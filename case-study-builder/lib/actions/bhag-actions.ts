@@ -1,6 +1,7 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
+import { getBHAGTarget } from './system-config-actions';
 
 /**
  * Get BHAG progress with deduplication logic
@@ -55,8 +56,8 @@ export async function getBHAGProgress() {
     byType.TECH = uniqueByType.TECH.size;
     byType.STAR = uniqueByType.STAR.size;
 
-    // BHAG target (can be configured)
-    const target = 1000;
+    // BHAG target (read from system configuration)
+    const target = await getBHAGTarget();
     const percentage = Math.min(100, Math.round((uniqueCount / target) * 100));
 
     return {

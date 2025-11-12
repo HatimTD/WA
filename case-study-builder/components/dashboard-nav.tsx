@@ -16,7 +16,13 @@ import {
   CheckCircle,
   Plus,
   GitCompare,
-  Stethoscope
+  Stethoscope,
+  Shield,
+  Users,
+  Sliders,
+  TrendingUp,
+  Bookmark,
+  BookOpen
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import BadgeDisplay from '@/components/badge-display';
@@ -34,14 +40,20 @@ interface DashboardNavProps {
 
 const navItems = [
   { href: '/dashboard', label: 'Home', icon: Home },
-  { href: '/dashboard/new', label: 'New Case Study', icon: Plus },
-  { href: '/dashboard/my-cases', label: 'My Cases', icon: FileText },
-  { href: '/dashboard/search', label: 'Search Database', icon: Search },
+  { href: '/dashboard/new', label: 'New Case Study', icon: Plus, roles: ['CONTRIBUTOR', 'APPROVER', 'ADMIN'] },
+  { href: '/dashboard/my-cases', label: 'My Cases', icon: FileText, roles: ['CONTRIBUTOR', 'APPROVER', 'ADMIN'] },
+  { href: '/dashboard/saved', label: 'Saved Cases', icon: Bookmark },
+  { href: '/dashboard/library', label: 'Library', icon: BookOpen },
+  { href: '/dashboard/search', label: 'Search Database', icon: Search, roles: ['CONTRIBUTOR', 'APPROVER', 'ADMIN'] },
   { href: '/dashboard/compare', label: 'Compare Cases', icon: GitCompare },
-  { href: '/dashboard/approvals', label: 'Approvals', icon: CheckCircle, roles: ['APPROVER'] },
+  { href: '/dashboard/approvals', label: 'Approvals', icon: CheckCircle, roles: ['APPROVER', 'ADMIN'] },
+  { href: '/dashboard/analytics', label: 'My Analytics', icon: TrendingUp, roles: ['CONTRIBUTOR', 'APPROVER', 'ADMIN'] },
   { href: '/dashboard/leaderboard', label: 'Leaderboard', icon: Trophy },
   { href: '/dashboard/bhag', label: 'BHAG Tracker', icon: BarChart },
-  { href: '/dashboard/diagnostics', label: 'Diagnostics', icon: Stethoscope },
+  { href: '/dashboard/diagnostics', label: 'Diagnostics', icon: Stethoscope, roles: ['CONTRIBUTOR', 'APPROVER', 'ADMIN'] },
+  { href: '/dashboard/admin', label: 'Admin Dashboard', icon: Shield, roles: ['ADMIN'] },
+  { href: '/dashboard/admin/users', label: 'User Management', icon: Users, roles: ['ADMIN'] },
+  { href: '/dashboard/admin/config', label: 'System Config', icon: Sliders, roles: ['ADMIN'] },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -71,11 +83,13 @@ export function DashboardNav({ user }: DashboardNavProps) {
           <Badge variant="secondary" className="text-xs">
             {user.role}
           </Badge>
-          <Badge variant="default" className="text-xs">
-            {user.totalPoints || 0} pts
-          </Badge>
+          {user.role !== 'VIEWER' && (
+            <Badge variant="default" className="text-xs">
+              {user.totalPoints || 0} pts
+            </Badge>
+          )}
         </div>
-        {user.badges && user.badges.length > 0 && (
+        {user.badges && user.badges.length > 0 && user.role !== 'VIEWER' && (
           <div className="pt-1">
             <BadgeDisplay badges={user.badges} size="sm" />
           </div>

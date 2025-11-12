@@ -22,6 +22,7 @@ model User {
   caseStudies   CaseStudy[] @relation("Contributor")
   approvals     CaseStudy[] @relation("Approver")
   comments      Comment[]
+  savedCases    SavedCase[]
   accounts      Account[]
   sessions      Session[]
 
@@ -67,6 +68,7 @@ model VerificationToken {
 enum Role {
   CONTRIBUTOR
   APPROVER
+  ADMIN
   VIEWER
 }
 
@@ -128,6 +130,7 @@ model CaseStudy {
   wps                     WeldingProcedure?
   costCalculator          CostCalculator?
   comments                Comment[]
+  savedBy                 SavedCase[]
 
   // Metadata
   createdAt               DateTime  @default(now())
@@ -289,4 +292,28 @@ enum ReactionType {
   INSIGHTFUL // 💡
   HELPFUL   // 🙌
   THUMBS_DOWN // 👎
+}
+
+model SavedCase {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  caseStudyId String
+  caseStudy   CaseStudy @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime  @default(now())
+
+  @@unique([userId, caseStudyId])
+  @@index([userId])
+  @@index([caseStudyId])
+}
+
+model SystemConfig {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+
+  createdAt DateTime @default(now())
 }

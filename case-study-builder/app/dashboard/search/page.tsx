@@ -11,6 +11,7 @@ import { Search, Filter, X } from 'lucide-react';
 import { searchCaseStudies } from '@/lib/actions/search-actions';
 import { getSearchSuggestions } from '@/lib/actions/autocomplete-actions';
 import Link from 'next/link';
+import { SaveButton } from '@/components/save-button';
 
 type SearchFilters = {
   query: string;
@@ -346,6 +347,11 @@ export default function SearchPage() {
                               <Badge variant="outline" className={getStatusColor(caseStudy.status)}>
                                 {caseStudy.status}
                               </Badge>
+                              {caseStudy.status === 'APPROVED' && (
+                                <div onClick={(e) => e.preventDefault()}>
+                                  <SaveButton caseStudyId={caseStudy.id} variant="icon" size="sm" />
+                                </div>
+                              )}
                             </div>
                             <h3 className="text-lg font-semibold mb-1">{caseStudy.title}</h3>
                             <p className="text-sm text-gray-600 mb-2 line-clamp-2">

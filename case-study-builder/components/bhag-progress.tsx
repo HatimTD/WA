@@ -22,7 +22,7 @@ export default async function BHAGProgress() {
               <Target className="h-6 w-6 text-blue-600" />
               BHAG Progress
             </CardTitle>
-            <CardDescription>Big Hairy Audacious Goal: 1,000 Unique Case Studies</CardDescription>
+            <CardDescription>Big Hairy Audacious Goal: {target.toLocaleString()} Unique Case Studies</CardDescription>
           </div>
           <TrendingUp className="h-8 w-8 text-blue-500" />
         </div>

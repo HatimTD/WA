@@ -189,6 +189,27 @@ async function main() {
 
   console.log(`Created ${createdCount} case studies`);
 
+  // Create system configuration defaults
+  const configDefaults = [
+    { key: 'bhag_target', value: '1000' },
+    { key: 'points_application', value: '1' },
+    { key: 'points_tech', value: '2' },
+    { key: 'points_star', value: '3' },
+    { key: 'badge_explorer_threshold', value: '10' },
+    { key: 'badge_expert_threshold', value: '10' },
+    { key: 'badge_champion_threshold', value: '10' },
+  ];
+
+  for (const config of configDefaults) {
+    await prisma.systemConfig.upsert({
+      where: { key: config.key },
+      update: {},
+      create: config,
+    });
+  }
+
+  console.log('Created system configuration defaults');
+
   // Update user points based on approved cases
   for (const user of users) {
     if (user.role === 'CONTRIBUTOR') {

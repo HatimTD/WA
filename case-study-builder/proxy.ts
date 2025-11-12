@@ -6,9 +6,10 @@ export default auth((req) => {
   const isAuthPage = req.nextUrl.pathname.startsWith('/login');
   const isDevLogin = req.nextUrl.pathname.startsWith('/dev-login');
   const isPublicPage = req.nextUrl.pathname === '/';
+  const isLibraryPage = req.nextUrl.pathname.startsWith('/library');
 
   // Allow public pages
-  if (isPublicPage) {
+  if (isPublicPage || isLibraryPage) {
     return NextResponse.next();
   }
 

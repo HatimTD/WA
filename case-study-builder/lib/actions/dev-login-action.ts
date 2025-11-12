@@ -1,8 +1,9 @@
 'use server';
 
 import { signIn } from '@/auth';
+import { prisma } from '@/lib/prisma';
 
-export async function devLogin(email: string, password: string) {
+export async function devLogin(email: string, password: string, role?: string) {
   // Only allow in development mode
   if (process.env.NODE_ENV === 'production') {
     return { success: false, error: 'Dev login not available in production' };
@@ -14,6 +15,14 @@ export async function devLogin(email: string, password: string) {
       password,
       redirect: false,
     });
+
+    // If role is provided, update the user's role
+    if (role && ['VIEWER', 'CONTRIBUTOR', 'APPROVER', 'ADMIN'].includes(role)) {
+      await prisma.user.update({
+        where: { email },
+        data: { role: role as any },
+      });
+    }
 
     return { success: true };
   } catch (error: any) {

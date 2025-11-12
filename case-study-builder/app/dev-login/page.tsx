@@ -6,6 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { devLogin } from '@/lib/actions/dev-login-action';
 import { toast } from 'sonner';
 import { AlertCircle } from 'lucide-react';
@@ -14,6 +21,7 @@ export default function DevLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('tidihatim@gmail.com');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('CONTRIBUTOR');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -21,10 +29,10 @@ export default function DevLoginPage() {
     setIsLoading(true);
 
     try {
-      const result = await devLogin(email, password);
+      const result = await devLogin(email, password, role);
 
       if (result.success) {
-        toast.success('Login successful!');
+        toast.success(`Login successful as ${role}!`);
         router.push('/dashboard');
         router.refresh();
       } else {
@@ -93,6 +101,49 @@ export default function DevLoginPage() {
                 placeholder="Enter password"
                 required
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="role">Role</Label>
+              <Select value={role} onValueChange={setRole}>
+                <SelectTrigger id="role">
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="VIEWER">
+                    <div className="flex flex-col">
+                      <span className="font-medium">VIEWER</span>
+                      <span className="text-xs text-muted-foreground">
+                        Browse approved cases (read-only)
+                      </span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="CONTRIBUTOR">
+                    <div className="flex flex-col">
+                      <span className="font-medium">CONTRIBUTOR</span>
+                      <span className="text-xs text-muted-foreground">
+                        Create and submit case studies
+                      </span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="APPROVER">
+                    <div className="flex flex-col">
+                      <span className="font-medium">APPROVER</span>
+                      <span className="text-xs text-muted-foreground">
+                        Review and approve submissions
+                      </span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="ADMIN">
+                    <div className="flex flex-col">
+                      <span className="font-medium">ADMIN</span>
+                      <span className="text-xs text-muted-foreground">
+                        Full system access
+                      </span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>
