@@ -1,0 +1,126 @@
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Card } from '@/components/ui/card';
+import { CaseStudyFormData } from '@/app/dashboard/new/page';
+import { Star, Cpu, FileText } from 'lucide-react';
+
+type Props = {
+  formData: CaseStudyFormData;
+  updateFormData: (data: Partial<CaseStudyFormData>) => void;
+};
+
+export default function StepOne({ formData, updateFormData }: Props) {
+  const caseTypes = [
+    {
+      value: 'APPLICATION',
+      label: 'Application Case',
+      description: 'Quick capture of a standard application',
+      points: 1,
+      icon: FileText,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
+      borderColor: 'border-blue-200',
+    },
+    {
+      value: 'TECH',
+      label: 'Tech Case',
+      description: 'Detailed technical case with WPS',
+      points: 2,
+      icon: Cpu,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+      borderColor: 'border-purple-200',
+    },
+    {
+      value: 'STAR',
+      label: 'Star Case',
+      description: 'Complete case with cost calculator and visuals',
+      points: 3,
+      icon: Star,
+      color: 'text-yellow-600',
+      bgColor: 'bg-yellow-50',
+      borderColor: 'border-yellow-200',
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <Label className="text-base font-semibold">
+          Select Case Study Type <span className="text-red-500">*</span>
+        </Label>
+        <p className="text-sm text-muted-foreground mt-1">
+          Choose the type based on the detail level you can provide
+        </p>
+      </div>
+
+      <RadioGroup
+        value={formData.type}
+        onValueChange={(value) =>
+          updateFormData({ type: value as 'APPLICATION' | 'TECH' | 'STAR' })
+        }
+        className="space-y-4"
+      >
+        {caseTypes.map((type) => {
+          const Icon = type.icon;
+          const isSelected = formData.type === type.value;
+
+          return (
+            <Card
+              key={type.value}
+              className={`relative cursor-pointer transition-all ${
+                isSelected
+                  ? `${type.borderColor} border-2 ${type.bgColor}`
+                  : 'border hover:border-gray-300'
+              }`}
+              onClick={() =>
+                updateFormData({ type: type.value as 'APPLICATION' | 'TECH' | 'STAR' })
+              }
+            >
+              <div className="flex items-start gap-4 p-6">
+                <RadioGroupItem value={type.value} id={type.value} className="mt-1" />
+                <div className={`p-3 rounded-lg ${type.bgColor}`}>
+                  <Icon className={`h-6 w-6 ${type.color}`} />
+                </div>
+                <div className="flex-1">
+                  <Label
+                    htmlFor={type.value}
+                    className="text-lg font-semibold cursor-pointer"
+                  >
+                    {type.label}
+                  </Label>
+                  <p className="text-sm text-muted-foreground mt-1">{type.description}</p>
+                  <div className="flex items-center gap-2 mt-3">
+                    <span className={`text-sm font-bold ${type.color}`}>
+                      +{type.points} Point{type.points > 1 ? 's' : ''}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      • {type.value === 'APPLICATION' && '~2 min'}
+                      {type.value === 'TECH' && '~5 min'}
+                      {type.value === 'STAR' && '~10 min'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
+      </RadioGroup>
+
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h4 className="font-semibold text-blue-900 mb-2">What's Required?</h4>
+        <ul className="space-y-1 text-sm text-blue-800">
+          <li>
+            <span className="font-semibold">Application:</span> Customer, problem, solution, product
+          </li>
+          <li>
+            <span className="font-semibold">Tech:</span> Above + WPS (Welding Procedure Specification)
+          </li>
+          <li>
+            <span className="font-semibold">Star:</span> Above + Cost calculator + Images/videos
+          </li>
+        </ul>
+      </div>
+    </div>
+  );
+}
