@@ -2,7 +2,18 @@
 
 import * as React from 'react';
 import { ThemeProvider as NextThemesProvider, useTheme } from 'next-themes';
-import { type ThemeProviderProps } from 'next-themes/dist/types';
+
+type ThemeProviderProps = {
+  children: React.ReactNode;
+  attribute?: 'class' | 'data-theme';
+  defaultTheme?: string;
+  enableSystem?: boolean;
+  storageKey?: string;
+  value?: { [key: string]: string };
+  themes?: string[];
+  forcedTheme?: string;
+  disableTransitionOnChange?: boolean;
+};
 
 function ThemeLoader() {
   const { setTheme } = useTheme();
