@@ -1,18 +1,29 @@
+'use client';
+
+import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Sign In',
-  description: 'Sign in to Welding Alloys Case Study Builder with your corporate Google account',
-  robots: {
-    index: false,
-    follow: false,
-  },
-};
+import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
 
 export default function LoginPage() {
+  const [isLoading, setIsLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      await signIn('google', { callbackUrl });
+    } catch (error) {
+      toast.error('Failed to sign in. Please try again.');
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-wa-green-50 to-purple-50 p-4">
       <Card className="w-full max-w-md">
@@ -28,8 +39,16 @@ export default function LoginPage() {
           <p className="text-center text-sm text-muted-foreground">
             Sign in with your Welding Alloys Google account to continue
           </p>
-          <Link href="/dev-login">
-            <Button className="w-full" size="lg">
+
+          <Button
+            className="w-full"
+            size="lg"
+            onClick={handleGoogleSignIn}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            ) : (
               <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
                 <path
                   fill="currentColor"
@@ -48,12 +67,29 @@ export default function LoginPage() {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-              Sign in with Google
-            </Button>
-          </Link>
+            )}
+            {isLoading ? 'Signing in...' : 'Sign in with Google'}
+          </Button>
+
           <p className="text-xs text-center text-muted-foreground">
             Only @weldingalloys.com email addresses are allowed
           </p>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">Or</span>
+            </div>
+          </div>
+
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground mb-2">Testing the application?</p>
+            <Link href="/dev-login" className="text-blue-600 hover:underline text-sm">
+              Use Test Login →
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>

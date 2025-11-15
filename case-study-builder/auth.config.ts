@@ -11,8 +11,8 @@ export const authConfig = {
       const isOnLogin = nextUrl.pathname.startsWith('/login');
       const isOnDevLogin = nextUrl.pathname.startsWith('/dev-login');
 
-      // Allow dev-login in development mode
-      if (isOnDevLogin && process.env.NODE_ENV === 'development') {
+      // Allow dev-login and dev-register pages
+      if (isOnDevLogin || nextUrl.pathname.startsWith('/dev-register')) {
         return true;
       }
 
