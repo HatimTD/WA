@@ -6,8 +6,9 @@ import { authConfig } from './auth.config';
 import prisma from '@/lib/prisma';
 import type { Role } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import type { Provider } from 'next-auth/providers';
 
-const providers = [
+const providers: Provider[] = [
   Google({
     clientId: process.env.GOOGLE_CLIENT_ID!,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
