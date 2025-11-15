@@ -61,13 +61,6 @@ export default async function EditCasePage({ params }: Props) {
     redirect(`/dashboard/cases/${id}?message=cannot_edit_submitted`);
   }
 
-  // Convert Decimal fields to numbers for client component
-  const serializedCaseStudy = {
-    ...caseStudy,
-    solutionValueRevenue: caseStudy.solutionValueRevenue ? Number(caseStudy.solutionValueRevenue) : null,
-    annualPotentialRevenue: caseStudy.annualPotentialRevenue ? Number(caseStudy.annualPotentialRevenue) : null,
-    customerSavingsAmount: caseStudy.customerSavingsAmount ? Number(caseStudy.customerSavingsAmount) : null,
-  };
-
-  return <EditCaseStudyForm caseStudy={serializedCaseStudy} wpsData={wpsData} costCalcData={costCalcData} />;
+  // Pass the original caseStudy - the component will handle conversion internally
+  return <EditCaseStudyForm caseStudy={caseStudy} wpsData={wpsData} costCalcData={costCalcData} />;
 }
