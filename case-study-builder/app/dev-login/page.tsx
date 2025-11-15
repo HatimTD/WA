@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -139,6 +140,13 @@ export default function DevLoginPage() {
             <div className="text-xs text-center text-muted-foreground mt-4">
               <p>Default credentials:</p>
               <p className="font-mono mt-1">tidihatim@gmail.com / Godofwar@3</p>
+            </div>
+
+            <div className="text-center mt-4 pt-4 border-t">
+              <p className="text-sm text-muted-foreground mb-2">Need a test account?</p>
+              <Link href="/dev-register" className="text-blue-600 hover:underline text-sm">
+                Create Test Account →
+              </Link>
             </div>
           </form>
         </CardContent>
