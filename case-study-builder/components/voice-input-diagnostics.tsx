@@ -86,6 +86,54 @@ export default function VoiceInputDiagnostics() {
       results.connectivity.speechAPIError = e.message;
     }
 
+    // REAL TEST: Actually try to initialize Speech Recognition API
+    results.connectivity.speechAPIRealTest = 'not_tested';
+    if (SpeechRecognition) {
+      try {
+        const testRecognition = new SpeechRecognition();
+        testRecognition.lang = 'en-US';
+
+        // Set up a promise to catch network errors
+        const testPromise = new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            testRecognition.stop();
+            resolve({ success: true, message: 'Started successfully (stopped before completing)' });
+          }, 2000);
+
+          testRecognition.onerror = (event: any) => {
+            clearTimeout(timeout);
+            testRecognition.stop();
+            reject({ error: event.error, message: event.message });
+          };
+
+          testRecognition.onstart = () => {
+            console.log('[Diagnostics] Speech API test started successfully');
+          };
+
+          try {
+            testRecognition.start();
+          } catch (err: any) {
+            clearTimeout(timeout);
+            reject({ error: 'start_failed', message: err.message });
+          }
+        });
+
+        const testResult: any = await testPromise;
+        results.connectivity.speechAPIRealTest = 'success';
+        results.connectivity.speechAPIRealTestMessage = testResult.message;
+      } catch (err: any) {
+        results.connectivity.speechAPIRealTest = 'failed';
+        results.connectivity.speechAPIRealTestError = err.error;
+        results.connectivity.speechAPIRealTestMessage = err.message || 'Unknown error';
+
+        // If we get a network error in the real test, that's the actual issue
+        if (err.error === 'network') {
+          results.connectivity.speechAPIReachable = false;
+          results.connectivity.speechAPIError = 'Speech API network test failed - firewall/VPN/antivirus blocking';
+        }
+      }
+    }
+
     setDiagnostics(results);
     setIsRunning(false);
   };
@@ -104,7 +152,7 @@ export default function VoiceInputDiagnostics() {
     <Card className="mt-4">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <AlertCircle className="h-5 w-5 text-blue-600" />
+          <AlertCircle className="h-5 w-5 text-wa-green-600" />
           Voice Input Diagnostics
         </CardTitle>
         <CardDescription>
@@ -190,6 +238,31 @@ export default function VoiceInputDiagnostics() {
                     )}
                   </span>
                 </div>
+                {diagnostics.connectivity.speechAPIRealTest && (
+                  <div className="flex items-center gap-2 mt-2 p-2 bg-wa-green-50 rounded border border-wa-green-200">
+                    {getStatusIcon(diagnostics.connectivity.speechAPIRealTest === 'success')}
+                    <div className="flex-1">
+                      <span className="font-semibold text-sm">
+                        Real Speech API Test: {diagnostics.connectivity.speechAPIRealTest === 'success' ? 'PASSED ✓' : 'FAILED ✗'}
+                      </span>
+                      {diagnostics.connectivity.speechAPIRealTest === 'success' && (
+                        <p className="text-xs text-gray-600 mt-1">
+                          {diagnostics.connectivity.speechAPIRealTestMessage}
+                        </p>
+                      )}
+                      {diagnostics.connectivity.speechAPIRealTest === 'failed' && (
+                        <div className="text-xs mt-1">
+                          <p className="text-red-600 font-semibold">
+                            Error: {diagnostics.connectivity.speechAPIRealTestError}
+                          </p>
+                          <p className="text-gray-600">
+                            {diagnostics.connectivity.speechAPIRealTestMessage}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -215,11 +288,35 @@ export default function VoiceInputDiagnostics() {
                 {diagnostics.connectivity.online && !diagnostics.connectivity.speechAPIReachable && (
                   <li>Speech API endpoints blocked. Check firewall or corporate network settings.</li>
                 )}
+                {diagnostics.connectivity.speechAPIRealTest === 'failed' && diagnostics.connectivity.speechAPIRealTestError === 'network' && (
+                  <li className="text-red-600 font-semibold">
+                    ⚠️ REAL TEST FAILED: Speech API is blocked by firewall/VPN/antivirus.
+                    <div className="ml-6 mt-2 space-y-1 text-sm">
+                      <div>Try these fixes:</div>
+                      <div>1. Temporarily disable Windows Firewall</div>
+                      <div>2. Temporarily disable antivirus software</div>
+                      <div>3. Disconnect from VPN</div>
+                      <div>4. Try incognito mode (Ctrl+Shift+N)</div>
+                      <div>5. Check if using Brave Browser - disable Shields for localhost</div>
+                    </div>
+                  </li>
+                )}
                 {diagnostics.environment.isSecureContext &&
                  diagnostics.speechAPI.supported &&
                  diagnostics.connectivity.online &&
-                 diagnostics.connectivity.googleReachable && (
-                  <li className="text-green-600">All checks passed! Voice input should work.</li>
+                 diagnostics.connectivity.googleReachable &&
+                 diagnostics.connectivity.speechAPIRealTest === 'success' && (
+                  <li className="text-green-600 font-semibold">✓ All checks passed including REAL test! Voice input works.</li>
+                )}
+                {diagnostics.environment.isSecureContext &&
+                 diagnostics.speechAPI.supported &&
+                 diagnostics.connectivity.online &&
+                 diagnostics.connectivity.googleReachable &&
+                 diagnostics.connectivity.speechAPIRealTest === 'failed' &&
+                 diagnostics.connectivity.speechAPIRealTestError !== 'network' && (
+                  <li className="text-orange-600">
+                    Basic checks passed but real test failed: {diagnostics.connectivity.speechAPIRealTestError}
+                  </li>
                 )}
               </ul>
             </div>

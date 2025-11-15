@@ -1,8 +1,10 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
-import { DashboardNav } from '@/components/dashboard-nav';
+import { DashboardShell } from '@/components/dashboard-shell';
 import { prisma } from '@/lib/prisma';
 import { SessionProvider } from 'next-auth/react';
+import AnnouncementBanner from '@/components/announcement-banner';
+import MaintenanceRedirect from '@/components/maintenance-redirect';
 
 export default async function DashboardLayout({
   children,
@@ -15,12 +17,14 @@ export default async function DashboardLayout({
     redirect('/login');
   }
 
-  // Fetch full user data from database to get updated name, points, role, and badges
+  // Fetch full user data from database including image and region
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
       name: true,
       email: true,
+      image: true,
+      region: true,
       role: true,
       totalPoints: true,
       badges: true,
@@ -33,14 +37,17 @@ export default async function DashboardLayout({
 
   return (
     <SessionProvider>
-      <div className="flex min-h-screen">
-        {/* Sidebar */}
-        <DashboardNav user={user} />
+      {/* Maintenance Mode Auto-Redirect */}
+      <MaintenanceRedirect />
 
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto bg-gray-50 p-8">
+      <div className="flex min-h-screen flex-col">
+        {/* Announcement Banner */}
+        <AnnouncementBanner />
+
+        {/* Dashboard Shell with Sidebar, Top Bar, and Content */}
+        <DashboardShell user={user}>
           {children}
-        </main>
+        </DashboardShell>
       </div>
     </SessionProvider>
   );

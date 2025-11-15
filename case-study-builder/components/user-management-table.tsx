@@ -113,13 +113,13 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
   };
 
   return (
-    <Card>
+    <Card className="dark:bg-card dark:border-border">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <UserCog className="h-5 w-5 text-blue-600" />
+        <CardTitle className="flex items-center gap-2 dark:text-foreground">
+          <UserCog className="h-5 w-5 text-wa-green-600 dark:text-primary" />
           All Users ({filteredUsers.length})
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="dark:text-muted-foreground">
           View and manage user accounts and permissions
         </CardDescription>
       </CardHeader>
@@ -127,20 +127,20 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
         {/* Search and Filter */}
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted-foreground" />
             <Input
               placeholder="Search by name or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 dark:bg-input dark:border-border dark:text-foreground"
             />
           </div>
           <div className="w-full md:w-48">
             <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger>
+              <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
                 <SelectValue placeholder="Filter by role" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="dark:bg-popover dark:border-border">
                 <SelectItem value="ALL">All Roles</SelectItem>
                 <SelectItem value="CONTRIBUTOR">CONTRIBUTOR</SelectItem>
                 <SelectItem value="APPROVER">APPROVER</SelectItem>
@@ -151,36 +151,36 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
         </div>
 
         {/* Users Table */}
-        <div className="border rounded-lg overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Region</TableHead>
-                <TableHead className="text-right">Points</TableHead>
-                <TableHead className="text-right">Cases</TableHead>
-                <TableHead>Joined</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+        <div className="border dark:border-border rounded-lg overflow-x-auto">
+          <Table className="min-w-[800px]">
+            <TableHeader className="dark:bg-card">
+              <TableRow className="dark:border-border">
+                <TableHead className="dark:text-foreground">User</TableHead>
+                <TableHead className="dark:text-foreground">Role</TableHead>
+                <TableHead className="dark:text-foreground">Region</TableHead>
+                <TableHead className="text-right dark:text-foreground">Points</TableHead>
+                <TableHead className="text-right dark:text-foreground">Cases</TableHead>
+                <TableHead className="dark:text-foreground">Joined</TableHead>
+                <TableHead className="text-right dark:text-foreground">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredUsers.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center text-gray-500 py-8">
+                <TableRow className="dark:border-border">
+                  <TableCell colSpan={7} className="text-center text-gray-500 dark:text-muted-foreground py-8">
                     No users found
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
+                  <TableRow key={user.id} className="dark:border-border dark:hover:bg-background">
                     {/* User Info */}
                     <TableCell>
                       <div>
-                        <p className="font-medium text-gray-900">
+                        <p className="font-medium text-gray-900 dark:text-foreground">
                           {user.name || 'No name'}
                         </p>
-                        <p className="text-sm text-gray-500">{user.email}</p>
+                        <p className="text-sm text-gray-500 dark:text-muted-foreground">{user.email}</p>
                       </div>
                     </TableCell>
 
@@ -191,13 +191,13 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
                         onValueChange={(newRole) => handleRoleChange(user.id, newRole)}
                         disabled={isUpdating === user.id}
                       >
-                        <SelectTrigger className="w-36">
+                        <SelectTrigger className="w-36 dark:bg-input dark:border-border dark:text-foreground">
                           <div className="flex items-center gap-2">
                             {user.role === 'ADMIN' && <Shield className="h-3 w-3" />}
                             <SelectValue />
                           </div>
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="dark:bg-popover dark:border-border">
                           <SelectItem value="CONTRIBUTOR">CONTRIBUTOR</SelectItem>
                           <SelectItem value="APPROVER">APPROVER</SelectItem>
                           <SelectItem value="ADMIN">ADMIN</SelectItem>
@@ -207,7 +207,7 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
 
                     {/* Region */}
                     <TableCell>
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-gray-600 dark:text-muted-foreground">
                         {user.region || 'Not set'}
                       </span>
                     </TableCell>
@@ -215,8 +215,8 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
                     {/* Points */}
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Award className="h-4 w-4 text-yellow-600" />
-                        <span className="font-medium text-gray-900">
+                        <Award className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                        <span className="font-medium text-gray-900 dark:text-foreground">
                           {user.totalPoints}
                         </span>
                       </div>
@@ -224,14 +224,14 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
 
                     {/* Case Count */}
                     <TableCell className="text-right">
-                      <span className="font-medium text-gray-900">
+                      <span className="font-medium text-gray-900 dark:text-foreground">
                         {user.caseCount}
                       </span>
                     </TableCell>
 
                     {/* Join Date */}
                     <TableCell>
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-gray-600 dark:text-muted-foreground">
                         {new Date(user.createdAt).toLocaleDateString()}
                       </span>
                     </TableCell>
@@ -243,7 +243,7 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
                         size="sm"
                         onClick={() => handleDeleteUser(user.id, user.email)}
                         disabled={isUpdating === user.id}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -257,19 +257,19 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
 
         {/* Summary Stats */}
         <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-600 font-medium">Total Users</p>
-            <p className="text-2xl font-bold text-blue-900">{users.length}</p>
+          <div className="bg-wa-green-50 dark:bg-accent border border-wa-green-200 dark:border-primary rounded-lg p-4">
+            <p className="text-sm text-wa-green-600 dark:text-primary font-medium">Total Users</p>
+            <p className="text-2xl font-bold text-wa-green-900 dark:text-foreground">{users.length}</p>
           </div>
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <p className="text-sm text-green-600 font-medium">Contributors</p>
-            <p className="text-2xl font-bold text-green-900">
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4">
+            <p className="text-sm text-green-600 dark:text-green-400 font-medium">Contributors</p>
+            <p className="text-2xl font-bold text-green-900 dark:text-foreground">
               {users.filter((u) => u.role === 'CONTRIBUTOR').length}
             </p>
           </div>
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-            <p className="text-sm text-purple-600 font-medium">Approvers + Admins</p>
-            <p className="text-2xl font-bold text-purple-900">
+          <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg p-4">
+            <p className="text-sm text-purple-600 dark:text-purple-400 font-medium">Approvers + Admins</p>
+            <p className="text-2xl font-bold text-purple-900 dark:text-foreground">
               {users.filter((u) => u.role === 'APPROVER' || u.role === 'ADMIN').length}
             </p>
           </div>

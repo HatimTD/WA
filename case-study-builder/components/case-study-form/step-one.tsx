@@ -17,9 +17,9 @@ export default function StepOne({ formData, updateFormData }: Props) {
       description: 'Quick capture of a standard application',
       points: 1,
       icon: FileText,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-      borderColor: 'border-blue-200',
+      color: 'text-wa-green-600',
+      bgColor: 'bg-wa-green-50',
+      borderColor: 'border-wa-green-200',
     },
     {
       value: 'TECH',
@@ -46,10 +46,10 @@ export default function StepOne({ formData, updateFormData }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <Label className="text-base font-semibold">
-          Select Case Study Type <span className="text-red-500">*</span>
+        <Label className="text-base font-semibold dark:text-foreground">
+          Select Case Study Type <span className="text-red-500 dark:text-red-400">*</span>
         </Label>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="text-sm text-muted-foreground dark:text-muted-foreground mt-1">
           Choose the type based on the detail level you can provide
         </p>
       </div>
@@ -66,12 +66,12 @@ export default function StepOne({ formData, updateFormData }: Props) {
           const isSelected = formData.type === type.value;
 
           return (
-            <Card
+            <Card role="article"
               key={type.value}
-              className={`relative cursor-pointer transition-all ${
+              className={`relative cursor-pointer transition-all dark:bg-card dark:border-border ${
                 isSelected
-                  ? `${type.borderColor} border-2 ${type.bgColor}`
-                  : 'border hover:border-gray-300'
+                  ? `${type.borderColor} border-2 ${type.bgColor} dark:border-primary dark:bg-accent`
+                  : 'border hover:border-gray-300 dark:hover:border-primary/50'
               }`}
               onClick={() =>
                 updateFormData({ type: type.value as 'APPLICATION' | 'TECH' | 'STAR' })
@@ -85,16 +85,16 @@ export default function StepOne({ formData, updateFormData }: Props) {
                 <div className="flex-1">
                   <Label
                     htmlFor={type.value}
-                    className="text-lg font-semibold cursor-pointer"
+                    className="text-lg font-semibold cursor-pointer dark:text-foreground"
                   >
                     {type.label}
                   </Label>
-                  <p className="text-sm text-muted-foreground mt-1">{type.description}</p>
+                  <p className="text-sm text-muted-foreground dark:text-muted-foreground mt-1">{type.description}</p>
                   <div className="flex items-center gap-2 mt-3">
                     <span className={`text-sm font-bold ${type.color}`}>
                       +{type.points} Point{type.points > 1 ? 's' : ''}
                     </span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground dark:text-muted-foreground">
                       • {type.value === 'APPLICATION' && '~2 min'}
                       {type.value === 'TECH' && '~5 min'}
                       {type.value === 'STAR' && '~10 min'}
@@ -107,17 +107,17 @@ export default function StepOne({ formData, updateFormData }: Props) {
         })}
       </RadioGroup>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h4 className="font-semibold text-blue-900 mb-2">What's Required?</h4>
-        <ul className="space-y-1 text-sm text-blue-800">
+      <div className="bg-wa-green-50 border border-wa-green-200 rounded-lg p-4 dark:bg-accent dark:border-primary">
+        <h4 className="font-semibold text-wa-green-900 mb-2 dark:text-foreground">What's Required?</h4>
+        <ul className="space-y-1 text-sm text-wa-green-800 dark:text-muted-foreground">
           <li>
-            <span className="font-semibold">Application:</span> Customer, problem, solution, product
+            <span className="font-semibold dark:text-foreground">Application:</span> Customer, problem, solution, product
           </li>
           <li>
-            <span className="font-semibold">Tech:</span> Above + WPS (Welding Procedure Specification)
+            <span className="font-semibold dark:text-foreground">Tech:</span> Above + WPS (Welding Procedure Specification)
           </li>
           <li>
-            <span className="font-semibold">Star:</span> Above + Cost calculator + Images/videos
+            <span className="font-semibold dark:text-foreground">Star:</span> Above + Cost calculator + Images/videos
           </li>
         </ul>
       </div>

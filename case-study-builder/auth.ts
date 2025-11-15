@@ -5,6 +5,7 @@ import { PrismaAdapter } from '@auth/prisma-adapter';
 import { authConfig } from './auth.config';
 import prisma from '@/lib/prisma';
 import type { Role } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const providers = [
   Google({
@@ -35,12 +36,11 @@ if (process.env.NODE_ENV === 'development') {
           return null;
         }
 
-        // Check dev credentials
-        if (
-          credentials.email === 'tidihatim@gmail.com' &&
-          credentials.password === 'Godofwar@3'
-        ) {
-          // Find or create the dev user
+        const email = credentials.email as string;
+        const password = credentials.password as string;
+
+        // First check hardcoded dev credentials for backward compatibility
+        if (email === 'tidihatim@gmail.com' && password === 'Godofwar@3') {
           let user = await prisma.user.findUnique({
             where: { email: 'tidihatim@gmail.com' },
           });
@@ -49,8 +49,8 @@ if (process.env.NODE_ENV === 'development') {
             user = await prisma.user.create({
               data: {
                 email: 'tidihatim@gmail.com',
-                name: 'Dev User',
-                role: 'CONTRIBUTOR',
+                name: 'Dev Hatim Tidi',
+                role: 'ADMIN',
                 emailVerified: new Date(),
               },
             });
@@ -64,7 +64,39 @@ if (process.env.NODE_ENV === 'development') {
           };
         }
 
-        return null;
+        // Check database for users with credentials accounts
+        const user = await prisma.user.findUnique({
+          where: { email },
+          include: {
+            accounts: {
+              where: {
+                provider: 'credentials',
+              },
+            },
+          },
+        });
+
+        if (!user || !user.accounts || user.accounts.length === 0) {
+          return null;
+        }
+
+        // Verify password (stored in access_token field)
+        const account = user.accounts[0];
+        if (!account.access_token) {
+          return null;
+        }
+
+        const isValid = await bcrypt.compare(password, account.access_token);
+        if (!isValid) {
+          return null;
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+        };
       },
     })
   );
@@ -77,9 +109,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers,
   callbacks: {
     async signIn({ user, account, profile }) {
-      // Allow dev user in development mode
-      if (process.env.NODE_ENV === 'development' && user.email === 'tidihatim@gmail.com') {
-        return true;
+      // Allow dev users in development mode
+      if (process.env.NODE_ENV === 'development') {
+        // Allow specific test accounts
+        if (user.email === 'tidihatim@gmail.com' || user.email === 'test@admin.com') {
+          return true;
+        }
+        // Allow credentials provider in dev
+        if (account?.provider === 'credentials') {
+          return true;
+        }
       }
 
       // Check if email is from weldingalloys.com domain

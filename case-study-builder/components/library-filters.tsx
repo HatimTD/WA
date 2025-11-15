@@ -47,18 +47,18 @@ export function LibraryFilters({
     <>
       {/* Search */}
       <div>
-        <label className="text-sm font-medium mb-2 block">Search</label>
+        <label className="text-sm font-medium mb-2 block dark:text-foreground">Search</label>
         <div className="relative">
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search cases..."
-            className="pr-10"
+            className="pr-10 dark:bg-input dark:border-border dark:text-foreground"
           />
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted-foreground" />
         </div>
         {query && (
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-500 mt-1 dark:text-muted-foreground">
             Filtering in real-time...
           </p>
         )}
@@ -66,7 +66,7 @@ export function LibraryFilters({
 
       {/* Type Filter */}
       <div>
-        <label className="text-sm font-medium mb-2 block">Case Type</label>
+        <label className="text-sm font-medium mb-2 block dark:text-foreground">Case Type</label>
         <div className="space-y-2">
           <Link
             href={`/dashboard/library?${new URLSearchParams({
@@ -75,8 +75,8 @@ export function LibraryFilters({
             }).toString()}`}
             className={`block px-3 py-2 rounded-md text-sm transition-colors ${
               !typeFilter
-                ? 'bg-blue-50 text-blue-700 font-medium'
-                : 'hover:bg-gray-100 text-gray-700'
+                ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
+                : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
             }`}
           >
             All Types ({typeCounts.reduce((sum, t) => sum + t._count, 0)})
@@ -91,8 +91,8 @@ export function LibraryFilters({
               }).toString()}`}
               className={`block px-3 py-2 rounded-md text-sm transition-colors ${
                 typeFilter === typeCount.type
-                  ? 'bg-blue-50 text-blue-700 font-medium'
-                  : 'hover:bg-gray-100 text-gray-700'
+                  ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
+                  : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
               }`}
             >
               {typeCount.type} ({typeCount._count})
@@ -103,7 +103,7 @@ export function LibraryFilters({
 
       {/* Industry Filter */}
       <div>
-        <label className="text-sm font-medium mb-2 block">Industry</label>
+        <label className="text-sm font-medium mb-2 block dark:text-foreground">Industry</label>
         <div className="space-y-2 max-h-64 overflow-y-auto">
           <Link
             href={`/dashboard/library?${new URLSearchParams({
@@ -112,8 +112,8 @@ export function LibraryFilters({
             }).toString()}`}
             className={`block px-3 py-2 rounded-md text-sm transition-colors ${
               !industryFilter
-                ? 'bg-blue-50 text-blue-700 font-medium'
-                : 'hover:bg-gray-100 text-gray-700'
+                ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
+                : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
             }`}
           >
             All Industries
@@ -128,8 +128,8 @@ export function LibraryFilters({
               }).toString()}`}
               className={`block px-3 py-2 rounded-md text-sm transition-colors ${
                 industryFilter === ind.industry
-                  ? 'bg-blue-50 text-blue-700 font-medium'
-                  : 'hover:bg-gray-100 text-gray-700'
+                  ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
+                  : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
               }`}
             >
               {ind.industry}

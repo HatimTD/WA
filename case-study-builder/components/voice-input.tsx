@@ -98,11 +98,13 @@ export default function VoiceInput({ onTranscript, currentValue = '', language =
           toast.error('Microphone access denied. Please enable microphone permissions in your browser.');
           setIsListening(false);
         } else if (event.error === 'network') {
-          console.error('[VoiceInput] Network error - possible causes:');
-          console.error('1. Not using localhost (use http://localhost:3010 instead of IP address)');
-          console.error('2. No HTTPS connection (Speech API requires HTTPS or localhost)');
-          console.error('3. Internet connection issue');
-          console.error('4. Firewall blocking Speech API endpoints');
+          console.error('[VoiceInput] Network error - Google Speech API is blocked');
+          console.error('[VoiceInput] Possible causes:');
+          console.error('1. Windows Firewall is blocking Chrome/Edge network access');
+          console.error('2. Antivirus software blocking Google servers');
+          console.error('3. VPN interfering with Speech API');
+          console.error('4. Browser extensions (ad blockers, privacy tools) blocking the API');
+          console.error('5. Brave Browser Shields blocking Google services');
           console.error('[VoiceInput] Current location:', {
             hostname: window.location.hostname,
             protocol: window.location.protocol,
@@ -110,37 +112,13 @@ export default function VoiceInput({ onTranscript, currentValue = '', language =
             isSecureContext: window.isSecureContext
           });
 
-          // More helpful error message
-          const hostname = window.location.hostname;
-          if (hostname !== 'localhost' && hostname !== '127.0.0.1' && window.location.protocol !== 'https:') {
-            console.error('[VoiceInput] Problem: Not on localhost or HTTPS');
-            toast.error(
-              'Voice input requires HTTPS or localhost. Please access the app at http://localhost:3010',
-              { duration: 6000 }
-            );
-          } else {
-            console.error('[VoiceInput] Problem: On localhost but network error - likely internet/firewall issue');
-            toast.error('Network error. The Speech API cannot reach Google servers. Check your internet connection, VPN, or firewall settings.', { duration: 8000 });
-          }
+          // Show detailed error with fixes
+          toast.error(
+            'Google Speech API is blocked by firewall/VPN/antivirus. Visit Diagnostics page for fix instructions.',
+            { duration: 10000 }
+          );
 
           setIsListening(false);
-
-          // Auto-retry once after network error (might be temporary)
-          if (restartTimeoutRef.current === null) {
-            console.log('[VoiceInput] Attempting auto-restart in 2 seconds...');
-            restartTimeoutRef.current = setTimeout(() => {
-              if (recognitionRef.current && !isListening) {
-                try {
-                  console.log('[VoiceInput] Auto-restarting after network error...');
-                  recognitionRef.current.start();
-                  restartTimeoutRef.current = null;
-                } catch (err) {
-                  console.error('[VoiceInput] Auto-restart failed:', err);
-                  restartTimeoutRef.current = null;
-                }
-              }
-            }, 2000);
-          }
         } else if (event.error === 'aborted') {
           // Aborted errors are usually fine, just user stopping
           console.log('[VoiceInput] Recognition aborted');

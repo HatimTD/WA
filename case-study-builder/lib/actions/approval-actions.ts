@@ -4,6 +4,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { checkAndAwardBadges } from './badge-actions';
+import { createNotification } from './notification-actions';
 
 export async function approveCaseStudy(caseStudyId: string) {
   const session = await auth();
@@ -26,7 +27,13 @@ export async function approveCaseStudy(caseStudyId: string) {
     // Check if case study exists and is submitted
     const caseStudy = await prisma.caseStudy.findUnique({
       where: { id: caseStudyId },
-      select: { status: true, type: true, contributorId: true },
+      select: {
+        status: true,
+        type: true,
+        contributorId: true,
+        customerName: true,
+        industry: true,
+      },
     });
 
     if (!caseStudy) {
@@ -70,7 +77,27 @@ export async function approveCaseStudy(caseStudyId: string) {
     // Check and award badges based on approved case counts
     const badgeResult = await checkAndAwardBadges(caseStudy.contributorId);
 
-    // TODO: Send notification to contributor
+    // Send approval notification to contributor
+    await createNotification({
+      userId: caseStudy.contributorId,
+      type: 'CASE_APPROVED',
+      title: 'Case Study Approved!',
+      message: `Your case study "${caseStudy.customerName} - ${caseStudy.industry}" has been approved and is now live. You earned ${points} point${points > 1 ? 's' : ''}!`,
+      link: `/dashboard/cases/${caseStudyId}`,
+    });
+
+    // Send badge notification if new badges were awarded
+    if (badgeResult.success && badgeResult.newBadges && badgeResult.newBadges.length > 0) {
+      for (const badge of badgeResult.newBadges) {
+        await createNotification({
+          userId: caseStudy.contributorId,
+          type: 'BADGE_EARNED',
+          title: 'New Badge Earned!',
+          message: `Congratulations! You've earned the ${badge} badge!`,
+          link: '/dashboard/analytics',
+        });
+      }
+    }
 
     revalidatePath('/dashboard/approvals');
     revalidatePath('/dashboard/my-cases');
@@ -113,7 +140,12 @@ export async function rejectCaseStudy(caseStudyId: string, reason: string) {
     // Check if case study exists and is submitted
     const caseStudy = await prisma.caseStudy.findUnique({
       where: { id: caseStudyId },
-      select: { status: true },
+      select: {
+        status: true,
+        contributorId: true,
+        customerName: true,
+        industry: true,
+      },
     });
 
     if (!caseStudy) {
@@ -124,19 +156,25 @@ export async function rejectCaseStudy(caseStudyId: string, reason: string) {
       return { success: false, error: 'Only submitted case studies can be rejected' };
     }
 
-    // Reject case study
-    // Note: We're not storing the rejection reason in the current schema
-    // You could add a rejectionReason field to the CaseStudy model
+    // Reject case study with reason
     await prisma.caseStudy.update({
       where: { id: caseStudyId },
       data: {
         status: 'REJECTED',
-        approverId: session.user.id,
-        approvedAt: new Date(), // Using same field to track when it was reviewed
+        rejectionReason: reason.trim(),
+        rejectedAt: new Date(),
+        rejectedBy: session.user.id,
       },
     });
 
-    // TODO: Send notification to contributor with reason
+    // Send rejection notification to contributor
+    await createNotification({
+      userId: caseStudy.contributorId,
+      type: 'CASE_REJECTED',
+      title: 'Case Study Needs Revision',
+      message: `Your case study "${caseStudy.customerName} - ${caseStudy.industry}" requires revisions. Please review the feedback and resubmit.`,
+      link: `/dashboard/my-cases`,
+    });
 
     revalidatePath('/dashboard/approvals');
     revalidatePath('/dashboard/my-cases');

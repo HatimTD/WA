@@ -1,13 +1,23 @@
-import { signIn } from '@/auth';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Sign In',
+  description: 'Sign in to Welding Alloys Case Study Builder with your corporate Google account',
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-wa-green-50 to-purple-50 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-wa-green-600 to-purple-600 bg-clip-text text-transparent">
             Case Study Builder
           </CardTitle>
           <CardDescription className="text-lg">
@@ -18,13 +28,8 @@ export default function LoginPage() {
           <p className="text-center text-sm text-muted-foreground">
             Sign in with your Welding Alloys Google account to continue
           </p>
-          <form
-            action={async () => {
-              'use server';
-              await signIn('google', { redirectTo: '/dashboard' });
-            }}
-          >
-            <Button type="submit" className="w-full" size="lg">
+          <Link href="/dev-login">
+            <Button className="w-full" size="lg">
               <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
                 <path
                   fill="currentColor"
@@ -45,7 +50,7 @@ export default function LoginPage() {
               </svg>
               Sign in with Google
             </Button>
-          </form>
+          </Link>
           <p className="text-xs text-center text-muted-foreground">
             Only @weldingalloys.com email addresses are allowed
           </p>

@@ -127,21 +127,21 @@ export default async function AdminDashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">Admin Dashboard</h1>
+          <p className="text-gray-600 dark:text-muted-foreground mt-2">
             System overview and management
           </p>
         </div>
         {user.role === 'ADMIN' && (
           <div className="flex gap-3">
             <Link href="/dashboard/admin/users">
-              <Button variant="outline" className="gap-2">
+              <Button variant="outline" className="gap-2 dark:border-border dark:text-foreground dark:hover:bg-background">
                 <Users className="h-4 w-4" />
                 User Management
               </Button>
             </Link>
-            <Link href="/dashboard/admin/settings">
-              <Button variant="outline" className="gap-2">
+            <Link href="/dashboard/system-settings">
+              <Button variant="outline" className="gap-2 dark:border-border dark:text-foreground dark:hover:bg-background">
                 <Settings className="h-4 w-4" />
                 System Settings
               </Button>
@@ -153,60 +153,60 @@ export default async function AdminDashboardPage() {
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Total Users */}
-        <Card>
+        <Card role="article" className="dark:bg-card dark:border-border">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">
+            <CardTitle className="text-sm font-medium text-gray-600 dark:text-muted-foreground">
               Total Users
             </CardTitle>
-            <Users className="h-4 w-4 text-blue-600" />
+            <Users className="h-4 w-4 text-wa-green-600 dark:text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">{totalUsers}</div>
-            <p className="text-xs text-gray-500 mt-1">Registered accounts</p>
+            <div className="text-2xl font-bold text-gray-900 dark:text-foreground">{totalUsers}</div>
+            <p className="text-xs text-gray-500 dark:text-muted-foreground mt-1">Registered accounts</p>
           </CardContent>
         </Card>
 
         {/* Total Cases */}
-        <Card>
+        <Card role="article" className="dark:bg-card dark:border-border">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">
+            <CardTitle className="text-sm font-medium text-gray-600 dark:text-muted-foreground">
               Total Cases
             </CardTitle>
-            <FileText className="h-4 w-4 text-green-600" />
+            <FileText className="h-4 w-4 text-green-600 dark:text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">{totalCases}</div>
-            <p className="text-xs text-gray-500 mt-1">All submissions</p>
+            <div className="text-2xl font-bold text-gray-900 dark:text-foreground">{totalCases}</div>
+            <p className="text-xs text-gray-500 dark:text-muted-foreground mt-1">All submissions</p>
           </CardContent>
         </Card>
 
         {/* Pending Approvals */}
-        <Card>
+        <Card role="article" className="dark:bg-card dark:border-border">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">
+            <CardTitle className="text-sm font-medium text-gray-600 dark:text-muted-foreground">
               Pending Review
             </CardTitle>
-            <Clock className="h-4 w-4 text-orange-600" />
+            <Clock className="h-4 w-4 text-orange-600 dark:text-orange-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">{pendingCases}</div>
-            <p className="text-xs text-gray-500 mt-1">Awaiting approval</p>
+            <div className="text-2xl font-bold text-gray-900 dark:text-foreground">{pendingCases}</div>
+            <p className="text-xs text-gray-500 dark:text-muted-foreground mt-1">Awaiting approval</p>
           </CardContent>
         </Card>
 
         {/* BHAG Progress */}
-        <Card>
+        <Card role="article" className="dark:bg-card dark:border-border">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">
+            <CardTitle className="text-sm font-medium text-gray-600 dark:text-muted-foreground">
               BHAG Progress
             </CardTitle>
-            <TrendingUp className="h-4 w-4 text-purple-600" />
+            <TrendingUp className="h-4 w-4 text-purple-600 dark:text-purple-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">
+            <div className="text-2xl font-bold text-gray-900 dark:text-foreground">
               {bhagProgress.toFixed(1)}%
             </div>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-muted-foreground mt-1">
               {approvedCases} / {bhagTarget} approved
             </p>
           </CardContent>
@@ -215,69 +215,69 @@ export default async function AdminDashboardPage() {
 
       {/* Approval Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
+        <Card role="article" className="dark:bg-card dark:border-border">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-600" />
+            <CardTitle className="text-sm font-medium text-gray-600 dark:text-muted-foreground flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600 dark:text-primary" />
               Approved Cases
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-600">{approvedCases}</div>
+            <div className="text-3xl font-bold text-green-600 dark:text-primary">{approvedCases}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card role="article" className="dark:bg-card dark:border-border">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-              <Clock className="h-4 w-4 text-orange-600" />
+            <CardTitle className="text-sm font-medium text-gray-600 dark:text-muted-foreground flex items-center gap-2">
+              <Clock className="h-4 w-4 text-orange-600 dark:text-orange-400" />
               Pending Cases
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-orange-600">{pendingCases}</div>
+            <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">{pendingCases}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card role="article" className="dark:bg-card dark:border-border">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-              <XCircle className="h-4 w-4 text-red-600" />
+            <CardTitle className="text-sm font-medium text-gray-600 dark:text-muted-foreground flex items-center gap-2">
+              <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
               Rejected Cases
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-red-600">{rejectedCases}</div>
+            <div className="text-3xl font-bold text-red-600 dark:text-red-400">{rejectedCases}</div>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent User Registrations */}
-        <Card>
+        <Card role="article" className="dark:bg-card dark:border-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <UserPlus className="h-5 w-5 text-blue-600" />
+            <CardTitle className="flex items-center gap-2 dark:text-foreground">
+              <UserPlus className="h-5 w-5 text-wa-green-600 dark:text-primary" />
               Recent User Registrations
             </CardTitle>
-            <CardDescription>Latest user accounts created</CardDescription>
+            <CardDescription className="dark:text-muted-foreground">Latest user accounts created</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {recentUsers.length === 0 ? (
-                <p className="text-sm text-gray-500">No recent registrations</p>
+                <p className="text-sm text-gray-500 dark:text-muted-foreground">No recent registrations</p>
               ) : (
                 recentUsers.map((u) => (
-                  <div key={u.id} className="flex items-center justify-between border-b pb-3 last:border-0">
+                  <div key={u.id} className="flex items-center justify-between border-b dark:border-border pb-3 last:border-0">
                     <div className="flex-1">
-                      <p className="font-medium text-gray-900">{u.name || 'No name'}</p>
-                      <p className="text-sm text-gray-500">{u.email}</p>
+                      <p className="font-medium text-gray-900 dark:text-foreground">{u.name || 'No name'}</p>
+                      <p className="text-sm text-gray-500 dark:text-muted-foreground">{u.email}</p>
                     </div>
                     <div className="text-right">
-                      <div className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-md font-medium">
+                      <div className="text-xs px-2 py-1 bg-wa-green-100 dark:bg-accent text-wa-green-700 dark:text-primary rounded-md font-medium">
                         {u.role}
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-gray-500 dark:text-muted-foreground mt-1">
                         {new Date(u.createdAt).toLocaleDateString()}
                       </p>
                     </div>
@@ -289,41 +289,41 @@ export default async function AdminDashboardPage() {
         </Card>
 
         {/* Recent Case Submissions */}
-        <Card>
+        <Card role="article" className="dark:bg-card dark:border-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-green-600" />
+            <CardTitle className="flex items-center gap-2 dark:text-foreground">
+              <FileText className="h-5 w-5 text-green-600 dark:text-primary" />
               Recent Case Submissions
             </CardTitle>
-            <CardDescription>Latest case studies submitted</CardDescription>
+            <CardDescription className="dark:text-muted-foreground">Latest case studies submitted</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {recentCases.length === 0 ? (
-                <p className="text-sm text-gray-500">No recent submissions</p>
+                <p className="text-sm text-gray-500 dark:text-muted-foreground">No recent submissions</p>
               ) : (
                 recentCases.map((c) => (
-                  <div key={c.id} className="flex items-center justify-between border-b pb-3 last:border-0">
+                  <div key={c.id} className="flex items-center justify-between border-b dark:border-border pb-3 last:border-0">
                     <div className="flex-1">
                       <Link
                         href={`/dashboard/cases/${c.id}`}
-                        className="font-medium text-gray-900 hover:text-blue-600 transition-colors"
+                        className="font-medium text-gray-900 dark:text-foreground hover:text-wa-green-600 dark:hover:text-primary transition-colors"
                       >
                         {c.customerName}
                       </Link>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 dark:text-muted-foreground">
                         by {c.contributor.name || c.contributor.email}
                       </p>
                     </div>
                     <div className="text-right">
                       <div className={`text-xs px-2 py-1 rounded-md font-medium ${
-                        c.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
-                        c.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
-                        'bg-orange-100 text-orange-700'
+                        c.status === 'APPROVED' ? 'bg-green-100 text-green-700 dark:bg-accent dark:text-primary' :
+                        c.status === 'REJECTED' ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400' :
+                        'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400'
                       }`}>
                         {c.status}
                       </div>
-                      <div className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-md font-medium mt-1">
+                      <div className="text-xs px-2 py-1 bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400 rounded-md font-medium mt-1">
                         {c.type}
                       </div>
                     </div>
@@ -336,46 +336,46 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* Recent Approvals/Rejections */}
-      <Card>
+      <Card role="article" className="dark:bg-card dark:border-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-purple-600" />
+          <CardTitle className="flex items-center gap-2 dark:text-foreground">
+            <BarChart3 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             Recent Review Activity
           </CardTitle>
-          <CardDescription>Latest approval and rejection decisions</CardDescription>
+          <CardDescription className="dark:text-muted-foreground">Latest approval and rejection decisions</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {recentApprovals.length === 0 ? (
-              <p className="text-sm text-gray-500">No recent review activity</p>
+              <p className="text-sm text-gray-500 dark:text-muted-foreground">No recent review activity</p>
             ) : (
               recentApprovals.map((c) => (
-                <div key={c.id} className="flex items-center justify-between border-b pb-3 last:border-0">
+                <div key={c.id} className="flex items-center justify-between border-b dark:border-border pb-3 last:border-0">
                   <div className="flex items-center gap-3 flex-1">
                     {c.status === 'APPROVED' ? (
-                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      <CheckCircle className="h-5 w-5 text-green-600 dark:text-primary" />
                     ) : (
-                      <XCircle className="h-5 w-5 text-red-600" />
+                      <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
                     )}
                     <div>
                       <Link
                         href={`/dashboard/cases/${c.id}`}
-                        className="font-medium text-gray-900 hover:text-blue-600 transition-colors"
+                        className="font-medium text-gray-900 dark:text-foreground hover:text-wa-green-600 dark:hover:text-primary transition-colors"
                       >
                         {c.customerName}
                       </Link>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 dark:text-muted-foreground">
                         by {c.contributor.name || 'Unknown'}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className={`text-xs px-2 py-1 rounded-md font-medium ${
-                      c.status === 'APPROVED' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                      c.status === 'APPROVED' ? 'bg-green-100 text-green-700 dark:bg-accent dark:text-primary' : 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400'
                     }`}>
                       {c.status}
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-muted-foreground mt-1">
                       {new Date(c.updatedAt).toLocaleDateString()}
                     </p>
                   </div>
@@ -388,27 +388,27 @@ export default async function AdminDashboardPage() {
 
       {/* Quick Actions */}
       {user.role === 'ADMIN' && (
-        <Card>
+        <Card role="article" className="dark:bg-card dark:border-border">
           <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Common administrative tasks</CardDescription>
+            <CardTitle className="dark:text-foreground">Quick Actions</CardTitle>
+            <CardDescription className="dark:text-muted-foreground">Common administrative tasks</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Link href="/dashboard/admin/users">
-                <Button variant="outline" className="w-full gap-2">
+                <Button variant="outline" className="w-full gap-2 dark:border-border dark:text-foreground dark:hover:bg-background">
                   <Users className="h-4 w-4" />
                   Manage Users
                 </Button>
               </Link>
               <Link href="/dashboard/approvals">
-                <Button variant="outline" className="w-full gap-2">
+                <Button variant="outline" className="w-full gap-2 dark:border-border dark:text-foreground dark:hover:bg-background">
                   <Clock className="h-4 w-4" />
                   Review Pending Cases
                 </Button>
               </Link>
-              <Link href="/dashboard/admin/settings">
-                <Button variant="outline" className="w-full gap-2">
+              <Link href="/dashboard/system-settings">
+                <Button variant="outline" className="w-full gap-2 dark:border-border dark:text-foreground dark:hover:bg-background">
                   <Settings className="h-4 w-4" />
                   System Settings
                 </Button>

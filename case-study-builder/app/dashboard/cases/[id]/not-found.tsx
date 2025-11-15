@@ -6,7 +6,7 @@ import { FileQuestion, ArrowLeft } from 'lucide-react';
 export default function NotFound() {
   return (
     <div className="min-h-[60vh] flex items-center justify-center">
-      <Card className="max-w-md">
+      <Card role="article" className="max-w-md">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
             <FileQuestion className="h-8 w-8 text-gray-400" />

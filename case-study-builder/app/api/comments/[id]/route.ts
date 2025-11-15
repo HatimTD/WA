@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -13,7 +13,8 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const commentId = params.id;
+    // Await params in Next.js 16
+    const { id: commentId } = await params;
 
     // Check if comment exists and get user info
     const comment = await prisma.comment.findUnique({

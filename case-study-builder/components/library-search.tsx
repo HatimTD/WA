@@ -113,7 +113,7 @@ export function LibrarySearch() {
       {/* Search Input */}
       <div className="relative" ref={suggestionsRef}>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted-foreground" />
           <Input
             value={query}
             onChange={(e) => {
@@ -124,7 +124,7 @@ export function LibrarySearch() {
               if (suggestions.length > 0) setShowSuggestions(true);
             }}
             placeholder="Search by customer, industry, product, location..."
-            className="pl-10 pr-20"
+            className="pl-10 pr-20 dark:bg-input dark:border-border dark:text-foreground"
           />
           {query && (
             <Button
@@ -140,16 +140,16 @@ export function LibrarySearch() {
 
         {/* Autocomplete Suggestions */}
         {showSuggestions && suggestions.length > 0 && (
-          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg">
+          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg dark:bg-card dark:border-border">
             <div className="py-1">
               {suggestions.map((suggestion, index) => (
                 <button
                   key={index}
                   onClick={() => handleSearch(suggestion)}
-                  className="w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors"
+                  className="w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors dark:hover:bg-background dark:text-foreground"
                 >
                   <div className="flex items-center gap-2">
-                    <Search className="h-3 w-3 text-gray-400" />
+                    <Search className="h-3 w-3 text-gray-400 dark:text-muted-foreground" />
                     <span className="text-sm">{suggestion}</span>
                   </div>
                 </button>
@@ -161,14 +161,14 @@ export function LibrarySearch() {
 
       {/* Loading State */}
       {isSearching && query.length >= 2 && (
-        <div className="text-sm text-gray-500 text-center py-2">Searching...</div>
+        <div className="text-sm text-gray-500 text-center py-2 dark:text-muted-foreground">Searching...</div>
       )}
 
       {/* Dynamic Search Results */}
       {showResults && !isSearching && results.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">
+            <p className="text-sm font-medium dark:text-foreground">
               Found {results.length} result{results.length !== 1 ? 's' : ''} for "{query}"
             </p>
             <Button variant="outline" size="sm" onClick={clearSearch}>
@@ -181,10 +181,10 @@ export function LibrarySearch() {
               <Link
                 key={result.id}
                 href={`/dashboard/library/${result.id}`}
-                className="block p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow bg-white"
+                className="block p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow bg-white dark:bg-card dark:border-border dark:hover:border-primary"
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
-                  <h3 className="font-semibold text-lg line-clamp-1">{result.customerName}</h3>
+                  <h3 className="font-semibold text-lg line-clamp-1 dark:text-foreground">{result.customerName}</h3>
                   <Badge
                     variant={
                       result.type === 'STAR' ? 'default' : result.type === 'TECH' ? 'secondary' : 'outline'
@@ -194,18 +194,18 @@ export function LibrarySearch() {
                     {result.type}
                   </Badge>
                 </div>
-                <p className="text-sm text-gray-600 mb-2">
+                <p className="text-sm text-gray-600 mb-2 dark:text-muted-foreground">
                   {result.industry} • {result.location}
                 </p>
                 <div className="space-y-1 text-sm mb-2">
-                  <p className="text-gray-600">
-                    <span className="font-medium">Component:</span> {result.componentWorkpiece}
+                  <p className="text-gray-600 dark:text-muted-foreground">
+                    <span className="font-medium dark:text-foreground">Component:</span> {result.componentWorkpiece}
                   </p>
-                  <p className="text-gray-600">
-                    <span className="font-medium">Product:</span> {result.waProduct}
+                  <p className="text-gray-600 dark:text-muted-foreground">
+                    <span className="font-medium dark:text-foreground">Product:</span> {result.waProduct}
                   </p>
                 </div>
-                <p className="text-sm text-gray-700 line-clamp-2">{result.problemDescription}</p>
+                <p className="text-sm text-gray-700 line-clamp-2 dark:text-foreground">{result.problemDescription}</p>
               </Link>
             ))}
           </div>
@@ -215,8 +215,8 @@ export function LibrarySearch() {
       {/* No Results */}
       {showResults && !isSearching && results.length === 0 && query.length >= 2 && (
         <div className="text-center py-8">
-          <p className="text-gray-500 mb-2">No results found for "{query}"</p>
-          <p className="text-sm text-gray-400">Try adjusting your search terms</p>
+          <p className="text-gray-500 mb-2 dark:text-muted-foreground">No results found for "{query}"</p>
+          <p className="text-sm text-gray-400 dark:text-muted-foreground">Try adjusting your search terms</p>
         </div>
       )}
     </div>

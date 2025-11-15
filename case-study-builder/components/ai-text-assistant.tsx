@@ -123,7 +123,7 @@ export default function AITextAssistant({ text, onTextChange, fieldType = 'gener
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuItem onClick={handleImprove}>
-          <RefreshCw className="h-4 w-4 mr-2 text-blue-600" />
+          <RefreshCw className="h-4 w-4 mr-2 text-wa-green-600" />
           <div>
             <div className="font-medium">Improve Text</div>
             <div className="text-xs text-muted-foreground">Enhance clarity and professionalism</div>

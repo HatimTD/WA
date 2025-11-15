@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Bookmark, BookmarkX, ExternalLink, Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Bookmark, BookmarkX, ExternalLink, Loader2, Search, X } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
@@ -29,6 +31,11 @@ export default function SavedCasesPage() {
   const [savedCases, setSavedCases] = useState<SavedCase[]>([]);
   const [loading, setLoading] = useState(true);
   const [removingId, setRemovingId] = useState<string | null>(null);
+
+  // Search and filter state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('date-newest');
 
   useEffect(() => {
     fetchSavedCases();
@@ -75,10 +82,58 @@ export default function SavedCasesPage() {
     }
   };
 
+  // Filter and sort saved cases
+  const filteredAndSortedCases = useMemo(() => {
+    let filtered = [...savedCases];
+
+    // Apply search filter
+    if (searchTerm) {
+      const lowerSearch = searchTerm.toLowerCase();
+      filtered = filtered.filter(saved =>
+        saved.caseStudy.customerName.toLowerCase().includes(lowerSearch) ||
+        saved.caseStudy.waProduct.toLowerCase().includes(lowerSearch) ||
+        saved.caseStudy.componentWorkpiece.toLowerCase().includes(lowerSearch) ||
+        saved.caseStudy.location.toLowerCase().includes(lowerSearch) ||
+        saved.caseStudy.industry.toLowerCase().includes(lowerSearch)
+      );
+    }
+
+    // Apply type filter
+    if (typeFilter !== 'all') {
+      filtered = filtered.filter(saved => saved.caseStudy.type === typeFilter);
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'date-newest':
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        case 'date-oldest':
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        case 'customer-az':
+          return a.caseStudy.customerName.localeCompare(b.caseStudy.customerName);
+        case 'customer-za':
+          return b.caseStudy.customerName.localeCompare(a.caseStudy.customerName);
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  }, [savedCases, searchTerm, typeFilter, sortBy]);
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setTypeFilter('all');
+    setSortBy('date-newest');
+  };
+
+  const hasActiveFilters = searchTerm || typeFilter !== 'all' || sortBy !== 'date-newest';
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-wa-green-600" />
       </div>
     );
   }
@@ -87,33 +142,98 @@ export default function SavedCasesPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-          <Bookmark className="h-8 w-8 text-blue-600" />
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <Bookmark className="h-8 w-8 text-wa-green-600 dark:text-primary" />
           Saved Cases
         </h1>
-        <p className="text-gray-600 mt-2">
+        <p className="text-gray-600 dark:text-muted-foreground mt-2">
           Access your saved case studies for quick reference
         </p>
       </div>
 
+      {/* Search and Filters */}
+      <Card role="article" className="dark:bg-card dark:border-border">
+        <CardContent className="pt-6">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Search className="h-5 w-5 text-wa-green-600 dark:text-primary" />
+                <h3 className="font-semibold text-gray-900 dark:text-foreground">Search & Filter</h3>
+              </div>
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="text-wa-green-600 hover:text-wa-green-700 dark:text-primary dark:hover:text-primary/80"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Clear All
+                </Button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Search Input */}
+              <div className="relative md:col-span-2">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted-foreground" />
+                <Input
+                  placeholder="Search by customer, product, component, location..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 dark:bg-input dark:border-border dark:text-foreground"
+                />
+              </div>
+
+              {/* Type Filter */}
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
+                  <SelectValue placeholder="Case Type" />
+                </SelectTrigger>
+                <SelectContent className="dark:bg-popover dark:border-border">
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="APPLICATION">Application</SelectItem>
+                  <SelectItem value="TECH">Technical</SelectItem>
+                  <SelectItem value="STAR">Star Case</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Sort By */}
+              <Select value={sortBy} onValueChange={setSortBy} className="md:col-span-1">
+                <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
+                  <SelectValue placeholder="Sort By" />
+                </SelectTrigger>
+                <SelectContent className="dark:bg-popover dark:border-border">
+                  <SelectItem value="date-newest">Newest First</SelectItem>
+                  <SelectItem value="date-oldest">Oldest First</SelectItem>
+                  <SelectItem value="customer-az">Customer A-Z</SelectItem>
+                  <SelectItem value="customer-za">Customer Z-A</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Saved Cases Count */}
-      <Card className="border-blue-100 bg-blue-50">
+      <Card role="article" className="border-wa-green-100 bg-wa-green-50 dark:bg-card dark:border-border">
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg text-blue-900">
-            {savedCases.length} Saved {savedCases.length === 1 ? 'Case' : 'Cases'}
+          <CardTitle className="text-lg text-wa-green-900 dark:text-foreground">
+            {filteredAndSortedCases.length} of {savedCases.length} Saved {savedCases.length === 1 ? 'Case' : 'Cases'}
+            {hasActiveFilters && ' (Filtered)'}
           </CardTitle>
-          <CardDescription className="text-blue-700">
+          <CardDescription className="text-wa-green-700 dark:text-muted-foreground">
             Case studies you've bookmarked for later
           </CardDescription>
         </CardHeader>
       </Card>
 
       {/* Saved Cases Grid */}
-      {savedCases.length === 0 ? (
-        <Card className="p-12 text-center">
-          <Bookmark className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-          <p className="text-gray-500 text-lg mb-4">No saved cases yet</p>
-          <p className="text-gray-400 text-sm mb-6">
+      {filteredAndSortedCases.length === 0 && savedCases.length === 0 ? (
+        <Card role="article" className="p-12 text-center dark:bg-card dark:border-border">
+          <Bookmark className="h-16 w-16 mx-auto text-gray-300 dark:text-muted-foreground mb-4" />
+          <p className="text-gray-500 dark:text-muted-foreground text-lg mb-4">No saved cases yet</p>
+          <p className="text-gray-400 dark:text-muted-foreground text-sm mb-6">
             Start exploring case studies and save the ones you find interesting
           </p>
           <Link href="/dashboard/search">
@@ -123,16 +243,27 @@ export default function SavedCasesPage() {
             </Button>
           </Link>
         </Card>
+      ) : filteredAndSortedCases.length === 0 ? (
+        <Card role="article" className="p-12 text-center dark:bg-card dark:border-border">
+          <Search className="h-16 w-16 mx-auto text-gray-300 dark:text-muted-foreground mb-4" />
+          <p className="text-gray-500 dark:text-muted-foreground text-lg mb-4">No cases match your filters</p>
+          <p className="text-gray-400 dark:text-muted-foreground text-sm mb-6">
+            Try adjusting your search or filters to see more results
+          </p>
+          <Button variant="outline" onClick={clearFilters}>
+            Clear Filters
+          </Button>
+        </Card>
       ) : (
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {savedCases.map((saved) => (
-            <Card
+          {filteredAndSortedCases.map((saved) => (
+            <Card role="article"
               key={saved.id}
-              className="hover:shadow-lg transition-shadow"
+              className="hover:shadow-lg transition-shadow dark:bg-card dark:border-border dark:hover:border-primary"
             >
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-lg line-clamp-2">
+                  <CardTitle className="text-lg line-clamp-2 dark:text-foreground">
                     {saved.caseStudy.customerName}
                   </CardTitle>
                   <Badge
@@ -148,21 +279,21 @@ export default function SavedCasesPage() {
                     {saved.caseStudy.type}
                   </Badge>
                 </div>
-                <CardDescription className="line-clamp-1">
+                <CardDescription className="line-clamp-1 dark:text-muted-foreground">
                   {saved.caseStudy.industry} • {saved.caseStudy.location}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="space-y-1 text-sm">
-                  <p className="text-gray-600">
+                  <p className="text-gray-600 dark:text-muted-foreground">
                     <span className="font-medium">Component:</span>{' '}
                     {saved.caseStudy.componentWorkpiece}
                   </p>
-                  <p className="text-gray-600">
+                  <p className="text-gray-600 dark:text-muted-foreground">
                     <span className="font-medium">Product:</span> {saved.caseStudy.waProduct}
                   </p>
                 </div>
-                <p className="text-sm text-gray-700 line-clamp-3">
+                <p className="text-sm text-gray-700 dark:text-foreground line-clamp-3">
                   {saved.caseStudy.problemDescription}
                 </p>
                 <div className="flex gap-2 pt-2">
@@ -187,7 +318,7 @@ export default function SavedCasesPage() {
                     Remove
                   </Button>
                 </div>
-                <p className="text-xs text-gray-400 text-center pt-2 border-t">
+                <p className="text-xs text-gray-400 dark:text-muted-foreground text-center pt-2 border-t dark:border-border">
                   Saved {new Date(saved.createdAt).toLocaleDateString()}
                 </p>
               </CardContent>

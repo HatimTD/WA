@@ -42,7 +42,7 @@ export default async function ActivityFeed({ limit = 10 }: Props) {
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'APPLICATION':
-        return 'bg-blue-100 text-blue-700';
+        return 'bg-wa-green-100 text-wa-green-700';
       case 'TECH':
         return 'bg-purple-100 text-purple-700';
       case 'STAR':
@@ -68,16 +68,16 @@ export default async function ActivityFeed({ limit = 10 }: Props) {
 
   if (recentApprovals.length === 0) {
     return (
-      <Card>
+      <Card className="dark:bg-card dark:border-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 dark:text-foreground">
+            <Clock className="h-5 w-5 dark:text-primary" />
             Recent Activity
           </CardTitle>
-          <CardDescription>Latest approved case studies</CardDescription>
+          <CardDescription className="dark:text-muted-foreground">Latest approved case studies</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-gray-500 dark:text-muted-foreground">
             <CheckCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p className="text-sm">No approved case studies yet</p>
           </div>
@@ -87,38 +87,38 @@ export default async function ActivityFeed({ limit = 10 }: Props) {
   }
 
   return (
-    <Card>
+    <Card className="dark:bg-card dark:border-border">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Clock className="h-5 w-5" />
+        <CardTitle className="flex items-center gap-2 dark:text-foreground">
+          <Clock className="h-5 w-5 dark:text-primary" />
           Recent Activity
         </CardTitle>
-        <CardDescription>Latest approved case studies across the organization</CardDescription>
+        <CardDescription className="dark:text-muted-foreground">Latest approved case studies across the organization</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
           {recentApprovals.map((caseStudy) => (
             <Link key={caseStudy.id} href={`/dashboard/cases/${caseStudy.id}`} className="block">
-              <div className="flex items-start gap-4 p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors cursor-pointer">
+              <div className="flex items-start gap-4 p-4 rounded-lg border border-gray-200 hover:border-wa-green-300 hover:bg-wa-green-50 dark:border-border dark:hover:border-primary dark:hover:bg-background transition-all cursor-pointer">
                 <div className="flex-shrink-0 mt-1">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <CheckCircle className="h-5 w-5 text-green-600 dark:text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <Badge className={getTypeColor(caseStudy.type)}>{caseStudy.type}</Badge>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-gray-500 dark:text-muted-foreground">
                       {getTimeAgo(caseStudy.approvedAt || caseStudy.createdAt)}
                     </span>
                   </div>
-                  <h4 className="font-semibold text-sm mb-1 truncate">
+                  <h4 className="font-semibold text-sm mb-1 truncate dark:text-foreground">
                     {caseStudy.customerName} - {caseStudy.componentWorkpiece}
                   </h4>
-                  <p className="text-xs text-gray-600 line-clamp-1 mb-2">
+                  <p className="text-xs text-gray-600 dark:text-muted-foreground line-clamp-1 mb-2">
                     {caseStudy.problemDescription}
                   </p>
-                  <div className="flex items-center gap-3 text-xs text-gray-500">
+                  <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-muted-foreground">
                     <span className="flex items-center gap-1">
-                      <span className="font-medium">{caseStudy.contributor.name}</span>
+                      <span className="font-medium dark:text-foreground">{caseStudy.contributor.name}</span>
                     </span>
                     <span>•</span>
                     <span>{caseStudy.location}</span>
@@ -128,10 +128,10 @@ export default async function ActivityFeed({ limit = 10 }: Props) {
                 </div>
                 <div className="flex-shrink-0 text-right">
                   {caseStudy.approver && (
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-muted-foreground">
                       Approved by
                       <br />
-                      <span className="font-medium">{caseStudy.approver.name}</span>
+                      <span className="font-medium dark:text-foreground">{caseStudy.approver.name}</span>
                     </p>
                   )}
                 </div>
@@ -143,7 +143,7 @@ export default async function ActivityFeed({ limit = 10 }: Props) {
           <div className="mt-4 text-center">
             <Link
               href="/dashboard/search?status=APPROVED"
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              className="text-sm text-wa-green-600 hover:text-wa-green-700 dark:text-primary dark:hover:text-primary/80 font-medium transition-colors"
             >
               View all approved cases →
             </Link>

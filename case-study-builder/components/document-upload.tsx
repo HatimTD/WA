@@ -25,7 +25,7 @@ export default function DocumentUpload({ onDocumentsChange, existingDocuments = 
         return <FileText className="h-8 w-8 text-red-500" />;
       case 'doc':
       case 'docx':
-        return <FileText className="h-8 w-8 text-blue-500" />;
+        return <FileText className="h-8 w-8 text-wa-green-500" />;
       case 'xls':
       case 'xlsx':
         return <FileSpreadsheet className="h-8 w-8 text-green-500" />;
@@ -121,7 +121,7 @@ export default function DocumentUpload({ onDocumentsChange, existingDocuments = 
   return (
     <div className="space-y-4">
       {/* Upload Area */}
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
+      <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-wa-green-400 transition-colors">
         <Upload className="h-12 w-12 mx-auto text-gray-400 mb-4" />
 
         <div className="space-y-2">
@@ -172,7 +172,7 @@ export default function DocumentUpload({ onDocumentsChange, existingDocuments = 
                   href={doc}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm font-medium text-blue-600 hover:underline truncate block"
+                  className="text-sm font-medium text-wa-green-600 hover:underline truncate block"
                 >
                   {getFileName(doc)}
                 </a>

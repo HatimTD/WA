@@ -2,6 +2,17 @@ import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import SettingsForm from '@/components/settings-form';
+import type { Metadata } from 'next';
+
+
+export const metadata: Metadata = {
+  title: 'Settings',
+  description: 'Manage your account settings and preferences',
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default async function SettingsPage() {
   const session = await auth();
@@ -17,6 +28,7 @@ export default async function SettingsPage() {
       id: true,
       name: true,
       email: true,
+      image: true,
       role: true,
       region: true,
       totalPoints: true,
@@ -30,8 +42,8 @@ export default async function SettingsPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-600 mt-2">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">Settings</h1>
+        <p className="text-gray-600 dark:text-muted-foreground mt-2">
           Manage your account settings and preferences
         </p>
       </div>

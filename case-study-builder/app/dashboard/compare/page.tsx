@@ -192,7 +192,7 @@ export default function ComparePage() {
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'APPLICATION':
-        return 'bg-blue-500 text-white';
+        return 'bg-wa-green-500 text-white';
       case 'TECH':
         return 'bg-purple-500 text-white';
       case 'STAR':
@@ -265,10 +265,10 @@ export default function ComparePage() {
     if (hiddenFields.has(fieldKey)) return null;
 
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
-        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
-          {Icon && <Icon className="h-4 w-4 text-blue-600" />}
-          <h4 className="text-sm font-semibold text-gray-700">{label}</h4>
+      <div className="bg-white dark:bg-card rounded-lg border border-gray-200 dark:border-border p-4 hover:shadow-md transition-shadow">
+        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100 dark:border-border">
+          {Icon && <Icon className="h-4 w-4 text-wa-green-600 dark:text-primary" />}
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-foreground">{label}</h4>
         </div>
         <div className="grid grid-cols-3 gap-3">
           {values.map((value, index) => {
@@ -283,23 +283,23 @@ export default function ComparePage() {
                 key={index}
                 className={`p-3 rounded-md border-2 transition-all ${
                   !selectedCases[index]
-                    ? 'bg-gray-50 border-gray-200'
+                    ? 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-border'
                     : indicator === 'best'
-                    ? 'bg-green-50 border-green-300 shadow-sm'
+                    ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700 shadow-sm'
                     : indicator === 'worst'
-                    ? 'bg-red-50 border-red-300 shadow-sm'
-                    : 'bg-gray-50 border-gray-200'
+                    ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700 shadow-sm'
+                    : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-border'
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-medium text-gray-900 break-words">
-                    {value || <span className="text-gray-400 italic text-xs">Not provided</span>}
+                  <p className="text-sm font-medium text-gray-900 dark:text-foreground break-words">
+                    {value || <span className="text-gray-400 dark:text-muted-foreground italic text-xs">Not provided</span>}
                   </p>
                   {indicator === 'best' && (
-                    <TrendingUp className="h-4 w-4 text-green-600 flex-shrink-0" />
+                    <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-500 flex-shrink-0" />
                   )}
                   {indicator === 'worst' && (
-                    <TrendingUp className="h-4 w-4 text-red-600 flex-shrink-0 rotate-180" />
+                    <TrendingUp className="h-4 w-4 text-red-600 dark:text-red-500 flex-shrink-0 rotate-180" />
                   )}
                 </div>
               </div>
@@ -321,19 +321,19 @@ export default function ComparePage() {
     return (
       <button
         onClick={() => toggleSection(section)}
-        className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-gray-200 rounded-lg hover:shadow-md transition-all group"
+        className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-wa-green-50 to-purple-50 dark:from-wa-green-900/20 dark:to-purple-900/20 border border-gray-200 dark:border-border rounded-lg hover:shadow-md transition-all group"
       >
         <div className="flex items-center gap-3">
-          <Icon className="h-5 w-5 text-blue-600" />
-          <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-          <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+          <Icon className="h-5 w-5 text-wa-green-600 dark:text-primary" />
+          <h3 className="text-lg font-bold text-gray-900 dark:text-foreground">{title}</h3>
+          <Badge variant="secondary" className="bg-wa-green-100 dark:bg-wa-green-900/30 text-wa-green-700 dark:text-wa-green-400">
             {count} fields
           </Badge>
         </div>
         {isExpanded ? (
-          <ChevronUp className="h-5 w-5 text-gray-600 group-hover:text-blue-600 transition-colors" />
+          <ChevronUp className="h-5 w-5 text-gray-600 dark:text-muted-foreground group-hover:text-wa-green-600 dark:group-hover:text-primary transition-colors" />
         ) : (
-          <ChevronDown className="h-5 w-5 text-gray-600 group-hover:text-blue-600 transition-colors" />
+          <ChevronDown className="h-5 w-5 text-gray-600 dark:text-muted-foreground group-hover:text-wa-green-600 dark:group-hover:text-primary transition-colors" />
         )}
       </button>
     );
@@ -346,22 +346,22 @@ export default function ComparePage() {
   }) => {
     const colors = {
       red: {
-        bg: 'from-red-50 to-orange-50',
-        border: 'border-red-300',
-        header: 'bg-red-100 text-red-900',
-        icon: 'text-red-600'
+        bg: 'from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20',
+        border: 'border-red-300 dark:border-red-700',
+        header: 'bg-red-100 dark:bg-red-900/30 text-red-900 dark:text-red-300',
+        icon: 'text-red-600 dark:text-red-500'
       },
       green: {
-        bg: 'from-green-50 to-emerald-50',
-        border: 'border-green-300',
-        header: 'bg-green-100 text-green-900',
-        icon: 'text-green-600'
+        bg: 'from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20',
+        border: 'border-green-300 dark:border-green-700',
+        header: 'bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-300',
+        icon: 'text-green-600 dark:text-green-500'
       },
       blue: {
-        bg: 'from-blue-50 to-cyan-50',
-        border: 'border-blue-300',
-        header: 'bg-blue-100 text-blue-900',
-        icon: 'text-blue-600'
+        bg: 'from-wa-green-50 to-cyan-50 dark:from-wa-green-900/20 dark:to-cyan-900/20',
+        border: 'border-wa-green-300 dark:border-wa-green-700',
+        header: 'bg-wa-green-100 dark:bg-wa-green-900/30 text-wa-green-900 dark:text-wa-green-300',
+        icon: 'text-wa-green-600 dark:text-wa-green-500'
       }
     };
 
@@ -378,8 +378,8 @@ export default function ComparePage() {
               key={index}
               className={`p-4 bg-gradient-to-br ${scheme.bg} rounded-lg border-2 ${scheme.border} shadow-sm hover:shadow-lg transition-all min-h-[120px]`}
             >
-              <p className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
-                {value || <span className="text-gray-400 italic">Not provided</span>}
+              <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap leading-relaxed">
+                {value || <span className="text-gray-400 dark:text-muted-foreground italic">Not provided</span>}
               </p>
             </div>
           ))}
@@ -418,12 +418,12 @@ export default function ComparePage() {
         </div>
       </div>
 
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 text-white shadow-lg">
+      <div className="bg-gradient-to-r from-wa-green-600 to-purple-600 dark:from-wa-green-700 dark:to-purple-700 rounded-lg p-6 text-white shadow-lg">
         <h1 className="text-3xl font-bold flex items-center gap-3">
           <GitCompare className="h-8 w-8" />
           Compare Case Studies
         </h1>
-        <p className="mt-2 text-blue-100">
+        <p className="mt-2 text-wa-green-100 dark:text-wa-green-200">
           Select up to 3 case studies for detailed side-by-side comparison with insights
         </p>
       </div>
@@ -431,10 +431,10 @@ export default function ComparePage() {
       {/* Selection Cards */}
       <div className="grid md:grid-cols-3 gap-4 no-print">
         {[0, 1, 2].map((position) => (
-          <Card key={position} className="border-2 hover:border-blue-300 transition-colors">
+          <Card role="article" key={position} className="border-2 hover:border-wa-green-300 transition-colors dark:bg-card dark:border-border dark:hover:border-wa-green-600">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Position {position + 1}</CardTitle>
+                <CardTitle className="text-base dark:text-foreground">Position {position + 1}</CardTitle>
                 {selectedCases[position] && position < 2 && selectedCases[position + 1] && (
                   <Button
                     variant="outline"
@@ -453,7 +453,7 @@ export default function ComparePage() {
                       {selectedCases[position]!.type}
                     </Badge>
                     {winnerIndex === position && (
-                      <div className="flex items-center gap-1 bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+                      <div className="flex items-center gap-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 px-2 py-1 rounded-full">
                         <Trophy className="h-3 w-3" />
                         <span className="text-xs font-bold">Winner</span>
                       </div>
@@ -472,28 +472,28 @@ export default function ComparePage() {
             <CardContent>
               {selectedCases[position] ? (
                 <div className="space-y-2">
-                  <h3 className="font-semibold text-sm">
+                  <h3 className="font-semibold text-sm dark:text-foreground">
                     {selectedCases[position]!.customerName}
                   </h3>
-                  <p className="text-xs text-gray-600">
+                  <p className="text-xs text-gray-600 dark:text-muted-foreground">
                     {selectedCases[position]!.componentWorkpiece}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-muted-foreground">
                     {selectedCases[position]!.location}, {selectedCases[position]!.country}
                   </p>
-                  <div className="pt-2 border-t border-gray-200">
-                    <p className="text-xs text-gray-700">
-                      <span className="font-medium">Product:</span> {selectedCases[position]!.waProduct}
+                  <div className="pt-2 border-t border-gray-200 dark:border-border">
+                    <p className="text-xs text-gray-700 dark:text-muted-foreground">
+                      <span className="font-medium dark:text-foreground">Product:</span> {selectedCases[position]!.waProduct}
                     </p>
-                    <p className="text-xs text-gray-700">
-                      <span className="font-medium">Industry:</span> {selectedCases[position]!.industry}
+                    <p className="text-xs text-gray-700 dark:text-muted-foreground">
+                      <span className="font-medium dark:text-foreground">Industry:</span> {selectedCases[position]!.industry}
                     </p>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-3">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted-foreground" />
                     <Input
                       placeholder="Search case studies..."
                       value={position === 0 ? searchTerm1 : position === 1 ? searchTerm2 : searchTerm3}
@@ -504,7 +504,7 @@ export default function ComparePage() {
                         if (position === 2) setSearchTerm3(term);
                         searchCases(term, position);
                       }}
-                      className="pl-10"
+                      className="pl-10 dark:bg-input dark:border-border dark:text-foreground"
                     />
                   </div>
 
@@ -512,17 +512,17 @@ export default function ComparePage() {
                   {((position === 0 && searchResults1.length > 0) ||
                     (position === 1 && searchResults2.length > 0) ||
                     (position === 2 && searchResults3.length > 0)) && (
-                    <div className="max-h-60 overflow-y-auto space-y-2 border border-gray-200 rounded-md p-2">
+                    <div className="max-h-60 overflow-y-auto space-y-2 border border-gray-200 dark:border-border rounded-md p-2 dark:bg-card">
                       {(position === 0 ? searchResults1 : position === 1 ? searchResults2 : searchResults3).map((caseStudy) => (
                         <button
                           key={caseStudy.id}
                           onClick={() => selectCase(caseStudy, position)}
-                          className="w-full text-left p-2 hover:bg-blue-50 rounded-md border border-gray-100 transition-colors"
+                          className="w-full text-left p-2 hover:bg-wa-green-50 dark:hover:bg-wa-green-900/20 rounded-md border border-gray-100 dark:border-border transition-colors"
                         >
-                          <p className="text-sm font-medium text-gray-900 line-clamp-1">
+                          <p className="text-sm font-medium text-gray-900 dark:text-foreground line-clamp-1">
                             {caseStudy.customerName} - {caseStudy.componentWorkpiece}
                           </p>
-                          <p className="text-xs text-gray-600">
+                          <p className="text-xs text-gray-600 dark:text-muted-foreground">
                             {caseStudy.industry} • {caseStudy.location}
                           </p>
                         </button>
@@ -538,7 +538,7 @@ export default function ComparePage() {
 
       {/* Toolbar */}
       {selectedCases.some(c => c !== null) && (
-        <div className="flex items-center justify-between bg-white rounded-lg border border-gray-200 p-3 shadow-sm no-print">
+        <div className="flex items-center justify-between bg-white dark:bg-card rounded-lg border border-gray-200 dark:border-border p-3 shadow-sm no-print">
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -550,7 +550,7 @@ export default function ComparePage() {
               Filter Fields
             </Button>
             {showFilter && (
-              <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+              <Badge variant="secondary" className="bg-wa-green-100 dark:bg-wa-green-900/30 text-wa-green-700 dark:text-wa-green-400">
                 {hiddenFields.size} hidden
               </Badge>
             )}
@@ -584,7 +584,7 @@ export default function ComparePage() {
               variant="default"
               size="sm"
               onClick={handleExport}
-              className="gap-2 bg-blue-600 hover:bg-blue-700"
+              className="gap-2 bg-wa-green-600 hover:bg-wa-green-700"
             >
               <Download className="h-4 w-4" />
               Export / Print
@@ -595,13 +595,13 @@ export default function ComparePage() {
 
       {/* Filter Panel */}
       {showFilter && selectedCases.some(c => c !== null) && (
-        <Card className="no-print border-blue-200 bg-blue-50/50">
+        <Card role="article" className="no-print border-wa-green-200 dark:border-border bg-wa-green-50/50 dark:bg-card">
           <CardHeader>
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Filter className="h-4 w-4" />
+            <CardTitle className="text-sm flex items-center gap-2 dark:text-foreground">
+              <Filter className="h-4 w-4 dark:text-primary" />
               Filter Comparison Fields
             </CardTitle>
-            <CardDescription className="text-xs">
+            <CardDescription className="text-xs dark:text-muted-foreground">
               Toggle visibility of specific fields in the comparison
             </CardDescription>
           </CardHeader>
@@ -626,15 +626,15 @@ export default function ComparePage() {
                   onClick={() => toggleFieldVisibility(key)}
                   className={`text-left px-3 py-2 rounded-md border-2 transition-all text-sm ${
                     hiddenFields.has(key)
-                      ? 'bg-gray-100 border-gray-300 text-gray-400 line-through'
-                      : 'bg-white border-blue-300 text-gray-900 hover:bg-blue-50'
+                      ? 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 line-through'
+                      : 'bg-white dark:bg-card border-wa-green-300 dark:border-wa-green-600 text-gray-900 dark:text-foreground hover:bg-wa-green-50 dark:hover:bg-wa-green-900/20'
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     {hiddenFields.has(key) ? (
                       <EyeOff className="h-3 w-3" />
                     ) : (
-                      <Eye className="h-3 w-3" />
+                      <Eye className="h-3 w-3 dark:text-primary" />
                     )}
                     {label}
                   </div>
@@ -787,24 +787,24 @@ export default function ComparePage() {
 
           {/* Winner Summary */}
           {winnerIndex !== null && (
-            <Card className="bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-300 shadow-lg no-print">
+            <Card role="article" className="bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 border-2 border-yellow-300 dark:border-yellow-700 shadow-lg no-print">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-yellow-900">
-                  <Trophy className="h-6 w-6 text-yellow-600" />
+                <CardTitle className="flex items-center gap-2 text-yellow-900 dark:text-yellow-400">
+                  <Trophy className="h-6 w-6 text-yellow-600 dark:text-yellow-500" />
                   Winner Analysis
                 </CardTitle>
-                <CardDescription className="text-yellow-800">
+                <CardDescription className="text-yellow-800 dark:text-yellow-500">
                   Based on case type, financial metrics, and overall value
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="bg-white rounded-lg p-4 border-2 border-yellow-200">
-                  <p className="text-sm font-semibold text-gray-900 mb-2">
+                <div className="bg-white dark:bg-card rounded-lg p-4 border-2 border-yellow-200 dark:border-yellow-800">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-foreground mb-2">
                     Position {winnerIndex + 1} leads with the highest combined score:
                   </p>
-                  <div className="flex items-center gap-4 text-sm text-gray-700">
+                  <div className="flex items-center gap-4 text-sm text-gray-700 dark:text-muted-foreground">
                     <div>
-                      <span className="font-medium">Customer:</span> {selectedCases[winnerIndex]?.customerName}
+                      <span className="font-medium dark:text-foreground">Customer:</span> {selectedCases[winnerIndex]?.customerName}
                     </div>
                     <div>
                       <Badge className={getTypeColor(selectedCases[winnerIndex]!.type)}>
@@ -821,13 +821,13 @@ export default function ComparePage() {
 
       {/* Empty State */}
       {!selectedCases.some(c => c !== null) && (
-        <Card className="border-2 border-dashed border-gray-300">
+        <Card role="article" className="border-2 border-dashed border-gray-300 dark:border-gray-600 dark:bg-card">
           <CardContent className="py-16">
             <div className="text-center space-y-4">
-              <GitCompare className="h-16 w-16 text-gray-300 mx-auto" />
+              <GitCompare className="h-16 w-16 text-gray-300 dark:text-gray-600 mx-auto" />
               <div>
-                <h3 className="text-lg font-semibold text-gray-700">No Cases Selected</h3>
-                <p className="text-sm text-gray-500 mt-2">
+                <h3 className="text-lg font-semibold text-gray-700 dark:text-foreground">No Cases Selected</h3>
+                <p className="text-sm text-gray-500 dark:text-muted-foreground mt-2">
                   Search and select case studies above to start comparing
                 </p>
               </div>

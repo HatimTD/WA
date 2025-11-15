@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Optimizer</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .container {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        button {
+            background: #0070f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #0051cc;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 4px;
+        }
+        .success {
+            color: green;
+        }
+        .info {
+            color: #666;
+        }
+        #instructions {
+            background: #fef8e7;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PWA Image Optimizer</h1>
+        <div id="instructions">
+            <h3>Instructions:</h3>
+            <ol>
+                <li>Click "Select Images" and choose: icon-512.png, icon-192.png, and apple-touch-icon.png</li>
+                <li>Click "Optimize Images" to compress them</li>
+                <li>Download each optimized image and replace the originals in the /public folder</li>
+            </ol>
+        </div>
+
+        <input type="file" id="fileInput" accept="image/png" multiple style="display: none;">
+        <button onclick="document.getElementById('fileInput').click()">Select Images</button>
+        <button onclick="optimizeImages()">Optimize Images</button>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        let selectedFiles = [];
+
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            selectedFiles = Array.from(e.target.files);
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `<div class="info">Selected ${selectedFiles.length} files: ${selectedFiles.map(f => f.name).join(', ')}</div>`;
+        });
+
+        async function optimizeImages() {
+            if (selectedFiles.length === 0) {
+                alert('Please select images first');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="info">Processing...</div>';
+            let html = '';
+
+            for (const file of selectedFiles) {
+                const result = await optimizeImage(file);
+                html += result;
+            }
+
+            resultsDiv.innerHTML = html;
+        }
+
+        function optimizeImage(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        // Determine target size based on filename
+                        let targetSize = 512;
+                        if (file.name.includes('192')) targetSize = 192;
+                        else if (file.name.includes('apple')) targetSize = 180;
+
+                        // Create canvas
+                        const canvas = document.createElement('canvas');
+                        canvas.width = targetSize;
+                        canvas.height = targetSize;
+                        const ctx = canvas.getContext('2d');
+
+                        // Draw image
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = 'high';
+                        ctx.drawImage(img, 0, 0, targetSize, targetSize);
+
+                        // Convert to blob with compression
+                        canvas.toBlob(function(blob) {
+                            const originalSize = file.size;
+                            const newSize = blob.size;
+                            const reduction = ((originalSize - newSize) / originalSize * 100).toFixed(1);
+
+                            // Create download link
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = file.name;
+
+                            const resultHtml = `
+                                <div class="result">
+                                    <div class="success">✓ ${file.name}</div>
+                                    <div class="info">Original: ${(originalSize/1024).toFixed(1)}KB → Optimized: ${(newSize/1024).toFixed(1)}KB (${reduction}% reduction)</div>
+                                    <a href="${url}" download="${file.name}">
+                                        <button>Download Optimized Image</button>
+                                    </a>
+                                </div>
+                            `;
+
+                            resolve(resultHtml);
+                        }, 'image/png', 0.85); // 85% quality
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+    </script>
+</body>
+</html>

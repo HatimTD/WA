@@ -18,11 +18,17 @@ model User {
   totalPoints   Int       @default(0)
   badges        Badge[]
 
+  // User Preferences
+  notificationPreferences Json?     @default("{\"inAppNotifications\":true,\"emailNotifications\":true,\"caseApprovalNotif\":true,\"caseRejectionNotif\":true,\"newCommentNotif\":true,\"bhagMilestones\":true,\"inAppCaseApproval\":true,\"inAppCaseRejection\":true,\"inAppNewComment\":true,\"inAppBhagMilestones\":true}")
+  displayPreferences      Json?     @default("{\"theme\":\"system\",\"resultsPerPage\":10,\"defaultView\":\"grid\"}")
+
   // Relations
   caseStudies   CaseStudy[] @relation("Contributor")
   approvals     CaseStudy[] @relation("Approver")
+  rejectedCases CaseStudy[] @relation("Rejector")
   comments      Comment[]
   savedCases    SavedCase[]
+  notifications Notification[]
   accounts      Account[]
   sessions      Session[]
 
@@ -90,6 +96,12 @@ model CaseStudy {
   approver                User?     @relation("Approver", fields: [approverId], references: [id])
   submittedAt             DateTime?
   approvedAt              DateTime?
+
+  // Rejection Tracking
+  rejectionReason         String?   @db.Text
+  rejectedAt              DateTime?
+  rejectedBy              String?
+  rejector                User?     @relation("Rejector", fields: [rejectedBy], references: [id])
 
   // Core Fields
   customerName            String
@@ -294,6 +306,14 @@ enum ReactionType {
   THUMBS_DOWN // 👎
 }
 
+enum NotificationType {
+  CASE_APPROVED
+  CASE_REJECTED
+  NEW_COMMENT
+  BADGE_EARNED
+  BHAG_MILESTONE
+}
+
 model SavedCase {
   id          String    @id @default(cuid())
   userId      String
@@ -316,4 +336,47 @@ model SystemConfig {
   updatedBy String?
 
   createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String           @db.Text
+  read      Boolean          @default(false)
+  link      String?
+
+  createdAt DateTime         @default(now())
+
+  @@index([userId, read])
+  @@index([createdAt])
+}
+
+model EmailTemplate {
+  id          String              @id @default(cuid())
+  name        String
+  type        EmailTemplateType
+  subject     String
+  htmlContent String              @db.Text
+  textContent String?             @db.Text
+  logoUrl     String?
+  isActive    Boolean             @default(true)
+  variables   String[]            // List of available variables like {{userName}}, {{caseTitle}}
+
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@unique([type])
+}
+
+enum EmailTemplateType {
+  CASE_APPROVED
+  CASE_REJECTED
+  NEW_COMMENT
+  BADGE_EARNED
+  BHAG_MILESTONE
+  WELCOME
+  SYSTEM_ANNOUNCEMENT
 }

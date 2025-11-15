@@ -128,7 +128,7 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
       {images.length < maxImages && (
         <Card
           className={`p-8 border-2 border-dashed transition-colors cursor-pointer ${
-            isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
+            isDragging ? 'border-wa-green-500 bg-wa-green-50' : 'border-gray-300 hover:border-gray-400'
           }`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -138,13 +138,13 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
           <div className="flex flex-col items-center justify-center text-center space-y-4">
             {uploading ? (
               <>
-                <Loader2 className="h-12 w-12 text-blue-500 animate-spin" />
+                <Loader2 className="h-12 w-12 text-wa-green-500 animate-spin" />
                 <p className="text-sm text-gray-600">Uploading images...</p>
               </>
             ) : (
               <>
-                <div className="p-4 bg-blue-100 rounded-full">
-                  <Upload className="h-8 w-8 text-blue-600" />
+                <div className="p-4 bg-wa-green-100 rounded-full">
+                  <Upload className="h-8 w-8 text-wa-green-600" />
                 </div>
                 <div>
                   <p className="text-base font-semibold text-gray-700">

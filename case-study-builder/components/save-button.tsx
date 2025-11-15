@@ -80,7 +80,7 @@ export function SaveButton({
     return (
       <Button
         variant="ghost"
-        size="icon"
+        size="icon" aria-label="Button"
         onClick={handleToggleSave}
         disabled={isLoading}
         className={className}
@@ -89,7 +89,7 @@ export function SaveButton({
         {isLoading ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : isSaved ? (
-          <BookmarkCheck className="h-4 w-4 text-blue-600" />
+          <BookmarkCheck className="h-4 w-4 text-wa-green-600" />
         ) : (
           <Bookmark className="h-4 w-4" />
         )}
@@ -110,7 +110,7 @@ export function SaveButton({
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : isSaved ? (
           <>
-            <BookmarkCheck className="h-4 w-4 text-blue-600" />
+            <BookmarkCheck className="h-4 w-4 text-wa-green-600" />
             <span>Saved</span>
           </>
         ) : (
@@ -129,14 +129,14 @@ export function SaveButton({
       size={size}
       onClick={handleToggleSave}
       disabled={isLoading}
-      className={`gap-2 ${isSaved ? 'border-blue-200 bg-blue-50' : ''} ${className}`}
+      className={`gap-2 ${isSaved ? 'border-wa-green-200 bg-wa-green-50' : ''} ${className}`}
     >
       {isLoading ? (
         <Loader2 className="h-4 w-4 animate-spin" />
       ) : isSaved ? (
         <>
-          <BookmarkCheck className="h-4 w-4 text-blue-600" />
-          <span className="text-blue-700">Saved</span>
+          <BookmarkCheck className="h-4 w-4 text-wa-green-600" />
+          <span className="text-wa-green-700">Saved</span>
         </>
       ) : (
         <>

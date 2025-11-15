@@ -93,17 +93,17 @@ export default async function LibraryPage({
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Case Study Library</h1>
-        <p className="text-gray-600 mt-2">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">Case Study Library</h1>
+        <p className="text-gray-600 dark:text-muted-foreground mt-2">
           Browse {totalCount.toLocaleString()} approved industrial solutions
         </p>
       </div>
 
       {/* Dynamic Search Section */}
-      <Card className="border-2 border-blue-100 bg-white">
+      <Card role="article" className="border-2 border-wa-green-100 bg-white dark:bg-card dark:border-primary">
         <CardHeader>
-          <CardTitle className="text-lg">Quick Search</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-lg dark:text-foreground">Quick Search</CardTitle>
+          <CardDescription className="dark:text-muted-foreground">
             Start typing to search and filter cases in real-time
           </CardDescription>
         </CardHeader>
@@ -115,9 +115,9 @@ export default async function LibraryPage({
       <div className="grid lg:grid-cols-4 gap-6">
         {/* Sidebar Filters */}
         <div className="lg:col-span-1">
-          <Card>
+          <Card role="article" className="dark:bg-card dark:border-border">
             <CardHeader>
-              <CardTitle className="text-lg">Filters</CardTitle>
+              <CardTitle className="text-lg dark:text-foreground">Filters</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <LibraryFilters
@@ -135,13 +135,13 @@ export default async function LibraryPage({
         <div className="lg:col-span-3">
           {/* Results Info */}
           <div className="mb-4 flex items-center justify-between">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-muted-foreground">
               Showing {(page - 1) * perPage + 1}-{Math.min(page * perPage, totalCount)} of{' '}
               {totalCount} cases
             </p>
             {(query || typeFilter || industryFilter) && (
               <Link href="/dashboard/library">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="dark:border-border dark:text-foreground dark:hover:bg-accent">
                   Clear Filters
                 </Button>
               </Link>
@@ -150,20 +150,20 @@ export default async function LibraryPage({
 
           {/* Cases Grid */}
           {cases.length === 0 ? (
-            <Card className="p-12 text-center">
-              <p className="text-gray-500 text-lg mb-4">No case studies found</p>
-              <p className="text-gray-400 text-sm">Try adjusting your filters or search query</p>
+            <Card role="article" className="p-12 text-center dark:bg-card dark:border-border">
+              <p className="text-gray-500 dark:text-muted-foreground text-lg mb-4">No case studies found</p>
+              <p className="text-gray-400 dark:text-muted-foreground text-sm">Try adjusting your filters or search query</p>
             </Card>
           ) : (
             <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
               {cases.map((caseStudy) => (
-                <Card
+                <Card role="article"
                   key={caseStudy.id}
-                  className="hover:shadow-lg transition-shadow cursor-pointer"
+                  className="hover:shadow-lg transition-shadow cursor-pointer dark:bg-card dark:border-border dark:hover:border-primary"
                 >
                   <CardHeader>
                     <div className="flex items-start justify-between gap-2">
-                      <CardTitle className="text-lg line-clamp-2">
+                      <CardTitle className="text-lg line-clamp-2 dark:text-foreground">
                         {caseStudy.customerName}
                       </CardTitle>
                       <div className="flex items-center gap-2 shrink-0">
@@ -181,21 +181,21 @@ export default async function LibraryPage({
                         </Badge>
                       </div>
                     </div>
-                    <CardDescription className="line-clamp-1">
+                    <CardDescription className="line-clamp-1 dark:text-muted-foreground">
                       {caseStudy.industry} • {caseStudy.location}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="space-y-1 text-sm">
-                      <p className="text-gray-600">
-                        <span className="font-medium">Component:</span>{' '}
+                      <p className="text-gray-600 dark:text-muted-foreground">
+                        <span className="font-medium dark:text-foreground">Component:</span>{' '}
                         {caseStudy.componentWorkpiece}
                       </p>
-                      <p className="text-gray-600">
-                        <span className="font-medium">Product:</span> {caseStudy.waProduct}
+                      <p className="text-gray-600 dark:text-muted-foreground">
+                        <span className="font-medium dark:text-foreground">Product:</span> {caseStudy.waProduct}
                       </p>
                     </div>
-                    <p className="text-sm text-gray-700 line-clamp-3">
+                    <p className="text-sm text-gray-700 dark:text-muted-foreground line-clamp-3">
                       {caseStudy.problemDescription}
                     </p>
                     <Link href={`/dashboard/library/${caseStudy.id}`}>

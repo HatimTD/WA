@@ -87,18 +87,18 @@ export default function ApprovalActions({ caseStudyId }: Props) {
     return (
       <div className="space-y-4">
         <div>
-          <Label htmlFor="rejectionReason">
-            Rejection Reason <span className="text-red-500">*</span>
+          <Label htmlFor="rejectionReason" className="dark:text-foreground">
+            Rejection Reason <span className="text-red-500 dark:text-red-400">*</span>
           </Label>
           <Textarea
             id="rejectionReason"
             value={rejectionReason}
             onChange={(e) => setRejectionReason(e.target.value)}
             placeholder="Explain why this case study is being rejected..."
-            className="mt-2"
+            className="mt-2 dark:bg-input dark:border-border dark:text-foreground"
             rows={4}
           />
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500 dark:text-muted-foreground mt-1">
             The contributor will see this feedback
           </p>
         </div>
@@ -110,6 +110,7 @@ export default function ApprovalActions({ caseStudyId }: Props) {
               setRejectionReason('');
             }}
             disabled={isSubmitting}
+            className="dark:border-border dark:text-foreground dark:hover:bg-accent"
           >
             Cancel
           </Button>

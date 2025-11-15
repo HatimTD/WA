@@ -331,14 +331,15 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Edit Case Study</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">Edit Case Study</h1>
+          <p className="text-gray-600 dark:text-muted-foreground mt-2">
             Update your case study information
           </p>
         </div>
         <Button
           variant="outline"
           onClick={() => router.push(`/dashboard/cases/${caseStudy.id}`)}
+          className="dark:border-border dark:text-foreground dark:hover:bg-accent"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Cancel
@@ -346,7 +347,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
       </div>
 
       {/* Progress */}
-      <Card>
+      <Card className="dark:bg-card dark:border-border">
         <CardContent className="pt-6">
           <div className="space-y-4">
             <div className="flex justify-between items-center">
@@ -360,22 +361,22 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${
                       currentStep === step.number
-                        ? 'bg-blue-600 text-white'
+                        ? 'bg-wa-green-600 text-white'
                         : currentStep > step.number
                         ? 'bg-green-500 text-white'
-                        : 'bg-gray-200 text-gray-500'
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
                     }`}
                   >
                     {step.number}
                   </div>
                   <div className="text-xs mt-2 text-center">
-                    <div className="font-semibold">{step.title}</div>
-                    <div className="text-gray-500 hidden sm:block">{step.description}</div>
+                    <div className="font-semibold dark:text-foreground">{step.title}</div>
+                    <div className="text-gray-500 dark:text-muted-foreground hidden sm:block">{step.description}</div>
                   </div>
                   {step.number < STEPS.length && (
                     <div
                       className={`absolute top-5 left-[60%] w-full h-0.5 ${
-                        currentStep > step.number ? 'bg-green-500' : 'bg-gray-200'
+                        currentStep > step.number ? 'bg-green-500 dark:bg-green-500' : 'bg-gray-200 dark:bg-border'
                       }`}
                       style={{ zIndex: -1 }}
                     />
@@ -389,10 +390,10 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
       </Card>
 
       {/* Form Content */}
-      <Card>
+      <Card className="dark:bg-card dark:border-border">
         <CardHeader>
-          <CardTitle>{STEPS[currentStep - 1].title}</CardTitle>
-          <CardDescription>{STEPS[currentStep - 1].description}</CardDescription>
+          <CardTitle className="dark:text-foreground">{STEPS[currentStep - 1].title}</CardTitle>
+          <CardDescription className="dark:text-muted-foreground">{STEPS[currentStep - 1].description}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {STEPS[currentStep - 1]?.title === 'Case Type' && (
@@ -438,6 +439,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
               variant="outline"
               onClick={handlePrevious}
               disabled={isSubmitting}
+              className="dark:border-border dark:text-foreground dark:hover:bg-accent"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Previous
@@ -450,6 +452,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
             variant="outline"
             onClick={handleSaveDraft}
             disabled={isSubmitting}
+            className="dark:border-border dark:text-foreground dark:hover:bg-accent"
           >
             <Save className="w-4 h-4 mr-2" />
             Save Draft

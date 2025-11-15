@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { revalidatePath } from 'next/cache';
+import { createNotification } from './notification-actions';
 
 export async function getComments(caseStudyId: string) {
   try {
@@ -53,6 +54,16 @@ export async function createComment(caseStudyId: string, content: string) {
       return { success: false, error: 'Comment cannot be empty' };
     }
 
+    // Get case study details for notification
+    const caseStudy = await prisma.caseStudy.findUnique({
+      where: { id: caseStudyId },
+      select: {
+        contributorId: true,
+        customerName: true,
+        industry: true,
+      },
+    });
+
     const comment = await prisma.comment.create({
       data: {
         content: content.trim(),
@@ -70,6 +81,17 @@ export async function createComment(caseStudyId: string, content: string) {
         },
       },
     });
+
+    // Send notification to case study author (if not commenting on own case)
+    if (caseStudy && caseStudy.contributorId !== session.user.id) {
+      await createNotification({
+        userId: caseStudy.contributorId,
+        type: 'NEW_COMMENT',
+        title: 'New Comment on Your Case Study',
+        message: `${comment.user.name} commented on "${caseStudy.customerName} - ${caseStudy.industry}"`,
+        link: `/dashboard/cases/${caseStudyId}`,
+      });
+    }
 
     revalidatePath(`/dashboard/cases/${caseStudyId}`);
 

@@ -37,30 +37,30 @@ export default function StepFive({ formData, updateFormData, caseStudyId, existi
 
       {/* Info message for STAR cases in create mode */}
       {formData.type === 'STAR' && !caseStudyId && (
-        <Card className="bg-blue-50 border-blue-200">
+        <Card role="article" className="bg-wa-green-50 border-wa-green-200 dark:bg-accent dark:border-primary">
           <CardContent className="pt-6">
-            <p className="text-sm text-blue-800">
-              <span className="font-semibold">Note:</span> The Cost Reduction Calculator will be available after saving this case study. You'll be able to add detailed cost analysis in the edit view.
+            <p className="text-sm text-wa-green-800 dark:text-muted-foreground">
+              <span className="font-semibold dark:text-foreground">Note:</span> The Cost Reduction Calculator will be available after saving this case study. You'll be able to add detailed cost analysis in the edit view.
             </p>
           </CardContent>
         </Card>
       )}
 
       {/* Media Upload */}
-      <Card>
+      <Card role="article" className="dark:bg-card dark:border-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Upload className="h-5 w-5 text-blue-600" />
+          <CardTitle className="flex items-center gap-2 dark:text-foreground">
+            <Upload className="h-5 w-5 text-wa-green-600" />
             Images & Documents
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="dark:text-muted-foreground">
             Upload photos, videos, or supporting documents
             {formData.type === 'STAR' && ' (Required for Star cases)'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Images</Label>
+            <Label className="dark:text-foreground">Images</Label>
             <ImageUpload
               onImagesChange={(images) => updateFormData({ images })}
               existingImages={formData.images}
@@ -69,7 +69,7 @@ export default function StepFive({ formData, updateFormData, caseStudyId, existi
           </div>
 
           <div className="space-y-2">
-            <Label>Supporting Documents</Label>
+            <Label className="dark:text-foreground">Supporting Documents</Label>
             <DocumentUpload
               onDocumentsChange={(documents) => updateFormData({ supportingDocs: documents })}
               existingDocuments={formData.supportingDocs}
@@ -80,34 +80,34 @@ export default function StepFive({ formData, updateFormData, caseStudyId, existi
       </Card>
 
       {/* Review Summary */}
-      <Card className="bg-blue-50 border-blue-200">
+      <Card role="article" className="bg-wa-green-50 border-wa-green-200 dark:bg-accent dark:border-primary">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-blue-600" />
+          <CardTitle className="flex items-center gap-2 dark:text-foreground">
+            <CheckCircle2 className="h-5 w-5 text-wa-green-600" />
             Ready to Submit?
           </CardTitle>
-          <CardDescription className="text-blue-700">
+          <CardDescription className="text-wa-green-700 dark:text-muted-foreground">
             Review your case study details before submission
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="grid md:grid-cols-2 gap-4 text-sm">
+          <div className="grid md:grid-cols-2 gap-4 text-sm dark:text-muted-foreground">
             <div>
-              <span className="font-semibold">Type:</span> {formData.type}
+              <span className="font-semibold dark:text-foreground">Type:</span> {formData.type}
             </div>
             <div>
-              <span className="font-semibold">Customer:</span> {formData.customerName || 'Not provided'}
+              <span className="font-semibold dark:text-foreground">Customer:</span> {formData.customerName || 'Not provided'}
             </div>
             <div>
-              <span className="font-semibold">Component:</span>{' '}
+              <span className="font-semibold dark:text-foreground">Component:</span>{' '}
               {formData.componentWorkpiece || 'Not provided'}
             </div>
             <div>
-              <span className="font-semibold">WA Product:</span> {formData.waProduct || 'Not provided'}
+              <span className="font-semibold dark:text-foreground">WA Product:</span> {formData.waProduct || 'Not provided'}
             </div>
           </div>
-          <div className="bg-white rounded p-3 text-sm">
-            <span className="font-semibold">Next Steps:</span> Your case study will be sent to an Approver
+          <div className="bg-white rounded p-3 text-sm dark:bg-background dark:text-muted-foreground">
+            <span className="font-semibold dark:text-foreground">Next Steps:</span> Your case study will be sent to an Approver
             for review. You'll be notified once it's approved and published!
           </div>
         </CardContent>

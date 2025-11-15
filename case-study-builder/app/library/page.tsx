@@ -7,10 +7,17 @@ import { ExternalLink, LogIn } from 'lucide-react';
 import { LibrarySearch } from '@/components/library-search';
 import { LibraryFilters } from '@/components/library-filters';
 import { SaveButton } from '@/components/save-button';
+import type { Metadata } from 'next';
 
-export const metadata = {
-  title: 'Public Case Study Library - Welding Alloys',
-  description: 'Browse approved industrial case studies from Welding Alloys',
+export const metadata: Metadata = {
+  title: 'Public Case Study Library',
+  description: 'Browse approved industrial welding case studies. Explore solutions for maintenance challenges, cost reduction strategies, and productivity improvements across various industries.',
+  openGraph: {
+    title: 'Case Study Library - Welding Alloys',
+    description: 'Discover industrial welding solutions and case studies',
+    type: 'website',
+  },
+  keywords: ['welding case studies', 'industrial solutions', 'maintenance', 'welding alloys library'],
 };
 
 interface SearchParams {
@@ -96,7 +103,7 @@ export default async function PublicLibraryPage({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-wa-green-600 to-purple-600 bg-clip-text text-transparent">
                 Case Study Library
               </h1>
               <p className="text-gray-600 mt-2">
@@ -115,7 +122,7 @@ export default async function PublicLibraryPage({
 
       {/* Dynamic Search Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        <Card className="border-2 border-blue-100 bg-white">
+        <Card role="article" className="border-2 border-wa-green-100 bg-white">
           <CardHeader>
             <CardTitle className="text-lg">Quick Search</CardTitle>
             <CardDescription>
@@ -132,7 +139,7 @@ export default async function PublicLibraryPage({
         <div className="grid lg:grid-cols-4 gap-6">
           {/* Sidebar Filters */}
           <div className="lg:col-span-1">
-            <Card>
+            <Card role="article">
               <CardHeader>
                 <CardTitle className="text-lg">Filters</CardTitle>
               </CardHeader>
@@ -167,14 +174,14 @@ export default async function PublicLibraryPage({
 
             {/* Cases Grid */}
             {cases.length === 0 ? (
-              <Card className="p-12 text-center">
+              <Card role="article" className="p-12 text-center">
                 <p className="text-gray-500 text-lg mb-4">No case studies found</p>
                 <p className="text-gray-400 text-sm">Try adjusting your filters or search query</p>
               </Card>
             ) : (
               <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {cases.map((caseStudy) => (
-                  <Card
+                  <Card role="article"
                     key={caseStudy.id}
                     className="hover:shadow-lg transition-shadow cursor-pointer"
                   >
@@ -297,12 +304,12 @@ export default async function PublicLibraryPage({
       </div>
 
       {/* CTA Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 mt-12">
+      <div className="bg-gradient-to-r from-wa-green-600 to-purple-600 mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">
             Have a success story to share?
           </h2>
-          <p className="text-blue-100 text-lg mb-6 max-w-2xl mx-auto">
+          <p className="text-wa-green-100 text-lg mb-6 max-w-2xl mx-auto">
             Join our community of contributors and help others solve similar industrial challenges
           </p>
           <Link href="/login">

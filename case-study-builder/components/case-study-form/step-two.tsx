@@ -46,28 +46,29 @@ export default function StepTwo({ formData, updateFormData }: Props) {
       <div className="grid md:grid-cols-2 gap-6">
         {/* Customer Name */}
         <div className="space-y-2">
-          <Label htmlFor="customerName">
-            Customer Name <span className="text-red-500">*</span>
+          <Label htmlFor="customerName" className="dark:text-foreground">
+            Customer Name <span className="text-red-500 dark:text-red-400">*</span>
           </Label>
           <Input
             id="customerName"
             value={formData.customerName}
             onChange={(e) => updateFormData({ customerName: e.target.value })}
             placeholder="e.g., ABC Mining Corp"
+            className="dark:bg-input dark:border-border dark:text-foreground"
             required
           />
         </div>
 
         {/* Industry */}
         <div className="space-y-2">
-          <Label htmlFor="industry">
-            Industry <span className="text-red-500">*</span>
+          <Label htmlFor="industry" className="dark:text-foreground">
+            Industry <span className="text-red-500 dark:text-red-400">*</span>
           </Label>
           <Select value={formData.industry} onValueChange={(value) => updateFormData({ industry: value })}>
-            <SelectTrigger>
+            <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
               <SelectValue placeholder="Select industry" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="dark:bg-popover dark:border-border">
               {INDUSTRIES.map((industry) => (
                 <SelectItem key={industry} value={industry}>
                   {industry}
@@ -79,53 +80,56 @@ export default function StepTwo({ formData, updateFormData }: Props) {
 
         {/* Location */}
         <div className="space-y-2">
-          <Label htmlFor="location">
-            Location (City/Plant) <span className="text-red-500">*</span>
+          <Label htmlFor="location" className="dark:text-foreground">
+            Location (City/Plant) <span className="text-red-500 dark:text-red-400">*</span>
           </Label>
           <Input
             id="location"
             value={formData.location}
             onChange={(e) => updateFormData({ location: e.target.value })}
             placeholder="e.g., Perth Plant"
+            className="dark:bg-input dark:border-border dark:text-foreground"
             required
           />
         </div>
 
         {/* Country */}
         <div className="space-y-2">
-          <Label htmlFor="country">Country</Label>
+          <Label htmlFor="country" className="dark:text-foreground">Country</Label>
           <Input
             id="country"
             value={formData.country}
             onChange={(e) => updateFormData({ country: e.target.value })}
             placeholder="e.g., Australia"
+            className="dark:bg-input dark:border-border dark:text-foreground"
           />
         </div>
 
         {/* Component/Workpiece */}
         <div className="space-y-2">
-          <Label htmlFor="componentWorkpiece">
-            Component/Workpiece <span className="text-red-500">*</span>
+          <Label htmlFor="componentWorkpiece" className="dark:text-foreground">
+            Component/Workpiece <span className="text-red-500 dark:text-red-400">*</span>
           </Label>
           <Input
             id="componentWorkpiece"
             value={formData.componentWorkpiece}
             onChange={(e) => updateFormData({ componentWorkpiece: e.target.value })}
             placeholder="e.g., Crusher Hammers"
+            className="dark:bg-input dark:border-border dark:text-foreground"
             required
           />
         </div>
 
         {/* Work Type */}
         <div className="space-y-2">
-          <Label htmlFor="workType">
-            Work Type <span className="text-red-500">*</span>
+          <Label htmlFor="workType" className="dark:text-foreground">
+            Work Type <span className="text-red-500 dark:text-red-400">*</span>
           </Label>
           <Select value={formData.workType} onValueChange={(value) => updateFormData({ workType: value as any })}>
-            <SelectTrigger>
+            <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
               <SelectValue placeholder="Select work type" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="dark:bg-popover dark:border-border">
               <SelectItem value="WORKSHOP">Workshop</SelectItem>
               <SelectItem value="ON_SITE">On Site</SelectItem>
               <SelectItem value="BOTH">Both</SelectItem>
@@ -135,33 +139,35 @@ export default function StepTwo({ formData, updateFormData }: Props) {
 
         {/* Base Metal */}
         <div className="space-y-2">
-          <Label htmlFor="baseMetal">Base Metal</Label>
+          <Label htmlFor="baseMetal" className="dark:text-foreground">Base Metal</Label>
           <Input
             id="baseMetal"
             value={formData.baseMetal}
             onChange={(e) => updateFormData({ baseMetal: e.target.value })}
             placeholder="e.g., Mild Steel"
+            className="dark:bg-input dark:border-border dark:text-foreground"
           />
         </div>
 
         {/* General Dimensions */}
         <div className="space-y-2">
-          <Label htmlFor="generalDimensions">General Dimensions</Label>
+          <Label htmlFor="generalDimensions" className="dark:text-foreground">General Dimensions</Label>
           <Input
             id="generalDimensions"
             value={formData.generalDimensions}
             onChange={(e) => updateFormData({ generalDimensions: e.target.value })}
             placeholder="e.g., 500mm x 200mm"
+            className="dark:bg-input dark:border-border dark:text-foreground"
           />
         </div>
       </div>
 
       {/* Wear Type */}
       <div className="space-y-3">
-        <Label>
-          Type of Wear <span className="text-red-500">*</span>
+        <Label className="dark:text-foreground">
+          Type of Wear <span className="text-red-500 dark:text-red-400">*</span>
         </Label>
-        <p className="text-sm text-muted-foreground">Select all that apply</p>
+        <p className="text-sm text-muted-foreground dark:text-muted-foreground">Select all that apply</p>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {WEAR_TYPES.map((wear) => (
             <div key={wear.value} className="flex items-center space-x-2">
@@ -170,7 +176,7 @@ export default function StepTwo({ formData, updateFormData }: Props) {
                 checked={formData.wearType?.includes(wear.value)}
                 onCheckedChange={() => toggleWearType(wear.value)}
               />
-              <Label htmlFor={wear.value} className="font-normal cursor-pointer">
+              <Label htmlFor={wear.value} className="font-normal cursor-pointer dark:text-foreground">
                 {wear.label}
               </Label>
             </div>

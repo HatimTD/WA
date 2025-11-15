@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { SaveButton } from '@/components/save-button';
+import { ShareButton } from '@/components/share-button';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -68,7 +69,14 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
               Back to Library
             </Button>
           </Link>
-          <SaveButton caseStudyId={id} variant="outline" />
+          <div className="flex gap-2">
+            <ShareButton
+              title={`${caseStudy.customerName} - Case Study`}
+              text={`Check out this ${caseStudy.industry} case study from ${caseStudy.customerName}. ${caseStudy.problemDescription.substring(0, 100)}...`}
+              variant="outline"
+            />
+            <SaveButton caseStudyId={id} variant="outline" />
+          </div>
         </div>
         <div>
           <div className="flex items-start justify-between gap-4">
@@ -96,35 +104,35 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Key Information */}
-        <Card>
+        <Card role="article">
           <CardHeader>
             <CardTitle>Case Study Overview</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="flex items-start gap-3">
-                <MapPin className="h-5 w-5 text-blue-600 mt-0.5" />
+                <MapPin className="h-5 w-5 text-wa-green-600 mt-0.5" />
                 <div>
                   <p className="font-medium text-sm text-gray-600">Location</p>
                   <p className="text-gray-900">{caseStudy.location}, {caseStudy.country}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <Building2 className="h-5 w-5 text-blue-600 mt-0.5" />
+                <Building2 className="h-5 w-5 text-wa-green-600 mt-0.5" />
                 <div>
                   <p className="font-medium text-sm text-gray-600">Industry</p>
                   <p className="text-gray-900">{caseStudy.industry}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <Package className="h-5 w-5 text-blue-600 mt-0.5" />
+                <Package className="h-5 w-5 text-wa-green-600 mt-0.5" />
                 <div>
                   <p className="font-medium text-sm text-gray-600">Component/Workpiece</p>
                   <p className="text-gray-900">{caseStudy.componentWorkpiece}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <Wrench className="h-5 w-5 text-blue-600 mt-0.5" />
+                <Wrench className="h-5 w-5 text-wa-green-600 mt-0.5" />
                 <div>
                   <p className="font-medium text-sm text-gray-600">Work Type</p>
                   <p className="text-gray-900">{caseStudy.workType}</p>
@@ -132,7 +140,7 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
               </div>
               {caseStudy.wearType && caseStudy.wearType.length > 0 && (
                 <div className="flex items-start gap-3 md:col-span-2">
-                  <FileText className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <FileText className="h-5 w-5 text-wa-green-600 mt-0.5" />
                   <div>
                     <p className="font-medium text-sm text-gray-600">Wear Types</p>
                     <div className="flex flex-wrap gap-2 mt-1">
@@ -146,7 +154,7 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
                 </div>
               )}
               <div className="flex items-start gap-3 md:col-span-2">
-                <Calendar className="h-5 w-5 text-blue-600 mt-0.5" />
+                <Calendar className="h-5 w-5 text-wa-green-600 mt-0.5" />
                 <div>
                   <p className="font-medium text-sm text-gray-600">Approved</p>
                   <p className="text-gray-900">
@@ -165,7 +173,7 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
         </Card>
 
         {/* Problem & Solution */}
-        <Card>
+        <Card role="article">
           <CardHeader>
             <CardTitle>Problem Description</CardTitle>
           </CardHeader>
@@ -175,7 +183,7 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
         </Card>
 
         {caseStudy.previousSolution && (
-          <Card>
+          <Card role="article">
             <CardHeader>
               <CardTitle>Previous Solution</CardTitle>
             </CardHeader>
@@ -196,7 +204,7 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
           </Card>
         )}
 
-        <Card className="border-2 border-green-200 bg-green-50">
+        <Card role="article" className="border-2 border-green-200 bg-green-50">
           <CardHeader>
             <CardTitle className="text-green-800">Welding Alloys Solution</CardTitle>
           </CardHeader>
@@ -221,10 +229,10 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
         </Card>
 
         {/* Results & Benefits */}
-        <Card>
+        <Card role="article">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-blue-600" />
+              <TrendingUp className="h-5 w-5 text-wa-green-600" />
               Results & Benefits
             </CardTitle>
           </CardHeader>
@@ -233,7 +241,7 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
               {caseStudy.expectedServiceLife && (
                 <div>
                   <p className="font-medium text-sm text-gray-600 mb-1">Expected Service Life</p>
-                  <p className="text-2xl font-bold text-blue-600">
+                  <p className="text-2xl font-bold text-wa-green-600">
                     {caseStudy.expectedServiceLife}
                   </p>
                 </div>
@@ -270,7 +278,7 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
 
         {/* Cost Calculator (STAR cases) */}
         {caseStudy.costCalculator && (
-          <Card>
+          <Card role="article">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <DollarSign className="h-5 w-5 text-green-600" />
@@ -331,7 +339,7 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
 
         {/* Welding Procedure (TECH/STAR cases) */}
         {caseStudy.wps && (
-          <Card>
+          <Card role="article">
             <CardHeader>
               <CardTitle>Welding Procedure Specification</CardTitle>
             </CardHeader>

@@ -40,8 +40,8 @@ export default async function ApprovalReviewPage({ params }: Props) {
     select: { role: true },
   });
 
-  // Only Approvers can access this page
-  if (user?.role !== 'APPROVER') {
+  // Only Approvers and Admins can access this page
+  if (user?.role !== 'APPROVER' && user?.role !== 'ADMIN') {
     redirect('/dashboard');
   }
 
@@ -89,7 +89,7 @@ export default async function ApprovalReviewPage({ params }: Props) {
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'APPLICATION':
-        return 'bg-blue-50 text-blue-600 border-blue-200';
+        return 'bg-wa-green-50 text-wa-green-600 border-wa-green-200';
       case 'TECH':
         return 'bg-purple-50 text-purple-600 border-purple-200';
       case 'STAR':
@@ -125,10 +125,10 @@ export default async function ApprovalReviewPage({ params }: Props) {
       </div>
 
       {/* Approval Actions */}
-      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200">
+      <Card role="article" className="bg-gradient-to-r from-wa-green-50 to-purple-50 dark:from-accent dark:to-purple-900/20 border-2 border-wa-green-200 dark:border-primary">
         <CardHeader>
-          <CardTitle className="text-xl">Review & Approve</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-xl dark:text-foreground">Review & Approve</CardTitle>
+          <CardDescription className="dark:text-muted-foreground">
             Review this case study and decide whether to approve or reject it
           </CardDescription>
         </CardHeader>
@@ -141,10 +141,10 @@ export default async function ApprovalReviewPage({ params }: Props) {
       <div className="space-y-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">
               {caseStudy.customerName} - {caseStudy.componentWorkpiece}
             </h1>
-            <p className="text-lg text-gray-600 mt-2">
+            <p className="text-lg text-gray-600 dark:text-muted-foreground mt-2">
               {caseStudy.location}, {caseStudy.country || 'N/A'}
             </p>
           </div>
@@ -155,49 +155,49 @@ export default async function ApprovalReviewPage({ params }: Props) {
       </div>
 
       {/* Basic Information */}
-      <Card>
+      <Card role="article" className="dark:bg-card dark:border-border">
         <CardHeader>
-          <CardTitle>Basic Information</CardTitle>
+          <CardTitle className="dark:text-foreground">Basic Information</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
             <div className="flex items-start gap-3">
-              <Building2 className="h-5 w-5 text-gray-400 mt-0.5" />
+              <Building2 className="h-5 w-5 text-gray-400 dark:text-muted-foreground mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-gray-500">Industry</p>
-                <p className="text-base font-semibold">{caseStudy.industry}</p>
+                <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Industry</p>
+                <p className="text-base font-semibold dark:text-foreground">{caseStudy.industry}</p>
               </div>
             </div>
 
             <div className="flex items-start gap-3">
-              <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
+              <MapPin className="h-5 w-5 text-gray-400 dark:text-muted-foreground mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-gray-500">Location</p>
-                <p className="text-base font-semibold">
+                <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Location</p>
+                <p className="text-base font-semibold dark:text-foreground">
                   {caseStudy.location}, {caseStudy.country || 'N/A'}
                 </p>
               </div>
             </div>
 
             <div className="flex items-start gap-3">
-              <Package className="h-5 w-5 text-gray-400 mt-0.5" />
+              <Package className="h-5 w-5 text-gray-400 dark:text-muted-foreground mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-gray-500">Component/Workpiece</p>
-                <p className="text-base font-semibold">{caseStudy.componentWorkpiece}</p>
+                <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Component/Workpiece</p>
+                <p className="text-base font-semibold dark:text-foreground">{caseStudy.componentWorkpiece}</p>
               </div>
             </div>
 
             <div className="flex items-start gap-3">
-              <Wrench className="h-5 w-5 text-gray-400 mt-0.5" />
+              <Wrench className="h-5 w-5 text-gray-400 dark:text-muted-foreground mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-gray-500">Work Type</p>
-                <p className="text-base font-semibold">{caseStudy.workType}</p>
+                <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Work Type</p>
+                <p className="text-base font-semibold dark:text-foreground">{caseStudy.workType}</p>
               </div>
             </div>
           </div>
 
           <div>
-            <p className="text-sm font-medium text-gray-500 mb-2">Type of Wear</p>
+            <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-2">Type of Wear</p>
             <div className="flex flex-wrap gap-2">
               {caseStudy.wearType.map((wear) => (
                 <Badge key={wear} variant="secondary">
@@ -209,51 +209,51 @@ export default async function ApprovalReviewPage({ params }: Props) {
 
           {caseStudy.baseMetal && (
             <div>
-              <p className="text-sm font-medium text-gray-500">Base Metal</p>
-              <p className="text-base">{caseStudy.baseMetal}</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Base Metal</p>
+              <p className="text-base dark:text-foreground">{caseStudy.baseMetal}</p>
             </div>
           )}
 
           {caseStudy.generalDimensions && (
             <div>
-              <p className="text-sm font-medium text-gray-500">General Dimensions</p>
-              <p className="text-base">{caseStudy.generalDimensions}</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">General Dimensions</p>
+              <p className="text-base dark:text-foreground">{caseStudy.generalDimensions}</p>
             </div>
           )}
         </CardContent>
       </Card>
 
       {/* Problem Description */}
-      <Card>
+      <Card role="article" className="dark:bg-card dark:border-border">
         <CardHeader>
-          <CardTitle>Problem Description</CardTitle>
-          <CardDescription>The challenge the customer was facing</CardDescription>
+          <CardTitle className="dark:text-foreground">Problem Description</CardTitle>
+          <CardDescription className="dark:text-muted-foreground">The challenge the customer was facing</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="prose max-w-none">
-            <p className="text-gray-700 whitespace-pre-wrap">{caseStudy.problemDescription}</p>
+            <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{caseStudy.problemDescription}</p>
           </div>
 
           {(caseStudy.previousSolution || caseStudy.previousServiceLife || caseStudy.competitorName) && (
-            <div className="pt-4 border-t space-y-3">
+            <div className="pt-4 border-t dark:border-border space-y-3">
               {caseStudy.previousSolution && (
                 <div>
-                  <p className="text-sm font-medium text-gray-500 mb-1">Previous Solution</p>
-                  <p className="text-base">{caseStudy.previousSolution}</p>
+                  <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Previous Solution</p>
+                  <p className="text-base dark:text-foreground">{caseStudy.previousSolution}</p>
                 </div>
               )}
 
               {caseStudy.previousServiceLife && (
                 <div>
-                  <p className="text-sm font-medium text-gray-500 mb-1">Previous Service Life</p>
-                  <p className="text-base">{caseStudy.previousServiceLife}</p>
+                  <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Previous Service Life</p>
+                  <p className="text-base dark:text-foreground">{caseStudy.previousServiceLife}</p>
                 </div>
               )}
 
               {caseStudy.competitorName && (
                 <div>
-                  <p className="text-sm font-medium text-gray-500 mb-1">Competitor</p>
-                  <p className="text-base">{caseStudy.competitorName}</p>
+                  <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Competitor</p>
+                  <p className="text-base dark:text-foreground">{caseStudy.competitorName}</p>
                 </div>
               )}
             </div>
@@ -262,32 +262,32 @@ export default async function ApprovalReviewPage({ params }: Props) {
       </Card>
 
       {/* WA Solution */}
-      <Card>
+      <Card role="article" className="dark:bg-card dark:border-border">
         <CardHeader>
-          <CardTitle>Welding Alloys Solution</CardTitle>
-          <CardDescription>How WA solved the challenge</CardDescription>
+          <CardTitle className="dark:text-foreground">Welding Alloys Solution</CardTitle>
+          <CardDescription className="dark:text-muted-foreground">How WA solved the challenge</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="prose max-w-none">
-            <p className="text-gray-700 whitespace-pre-wrap">{caseStudy.waSolution}</p>
+            <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{caseStudy.waSolution}</p>
           </div>
 
-          <div className="pt-4 border-t">
-            <p className="text-sm font-medium text-gray-500 mb-1">WA Product Used</p>
-            <p className="text-lg font-semibold text-blue-600">{caseStudy.waProduct}</p>
+          <div className="pt-4 border-t dark:border-border">
+            <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">WA Product Used</p>
+            <p className="text-lg font-semibold text-wa-green-600 dark:text-primary">{caseStudy.waProduct}</p>
           </div>
 
           {caseStudy.technicalAdvantages && (
             <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Technical Advantages</p>
-              <p className="text-base whitespace-pre-wrap">{caseStudy.technicalAdvantages}</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Technical Advantages</p>
+              <p className="text-base dark:text-foreground whitespace-pre-wrap">{caseStudy.technicalAdvantages}</p>
             </div>
           )}
 
           {caseStudy.expectedServiceLife && (
             <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Expected/Achieved Service Life</p>
-              <p className="text-base">{caseStudy.expectedServiceLife}</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Expected/Achieved Service Life</p>
+              <p className="text-base dark:text-foreground">{caseStudy.expectedServiceLife}</p>
             </div>
           )}
         </CardContent>
@@ -295,18 +295,18 @@ export default async function ApprovalReviewPage({ params }: Props) {
 
       {/* Images Gallery */}
       {caseStudy.images && caseStudy.images.length > 0 && (
-        <Card>
+        <Card role="article" className="dark:bg-card dark:border-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ImageIcon className="h-5 w-5 text-blue-600" />
+            <CardTitle className="flex items-center gap-2 dark:text-foreground">
+              <ImageIcon className="h-5 w-5 text-wa-green-600 dark:text-primary" />
               Images ({caseStudy.images.length})
             </CardTitle>
-            <CardDescription>Photos and visuals for this case study</CardDescription>
+            <CardDescription className="dark:text-muted-foreground">Photos and visuals for this case study</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {caseStudy.images.map((imageUrl, index) => (
-                <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 bg-gray-100">
+                <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-border bg-gray-100 dark:bg-background">
                   <Image
                     src={imageUrl}
                     alt={`${caseStudy.customerName} - Image ${index + 1}`}
@@ -323,13 +323,13 @@ export default async function ApprovalReviewPage({ params }: Props) {
 
       {/* Supporting Documents */}
       {caseStudy.supportingDocs && caseStudy.supportingDocs.length > 0 && (
-        <Card>
+        <Card role="article" className="dark:bg-card dark:border-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-purple-600" />
+            <CardTitle className="flex items-center gap-2 dark:text-foreground">
+              <FileText className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               Supporting Documents ({caseStudy.supportingDocs.length})
             </CardTitle>
-            <CardDescription>Documents and files for this case study</CardDescription>
+            <CardDescription className="dark:text-muted-foreground">Documents and files for this case study</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 gap-3">
@@ -343,20 +343,20 @@ export default async function ApprovalReviewPage({ params }: Props) {
                     href={docUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-blue-300 transition-all"
+                    className="flex items-center gap-4 p-4 border border-gray-200 dark:border-border rounded-lg hover:bg-gray-50 dark:hover:bg-accent hover:border-wa-green-300 dark:hover:border-primary transition-all"
                   >
                     <FileText className={`h-8 w-8 flex-shrink-0 ${
-                      extension === 'pdf' ? 'text-red-500' :
-                      extension === 'doc' || extension === 'docx' ? 'text-blue-500' :
-                      extension === 'xls' || extension === 'xlsx' ? 'text-green-500' :
-                      extension === 'ppt' || extension === 'pptx' ? 'text-orange-500' :
-                      'text-gray-500'
+                      extension === 'pdf' ? 'text-red-500 dark:text-red-400' :
+                      extension === 'doc' || extension === 'docx' ? 'text-wa-green-500 dark:text-primary' :
+                      extension === 'xls' || extension === 'xlsx' ? 'text-green-500 dark:text-green-400' :
+                      extension === 'ppt' || extension === 'pptx' ? 'text-orange-500 dark:text-orange-400' :
+                      'text-gray-500 dark:text-muted-foreground'
                     }`} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-blue-600 hover:underline truncate">
+                      <p className="text-sm font-medium text-wa-green-600 dark:text-primary hover:underline truncate">
                         {fileName}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-gray-500 dark:text-muted-foreground mt-1">
                         Click to view or download
                       </p>
                     </div>
@@ -370,10 +370,10 @@ export default async function ApprovalReviewPage({ params }: Props) {
 
       {/* Financial Information - Only for APPLICATION cases */}
       {caseStudy.type === 'APPLICATION' && (caseStudy.solutionValueRevenue || caseStudy.annualPotentialRevenue || caseStudy.customerSavingsAmount) && (
-        <Card>
+        <Card role="article" className="dark:bg-card dark:border-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-600" />
+            <CardTitle className="flex items-center gap-2 dark:text-foreground">
+              <DollarSign className="h-5 w-5 text-green-600 dark:text-primary" />
               Financial Impact
             </CardTitle>
           </CardHeader>
@@ -381,8 +381,8 @@ export default async function ApprovalReviewPage({ params }: Props) {
             <div className="grid md:grid-cols-3 gap-4">
               {caseStudy.solutionValueRevenue && (
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Solution Value/Revenue</p>
-                  <p className="text-2xl font-bold text-green-600">
+                  <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Solution Value/Revenue</p>
+                  <p className="text-2xl font-bold text-green-600 dark:text-primary">
                     ${Number(caseStudy.solutionValueRevenue).toLocaleString()}
                   </p>
                 </div>
@@ -390,8 +390,8 @@ export default async function ApprovalReviewPage({ params }: Props) {
 
               {caseStudy.annualPotentialRevenue && (
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Annual Potential Revenue</p>
-                  <p className="text-2xl font-bold text-green-600">
+                  <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Annual Potential Revenue</p>
+                  <p className="text-2xl font-bold text-green-600 dark:text-primary">
                     ${Number(caseStudy.annualPotentialRevenue).toLocaleString()}
                   </p>
                 </div>
@@ -399,8 +399,8 @@ export default async function ApprovalReviewPage({ params }: Props) {
 
               {caseStudy.customerSavingsAmount && (
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Customer Savings</p>
-                  <p className="text-2xl font-bold text-green-600">
+                  <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Customer Savings</p>
+                  <p className="text-2xl font-bold text-green-600 dark:text-primary">
                     ${Number(caseStudy.customerSavingsAmount).toLocaleString()}
                   </p>
                 </div>
@@ -470,17 +470,17 @@ export default async function ApprovalReviewPage({ params }: Props) {
       )}
 
       {/* Contributor Info */}
-      <Card>
+      <Card role="article" className="dark:bg-card dark:border-border">
         <CardHeader>
-          <CardTitle>Submitted By</CardTitle>
+          <CardTitle className="dark:text-foreground">Submitted By</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-start gap-3">
-            <User className="h-5 w-5 text-gray-400 mt-0.5" />
+            <User className="h-5 w-5 text-gray-400 dark:text-muted-foreground mt-0.5" />
             <div>
-              <p className="text-base font-semibold">{caseStudy.contributor.name}</p>
-              <p className="text-sm text-gray-600">{caseStudy.contributor.email}</p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-base font-semibold dark:text-foreground">{caseStudy.contributor.name}</p>
+              <p className="text-sm text-gray-600 dark:text-muted-foreground">{caseStudy.contributor.email}</p>
+              <p className="text-xs text-gray-500 dark:text-muted-foreground mt-1">
                 Submitted on {new Date(caseStudy.submittedAt!).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
@@ -493,7 +493,7 @@ export default async function ApprovalReviewPage({ params }: Props) {
       </Card>
 
       {/* Approval Actions (Sticky Bottom) */}
-      <div className="sticky bottom-0 bg-white border-t shadow-lg p-4 -mx-4">
+      <div className="sticky bottom-0 bg-white dark:bg-card border-t dark:border-border shadow-lg p-4 -mx-4">
         <div className="max-w-5xl mx-auto">
           <ApprovalActions caseStudyId={caseStudy.id} />
         </div>

@@ -12,7 +12,7 @@ const BADGE_CONFIG = {
   EXPLORER: {
     icon: Target,
     label: 'Explorer',
-    color: 'bg-blue-100 text-blue-700 border-blue-300',
+    color: 'bg-wa-green-100 text-wa-green-700 border-wa-green-300',
     description: '10 Application cases approved',
   },
   EXPERT: {

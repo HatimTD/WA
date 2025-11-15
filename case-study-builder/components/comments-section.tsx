@@ -124,24 +124,24 @@ export default function CommentsSection({
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case 'APPROVER':
-        return 'bg-purple-100 text-purple-700';
+        return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
       case 'CONTRIBUTOR':
-        return 'bg-blue-100 text-blue-700';
+        return 'bg-wa-green-100 text-wa-green-700 dark:bg-accent dark:text-primary';
       case 'VIEWER':
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400';
       default:
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400';
     }
   };
 
   return (
-    <Card>
+    <Card className="dark:bg-card dark:border-border">
       <CardHeader>
         <div className="flex items-center gap-3">
-          <MessageSquare className="h-6 w-6 text-blue-600" />
+          <MessageSquare className="h-6 w-6 text-wa-green-600 dark:text-primary" />
           <div>
-            <CardTitle>Comments ({comments.length})</CardTitle>
-            <CardDescription>Share your thoughts and feedback</CardDescription>
+            <CardTitle className="dark:text-foreground">Comments ({comments.length})</CardTitle>
+            <CardDescription className="dark:text-muted-foreground">Share your thoughts and feedback</CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -152,7 +152,7 @@ export default function CommentsSection({
             placeholder="Add a comment..."
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
-            className="min-h-[100px]"
+            className="min-h-[100px] dark:bg-input dark:border-border dark:text-foreground"
           />
           <div className="flex justify-end">
             <Button
@@ -167,8 +167,8 @@ export default function CommentsSection({
 
         {/* Comments List */}
         {comments.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <MessageSquare className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+          <div className="text-center py-8 text-gray-500 dark:text-muted-foreground">
+            <MessageSquare className="h-12 w-12 mx-auto mb-3 text-gray-300 dark:text-muted-foreground" />
             <p>No comments yet. Be the first to share your thoughts!</p>
           </div>
         ) : (
@@ -176,17 +176,17 @@ export default function CommentsSection({
             {comments.map((comment) => (
               <div
                 key={comment.id}
-                className="border border-gray-200 rounded-lg p-4 space-y-3"
+                className="border border-gray-200 dark:border-border rounded-lg p-4 space-y-3 dark:bg-card"
               >
                 {/* Comment Header */}
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                      <User className="h-5 w-5 text-blue-600" />
+                    <div className="w-10 h-10 rounded-full bg-wa-green-100 dark:bg-accent flex items-center justify-center">
+                      <User className="h-5 w-5 text-wa-green-600 dark:text-primary" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="font-semibold text-sm text-gray-900">
+                        <p className="font-semibold text-sm text-gray-900 dark:text-foreground">
                           {comment.user.name || 'Unknown User'}
                         </p>
                         <Badge
@@ -196,7 +196,7 @@ export default function CommentsSection({
                           {comment.user.role}
                         </Badge>
                       </div>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-muted-foreground">
                         {new Date(comment.createdAt).toLocaleDateString('en-US', {
                           year: 'numeric',
                           month: 'short',
@@ -216,13 +216,13 @@ export default function CommentsSection({
                       onClick={() => handleDelete(comment.id)}
                       disabled={deletingCommentId === comment.id}
                     >
-                      <Trash2 className="h-4 w-4 text-red-500" />
+                      <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
                     </Button>
                   )}
                 </div>
 
                 {/* Comment Content */}
-                <p className="text-sm text-gray-700 whitespace-pre-wrap pl-13">
+                <p className="text-sm text-gray-700 dark:text-foreground whitespace-pre-wrap pl-13">
                   {comment.content}
                 </p>
 

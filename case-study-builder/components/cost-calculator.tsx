@@ -110,13 +110,13 @@ export default function CostCalculator({ caseStudyId, existingData }: CostCalcul
   return (
     <div className="space-y-6">
       {/* Header */}
-      <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white">
+      <Card className="border-2 border-wa-green-200 dark:border-primary bg-gradient-to-br from-wa-green-50 to-white dark:from-accent dark:to-card">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-2xl">
-            <Calculator className="h-6 w-6 text-blue-600" />
+          <CardTitle className="flex items-center gap-2 text-2xl dark:text-foreground">
+            <Calculator className="h-6 w-6 text-wa-green-600 dark:text-primary" />
             Cost Reduction Calculator
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="dark:text-muted-foreground">
             Calculate the total cost savings from implementing Welding Alloys solutions
           </CardDescription>
         </CardHeader>
@@ -125,16 +125,16 @@ export default function CostCalculator({ caseStudyId, existingData }: CostCalcul
       {/* Input Sections */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Material Costs */}
-        <Card>
+        <Card className="dark:bg-card dark:border-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Package className="h-5 w-5 text-purple-600" />
+            <CardTitle className="flex items-center gap-2 text-lg dark:text-foreground">
+              <Package className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               Material Costs
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="materialCostBefore">Before (Annual)</Label>
+              <Label htmlFor="materialCostBefore" className="dark:text-foreground">Before (Annual)</Label>
               <Input
                 id="materialCostBefore"
                 type="number"
@@ -142,10 +142,11 @@ export default function CostCalculator({ caseStudyId, existingData }: CostCalcul
                 value={values.materialCostBefore || ''}
                 onChange={(e) => handleChange('materialCostBefore', e.target.value)}
                 placeholder="$0.00"
+                className="dark:bg-input dark:border-border dark:text-foreground"
               />
             </div>
             <div>
-              <Label htmlFor="materialCostAfter">After (Annual)</Label>
+              <Label htmlFor="materialCostAfter" className="dark:text-foreground">After (Annual)</Label>
               <Input
                 id="materialCostAfter"
                 type="number"
@@ -153,11 +154,12 @@ export default function CostCalculator({ caseStudyId, existingData }: CostCalcul
                 value={values.materialCostAfter || ''}
                 onChange={(e) => handleChange('materialCostAfter', e.target.value)}
                 placeholder="$0.00"
+                className="dark:bg-input dark:border-border dark:text-foreground"
               />
             </div>
-            <div className="pt-2 border-t">
-              <p className="text-sm font-medium text-gray-700">Savings:</p>
-              <p className="text-2xl font-bold text-green-600">
+            <div className="pt-2 border-t dark:border-border">
+              <p className="text-sm font-medium text-gray-700 dark:text-muted-foreground">Savings:</p>
+              <p className="text-2xl font-bold text-green-600 dark:text-primary">
                 ${(values.materialCostBefore - values.materialCostAfter).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
@@ -165,16 +167,16 @@ export default function CostCalculator({ caseStudyId, existingData }: CostCalcul
         </Card>
 
         {/* Labor Costs */}
-        <Card>
+        <Card className="dark:bg-card dark:border-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Users className="h-5 w-5 text-blue-600" />
+            <CardTitle className="flex items-center gap-2 text-lg dark:text-foreground">
+              <Users className="h-5 w-5 text-wa-green-600 dark:text-primary" />
               Labor Costs
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="laborCostBefore">Before (Annual)</Label>
+              <Label htmlFor="laborCostBefore" className="dark:text-foreground">Before (Annual)</Label>
               <Input
                 id="laborCostBefore"
                 type="number"
@@ -182,10 +184,11 @@ export default function CostCalculator({ caseStudyId, existingData }: CostCalcul
                 value={values.laborCostBefore || ''}
                 onChange={(e) => handleChange('laborCostBefore', e.target.value)}
                 placeholder="$0.00"
+                className="dark:bg-input dark:border-border dark:text-foreground"
               />
             </div>
             <div>
-              <Label htmlFor="laborCostAfter">After (Annual)</Label>
+              <Label htmlFor="laborCostAfter" className="dark:text-foreground">After (Annual)</Label>
               <Input
                 id="laborCostAfter"
                 type="number"
@@ -193,11 +196,12 @@ export default function CostCalculator({ caseStudyId, existingData }: CostCalcul
                 value={values.laborCostAfter || ''}
                 onChange={(e) => handleChange('laborCostAfter', e.target.value)}
                 placeholder="$0.00"
+                className="dark:bg-input dark:border-border dark:text-foreground"
               />
             </div>
-            <div className="pt-2 border-t">
-              <p className="text-sm font-medium text-gray-700">Savings:</p>
-              <p className="text-2xl font-bold text-green-600">
+            <div className="pt-2 border-t dark:border-border">
+              <p className="text-sm font-medium text-gray-700 dark:text-muted-foreground">Savings:</p>
+              <p className="text-2xl font-bold text-green-600 dark:text-primary">
                 ${(values.laborCostBefore - values.laborCostAfter).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
@@ -205,16 +209,16 @@ export default function CostCalculator({ caseStudyId, existingData }: CostCalcul
         </Card>
 
         {/* Downtime Costs */}
-        <Card>
+        <Card className="dark:bg-card dark:border-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Clock className="h-5 w-5 text-orange-600" />
+            <CardTitle className="flex items-center gap-2 text-lg dark:text-foreground">
+              <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
               Downtime Costs
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="downtimeCostBefore">Before (Annual)</Label>
+              <Label htmlFor="downtimeCostBefore" className="dark:text-foreground">Before (Annual)</Label>
               <Input
                 id="downtimeCostBefore"
                 type="number"
@@ -222,10 +226,11 @@ export default function CostCalculator({ caseStudyId, existingData }: CostCalcul
                 value={values.downtimeCostBefore || ''}
                 onChange={(e) => handleChange('downtimeCostBefore', e.target.value)}
                 placeholder="$0.00"
+                className="dark:bg-input dark:border-border dark:text-foreground"
               />
             </div>
             <div>
-              <Label htmlFor="downtimeCostAfter">After (Annual)</Label>
+              <Label htmlFor="downtimeCostAfter" className="dark:text-foreground">After (Annual)</Label>
               <Input
                 id="downtimeCostAfter"
                 type="number"
@@ -233,11 +238,12 @@ export default function CostCalculator({ caseStudyId, existingData }: CostCalcul
                 value={values.downtimeCostAfter || ''}
                 onChange={(e) => handleChange('downtimeCostAfter', e.target.value)}
                 placeholder="$0.00"
+                className="dark:bg-input dark:border-border dark:text-foreground"
               />
             </div>
-            <div className="pt-2 border-t">
-              <p className="text-sm font-medium text-gray-700">Savings:</p>
-              <p className="text-2xl font-bold text-green-600">
+            <div className="pt-2 border-t dark:border-border">
+              <p className="text-sm font-medium text-gray-700 dark:text-muted-foreground">Savings:</p>
+              <p className="text-2xl font-bold text-green-600 dark:text-primary">
                 ${(values.downtimeCostBefore - values.downtimeCostAfter).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
@@ -245,37 +251,39 @@ export default function CostCalculator({ caseStudyId, existingData }: CostCalcul
         </Card>
 
         {/* Maintenance Frequency */}
-        <Card>
+        <Card className="dark:bg-card dark:border-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <TrendingDown className="h-5 w-5 text-green-600" />
+            <CardTitle className="flex items-center gap-2 text-lg dark:text-foreground">
+              <TrendingDown className="h-5 w-5 text-green-600 dark:text-primary" />
               Maintenance Frequency
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="maintenanceFrequencyBefore">Before (times/year)</Label>
+              <Label htmlFor="maintenanceFrequencyBefore" className="dark:text-foreground">Before (times/year)</Label>
               <Input
                 id="maintenanceFrequencyBefore"
                 type="number"
                 value={values.maintenanceFrequencyBefore || ''}
                 onChange={(e) => handleChange('maintenanceFrequencyBefore', e.target.value)}
                 placeholder="12"
+                className="dark:bg-input dark:border-border dark:text-foreground"
               />
             </div>
             <div>
-              <Label htmlFor="maintenanceFrequencyAfter">After (times/year)</Label>
+              <Label htmlFor="maintenanceFrequencyAfter" className="dark:text-foreground">After (times/year)</Label>
               <Input
                 id="maintenanceFrequencyAfter"
                 type="number"
                 value={values.maintenanceFrequencyAfter || ''}
                 onChange={(e) => handleChange('maintenanceFrequencyAfter', e.target.value)}
                 placeholder="4"
+                className="dark:bg-input dark:border-border dark:text-foreground"
               />
             </div>
-            <div className="pt-2 border-t">
-              <p className="text-sm font-medium text-gray-700">Reduction:</p>
-              <p className="text-2xl font-bold text-green-600">
+            <div className="pt-2 border-t dark:border-border">
+              <p className="text-sm font-medium text-gray-700 dark:text-muted-foreground">Reduction:</p>
+              <p className="text-2xl font-bold text-green-600 dark:text-primary">
                 {frequencyReduction} times ({frequencyReductionPercent}%)
               </p>
             </div>
@@ -284,33 +292,33 @@ export default function CostCalculator({ caseStudyId, existingData }: CostCalcul
       </div>
 
       {/* Summary Card */}
-      <Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-white">
+      <Card className="border-2 border-green-200 dark:border-primary bg-gradient-to-br from-green-50 to-white dark:from-accent dark:to-card">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <DollarSign className="h-6 w-6 text-green-600" />
+          <CardTitle className="flex items-center gap-2 text-xl dark:text-foreground">
+            <DollarSign className="h-6 w-6 text-green-600 dark:text-primary" />
             Total Annual Savings
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center">
-              <p className="text-sm text-gray-600 mb-1">Total Cost Before</p>
-              <p className="text-3xl font-bold text-gray-800">
+              <p className="text-sm text-gray-600 dark:text-muted-foreground mb-1">Total Cost Before</p>
+              <p className="text-3xl font-bold text-gray-800 dark:text-foreground">
                 ${totalCostBefore.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
             <div className="text-center">
-              <p className="text-sm text-gray-600 mb-1">Total Cost After</p>
-              <p className="text-3xl font-bold text-blue-600">
+              <p className="text-sm text-gray-600 dark:text-muted-foreground mb-1">Total Cost After</p>
+              <p className="text-3xl font-bold text-wa-green-600 dark:text-primary">
                 ${totalCostAfter.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
             <div className="text-center">
-              <p className="text-sm text-gray-600 mb-1">Annual Savings</p>
-              <p className="text-4xl font-bold text-green-600">
+              <p className="text-sm text-gray-600 dark:text-muted-foreground mb-1">Annual Savings</p>
+              <p className="text-4xl font-bold text-green-600 dark:text-primary">
                 ${annualSavings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
-              <p className="text-lg font-semibold text-green-700 mt-1">
+              <p className="text-lg font-semibold text-green-700 dark:text-primary mt-1">
                 {savingsPercentage}% Reduction
               </p>
             </div>
@@ -325,7 +333,7 @@ export default function CostCalculator({ caseStudyId, existingData }: CostCalcul
           {isSaving ? 'Saving...' : 'Save Calculation'}
         </Button>
         {saveMessage && (
-          <p className={`text-sm font-medium ${saveMessage.includes('Error') ? 'text-red-600' : 'text-green-600'}`}>
+          <p className={`text-sm font-medium ${saveMessage.includes('Error') ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-primary'}`}>
             {saveMessage}
           </p>
         )}

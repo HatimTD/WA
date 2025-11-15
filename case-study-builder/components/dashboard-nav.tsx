@@ -1,10 +1,18 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import {
   Home,
   FileText,
@@ -32,10 +40,14 @@ interface DashboardNavProps {
   user: {
     name?: string | null;
     email?: string | null;
+    image?: string | null;
     role?: string;
+    region?: string | null;
     totalPoints?: number;
     badges?: BadgeType[];
   };
+  isCollapsed: boolean;
+  onNavigate?: () => void; // Callback for mobile menu close
 }
 
 const navItems = [
@@ -54,10 +66,10 @@ const navItems = [
   { href: '/dashboard/admin', label: 'Admin Dashboard', icon: Shield, roles: ['ADMIN'] },
   { href: '/dashboard/admin/users', label: 'User Management', icon: Users, roles: ['ADMIN'] },
   { href: '/dashboard/admin/config', label: 'System Config', icon: Sliders, roles: ['ADMIN'] },
-  { href: '/dashboard/settings', label: 'Settings', icon: Settings },
+  { href: '/dashboard/system-settings', label: 'System Settings', icon: Settings, roles: ['ADMIN'] },
 ];
 
-export function DashboardNav({ user }: DashboardNavProps) {
+export function DashboardNav({ user, isCollapsed, onNavigate }: DashboardNavProps) {
   const pathname = usePathname();
 
   const filteredNavItems = navItems.filter(item => {
@@ -66,71 +78,198 @@ export function DashboardNav({ user }: DashboardNavProps) {
   });
 
   return (
-    <div className="flex flex-col w-64 bg-white border-r border-gray-200">
-      {/* Logo/Header */}
-      <div className="p-6 border-b border-gray-200">
-        <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          CS Builder
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">Welding Alloys</p>
-      </div>
-
-      {/* User Info */}
-      <div className="p-4 border-b border-gray-200 space-y-2">
-        <p className="font-medium text-sm truncate">{user.name}</p>
-        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="text-xs">
-            {user.role}
-          </Badge>
-          {user.role !== 'VIEWER' && (
-            <Badge variant="default" className="text-xs">
-              {user.totalPoints || 0} pts
-            </Badge>
-          )}
-        </div>
-        {user.badges && user.badges.length > 0 && user.role !== 'VIEWER' && (
-          <div className="pt-1">
-            <BadgeDisplay badges={user.badges} size="sm" />
+    <aside role="navigation" aria-label="Main navigation" className={cn(
+      "flex flex-col h-screen bg-white dark:bg-card border-r border-gray-200 dark:border-border transition-all duration-300 z-30",
+      isCollapsed ? "w-20" : "w-64"
+    )}>
+      {/* TOP SECTION: Logo + Brand Name */}
+      <div className="p-4 border-b border-gray-200 dark:border-border flex items-center justify-center">
+        {!isCollapsed ? (
+          <div className="flex items-center gap-3 w-full">
+            {/* Welding Alloys Logo */}
+            <div className="w-12 h-12 flex-shrink-0">
+              <img
+                src="/wa-logo-48.svg"
+                alt="Welding Alloys"
+                className="w-full h-full"
+              />
+            </div>
+            <h1 className="text-base font-bold text-gray-900 dark:text-gray-100">
+              Welding Alloys
+            </h1>
+          </div>
+        ) : (
+          <div className="w-10 h-10 flex-shrink-0">
+            <img
+              src="/wa-logo-40.svg"
+              alt="Welding Alloys"
+              className="w-full h-full"
+            />
           </div>
         )}
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1">
-        {filteredNavItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = pathname === item.href;
+      {/* MIDDLE SECTION: Navigation (flex-1 to push content down) */}
+      <nav aria-label="Primary navigation" className="flex-1 overflow-y-auto py-4 px-2">
+        <TooltipProvider>
+          <div className="space-y-1">
+            {filteredNavItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
-                isActive
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-gray-700 hover:bg-gray-100'
-              )}
-            >
-              <Icon className="h-5 w-5" />
-              {item.label}
-            </Link>
-          );
-        })}
+              const linkContent = (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => onNavigate?.()}
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                    isActive
+                      ? 'bg-wa-green-50 text-wa-green-900 dark:bg-accent dark:text-primary'
+                      : 'text-gray-700 hover:bg-wa-green-50 hover:text-wa-green-800 dark:text-muted-foreground dark:hover:bg-background dark:hover:text-foreground',
+                    isCollapsed && 'justify-center'
+                  )}
+                >
+                  <Icon className="h-5 w-5 flex-shrink-0" />
+                  {!isCollapsed && <span>{item.label}</span>}
+                </Link>
+              );
+
+              if (isCollapsed) {
+                return (
+                  <Tooltip key={item.href}>
+                    <TooltipTrigger asChild>
+                      {linkContent}
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      <p>{item.label}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              }
+
+              return linkContent;
+            })}
+          </div>
+        </TooltipProvider>
       </nav>
 
-      {/* Sign Out */}
-      <div className="p-4 border-t border-gray-200">
-        <Button
-          variant="ghost"
-          className="w-full justify-start"
-          onClick={() => signOut({ callbackUrl: '/' })}
-        >
-          <LogOut className="mr-3 h-5 w-5" />
-          Sign Out
-        </Button>
+      {/* BOTTOM SECTION: User Info + Settings/Logout */}
+      <div className="border-t border-gray-200 dark:border-border">
+        {/* User Info - ABOVE settings */}
+        {!isCollapsed ? (
+          <div className="p-4 border-b border-gray-200 dark:border-border">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={user.image || undefined} alt={user.name || 'User'} />
+                <AvatarFallback className="bg-wa-green-100 text-wa-green-900 dark:bg-accent dark:text-primary">
+                  {user.name?.[0]?.toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm truncate text-gray-900 dark:text-foreground">{user.name}</p>
+                {user.region && (
+                  <p className="text-xs text-gray-500 dark:text-muted-foreground truncate">{user.region}</p>
+                )}
+                <div className="flex items-center gap-1 mt-1">
+                  <Badge variant="secondary" className="text-xs bg-wa-green-100 text-wa-green-900">
+                    {user.role}
+                  </Badge>
+                  {user.role !== 'VIEWER' && (
+                    <Badge className="text-xs bg-wa-green-900 text-white">
+                      {user.totalPoints || 0} pts
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+            {user.badges && user.badges.length > 0 && user.role !== 'VIEWER' && (
+              <div className="pt-2 mt-2 border-t border-gray-100 dark:border-border">
+                <BadgeDisplay badges={user.badges} size="sm" />
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="p-2 border-b border-gray-200 dark:border-border flex justify-center">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Avatar className="h-10 w-10 cursor-pointer">
+                    <AvatarImage src={user.image || undefined} alt={user.name || 'User'} />
+                    <AvatarFallback className="bg-wa-green-100 text-wa-green-900 dark:bg-accent dark:text-primary">
+                      {user.name?.[0]?.toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <div>
+                    <p className="font-medium dark:text-foreground">{user.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-muted-foreground">{user.role}</p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        )}
+
+        {/* Settings & Logout - AT BOTTOM */}
+        <div className="p-2 space-y-1">
+          <TooltipProvider>
+            {!isCollapsed ? (
+              <>
+                <Link
+                  href="/dashboard/settings"
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                    pathname === '/dashboard/settings'
+                      ? 'bg-wa-green-50 text-wa-green-900 dark:bg-accent dark:text-primary'
+                      : 'text-gray-700 hover:bg-wa-green-50 hover:text-wa-green-800 dark:text-muted-foreground dark:hover:bg-background dark:hover:text-foreground'
+                  )}
+                >
+                  <Settings className="h-5 w-5" />
+                  <span>Settings</span>
+                </Link>
+                <Button variant="ghost" aria-label="Sign out" className="w-full justify-start text-gray-700 hover:bg-red-50 hover:text-red-700 dark:text-muted-foreground dark:hover:bg-red-900/20 dark:hover:text-red-400" onClick={() => signOut({ callbackUrl: '/' })}
+                >
+                  <LogOut className="mr-3 h-5 w-5" />
+                  Log Out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link                       href="/dashboard/settings"
+                      className={cn(
+                        'flex items-center justify-center px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                        pathname === '/dashboard/settings'
+                          ? 'bg-wa-green-50 text-wa-green-900 dark:bg-accent dark:text-primary'
+                          : 'text-gray-700 hover:bg-wa-green-50 hover:text-wa-green-800 dark:text-muted-foreground dark:hover:bg-background dark:hover:text-foreground'
+                      )}
+                    >
+                      <Settings className="h-5 w-5" />
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>Settings</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" aria-label="Sign out" className="w-full justify-start text-gray-700 hover:bg-red-50 hover:text-red-700 dark:text-muted-foreground dark:hover:bg-red-900/20 dark:hover:text-red-400" onClick={() => signOut({ callbackUrl: '/' })}
+                    >
+                      <LogOut className="h-5 w-5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>Log Out</p>
+                  </TooltipContent>
+                </Tooltip>
+              </>
+            )}
+          </TooltipProvider>
+        </div>
       </div>
-    </div>
+    </aside>
   );
 }

@@ -1,20 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { User, Settings, Download, Bell, Shield } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { User, Settings, Download, Bell, Shield, Camera } from 'lucide-react';
 import { toast } from 'sonner';
 
 type UserData = {
   id: string;
   name: string | null;
   email: string | null;
+  image: string | null;
   role: string;
   region: string | null;
   totalPoints: number;
@@ -26,19 +29,78 @@ type Props = {
 
 export default function SettingsForm({ user }: Props) {
   const router = useRouter();
+  const { theme: currentTheme, setTheme: setNextTheme } = useTheme();
   const [name, setName] = useState(user.name || '');
   const [region, setRegion] = useState(user.region || '');
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isSwitchingRole, setIsSwitchingRole] = useState(false);
 
+  // Avatar upload state
+  const [avatarUrl, setAvatarUrl] = useState(user.image || '');
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Notification preferences
+  const [inAppNotifications, setInAppNotifications] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
+
+  // Email notification controls
   const [caseApprovalNotif, setCaseApprovalNotif] = useState(true);
   const [caseRejectionNotif, setCaseRejectionNotif] = useState(true);
   const [newCommentNotif, setNewCommentNotif] = useState(true);
-  const [weeklyDigest, setWeeklyDigest] = useState(true);
   const [bhagMilestones, setBhagMilestones] = useState(true);
+
+  // In-app notification controls
+  const [inAppCaseApproval, setInAppCaseApproval] = useState(true);
+  const [inAppCaseRejection, setInAppCaseRejection] = useState(true);
+  const [inAppNewComment, setInAppNewComment] = useState(true);
+  const [inAppBhagMilestones, setInAppBhagMilestones] = useState(true);
+
+  // Display preferences
+  const [themePreference, setThemePreference] = useState('system');
+  const [resultsPerPage, setResultsPerPage] = useState(10);
+  const [defaultView, setDefaultView] = useState('grid');
+
+  // Load preferences on mount
+  useEffect(() => {
+    loadPreferences();
+  }, []);
+
+  async function loadPreferences() {
+    try {
+      const response = await fetch('/api/user/preferences');
+      if (response.ok) {
+        const data = await response.json();
+
+        // Load notification preferences
+        const notifPrefs = data.notificationPreferences || {};
+        setInAppNotifications(notifPrefs.inAppNotifications ?? true);
+        setEmailNotifications(notifPrefs.emailNotifications ?? true);
+
+        // Email notification preferences
+        setCaseApprovalNotif(notifPrefs.caseApprovalNotif ?? true);
+        setCaseRejectionNotif(notifPrefs.caseRejectionNotif ?? true);
+        setNewCommentNotif(notifPrefs.newCommentNotif ?? true);
+        setBhagMilestones(notifPrefs.bhagMilestones ?? true);
+
+        // In-app notification preferences
+        setInAppCaseApproval(notifPrefs.inAppCaseApproval ?? true);
+        setInAppCaseRejection(notifPrefs.inAppCaseRejection ?? true);
+        setInAppNewComment(notifPrefs.inAppNewComment ?? true);
+        setInAppBhagMilestones(notifPrefs.inAppBhagMilestones ?? true);
+
+        // Load display preferences
+        const displayPrefs = data.displayPreferences || {};
+        const savedTheme = displayPrefs.theme || 'system';
+        setThemePreference(savedTheme);
+        setResultsPerPage(displayPrefs.resultsPerPage || 10);
+        setDefaultView(displayPrefs.defaultView || 'grid');
+      }
+    } catch (error) {
+      console.error('[Settings] Failed to load preferences:', error);
+    }
+  }
 
   const handleSaveProfile = async () => {
     setIsSaving(true);
@@ -60,6 +122,73 @@ export default function SettingsForm({ user }: Props) {
       }
     } catch (error) {
       console.error('[Settings] Error:', error);
+      toast.error('An error occurred');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveNotifications = async () => {
+    setIsSaving(true);
+    try {
+      const notificationPreferences = {
+        inAppNotifications,
+        emailNotifications,
+        // Email notification preferences
+        caseApprovalNotif,
+        caseRejectionNotif,
+        newCommentNotif,
+        bhagMilestones,
+        // In-app notification preferences
+        inAppCaseApproval,
+        inAppCaseRejection,
+        inAppNewComment,
+        inAppBhagMilestones,
+      };
+
+      const response = await fetch('/api/user/preferences', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notificationPreferences }),
+      });
+
+      if (response.ok) {
+        toast.success('Notification preferences saved!');
+      } else {
+        toast.error('Failed to save preferences');
+      }
+    } catch (error) {
+      console.error('[Settings] Save notification preferences error:', error);
+      toast.error('An error occurred');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveDisplay = async () => {
+    setIsSaving(true);
+    try {
+      const displayPreferences = {
+        theme: themePreference,
+        resultsPerPage,
+        defaultView,
+      };
+
+      const response = await fetch('/api/user/preferences', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ displayPreferences }),
+      });
+
+      if (response.ok) {
+        // Apply the theme immediately
+        setNextTheme(themePreference);
+        toast.success('Display preferences saved!');
+      } else {
+        toast.error('Failed to save preferences');
+      }
+    } catch (error) {
+      console.error('[Settings] Save display preferences error:', error);
       toast.error('An error occurred');
     } finally {
       setIsSaving(false);
@@ -124,52 +253,139 @@ export default function SettingsForm({ user }: Props) {
     }
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('Invalid file type. Only JPEG, PNG, and WebP are allowed.');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('File size exceeds 5MB limit.');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+
+      const response = await fetch('/api/user/upload-avatar', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.success && result.url) {
+        setAvatarUrl(result.url);
+        toast.success('Profile picture updated successfully!');
+        // Refresh to update all components with new avatar
+        router.refresh();
+      } else {
+        toast.error(result.error || 'Failed to upload image');
+      }
+    } catch (error) {
+      console.error('[Settings] Avatar upload error:', error);
+      toast.error('An error occurred while uploading');
+    } finally {
+      setIsUploadingAvatar(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Profile Section */}
-      <Card>
+      <Card className="dark:bg-card dark:border-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5 text-blue-600" />
+          <CardTitle className="flex items-center gap-2 dark:text-foreground">
+            <User className="h-5 w-5 text-wa-green-600 dark:text-primary" />
             Profile Information
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="dark:text-muted-foreground">
             Update your personal information
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Avatar Upload Section */}
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label className="dark:text-foreground">Profile Picture</Label>
+            <div className="flex items-center gap-4">
+              <Avatar className="h-20 w-20">
+                <AvatarImage src={avatarUrl || undefined} alt={user.name || 'User'} />
+                <AvatarFallback className="bg-wa-green-100 text-wa-green-900 text-2xl dark:bg-accent dark:text-primary">
+                  {user.name?.[0]?.toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingAvatar}
+                  className="gap-2"
+                >
+                  <Camera className="h-4 w-4" />
+                  {isUploadingAvatar ? 'Uploading...' : 'Change Picture'}
+                </Button>
+                <p className="text-xs text-gray-500 dark:text-muted-foreground">
+                  JPG, PNG or WebP. Max 5MB.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="email" className="dark:text-foreground">Email</Label>
             <Input
               id="email"
               type="email"
               value={user.email || ''}
               disabled
-              className="bg-gray-50"
+              className="bg-gray-50 dark:bg-gray-800 dark:border-border dark:text-foreground"
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-500 dark:text-muted-foreground">
               Email cannot be changed (linked to Google account)
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="name" className="dark:text-foreground">Name</Label>
             <Input
               id="name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter your name"
+              className="dark:bg-input dark:border-border dark:text-foreground"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="region">Region</Label>
+            <Label htmlFor="region" className="dark:text-foreground">Region</Label>
             <Select value={region} onValueChange={setRegion}>
-              <SelectTrigger id="region">
+              <SelectTrigger id="region" className="dark:bg-input dark:border-border dark:text-foreground">
                 <SelectValue placeholder="Select your region" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="dark:bg-popover dark:border-border">
                 <SelectItem value="North America">North America</SelectItem>
                 <SelectItem value="South America">South America</SelectItem>
                 <SelectItem value="Europe">Europe</SelectItem>
@@ -182,20 +398,20 @@ export default function SettingsForm({ user }: Props) {
           </div>
 
           <div className="space-y-2">
-            <Label>Role</Label>
+            <Label className="dark:text-foreground">Role</Label>
             <div className="flex items-center gap-2">
-              <div className="px-3 py-2 bg-blue-50 text-blue-700 rounded-md text-sm font-medium border border-blue-200">
+              <div className="px-3 py-2 bg-wa-green-50 text-wa-green-700 rounded-md text-sm font-medium border border-wa-green-200 dark:bg-accent dark:text-primary dark:border-primary">
                 {user.role}
               </div>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500 dark:text-muted-foreground">
                 Contact an administrator to change your role
               </p>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label>Total Points</Label>
-            <div className="px-3 py-2 bg-green-50 text-green-700 rounded-md text-sm font-medium border border-green-200 inline-block">
+            <Label className="dark:text-foreground">Total Points</Label>
+            <div className="px-3 py-2 bg-green-50 text-green-700 rounded-md text-sm font-medium border border-green-200 inline-block dark:bg-accent dark:text-primary dark:border-primary">
               {user.totalPoints} points
             </div>
           </div>
@@ -209,41 +425,41 @@ export default function SettingsForm({ user }: Props) {
       </Card>
 
       {/* Display Preferences */}
-      <Card>
+      <Card className="dark:bg-card dark:border-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5 text-blue-600" />
+          <CardTitle className="flex items-center gap-2 dark:text-foreground">
+            <Settings className="h-5 w-5 text-wa-green-600 dark:text-primary" />
             Display Preferences
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="dark:text-muted-foreground">
             Customize your viewing experience
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="theme">Theme</Label>
-            <Select defaultValue="light">
-              <SelectTrigger id="theme">
+            <Label htmlFor="theme" className="dark:text-foreground">Theme</Label>
+            <Select value={themePreference} onValueChange={setThemePreference}>
+              <SelectTrigger id="theme" className="dark:bg-input dark:border-border dark:text-foreground">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="dark:bg-popover dark:border-border">
                 <SelectItem value="light">Light</SelectItem>
-                <SelectItem value="dark">Dark (Coming Soon)</SelectItem>
-                <SelectItem value="system">System (Coming Soon)</SelectItem>
+                <SelectItem value="dark">Dark</SelectItem>
+                <SelectItem value="system">System</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-xs text-gray-500">
-              Dark mode will be available in a future update
+            <p className="text-xs text-gray-500 dark:text-muted-foreground">
+              Choose your preferred theme. System will match your device settings.
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="resultsPerPage">Results Per Page</Label>
-            <Select defaultValue="20">
-              <SelectTrigger id="resultsPerPage">
+            <Label htmlFor="resultsPerPage" className="dark:text-foreground">Results Per Page</Label>
+            <Select value={resultsPerPage.toString()} onValueChange={(v) => setResultsPerPage(parseInt(v))}>
+              <SelectTrigger id="resultsPerPage" className="dark:bg-input dark:border-border dark:text-foreground">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="dark:bg-popover dark:border-border">
                 <SelectItem value="10">10 items</SelectItem>
                 <SelectItem value="20">20 items</SelectItem>
                 <SelectItem value="50">50 items</SelectItem>
@@ -252,42 +468,117 @@ export default function SettingsForm({ user }: Props) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="defaultView">Default Case View</Label>
-            <Select defaultValue="grid">
-              <SelectTrigger id="defaultView">
+            <Label htmlFor="defaultView" className="dark:text-foreground">Default Case View</Label>
+            <Select value={defaultView} onValueChange={setDefaultView}>
+              <SelectTrigger id="defaultView" className="dark:bg-input dark:border-border dark:text-foreground">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="dark:bg-popover dark:border-border">
                 <SelectItem value="grid">Grid View</SelectItem>
                 <SelectItem value="list">List View</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          <p className="text-xs text-gray-500 pt-2">
-            These preferences are saved locally in your browser
-          </p>
+          <div className="pt-4">
+            <Button onClick={handleSaveDisplay} disabled={isSaving}>
+              {isSaving ? 'Saving...' : 'Save Display Preferences'}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
       {/* Notifications */}
-      <Card>
+      <Card className="dark:bg-card dark:border-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5 text-blue-600" />
+          <CardTitle className="flex items-center gap-2 dark:text-foreground">
+            <Bell className="h-5 w-5 text-wa-green-600 dark:text-primary" />
             Notifications
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="dark:text-muted-foreground">
             Manage how you receive notifications
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Master Email Toggle */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          {/* Master In-App Toggle */}
+          <div className="flex items-center justify-between p-4 bg-wa-green-50 rounded-lg border-2 border-wa-green-200 dark:bg-accent dark:border-primary">
             <div>
-              <Label className="text-base font-semibold">Email Notifications</Label>
-              <p className="text-sm text-gray-500">
-                Enable or disable all email notifications
+              <Label className="text-base font-semibold dark:text-foreground">In-App Notifications</Label>
+              <p className="text-sm text-gray-500 dark:text-muted-foreground">
+                Show notification bell and alerts within the application
+              </p>
+            </div>
+            <Switch
+              checked={inAppNotifications}
+              onCheckedChange={setInAppNotifications}
+            />
+          </div>
+
+          {/* Individual In-App Notification Settings */}
+          <div className="space-y-4 pl-4 border-l-2 border-wa-green-200 dark:border-primary">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="dark:text-foreground">Case Approval Notifications</Label>
+                <p className="text-sm text-gray-500 dark:text-muted-foreground">
+                  Show in-app notification when your case study is approved
+                </p>
+              </div>
+              <Switch
+                checked={inAppCaseApproval}
+                onCheckedChange={setInAppCaseApproval}
+                disabled={!inAppNotifications}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="dark:text-foreground">Case Rejection Notifications</Label>
+                <p className="text-sm text-gray-500 dark:text-muted-foreground">
+                  Show in-app notification when your case study needs revisions
+                </p>
+              </div>
+              <Switch
+                checked={inAppCaseRejection}
+                onCheckedChange={setInAppCaseRejection}
+                disabled={!inAppNotifications}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="dark:text-foreground">New Comment Notifications</Label>
+                <p className="text-sm text-gray-500 dark:text-muted-foreground">
+                  Show in-app notification when someone comments on your cases
+                </p>
+              </div>
+              <Switch
+                checked={inAppNewComment}
+                onCheckedChange={setInAppNewComment}
+                disabled={!inAppNotifications}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="dark:text-foreground">BHAG Milestone Notifications</Label>
+                <p className="text-sm text-gray-500 dark:text-muted-foreground">
+                  Show in-app notification when BHAG milestones are reached
+                </p>
+              </div>
+              <Switch
+                checked={inAppBhagMilestones}
+                onCheckedChange={setInAppBhagMilestones}
+                disabled={!inAppNotifications}
+              />
+            </div>
+          </div>
+
+          {/* Master Email Toggle */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border-2 border-gray-200 dark:bg-gray-800 dark:border-border">
+            <div>
+              <Label className="text-base font-semibold dark:text-foreground">Email Notifications</Label>
+              <p className="text-sm text-gray-500 dark:text-muted-foreground">
+                Receive notifications via email
               </p>
             </div>
             <Switch
@@ -297,11 +588,11 @@ export default function SettingsForm({ user }: Props) {
           </div>
 
           {/* Individual Notification Settings */}
-          <div className="space-y-4 pl-4 border-l-2 border-gray-200">
+          <div className="space-y-4 pl-4 border-l-2 border-gray-200 dark:border-border">
             <div className="flex items-center justify-between">
               <div>
-                <Label>Case Approval Notifications</Label>
-                <p className="text-sm text-gray-500">
+                <Label className="dark:text-foreground">Case Approval Notifications</Label>
+                <p className="text-sm text-gray-500 dark:text-muted-foreground">
                   Get notified when your case study is approved
                 </p>
               </div>
@@ -314,8 +605,8 @@ export default function SettingsForm({ user }: Props) {
 
             <div className="flex items-center justify-between">
               <div>
-                <Label>Case Rejection Notifications</Label>
-                <p className="text-sm text-gray-500">
+                <Label className="dark:text-foreground">Case Rejection Notifications</Label>
+                <p className="text-sm text-gray-500 dark:text-muted-foreground">
                   Get notified when your case study needs revisions
                 </p>
               </div>
@@ -328,8 +619,8 @@ export default function SettingsForm({ user }: Props) {
 
             <div className="flex items-center justify-between">
               <div>
-                <Label>New Comment Notifications</Label>
-                <p className="text-sm text-gray-500">
+                <Label className="dark:text-foreground">New Comment Notifications</Label>
+                <p className="text-sm text-gray-500 dark:text-muted-foreground">
                   Get notified when someone comments on your cases
                 </p>
               </div>
@@ -342,22 +633,8 @@ export default function SettingsForm({ user }: Props) {
 
             <div className="flex items-center justify-between">
               <div>
-                <Label>Weekly Digest</Label>
-                <p className="text-sm text-gray-500">
-                  Receive a weekly summary of activity
-                </p>
-              </div>
-              <Switch
-                checked={weeklyDigest}
-                onCheckedChange={setWeeklyDigest}
-                disabled={!emailNotifications}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>BHAG Milestone Notifications</Label>
-                <p className="text-sm text-gray-500">
+                <Label className="dark:text-foreground">BHAG Milestone Notifications</Label>
+                <p className="text-sm text-gray-500 dark:text-muted-foreground">
                   Get notified when BHAG milestones are reached
                 </p>
               </div>
@@ -369,41 +646,47 @@ export default function SettingsForm({ user }: Props) {
             </div>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-800">
-              <span className="font-semibold">Note:</span> Email notifications will be fully functional in a future update.
-              Currently, notifications are shown in the app only.
+          <div className="bg-wa-green-50 border border-wa-green-200 rounded-lg p-4 dark:bg-accent dark:border-primary dark:text-foreground">
+            <p className="text-sm text-wa-green-800 dark:text-foreground">
+              <span className="font-semibold">Note:</span> Email notifications require the RESEND_API_KEY to be configured in your environment variables.
+              Contact your administrator if you're not receiving email notifications.
             </p>
+          </div>
+
+          <div className="pt-4">
+            <Button onClick={handleSaveNotifications} disabled={isSaving}>
+              {isSaving ? 'Saving...' : 'Save Notification Preferences'}
+            </Button>
           </div>
         </CardContent>
       </Card>
 
       {/* Dev Role Switcher (Development Only) */}
-      <Card className="border-orange-200 bg-orange-50">
+      <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/30 dark:border-orange-800">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-orange-900">
-            <Shield className="h-5 w-5 text-orange-600" />
+          <CardTitle className="flex items-center gap-2 text-orange-900 dark:text-orange-400">
+            <Shield className="h-5 w-5 text-orange-600 dark:text-orange-400" />
             Dev Role Switcher
           </CardTitle>
-          <CardDescription className="text-orange-700">
+          <CardDescription className="text-orange-700 dark:text-orange-300">
             Switch roles for testing purposes (Development Only)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="devRole">Current Role: <span className="font-bold">{user.role}</span></Label>
+            <Label htmlFor="devRole" className="dark:text-orange-300">Current Role: <span className="font-bold">{user.role}</span></Label>
             <Select onValueChange={handleRoleSwitch} disabled={isSwitchingRole}>
-              <SelectTrigger id="devRole">
+              <SelectTrigger id="devRole" className="dark:bg-orange-950/50 dark:border-orange-800 dark:text-orange-200">
                 <SelectValue placeholder="Switch to..." />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="dark:bg-popover dark:border-border">
                 <SelectItem value="VIEWER">VIEWER</SelectItem>
                 <SelectItem value="CONTRIBUTOR">CONTRIBUTOR</SelectItem>
                 <SelectItem value="APPROVER">APPROVER</SelectItem>
                 <SelectItem value="ADMIN">ADMIN</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-xs text-orange-600">
+            <p className="text-xs text-orange-600 dark:text-orange-400">
               This will immediately update your role and redirect you to the dashboard with updated permissions.
             </p>
           </div>
@@ -411,20 +694,20 @@ export default function SettingsForm({ user }: Props) {
       </Card>
 
       {/* Data & Privacy */}
-      <Card>
+      <Card className="dark:bg-card dark:border-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Download className="h-5 w-5 text-blue-600" />
+          <CardTitle className="flex items-center gap-2 dark:text-foreground">
+            <Download className="h-5 w-5 text-wa-green-600 dark:text-primary" />
             Data & Privacy
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="dark:text-muted-foreground">
             Manage your data and privacy settings
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Export Your Data</Label>
-            <p className="text-sm text-gray-500 mb-2">
+            <Label className="dark:text-foreground">Export Your Data</Label>
+            <p className="text-sm text-gray-500 mb-2 dark:text-muted-foreground">
               Download all your case studies as a JSON file
             </p>
             <Button
@@ -438,9 +721,9 @@ export default function SettingsForm({ user }: Props) {
             </Button>
           </div>
 
-          <div className="border-t pt-4 mt-4">
-            <Label className="text-red-600">Delete Account</Label>
-            <p className="text-sm text-gray-500 mb-2">
+          <div className="border-t pt-4 mt-4 dark:border-border">
+            <Label className="text-red-600 dark:text-red-400">Delete Account</Label>
+            <p className="text-sm text-gray-500 mb-2 dark:text-muted-foreground">
               Request deletion of your account and all associated data
             </p>
             <Button

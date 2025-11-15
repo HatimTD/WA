@@ -6,6 +6,17 @@ import { Badge } from '@/components/ui/badge';
 import BadgeDisplay from '@/components/badge-display';
 import { Trophy, Medal, Award, TrendingUp } from 'lucide-react';
 import { Badge as BadgeType } from '@prisma/client';
+import type { Metadata } from 'next';
+
+
+export const metadata: Metadata = {
+  title: 'Leaderboard',
+  description: 'View top contributors and their achievements',
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default async function LeaderboardPage() {
   const session = await auth();
@@ -59,13 +70,13 @@ export default async function LeaderboardPage() {
   const getRankColor = (rank: number) => {
     switch (rank) {
       case 1:
-        return 'bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-300';
+        return 'bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-300 dark:from-yellow-900/20 dark:to-yellow-800/20 dark:border-yellow-700';
       case 2:
-        return 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-300';
+        return 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-300 dark:from-gray-800 dark:to-gray-900 dark:border-gray-700';
       case 3:
-        return 'bg-gradient-to-br from-amber-50 to-amber-100 border-amber-300';
+        return 'bg-gradient-to-br from-amber-50 to-amber-100 border-amber-300 dark:from-amber-900/20 dark:to-amber-800/20 dark:border-amber-700';
       default:
-        return 'bg-white border-gray-200';
+        return 'bg-white border-gray-200 dark:bg-card dark:border-border';
     }
   };
 
@@ -73,25 +84,25 @@ export default async function LeaderboardPage() {
     <div className="max-w-7xl mx-auto p-8 space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Leaderboard</h1>
-          <p className="text-gray-600 mt-1">See how you rank among contributors</p>
+          <h1 className="text-3xl font-bold dark:text-foreground">Leaderboard</h1>
+          <p className="text-gray-600 dark:text-muted-foreground mt-1">See how you rank among contributors</p>
         </div>
-        <TrendingUp className="h-12 w-12 text-blue-500" />
+        <TrendingUp className="h-12 w-12 text-wa-green-500 dark:text-primary" />
       </div>
 
       {/* Current User Stats */}
       {currentUser && (
-        <Card className="border-blue-200 bg-blue-50">
+        <Card role="article" className="border-wa-green-200 bg-wa-green-50 dark:border-primary dark:bg-accent">
           <CardHeader>
-            <CardTitle className="text-lg">Your Ranking</CardTitle>
+            <CardTitle className="text-lg dark:text-foreground">Your Ranking</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="text-4xl font-bold text-blue-600">#{currentUserRank}</div>
+                <div className="text-4xl font-bold text-wa-green-600 dark:text-primary">#{currentUserRank}</div>
                 <div>
-                  <p className="font-medium">{currentUser.name}</p>
-                  <p className="text-sm text-gray-600">
+                  <p className="font-medium dark:text-foreground">{currentUser.name}</p>
+                  <p className="text-sm text-gray-600 dark:text-muted-foreground">
                     {currentUser.totalPoints} points • {currentUser._count.caseStudies} approved cases
                   </p>
                 </div>
@@ -109,16 +120,16 @@ export default async function LeaderboardPage() {
         <div className="grid grid-cols-3 gap-4">
           {/* 2nd Place */}
           {topThree[1] && (
-            <Card className={`border-2 ${getRankColor(2)} mt-8`}>
+            <Card role="article" className={`border-2 ${getRankColor(2)} mt-8`}>
               <CardHeader className="text-center pb-2">
                 <div className="flex justify-center mb-2">{getRankIcon(2)}</div>
-                <CardTitle className="text-lg">{topThree[1].name}</CardTitle>
-                <CardDescription className="text-xs truncate">{topThree[1].email}</CardDescription>
+                <CardTitle className="text-lg dark:text-foreground">{topThree[1].name}</CardTitle>
+                <CardDescription className="text-xs truncate dark:text-muted-foreground">{topThree[1].email}</CardDescription>
               </CardHeader>
               <CardContent className="text-center space-y-2">
-                <div className="text-3xl font-bold text-gray-700">{topThree[1].totalPoints}</div>
-                <p className="text-sm text-gray-600">points</p>
-                <Badge variant="outline">{topThree[1]._count.caseStudies} approved</Badge>
+                <div className="text-3xl font-bold text-gray-700 dark:text-foreground">{topThree[1].totalPoints}</div>
+                <p className="text-sm text-gray-600 dark:text-muted-foreground">points</p>
+                <Badge variant="outline" className="dark:border-border dark:text-foreground">{topThree[1]._count.caseStudies} approved</Badge>
                 {topThree[1].badges && (topThree[1].badges as BadgeType[]).length > 0 && (
                   <div className="flex justify-center pt-2">
                     <BadgeDisplay badges={topThree[1].badges as BadgeType[]} showLabels={false} />
@@ -130,16 +141,16 @@ export default async function LeaderboardPage() {
 
           {/* 1st Place */}
           {topThree[0] && (
-            <Card className={`border-2 ${getRankColor(1)}`}>
+            <Card role="article" className={`border-2 ${getRankColor(1)}`}>
               <CardHeader className="text-center pb-2">
                 <div className="flex justify-center mb-2">{getRankIcon(1)}</div>
-                <CardTitle className="text-xl">{topThree[0].name}</CardTitle>
-                <CardDescription className="text-xs truncate">{topThree[0].email}</CardDescription>
+                <CardTitle className="text-xl dark:text-foreground">{topThree[0].name}</CardTitle>
+                <CardDescription className="text-xs truncate dark:text-muted-foreground">{topThree[0].email}</CardDescription>
               </CardHeader>
               <CardContent className="text-center space-y-2">
-                <div className="text-4xl font-bold text-yellow-600">{topThree[0].totalPoints}</div>
-                <p className="text-sm text-gray-600">points</p>
-                <Badge variant="outline">{topThree[0]._count.caseStudies} approved</Badge>
+                <div className="text-4xl font-bold text-yellow-600 dark:text-yellow-400">{topThree[0].totalPoints}</div>
+                <p className="text-sm text-gray-600 dark:text-muted-foreground">points</p>
+                <Badge variant="outline" className="dark:border-border dark:text-foreground">{topThree[0]._count.caseStudies} approved</Badge>
                 {topThree[0].badges && (topThree[0].badges as BadgeType[]).length > 0 && (
                   <div className="flex justify-center pt-2">
                     <BadgeDisplay badges={topThree[0].badges as BadgeType[]} showLabels={false} />
@@ -151,16 +162,16 @@ export default async function LeaderboardPage() {
 
           {/* 3rd Place */}
           {topThree[2] && (
-            <Card className={`border-2 ${getRankColor(3)} mt-8`}>
+            <Card role="article" className={`border-2 ${getRankColor(3)} mt-8`}>
               <CardHeader className="text-center pb-2">
                 <div className="flex justify-center mb-2">{getRankIcon(3)}</div>
-                <CardTitle className="text-lg">{topThree[2].name}</CardTitle>
-                <CardDescription className="text-xs truncate">{topThree[2].email}</CardDescription>
+                <CardTitle className="text-lg dark:text-foreground">{topThree[2].name}</CardTitle>
+                <CardDescription className="text-xs truncate dark:text-muted-foreground">{topThree[2].email}</CardDescription>
               </CardHeader>
               <CardContent className="text-center space-y-2">
-                <div className="text-3xl font-bold text-amber-700">{topThree[2].totalPoints}</div>
-                <p className="text-sm text-gray-600">points</p>
-                <Badge variant="outline">{topThree[2]._count.caseStudies} approved</Badge>
+                <div className="text-3xl font-bold text-amber-700 dark:text-amber-400">{topThree[2].totalPoints}</div>
+                <p className="text-sm text-gray-600 dark:text-muted-foreground">points</p>
+                <Badge variant="outline" className="dark:border-border dark:text-foreground">{topThree[2]._count.caseStudies} approved</Badge>
                 {topThree[2].badges && (topThree[2].badges as BadgeType[]).length > 0 && (
                   <div className="flex justify-center pt-2">
                     <BadgeDisplay badges={topThree[2].badges as BadgeType[]} showLabels={false} />
@@ -174,10 +185,10 @@ export default async function LeaderboardPage() {
 
       {/* Rest of Rankings */}
       {restOfUsers.length > 0 && (
-        <Card>
+        <Card role="article" className="dark:bg-card dark:border-border">
           <CardHeader>
-            <CardTitle>All Contributors</CardTitle>
-            <CardDescription>Complete leaderboard rankings</CardDescription>
+            <CardTitle className="dark:text-foreground">All Contributors</CardTitle>
+            <CardDescription className="dark:text-muted-foreground">Complete leaderboard rankings</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -189,24 +200,24 @@ export default async function LeaderboardPage() {
                   <div
                     key={user.id}
                     className={`flex items-center justify-between p-4 rounded-lg border ${
-                      isCurrentUser ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
+                      isCurrentUser ? 'bg-wa-green-50 border-wa-green-200 dark:bg-accent dark:border-primary' : 'bg-gray-50 border-gray-200 dark:bg-background dark:border-border'
                     }`}
                   >
                     <div className="flex items-center gap-4 flex-1">
                       <div
                         className={`text-lg font-semibold w-10 text-center ${
-                          isCurrentUser ? 'text-blue-600' : 'text-gray-600'
+                          isCurrentUser ? 'text-wa-green-600 dark:text-primary' : 'text-gray-600 dark:text-muted-foreground'
                         }`}
                       >
                         #{rank}
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium">{user.name}</p>
-                        <p className="text-sm text-gray-600 truncate">{user.email}</p>
+                        <p className="font-medium dark:text-foreground">{user.name}</p>
+                        <p className="text-sm text-gray-600 dark:text-muted-foreground truncate">{user.email}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-bold">{user.totalPoints}</p>
-                        <p className="text-xs text-gray-500">{user._count.caseStudies} approved</p>
+                        <p className="text-lg font-bold dark:text-foreground">{user.totalPoints}</p>
+                        <p className="text-xs text-gray-500 dark:text-muted-foreground">{user._count.caseStudies} approved</p>
                       </div>
                       {user.badges && (user.badges as BadgeType[]).length > 0 && (
                         <div className="ml-4">
