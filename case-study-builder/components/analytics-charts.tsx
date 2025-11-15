@@ -40,6 +40,7 @@ const COLORS = {
   cyan: 'hsl(189, 94%, 43%)',
   pink: 'hsl(330, 81%, 60%)',
   gray: 'hsl(215, 16%, 47%)',
+  blue: 'hsl(217, 91%, 60%)',
 };
 
 const STATUS_COLORS = {
