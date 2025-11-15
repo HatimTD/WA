@@ -199,17 +199,19 @@ export default function SavedCasesPage() {
               </Select>
 
               {/* Sort By */}
-              <Select value={sortBy} onValueChange={setSortBy} className="md:col-span-1">
-                <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
-                  <SelectValue placeholder="Sort By" />
-                </SelectTrigger>
-                <SelectContent className="dark:bg-popover dark:border-border">
-                  <SelectItem value="date-newest">Newest First</SelectItem>
-                  <SelectItem value="date-oldest">Oldest First</SelectItem>
-                  <SelectItem value="customer-az">Customer A-Z</SelectItem>
-                  <SelectItem value="customer-za">Customer Z-A</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="md:col-span-1">
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
+                    <SelectValue placeholder="Sort By" />
+                  </SelectTrigger>
+                  <SelectContent className="dark:bg-popover dark:border-border">
+                    <SelectItem value="date-newest">Newest First</SelectItem>
+                    <SelectItem value="date-oldest">Oldest First</SelectItem>
+                    <SelectItem value="customer-az">Customer A-Z</SelectItem>
+                    <SelectItem value="customer-za">Customer Z-A</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </CardContent>
