@@ -45,21 +45,7 @@ export default function DevLoginPage() {
     }
   };
 
-  // Only show this page in development
-  if (process.env.NODE_ENV === 'production') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-red-600">Access Denied</CardTitle>
-            <CardDescription>
-              This page is only available in development mode.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
+  // Page is now available in production for testing purposes
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
@@ -72,8 +58,8 @@ export default function DevLoginPage() {
           <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
             <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
             <div className="text-sm text-yellow-800">
-              <p className="font-semibold mb-1">Development Mode Only</p>
-              <p>This login bypasses OAuth and is only available in development.</p>
+              <p className="font-semibold mb-1">Test Login Mode</p>
+              <p>This login is available for testing purposes.</p>
             </div>
           </div>
         </CardHeader>

@@ -23,9 +23,8 @@ const providers: Provider[] = [
   }),
 ];
 
-// Add credentials provider in development mode only
-if (process.env.NODE_ENV === 'development') {
-  providers.push(
+// Add credentials provider for testing (available in production for testing purposes)
+providers.push(
     Credentials({
       name: 'Dev Login',
       credentials: {
@@ -102,8 +101,7 @@ if (process.env.NODE_ENV === 'development') {
         };
       },
     })
-  );
-}
+);
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -112,16 +110,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers,
   callbacks: {
     async signIn({ user, account, profile }) {
-      // Allow dev users in development mode
-      if (process.env.NODE_ENV === 'development') {
-        // Allow specific test accounts
-        if (user.email === 'tidihatim@gmail.com' || user.email === 'test@admin.com') {
-          return true;
-        }
-        // Allow credentials provider in dev
-        if (account?.provider === 'credentials') {
-          return true;
-        }
+      // Allow test accounts for testing purposes
+      if (user.email === 'tidihatim@gmail.com' || user.email === 'test@admin.com') {
+        return true;
+      }
+      // Allow credentials provider for testing
+      if (account?.provider === 'credentials') {
+        return true;
       }
 
       // Check if email is from weldingalloys.com domain

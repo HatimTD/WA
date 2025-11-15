@@ -4,11 +4,7 @@ import { signIn } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
 export async function devLogin(email: string, password: string, role?: string) {
-  // Only allow in development mode
-  if (process.env.NODE_ENV === 'production') {
-    return { success: false, error: 'Dev login not available in production' };
-  }
-
+  // Now available in production for testing
   try {
     await signIn('credentials', {
       email,
