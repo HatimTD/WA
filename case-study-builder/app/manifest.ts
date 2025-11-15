@@ -41,7 +41,6 @@ export default function manifest(): MetadataRoute.Manifest {
     categories: ['productivity', 'business', 'utilities'],
     lang: 'en',
     dir: 'ltr',
-    scope: '/',
     prefer_related_applications: false,
     shortcuts: [
       {
