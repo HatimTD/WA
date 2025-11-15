@@ -4,8 +4,8 @@ import withSerwistInit from '@serwist/next';
 const withSerwist = withSerwistInit({
   swSrc: 'app/sw.ts',
   swDest: 'public/sw.js',
-  // Temporarily enable in dev for PWA testing
-  disable: false,
+  // Disable in development, enable in production
+  disable: process.env.NODE_ENV !== 'production',
   reloadOnOnline: true,
   cacheOnNavigation: true,
   additionalPrecacheEntries: ['/dev-login'],

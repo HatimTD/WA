@@ -312,6 +312,7 @@ enum NotificationType {
   NEW_COMMENT
   BADGE_EARNED
   BHAG_MILESTONE
+  SYSTEM_ANNOUNCEMENT
 }
 
 model SavedCase {
