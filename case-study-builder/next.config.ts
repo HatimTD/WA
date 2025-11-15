@@ -12,6 +12,8 @@ const withSerwist = withSerwistInit({
 });
 
 const nextConfig: NextConfig = {
+  // Enable Turbopack (Next.js 16 default)
+  turbopack: {},
   images: {
     remotePatterns: [
       {
