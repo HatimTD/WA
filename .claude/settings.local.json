@@ -13,7 +13,9 @@
       "Skill(superpowers:executing-plans)",
       "Bash(netstat:*)",
       "Bash(findstr:*)",
-      "Bash(taskkill //F //PID 61848)"
+      "Bash(taskkill //F //PID 61848)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,14 +1,14 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { Badge, CaseStudyType } from '@prisma/client';
+import { Badge, CaseType } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 
 // Badge thresholds
 const BADGE_REQUIREMENTS = {
-  EXPLORER: { type: 'APPLICATION' as CaseStudyType, count: 10 },
-  EXPERT: { type: 'TECH' as CaseStudyType, count: 10 },
-  CHAMPION: { type: 'STAR' as CaseStudyType, count: 10 },
+  EXPLORER: { type: 'APPLICATION' as CaseType, count: 10 },
+  EXPERT: { type: 'TECH' as CaseType, count: 10 },
+  CHAMPION: { type: 'STAR' as CaseType, count: 10 },
 };
 
 /**
