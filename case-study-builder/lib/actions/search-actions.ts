@@ -46,7 +46,7 @@ export async function searchCaseStudies(filters: SearchFilters) {
     if (filters.query) {
       where.OR = [
         {
-          title: {
+          customerName: {
             contains: filters.query,
             mode: 'insensitive',
           },
@@ -70,7 +70,7 @@ export async function searchCaseStudies(filters: SearchFilters) {
           },
         },
         {
-          productName: {
+          waProduct: {
             contains: filters.query,
             mode: 'insensitive',
           },
