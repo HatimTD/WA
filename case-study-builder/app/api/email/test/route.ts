@@ -73,16 +73,20 @@ export async function POST(req: NextRequest) {
       `
     }
 
-    const data = await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'Case Study Builder <onboarding@resend.dev>',
       to: [to],
       subject: subject || `Test Email - ${templateType || 'Template Preview'}`,
       html: processedHtml,
     })
 
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
     return NextResponse.json({
       success: true,
-      messageId: data.id,
+      messageId: data?.id,
       message: `Test email sent successfully to ${to}`,
     })
   } catch (error: any) {
