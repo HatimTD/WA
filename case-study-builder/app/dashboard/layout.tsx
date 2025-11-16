@@ -37,8 +37,8 @@ export default async function DashboardLayout({
 
   return (
     <SessionProvider>
-      {/* Maintenance Mode Auto-Redirect */}
-      <MaintenanceRedirect />
+      {/* Maintenance Mode Auto-Redirect - Temporarily disabled */}
+      {/* <MaintenanceRedirect /> */}
 
       <div className="flex min-h-screen flex-col">
         {/* Announcement Banner */}

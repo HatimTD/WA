@@ -81,8 +81,8 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
         <div>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{caseStudy.customerName}</h1>
-              <p className="text-gray-600 mt-2">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">{caseStudy.customerName}</h1>
+              <p className="text-gray-600 dark:text-muted-foreground mt-2">
                 {caseStudy.industry} • {caseStudy.location}
               </p>
             </div>
@@ -104,45 +104,45 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Key Information */}
-        <Card role="article">
+        <Card role="article" className="dark:bg-card dark:border-border">
           <CardHeader>
-            <CardTitle>Case Study Overview</CardTitle>
+            <CardTitle className="dark:text-foreground">Case Study Overview</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="flex items-start gap-3">
-                <MapPin className="h-5 w-5 text-wa-green-600 mt-0.5" />
+                <MapPin className="h-5 w-5 text-wa-green-600 dark:text-primary mt-0.5" />
                 <div>
-                  <p className="font-medium text-sm text-gray-600">Location</p>
-                  <p className="text-gray-900">{caseStudy.location}, {caseStudy.country}</p>
+                  <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground">Location</p>
+                  <p className="text-gray-900 dark:text-foreground">{caseStudy.location}, {caseStudy.country}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <Building2 className="h-5 w-5 text-wa-green-600 mt-0.5" />
+                <Building2 className="h-5 w-5 text-wa-green-600 dark:text-primary mt-0.5" />
                 <div>
-                  <p className="font-medium text-sm text-gray-600">Industry</p>
-                  <p className="text-gray-900">{caseStudy.industry}</p>
+                  <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground">Industry</p>
+                  <p className="text-gray-900 dark:text-foreground">{caseStudy.industry}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <Package className="h-5 w-5 text-wa-green-600 mt-0.5" />
+                <Package className="h-5 w-5 text-wa-green-600 dark:text-primary mt-0.5" />
                 <div>
-                  <p className="font-medium text-sm text-gray-600">Component/Workpiece</p>
-                  <p className="text-gray-900">{caseStudy.componentWorkpiece}</p>
+                  <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground">Component/Workpiece</p>
+                  <p className="text-gray-900 dark:text-foreground">{caseStudy.componentWorkpiece}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <Wrench className="h-5 w-5 text-wa-green-600 mt-0.5" />
+                <Wrench className="h-5 w-5 text-wa-green-600 dark:text-primary mt-0.5" />
                 <div>
-                  <p className="font-medium text-sm text-gray-600">Work Type</p>
-                  <p className="text-gray-900">{caseStudy.workType}</p>
+                  <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground">Work Type</p>
+                  <p className="text-gray-900 dark:text-foreground">{caseStudy.workType}</p>
                 </div>
               </div>
               {caseStudy.wearType && caseStudy.wearType.length > 0 && (
                 <div className="flex items-start gap-3 md:col-span-2">
-                  <FileText className="h-5 w-5 text-wa-green-600 mt-0.5" />
+                  <FileText className="h-5 w-5 text-wa-green-600 dark:text-primary mt-0.5" />
                   <div>
-                    <p className="font-medium text-sm text-gray-600">Wear Types</p>
+                    <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground">Wear Types</p>
                     <div className="flex flex-wrap gap-2 mt-1">
                       {caseStudy.wearType.map((type) => (
                         <Badge key={type} variant="outline">
@@ -154,10 +154,10 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
                 </div>
               )}
               <div className="flex items-start gap-3 md:col-span-2">
-                <Calendar className="h-5 w-5 text-wa-green-600 mt-0.5" />
+                <Calendar className="h-5 w-5 text-wa-green-600 dark:text-primary mt-0.5" />
                 <div>
-                  <p className="font-medium text-sm text-gray-600">Approved</p>
-                  <p className="text-gray-900">
+                  <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground">Approved</p>
+                  <p className="text-gray-900 dark:text-foreground">
                     {caseStudy.approvedAt
                       ? new Date(caseStudy.approvedAt).toLocaleDateString('en-US', {
                           year: 'numeric',
@@ -173,30 +173,30 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
         </Card>
 
         {/* Problem & Solution */}
-        <Card role="article">
+        <Card role="article" className="dark:bg-card dark:border-border">
           <CardHeader>
-            <CardTitle>Problem Description</CardTitle>
+            <CardTitle className="dark:text-foreground">Problem Description</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-700 whitespace-pre-wrap">{caseStudy.problemDescription}</p>
+            <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{caseStudy.problemDescription}</p>
           </CardContent>
         </Card>
 
         {caseStudy.previousSolution && (
-          <Card role="article">
+          <Card role="article" className="dark:bg-card dark:border-border">
             <CardHeader>
-              <CardTitle>Previous Solution</CardTitle>
+              <CardTitle className="dark:text-foreground">Previous Solution</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-700 whitespace-pre-wrap">{caseStudy.previousSolution}</p>
+              <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{caseStudy.previousSolution}</p>
               {caseStudy.previousServiceLife && (
-                <p className="text-sm text-gray-600 mt-2">
+                <p className="text-sm text-gray-600 dark:text-muted-foreground mt-2">
                   <span className="font-medium">Previous Service Life:</span>{' '}
                   {caseStudy.previousServiceLife}
                 </p>
               )}
               {caseStudy.competitorName && (
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-sm text-gray-600 dark:text-muted-foreground mt-1">
                   <span className="font-medium">Competitor:</span> {caseStudy.competitorName}
                 </p>
               )}
@@ -204,23 +204,23 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
           </Card>
         )}
 
-        <Card role="article" className="border-2 border-green-200 bg-green-50">
+        <Card role="article" className="border-2 border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-800">
           <CardHeader>
-            <CardTitle className="text-green-800">Welding Alloys Solution</CardTitle>
+            <CardTitle className="text-green-800 dark:text-green-400">Welding Alloys Solution</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <p className="font-medium text-sm text-green-700 mb-2">WA Product Used</p>
-              <p className="text-gray-900 text-lg font-semibold">{caseStudy.waProduct}</p>
+              <p className="font-medium text-sm text-green-700 dark:text-green-300 mb-2">WA Product Used</p>
+              <p className="text-gray-900 dark:text-foreground text-lg font-semibold">{caseStudy.waProduct}</p>
             </div>
             <div>
-              <p className="font-medium text-sm text-green-700 mb-2">Solution Description</p>
-              <p className="text-gray-700 whitespace-pre-wrap">{caseStudy.waSolution}</p>
+              <p className="font-medium text-sm text-green-700 dark:text-green-300 mb-2">Solution Description</p>
+              <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{caseStudy.waSolution}</p>
             </div>
             {caseStudy.technicalAdvantages && (
               <div>
-                <p className="font-medium text-sm text-green-700 mb-2">Technical Advantages</p>
-                <p className="text-gray-700 whitespace-pre-wrap">
+                <p className="font-medium text-sm text-green-700 dark:text-green-300 mb-2">Technical Advantages</p>
+                <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">
                   {caseStudy.technicalAdvantages}
                 </p>
               </div>
@@ -229,9 +229,9 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
         </Card>
 
         {/* Results & Benefits */}
-        <Card role="article">
+        <Card role="article" className="dark:bg-card dark:border-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 dark:text-foreground">
               <TrendingUp className="h-5 w-5 text-wa-green-600" />
               Results & Benefits
             </CardTitle>
@@ -240,15 +240,15 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
             <div className="grid md:grid-cols-2 gap-6">
               {caseStudy.expectedServiceLife && (
                 <div>
-                  <p className="font-medium text-sm text-gray-600 mb-1">Expected Service Life</p>
-                  <p className="text-2xl font-bold text-wa-green-600">
+                  <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground mb-1">Expected Service Life</p>
+                  <p className="text-2xl font-bold text-wa-green-600 dark:text-primary">
                     {caseStudy.expectedServiceLife}
                   </p>
                 </div>
               )}
               {caseStudy.solutionValueRevenue && (
                 <div>
-                  <p className="font-medium text-sm text-gray-600 mb-1">Solution Value Revenue</p>
+                  <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground mb-1">Solution Value Revenue</p>
                   <p className="text-2xl font-bold text-green-600">
                     ${parseFloat(caseStudy.solutionValueRevenue.toString()).toLocaleString()}
                   </p>
@@ -256,7 +256,7 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
               )}
               {caseStudy.annualPotentialRevenue && (
                 <div>
-                  <p className="font-medium text-sm text-gray-600 mb-1">
+                  <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground mb-1">
                     Annual Potential Revenue
                   </p>
                   <p className="text-2xl font-bold text-purple-600">
@@ -266,7 +266,7 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
               )}
               {caseStudy.customerSavingsAmount && (
                 <div>
-                  <p className="font-medium text-sm text-gray-600 mb-1">Customer Savings</p>
+                  <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground mb-1">Customer Savings</p>
                   <p className="text-2xl font-bold text-orange-600">
                     ${parseFloat(caseStudy.customerSavingsAmount.toString()).toLocaleString()}
                   </p>
@@ -278,17 +278,17 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
 
         {/* Cost Calculator (STAR cases) */}
         {caseStudy.costCalculator && (
-          <Card role="article">
+          <Card role="article" className="dark:bg-card dark:border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-green-600" />
+              <CardTitle className="flex items-center gap-2 dark:text-foreground">
+                <DollarSign className="h-5 w-5 text-green-600 dark:text-primary" />
                 Cost Analysis
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-3 gap-6">
                 <div>
-                  <p className="font-medium text-sm text-gray-600 mb-3">Before</p>
+                  <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground mb-3">Before</p>
                   <div className="space-y-2 text-sm">
                     <p>
                       Material: ${parseFloat(caseStudy.costCalculator.materialCostBefore.toString()).toLocaleString()}
@@ -305,7 +305,7 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
                   </div>
                 </div>
                 <div>
-                  <p className="font-medium text-sm text-gray-600 mb-3">After</p>
+                  <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground mb-3">After</p>
                   <div className="space-y-2 text-sm">
                     <p>
                       Material: ${parseFloat(caseStudy.costCalculator.materialCostAfter.toString()).toLocaleString()}
@@ -339,46 +339,46 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
 
         {/* Welding Procedure (TECH/STAR cases) */}
         {caseStudy.wps && (
-          <Card role="article">
+          <Card role="article" className="dark:bg-card dark:border-border">
             <CardHeader>
-              <CardTitle>Welding Procedure Specification</CardTitle>
+              <CardTitle className="dark:text-foreground">Welding Procedure Specification</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-2 gap-6 text-sm">
                 {caseStudy.wps.baseMetalType && (
                   <div>
-                    <p className="font-medium text-gray-600">Base Metal Type</p>
-                    <p className="text-gray-900">{caseStudy.wps.baseMetalType}</p>
+                    <p className="font-medium text-gray-600 dark:text-muted-foreground">Base Metal Type</p>
+                    <p className="text-gray-900 dark:text-foreground">{caseStudy.wps.baseMetalType}</p>
                   </div>
                 )}
                 {caseStudy.wps.weldingProcess && (
                   <div>
-                    <p className="font-medium text-gray-600">Welding Process</p>
-                    <p className="text-gray-900">{caseStudy.wps.weldingProcess}</p>
+                    <p className="font-medium text-gray-600 dark:text-muted-foreground">Welding Process</p>
+                    <p className="text-gray-900 dark:text-foreground">{caseStudy.wps.weldingProcess}</p>
                   </div>
                 )}
                 {caseStudy.wps.shieldingGas && (
                   <div>
-                    <p className="font-medium text-gray-600">Shielding Gas</p>
-                    <p className="text-gray-900">{caseStudy.wps.shieldingGas}</p>
+                    <p className="font-medium text-gray-600 dark:text-muted-foreground">Shielding Gas</p>
+                    <p className="text-gray-900 dark:text-foreground">{caseStudy.wps.shieldingGas}</p>
                   </div>
                 )}
                 {caseStudy.wps.currentType && (
                   <div>
-                    <p className="font-medium text-gray-600">Current Type</p>
-                    <p className="text-gray-900">{caseStudy.wps.currentType}</p>
+                    <p className="font-medium text-gray-600 dark:text-muted-foreground">Current Type</p>
+                    <p className="text-gray-900 dark:text-foreground">{caseStudy.wps.currentType}</p>
                   </div>
                 )}
                 {caseStudy.wps.voltage && (
                   <div>
-                    <p className="font-medium text-gray-600">Voltage</p>
-                    <p className="text-gray-900">{caseStudy.wps.voltage}</p>
+                    <p className="font-medium text-gray-600 dark:text-muted-foreground">Voltage</p>
+                    <p className="text-gray-900 dark:text-foreground">{caseStudy.wps.voltage}</p>
                   </div>
                 )}
                 {caseStudy.wps.intensity && (
                   <div>
-                    <p className="font-medium text-gray-600">Current/Intensity</p>
-                    <p className="text-gray-900">{caseStudy.wps.intensity}</p>
+                    <p className="font-medium text-gray-600 dark:text-muted-foreground">Current/Intensity</p>
+                    <p className="text-gray-900 dark:text-foreground">{caseStudy.wps.intensity}</p>
                   </div>
                 )}
               </div>
