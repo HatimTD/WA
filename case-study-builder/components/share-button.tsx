@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Share2, Copy, Check } from 'lucide-react';
 import { toast } from 'sonner';
@@ -24,9 +24,12 @@ export function ShareButton({
 }: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
+  const [canShare, setCanShare] = useState(false);
 
-  // Check if Web Share API is available
-  const canShare = typeof navigator !== 'undefined' && 'share' in navigator;
+  // Check if Web Share API is available (client-side only to avoid hydration mismatch)
+  useEffect(() => {
+    setCanShare(typeof navigator !== 'undefined' && 'share' in navigator);
+  }, []);
 
   const handleShare = async () => {
     setIsSharing(true);
