@@ -63,7 +63,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+            value: 'camera=(self), microphone=(self), geolocation=(), interest-cohort=()',
           },
           {
             key: 'Content-Security-Policy',
@@ -73,7 +73,7 @@ const nextConfig: NextConfig = {
               style-src 'self' 'unsafe-inline';
               img-src 'self' data: https: blob:;
               font-src 'self' data:;
-              connect-src 'self' https://api.openai.com https://res.cloudinary.com https://*.ngrok-free.dev wss://*.ngrok-free.dev;
+              connect-src 'self' https://api.openai.com https://res.cloudinary.com https://*.ngrok-free.dev wss://*.ngrok-free.dev https://*.google.com https://*.googleapis.com;
               media-src 'self';
               object-src 'none';
               frame-src 'none';
