@@ -3,18 +3,11 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
 /**
- * Dev-only endpoint to switch user roles for testing
- * IMPORTANT: This should only be available in development mode
+ * Dev endpoint to switch user roles for testing
+ * Now available in production for testing purposes
  */
 export async function PUT(request: NextRequest) {
-  // Only allow in development
-  if (process.env.NODE_ENV !== 'development') {
-    return NextResponse.json(
-      { success: false, error: 'This endpoint is only available in development mode' },
-      { status: 403 }
-    );
-  }
-
+  // Available in production for testing
   try {
     const session = await auth();
 
