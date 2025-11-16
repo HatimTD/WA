@@ -24,6 +24,14 @@ export default function VoiceInput({ onTranscript, currentValue = '', language =
   const recognitionRef = useRef<any>(null);
   const interimTranscriptRef = useRef('');
   const restartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const onTranscriptRef = useRef(onTranscript);
+  const currentValueRef = useRef(currentValue);
+
+  // Keep refs in sync with props
+  useEffect(() => {
+    onTranscriptRef.current = onTranscript;
+    currentValueRef.current = currentValue;
+  }, [onTranscript, currentValue]);
 
   useEffect(() => {
     // Check if browser supports Web Speech API
@@ -58,7 +66,7 @@ export default function VoiceInput({ onTranscript, currentValue = '', language =
       recognition.onstart = () => {
         console.log('[VoiceInput] Speech recognition started');
         setIsListening(true);
-        interimTranscriptRef.current = currentValue;
+        // Don't set interimTranscriptRef here - it will be set in toggleListening
       };
 
       recognition.onresult = (event: any) => {
@@ -82,7 +90,7 @@ export default function VoiceInput({ onTranscript, currentValue = '', language =
             : finalTranscript.trim();
 
           interimTranscriptRef.current = newText;
-          onTranscript(newText);
+          onTranscriptRef.current(newText); // Use ref instead of prop
           console.log('[VoiceInput] Final transcript:', finalTranscript);
         }
       };
@@ -152,7 +160,7 @@ export default function VoiceInput({ onTranscript, currentValue = '', language =
         restartTimeoutRef.current = null;
       }
     };
-  }, [language, onTranscript, currentValue]);
+  }, [language]); // Only reinitialize when language changes, not on every currentValue update
 
   const toggleListening = () => {
     if (!recognitionRef.current) return;
@@ -175,7 +183,7 @@ export default function VoiceInput({ onTranscript, currentValue = '', language =
       toast.success('Voice input stopped');
     } else {
       try {
-        interimTranscriptRef.current = currentValue;
+        interimTranscriptRef.current = currentValueRef.current; // Use ref instead of prop
         recognitionRef.current.start();
         toast.success('Voice input started - speak now');
       } catch (error) {
