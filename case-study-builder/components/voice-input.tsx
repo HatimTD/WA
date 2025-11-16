@@ -162,7 +162,7 @@ export default function VoiceInput({ onTranscript, currentValue = '', language =
     };
   }, [language]); // Only reinitialize when language changes, not on every currentValue update
 
-  const toggleListening = () => {
+  const toggleListening = async () => {
     if (!recognitionRef.current) return;
 
     // Warn if not in secure context
@@ -183,6 +183,20 @@ export default function VoiceInput({ onTranscript, currentValue = '', language =
       toast.success('Voice input stopped');
     } else {
       try {
+        // Request microphone permission first
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            // Stop the stream immediately - we only needed it to trigger permission request
+            stream.getTracks().forEach(track => track.stop());
+            console.log('[VoiceInput] Microphone permission granted');
+          } catch (permError: any) {
+            console.error('[VoiceInput] Microphone permission denied:', permError);
+            toast.error('Please allow microphone access to use voice input', { duration: 5000 });
+            return;
+          }
+        }
+
         interimTranscriptRef.current = currentValueRef.current; // Use ref instead of prop
         recognitionRef.current.start();
         toast.success('Voice input started - speak now');
