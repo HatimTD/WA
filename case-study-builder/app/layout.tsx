@@ -87,7 +87,6 @@ export const metadata: Metadata = {
       { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
     ],
   },
-  manifest: '/manifest.json',
   other: {
     'mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-capable': 'yes',
@@ -109,7 +108,6 @@ export default function RootLayout({
         <meta name="format-detection" content="telephone=no" />
         <meta name="apple-touch-fullscreen" content="yes" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        <link rel="manifest" href="/manifest.json" />
       </head>
       <body className={inter.className}>
         <ThemeProvider
@@ -119,7 +117,8 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <OfflineIndicator />
-          <ServiceWorkerRegister />
+          {/* Temporarily disabled - service worker not building in production */}
+          {/* <ServiceWorkerRegister /> */}
           <StandaloneModeKeeper />
           <PWAInstallPrompt />
           <IOSPWAPrompt />
