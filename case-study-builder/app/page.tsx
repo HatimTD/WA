@@ -1,5 +1,4 @@
 import { IOSSafeLink } from '@/components/ios-safe-link';
-import Image from 'next/image';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -19,13 +18,11 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 sm:h-20">
             <div className="flex items-center gap-3">
-              <div className="relative w-10 h-10 sm:w-12 sm:h-12">
-                <Image
-                  src="/welding-alloys-logo.svg"
+              <div className="w-10 h-10 sm:w-12 sm:h-12">
+                <img
+                  src="/welding_alloys_logo.png"
                   alt="Welding Alloys Logo"
-                  fill
-                  className="object-contain"
-                  priority
+                  className="w-full h-full object-contain"
                 />
               </div>
               <div className="hidden sm:block">
@@ -50,13 +47,11 @@ export default function Home() {
           <div className="text-center space-y-6 sm:space-y-8">
             {/* Logo */}
             <div className="flex justify-center">
-              <div className="relative w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 animate-[fadeIn_1s_ease-in]">
-                <Image
-                  src="/welding-alloys-logo.svg"
+              <div className="w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 animate-[fadeIn_1s_ease-in]">
+                <img
+                  src="/welding_alloys_logo.png"
                   alt="Welding Alloys Logo"
-                  fill
-                  className="object-contain drop-shadow-2xl"
-                  priority
+                  className="w-full h-full object-contain drop-shadow-2xl"
                 />
               </div>
             </div>
