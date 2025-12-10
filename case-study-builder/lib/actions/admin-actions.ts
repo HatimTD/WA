@@ -1,10 +1,19 @@
 'use server';
 
+import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 import { revalidatePath } from 'next/cache';
 
 export async function changeUserRole(email: string, newRole: 'CONTRIBUTOR' | 'APPROVER' | 'VIEWER') {
+  const session = await auth();
+
   try {
+    const targetUser = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true, role: true }
+    });
+
     const user = await prisma.user.update({
       where: { email },
       data: { role: newRole },
@@ -19,8 +28,23 @@ export async function changeUserRole(email: string, newRole: 'CONTRIBUTOR' | 'AP
 
     revalidatePath('/dashboard');
 
+    if (session?.user?.id) {
+      logger.audit('USER_ROLE_CHANGED', session.user.id, user.id, {
+        email: user.email,
+        oldRole: targetUser?.role,
+        newRole: newRole
+      });
+    }
+
     return { success: true, user };
-  } catch (error) {
+  } catch (error: any) {
+    if (session?.user?.id) {
+      logger.error('User role change failed', {
+        adminId: session.user.id,
+        targetEmail: email,
+        error: error.message
+      });
+    }
     console.error('Error changing user role:', error);
     return { success: false, error: 'Failed to change user role' };
   }

@@ -2,6 +2,7 @@
 
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
@@ -85,8 +86,17 @@ export async function createCaseStudy(data: CreateCaseStudyInput) {
     revalidatePath('/dashboard');
     revalidatePath('/dashboard/my-cases');
 
+    logger.audit('CASE_CREATED', session.user.id, caseStudy.id, {
+      type: data.type,
+      status: data.status || 'DRAFT'
+    });
+
     return { success: true, id: caseStudy.id };
   } catch (error: any) {
+    logger.error('Case creation failed', {
+      userId: session.user.id,
+      error: error.message
+    });
     console.error('Error creating case study:', error);
 
     // Check for unique constraint violation
@@ -179,8 +189,18 @@ export async function updateCaseStudy(id: string, data: any) {
     revalidatePath('/dashboard/my-cases');
     revalidatePath(`/dashboard/cases/${id}`);
 
+    logger.audit('CASE_UPDATED', session.user.id, id, {
+      type: updated.type,
+      status: updated.status
+    });
+
     return { success: true, id: updated.id };
-  } catch (error) {
+  } catch (error: any) {
+    logger.error('Case update failed', {
+      userId: session.user.id,
+      caseId: id,
+      error: error.message
+    });
     console.error('Error updating case study:', error);
     throw new Error('Failed to update case study');
   }
@@ -213,8 +233,18 @@ export async function deleteCaseStudy(id: string) {
     revalidatePath('/dashboard');
     revalidatePath('/dashboard/my-cases');
 
+    logger.audit('CASE_DELETED', session.user.id, id, {
+      customerName: caseStudy.customerName,
+      type: caseStudy.type
+    });
+
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
+    logger.error('Case deletion failed', {
+      userId: session.user.id,
+      caseId: id,
+      error: error.message
+    });
     console.error('Error deleting case study:', error);
     throw new Error('Failed to delete case study');
   }

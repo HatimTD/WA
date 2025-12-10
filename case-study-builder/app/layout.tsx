@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { Toaster } from 'sonner';
+import { Analytics } from '@vercel/analytics/react';
 import { OfflineIndicator } from '@/components/offline-indicator';
 import { ServiceWorkerRegister } from '@/components/service-worker-register';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -124,6 +125,7 @@ export default function RootLayout({
           <IOSPWAPrompt />
           {children}
           <Toaster richColors position="top-right" />
+          <Analytics />
         </ThemeProvider>
       </body>
     </html>

@@ -2,6 +2,7 @@
 
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 import { revalidatePath } from 'next/cache';
 import { checkAndAwardBadges } from './badge-actions';
 import { createNotification } from './notification-actions';
@@ -103,13 +104,24 @@ export async function approveCaseStudy(caseStudyId: string) {
     revalidatePath('/dashboard/my-cases');
     revalidatePath(`/dashboard/cases/${caseStudyId}`);
 
+    logger.audit('CASE_APPROVED', session.user.id, caseStudyId, {
+      type: caseStudy.type,
+      contributorId: caseStudy.contributorId,
+      pointsAwarded: points
+    });
+
     return {
       success: true,
       badgeAwarded: badgeResult.success && badgeResult.newBadges && badgeResult.newBadges.length > 0,
       newBadges: badgeResult.newBadges || [],
       badgeMessage: badgeResult.message,
     };
-  } catch (error) {
+  } catch (error: any) {
+    logger.error('Case approval failed', {
+      userId: session.user.id,
+      caseId: caseStudyId,
+      error: error.message
+    });
     console.error('Error approving case study:', error);
     return { success: false, error: 'Failed to approve case study' };
   }
@@ -180,8 +192,18 @@ export async function rejectCaseStudy(caseStudyId: string, reason: string) {
     revalidatePath('/dashboard/my-cases');
     revalidatePath(`/dashboard/cases/${caseStudyId}`);
 
+    logger.audit('CASE_REJECTED', session.user.id, caseStudyId, {
+      contributorId: caseStudy.contributorId,
+      reason: reason.trim()
+    });
+
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
+    logger.error('Case rejection failed', {
+      userId: session.user.id,
+      caseId: caseStudyId,
+      error: error.message
+    });
     console.error('Error rejecting case study:', error);
     return { success: false, error: 'Failed to reject case study' };
   }
