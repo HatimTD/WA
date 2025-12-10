@@ -32,6 +32,8 @@ import EnhancedCommentsSection from '@/components/enhanced-comments-section';
 import { getComments } from '@/lib/actions/comment-actions';
 import dynamic from 'next/dynamic';
 import type { CaseStudyPDFData } from '@/lib/pdf-export';
+import { CompletionIndicator } from '@/components/completion-indicator';
+import { calculateCompletionPercentage, getFieldBreakdown } from '@/lib/utils/case-quality';
 
 // Dynamic import for PDF export (saves ~200KB from jspdf)
 const PDFExportButton = dynamic(() => import('@/components/pdf-export-button'), {
@@ -103,6 +105,18 @@ export default async function CaseStudyDetailPage({ params }: Props) {
 
   const isOwner = caseStudy.contributorId === session.user.id;
   const canEdit = isOwner && caseStudy.status === 'DRAFT';
+
+  // Calculate completion percentage
+  const completionPercentage = calculateCompletionPercentage(
+    caseStudy,
+    existingWPS,
+    existingCostCalc
+  );
+  const breakdown = getFieldBreakdown(
+    caseStudy,
+    existingWPS,
+    existingCostCalc
+  );
 
   // Prepare data for PDF export
   const pdfData: CaseStudyPDFData = {
@@ -252,6 +266,102 @@ export default async function CaseStudyDetailPage({ params }: Props) {
           </div>
         </div>
       </div>
+
+      {/* Completion Quality Indicator */}
+      <Card role="article" className="dark:bg-card dark:border-border">
+        <CardHeader>
+          <CardTitle className="dark:text-foreground">Case Study Quality</CardTitle>
+          <CardDescription className="dark:text-muted-foreground">
+            Completion status based on filled fields
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <CompletionIndicator
+            percentage={completionPercentage}
+            variant="full"
+            showTooltip={true}
+            missingFields={breakdown.missingFields}
+          />
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t dark:border-border">
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-gray-500 dark:text-muted-foreground">Required Fields</p>
+              <p className="text-lg font-bold dark:text-foreground">
+                {breakdown.required.filled}/{breakdown.required.total}
+              </p>
+              <div className="h-1.5 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-wa-green-500 dark:bg-primary transition-all"
+                  style={{ width: `${(breakdown.required.filled / breakdown.required.total) * 100}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-gray-500 dark:text-muted-foreground">Optional Fields</p>
+              <p className="text-lg font-bold dark:text-foreground">
+                {breakdown.optional.filled}/{breakdown.optional.total}
+              </p>
+              <div className="h-1.5 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-blue-500 dark:bg-blue-600 transition-all"
+                  style={{ width: `${(breakdown.optional.filled / breakdown.optional.total) * 100}%` }}
+                />
+              </div>
+            </div>
+
+            {(caseStudy.type === 'TECH' || caseStudy.type === 'STAR') && (
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-gray-500 dark:text-muted-foreground">WPS Fields</p>
+                <p className="text-lg font-bold dark:text-foreground">
+                  {breakdown.wps.filled}/{breakdown.wps.total}
+                </p>
+                <div className="h-1.5 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-purple-500 dark:bg-purple-600 transition-all"
+                    style={{ width: `${breakdown.wps.total > 0 ? (breakdown.wps.filled / breakdown.wps.total) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {caseStudy.type === 'STAR' && (
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-gray-500 dark:text-muted-foreground">Cost Calculator</p>
+                <p className="text-lg font-bold dark:text-foreground">
+                  {breakdown.cost.filled}/{breakdown.cost.total}
+                </p>
+                <div className="h-1.5 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-yellow-500 dark:bg-yellow-600 transition-all"
+                    style={{ width: `${breakdown.cost.total > 0 ? (breakdown.cost.filled / breakdown.cost.total) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {breakdown.missingFields.length > 0 && (
+            <div className="pt-4 border-t dark:border-border">
+              <p className="text-sm font-medium text-gray-700 dark:text-foreground mb-2">
+                Missing Fields ({breakdown.missingFields.length}):
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {breakdown.missingFields.slice(0, 10).map((field, idx) => (
+                  <Badge key={idx} variant="outline" className="text-xs dark:border-border">
+                    {field}
+                  </Badge>
+                ))}
+                {breakdown.missingFields.length > 10 && (
+                  <Badge variant="outline" className="text-xs dark:border-border">
+                    +{breakdown.missingFields.length - 10} more
+                  </Badge>
+                )}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Basic Information */}
       <Card role="article" className="dark:bg-card dark:border-border">
