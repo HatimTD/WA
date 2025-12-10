@@ -2,17 +2,31 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Linkedin, Mail, Copy, Check } from 'lucide-react';
+import { Linkedin, Mail, Copy, Check, MessageCircle, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
+/**
+ * Props for ShareButtons component
+ */
 interface ShareButtonsProps {
+  /** Case study ID for tracking */
   caseStudyId: string;
+  /** Title of the case study */
   title: string;
+  /** Description of the case study */
   description: string;
+  /** Optional custom URL (defaults to current page) */
   url?: string;
+  /** Optional CSS class */
   className?: string;
 }
 
+/**
+ * ShareButtons Component
+ * @description Social sharing buttons for case studies (LinkedIn, WhatsApp, Teams, Email, Copy Link)
+ * @param props - Component props
+ * @returns Share buttons JSX
+ */
 export function ShareButtons({
   caseStudyId,
   title,
@@ -23,23 +37,52 @@ export function ShareButtons({
   const [copied, setCopied] = useState(false);
   const shareUrl = url || (typeof window !== 'undefined' ? window.location.href : '');
 
-  // LinkedIn Share
-  const handleLinkedInShare = () => {
-    const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`;
-    window.open(linkedInUrl, '_blank', 'width=600,height=400');
-
-    // Track share if analytics available
+  /**
+   * Track share event if analytics available
+   */
+  const trackShare = (method: string) => {
     if (typeof window !== 'undefined' && (window as any).trackEvent) {
       (window as any).trackEvent('share', {
-        method: 'linkedin',
+        method,
         case_study_id: caseStudyId,
       });
     }
+  };
 
+  /**
+   * Handle LinkedIn share
+   */
+  const handleLinkedInShare = () => {
+    const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`;
+    window.open(linkedInUrl, '_blank', 'width=600,height=400');
+    trackShare('linkedin');
     toast.success('Opening LinkedIn share dialog...');
   };
 
-  // Email Share
+  /**
+   * Handle WhatsApp share
+   */
+  const handleWhatsAppShare = () => {
+    const text = encodeURIComponent(`${title}\n\n${description}\n\n${shareUrl}`);
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${text}`;
+    window.open(whatsappUrl, '_blank', 'width=600,height=400');
+    trackShare('whatsapp');
+    toast.success('Opening WhatsApp...');
+  };
+
+  /**
+   * Handle Microsoft Teams share
+   */
+  const handleTeamsShare = () => {
+    const teamsUrl = `https://teams.microsoft.com/share?href=${encodeURIComponent(shareUrl)}&msgText=${encodeURIComponent(title)}`;
+    window.open(teamsUrl, '_blank', 'width=600,height=400');
+    trackShare('teams');
+    toast.success('Opening Microsoft Teams...');
+  };
+
+  /**
+   * Handle Email share
+   */
   const handleEmailShare = () => {
     const subject = encodeURIComponent(title);
     const body = encodeURIComponent(
@@ -47,38 +90,20 @@ export function ShareButtons({
     );
     const mailtoUrl = `mailto:?subject=${subject}&body=${body}`;
     window.location.href = mailtoUrl;
-
-    // Track share if analytics available
-    if (typeof window !== 'undefined' && (window as any).trackEvent) {
-      (window as any).trackEvent('share', {
-        method: 'email',
-        case_study_id: caseStudyId,
-      });
-    }
-
+    trackShare('email');
     toast.success('Opening email client...');
   };
 
-  // Copy Link
+  /**
+   * Handle Copy Link
+   */
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
-
-      // Track share if analytics available
-      if (typeof window !== 'undefined' && (window as any).trackEvent) {
-        (window as any).trackEvent('share', {
-          method: 'copy_link',
-          case_study_id: caseStudyId,
-        });
-      }
-
+      trackShare('copy_link');
       toast.success('Link copied to clipboard!');
-
-      // Reset copied state after 2 seconds
-      setTimeout(() => {
-        setCopied(false);
-      }, 2000);
+      setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error('[ShareButtons] Error copying to clipboard:', error);
       toast.error('Failed to copy link');
@@ -86,7 +111,7 @@ export function ShareButtons({
   };
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className={`flex items-center gap-2 flex-wrap ${className}`}>
       <Button
         variant="outline"
         size="sm"
@@ -96,6 +121,28 @@ export function ShareButtons({
       >
         <Linkedin className="h-4 w-4" />
         <span className="hidden sm:inline ml-2">LinkedIn</span>
+      </Button>
+
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleWhatsAppShare}
+        className="dark:border-border"
+        title="Share on WhatsApp"
+      >
+        <MessageCircle className="h-4 w-4" />
+        <span className="hidden sm:inline ml-2">WhatsApp</span>
+      </Button>
+
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleTeamsShare}
+        className="dark:border-border"
+        title="Share on Microsoft Teams"
+      >
+        <Users className="h-4 w-4" />
+        <span className="hidden sm:inline ml-2">Teams</span>
       </Button>
 
       <Button
