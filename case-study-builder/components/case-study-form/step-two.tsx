@@ -3,6 +3,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CaseStudyFormData } from '@/app/dashboard/new/page';
+import NetSuiteCustomerSearch from '@/components/netsuite-customer-search';
+import { NetSuiteCustomer } from '@/lib/integrations/netsuite';
 
 type Props = {
   formData: CaseStudyFormData;
@@ -41,23 +43,37 @@ export default function StepTwo({ formData, updateFormData }: Props) {
     updateFormData({ wearType: updated });
   };
 
+  const handleNetSuiteCustomerSelect = (customer: NetSuiteCustomer) => {
+    // Auto-fill fields from NetSuite data
+    const updates: Partial<CaseStudyFormData> = {
+      customerName: customer.companyName,
+    };
+
+    if (customer.city) {
+      updates.location = customer.city;
+    }
+    if (customer.country) {
+      updates.country = customer.country;
+    }
+    if (customer.industry) {
+      updates.industry = customer.industry;
+    }
+
+    updateFormData(updates);
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Customer Name */}
-        <div className="space-y-2">
-          <Label htmlFor="customerName" className="dark:text-foreground">
-            Customer Name <span className="text-red-500 dark:text-red-400">*</span>
-          </Label>
-          <Input
-            id="customerName"
-            value={formData.customerName}
-            onChange={(e) => updateFormData({ customerName: e.target.value })}
-            placeholder="e.g., ABC Mining Corp"
-            className="dark:bg-input dark:border-border dark:text-foreground"
-            required
-          />
-        </div>
+        {/* Customer Name - NetSuite Integration */}
+        <NetSuiteCustomerSearch
+          value={formData.customerName}
+          onChange={(value) => updateFormData({ customerName: value })}
+          onCustomerSelect={handleNetSuiteCustomerSelect}
+          label="Customer Name"
+          required
+          placeholder="Search NetSuite customers or enter manually..."
+        />
 
         {/* Industry */}
         <div className="space-y-2">

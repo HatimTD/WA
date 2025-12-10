@@ -144,6 +144,10 @@ model CaseStudy {
   comments                Comment[]
   savedBy                 SavedCase[]
 
+  // NetSuite Integration
+  netsuiteCustomerId      String?
+  netsuiteSyncedAt        DateTime?
+
   // Metadata
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
