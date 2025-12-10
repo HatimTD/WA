@@ -31,6 +31,7 @@ model User {
   notifications Notification[]
   accounts      Account[]
   sessions      Session[]
+  taggedInCases CaseStudy[]    @relation("TaggedInCases")
 
   // Soft delete support (WA Policy Section 5.1)
   isActive  Boolean   @default(true)
@@ -150,6 +151,7 @@ model CaseStudy {
   costCalculator CostCalculator?
   comments       Comment[]
   savedBy        SavedCase[]
+  taggedUsers    User[]            @relation("TaggedInCases")
 
   // Soft delete support (WA Policy Section 5.1)
   isActive  Boolean   @default(true)

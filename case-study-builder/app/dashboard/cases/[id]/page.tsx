@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ShareButton } from '@/components/share-button';
+import { ShareButtons } from '@/components/share-buttons';
+import { EmailPDFButton } from '@/components/email-pdf-button';
+import { TagColleagues } from '@/components/tag-colleagues';
 import {
   ArrowLeft,
   Edit,
@@ -210,9 +213,15 @@ export default async function CaseStudyDetailPage({ params }: Props) {
           </Button>
         </Link>
         <div className="flex gap-2">
-          <ShareButton
+          <ShareButtons
+            caseStudyId={caseStudy.id}
             title={`${caseStudy.customerName} - Case Study`}
-            text={`${caseStudy.industry} case study: ${caseStudy.problemDescription.substring(0, 100)}...`}
+            description={`${caseStudy.industry} case study: ${caseStudy.problemDescription.substring(0, 100)}...`}
+            variant="outline"
+            size="sm"
+          />
+          <EmailPDFButton
+            caseStudyId={caseStudy.id}
             variant="outline"
             size="sm"
           />
@@ -563,6 +572,19 @@ export default async function CaseStudyDetailPage({ params }: Props) {
         } : undefined}
         />
       )}
+
+      {/* Tag Colleagues */}
+      <Card role="article" className="dark:bg-card dark:border-border">
+        <CardHeader>
+          <CardTitle className="dark:text-foreground">Collaborate</CardTitle>
+          <CardDescription className="dark:text-muted-foreground">
+            Tag colleagues to notify them about this case study
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <TagColleagues caseStudyId={caseStudy.id} />
+        </CardContent>
+      </Card>
 
       {/* Metadata */}
       <Card role="article" className="dark:bg-card dark:border-border">
