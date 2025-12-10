@@ -137,6 +137,9 @@ model CaseStudy {
   images                  String[]
   supportingDocs          String[]
 
+  // Tags for AI-powered search
+  tags                    String[]  @default([])
+
   // Translation
   originalLanguage        String    @default("en")
   translationAvailable    Boolean   @default(false)

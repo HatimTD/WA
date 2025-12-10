@@ -49,6 +49,7 @@ export type CaseStudyFormData = {
   customerSavingsAmount: string;
   images: string[];
   supportingDocs: string[];
+  tags: string[];
 
   // Step WPS: Welding Procedure Specification (TECH & STAR only)
   wps?: {
@@ -122,6 +123,7 @@ export default function NewCaseStudyPage() {
     customerSavingsAmount: '',
     images: [],
     supportingDocs: [],
+    tags: [],
     wps: undefined,
   });
 

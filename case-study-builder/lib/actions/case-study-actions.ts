@@ -31,6 +31,7 @@ type CreateCaseStudyInput = {
   customerSavingsAmount: string;
   images: string[];
   supportingDocs: string[];
+  tags: string[];
 };
 
 export async function createCaseStudy(data: CreateCaseStudyInput) {
@@ -79,6 +80,7 @@ export async function createCaseStudy(data: CreateCaseStudyInput) {
         customerSavingsAmount: customerSavings,
         images: data.images || [],
         supportingDocs: data.supportingDocs || [],
+        tags: data.tags || [],
         submittedAt: data.status === 'SUBMITTED' ? new Date() : null,
       },
     });
