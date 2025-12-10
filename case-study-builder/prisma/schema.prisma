@@ -156,6 +156,10 @@ model CaseStudy {
   deletedAt               DateTime?
   deletedBy               String?
 
+  // NetSuite Integration
+  netsuiteCustomerId      String?
+  netsuiteSyncedAt        DateTime?
+
   // Metadata
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
