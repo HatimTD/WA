@@ -3,6 +3,9 @@
  * Calculates how complete a case study is based on required and optional fields
  */
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type NumberLike = number | { toNumber?: () => number } | null | undefined;
+
 interface CaseStudy {
   id: string;
   type: 'APPLICATION' | 'TECH' | 'STAR';
@@ -17,15 +20,15 @@ interface CaseStudy {
   waSolution: string;
   waProduct: string;
 
-  // Optional fields
+  // Optional fields (accept Prisma Decimal type)
   country?: string | null;
   previousSolution?: string | null;
   baseMetal?: string | null;
   generalDimensions?: string | null;
   technicalAdvantages?: string | null;
-  solutionValueRevenue?: number | null;
-  annualPotentialRevenue?: number | null;
-  customerSavingsAmount?: number | null;
+  solutionValueRevenue?: NumberLike;
+  annualPotentialRevenue?: NumberLike;
+  customerSavingsAmount?: NumberLike;
 }
 
 interface WeldingProcedure {
@@ -55,22 +58,22 @@ interface WeldingProcedure {
 
 interface CostCalculator {
   id: string;
-  materialCostBefore: number;
-  materialCostAfter: number;
-  laborCostBefore: number;
-  laborCostAfter: number;
-  downtimeCostBefore: number;
-  downtimeCostAfter: number;
-  maintenanceFrequencyBefore: number;
-  maintenanceFrequencyAfter: number;
+  materialCostBefore: NumberLike;
+  materialCostAfter: NumberLike;
+  laborCostBefore: NumberLike;
+  laborCostAfter: NumberLike;
+  downtimeCostBefore: NumberLike;
+  downtimeCostAfter: NumberLike;
+  maintenanceFrequencyBefore: NumberLike;
+  maintenanceFrequencyAfter: NumberLike;
 
   // Optional but important cost fields
-  costOfPart?: number | null;
-  oldSolutionLifetimeDays?: number | null;
-  waSolutionLifetimeDays?: number | null;
-  partsUsedPerYear?: number | null;
-  maintenanceRepairCostBefore?: number | null;
-  maintenanceRepairCostAfter?: number | null;
+  costOfPart?: NumberLike;
+  oldSolutionLifetimeDays?: NumberLike;
+  waSolutionLifetimeDays?: NumberLike;
+  partsUsedPerYear?: NumberLike;
+  maintenanceRepairCostBefore?: NumberLike;
+  maintenanceRepairCostAfter?: NumberLike;
 }
 
 interface FieldInfo {
