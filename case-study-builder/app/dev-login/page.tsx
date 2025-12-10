@@ -20,7 +20,7 @@ import { AlertCircle } from 'lucide-react';
 
 export default function DevLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('tidihatim@gmail.com');
+  const [email, setEmail] = useState('admin@weldingalloys.com');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('CONTRIBUTOR');
   const [isLoading, setIsLoading] = useState(false);
@@ -32,16 +32,23 @@ export default function DevLoginPage() {
     try {
       const result = await devLogin(email, password, role);
 
-      if (result.success) {
+      if (result?.success) {
         toast.success(`Login successful as ${role}!`);
         router.push('/dashboard');
         router.refresh();
-      } else {
-        toast.error(result.error || 'Invalid credentials');
+      } else if (result?.error) {
+        toast.error(result.error);
+        setIsLoading(false);
       }
-    } catch (error) {
+      // If result is undefined, the redirect was handled by NextAuth
+    } catch (error: any) {
+      // NextAuth v5 may throw NEXT_REDIRECT which is expected behavior
+      if (error?.digest?.includes('NEXT_REDIRECT')) {
+        toast.success(`Login successful as ${role}!`);
+        // Redirect is handled automatically
+        return;
+      }
       toast.error('Login failed');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -73,7 +80,7 @@ export default function DevLoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="tidihatim@gmail.com"
+                placeholder="admin@weldingalloys.com"
                 required
               />
             </div>
@@ -139,7 +146,7 @@ export default function DevLoginPage() {
 
             <div className="text-xs text-center text-muted-foreground mt-4">
               <p>Default credentials:</p>
-              <p className="font-mono mt-1">tidihatim@gmail.com / Godofwar@3</p>
+              <p className="font-mono mt-1">admin@weldingalloys.com / TestPassword123</p>
             </div>
 
             <div className="text-center mt-4 pt-4 border-t">

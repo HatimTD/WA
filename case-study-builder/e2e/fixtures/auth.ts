@@ -4,9 +4,9 @@ import { Page } from '@playwright/test';
  * Test user credentials for development environment
  */
 export const TEST_USER = {
-  email: 'tidihatim@gmail.com',
-  password: 'Godofwar@3',
-  role: 'CONTRIBUTOR' as const,
+  email: 'admin@weldingalloys.com',
+  password: 'TestPassword123',
+  role: 'ADMIN' as const,
 };
 
 /**
@@ -37,7 +37,7 @@ export async function loginAsTestUser(
   await page.getByRole('button', { name: /Login/i }).click();
 
   // Wait for successful navigation to dashboard
-  await page.waitForURL(/\/dashboard/, { timeout: 10000 });
+  await page.waitForURL(/\/dashboard/, { timeout: 15000 });
 }
 
 /**

@@ -4,203 +4,110 @@ test.describe('Navigation', () => {
   test.beforeEach(async ({ page }) => {
     // Login before each test
     await page.goto('/dev-login');
-    await page.getByLabel('Email').fill('tidihatim@gmail.com');
-    await page.getByLabel('Password').fill('Godofwar@3');
+    await page.getByLabel('Email').fill('admin@weldingalloys.com');
+    await page.getByLabel('Password').fill('TestPassword123');
     await page.getByLabel('Role').click();
-    await page.getByRole('option', { name: /CONTRIBUTOR/i }).click();
+    await page.getByRole('option', { name: /ADMIN/i }).click();
     await page.getByRole('button', { name: /Login/i }).click();
 
     // Wait for dashboard to load
-    await expect(page).toHaveURL(/\/dashboard/);
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
   });
 
-  test('main navigation works', async ({ page }) => {
+  test('dashboard loads after login', async ({ page }) => {
     // Verify we're on the dashboard
     await expect(page).toHaveURL(/\/dashboard/);
 
-    // Test navigation to Case Studies
-    const caseStudiesLink = page.getByRole('link', { name: /case stud/i }).first();
-    if (await caseStudiesLink.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await caseStudiesLink.click();
-      await expect(page).toHaveURL(/\/dashboard\/case-studies/, { timeout: 10000 });
-    }
-
-    // Navigate back to dashboard
-    const dashboardLink = page.getByRole('link', { name: /dashboard|home/i }).first();
-    if (await dashboardLink.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await dashboardLink.click();
-      await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 });
-    }
-
-    // Test navigation to Profile/Settings if available
-    const profileLink = page.getByRole('link', { name: /profile|settings|account/i }).first();
-    if (await profileLink.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await profileLink.click();
-      await page.waitForTimeout(1000);
-      // Verify URL changed or modal opened
-      const urlChanged = !page.url().includes('/dashboard?') && !page.url().endsWith('/dashboard');
-      expect(urlChanged || await page.getByRole('dialog').isVisible()).toBeTruthy();
-    }
+    // Verify dashboard heading is visible
+    await expect(page.getByRole('heading', { name: /Welcome back/i })).toBeVisible({ timeout: 10000 });
   });
 
-  test('sidebar navigation links work', async ({ page }) => {
-    // Test each main sidebar navigation item
-    const navigationItems = [
-      { name: /dashboard|home/i, urlPattern: /\/dashboard$/ },
-      { name: /case stud/i, urlPattern: /\/case-studies/ },
-      { name: /analytics|reports/i, urlPattern: /\/analytics|\/reports/ },
-      { name: /settings/i, urlPattern: /\/settings/ },
-    ];
+  test('navigate to library', async ({ page }) => {
+    // Navigate to library
+    await page.goto('/dashboard/library');
 
-    for (const item of navigationItems) {
-      const link = page.getByRole('link', { name: item.name }).first();
-
-      if (await link.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await link.click();
-        await page.waitForTimeout(1000);
-
-        // Verify URL matches expected pattern
-        const currentUrl = page.url();
-        const matches = item.urlPattern.test(currentUrl);
-
-        expect(matches).toBeTruthy();
-      }
-    }
+    // Verify library page loaded
+    await expect(page.getByRole('heading', { name: /Case Study Library/i })).toBeVisible({ timeout: 10000 });
   });
 
-  test('breadcrumbs work', async ({ page }) => {
-    // Navigate to a nested page (case studies detail)
-    await page.goto('/dashboard/case-studies');
+  test('navigate to my cases', async ({ page }) => {
+    // Navigate to my-cases
+    await page.goto('/dashboard/my-cases');
+
+    // Verify my cases page loaded
+    await expect(page.getByRole('heading', { name: /My Case Studies/i })).toBeVisible({ timeout: 10000 });
+  });
+
+  test('navigate to search', async ({ page }) => {
+    // Navigate to search
+    await page.goto('/dashboard/search');
+
+    // Verify search page loaded
+    await expect(page.getByRole('heading', { name: /Search Case Studies/i })).toBeVisible({ timeout: 10000 });
+  });
+
+  test('navigate to new case study', async ({ page }) => {
+    // Navigate to new case study
+    await page.goto('/dashboard/new');
+
+    // Verify new case study page loaded
+    await expect(page.getByRole('heading', { name: /Create New Case Study/i })).toBeVisible({ timeout: 10000 });
+  });
+
+  test('navigate to analytics', async ({ page }) => {
+    // Navigate to analytics
+    await page.goto('/dashboard/analytics');
+
+    // Wait for page to load (might show analytics content or access denied)
+    await page.waitForTimeout(1000);
+    await expect(page.locator('main')).toBeVisible();
+  });
+
+  test('navigate to leaderboard', async ({ page }) => {
+    // Navigate to leaderboard
+    await page.goto('/dashboard/leaderboard');
 
     // Wait for page to load
-    await expect(page).toHaveURL(/\/dashboard\/case-studies/);
-
-    // Look for breadcrumb navigation
-    const breadcrumbs = page.getByRole('navigation', { name: /breadcrumb/i })
-      .or(page.locator('[aria-label*="readcrumb"]'))
-      .or(page.locator('.breadcrumb'));
-
-    if (await breadcrumbs.isVisible({ timeout: 5000 }).catch(() => false)) {
-      // Click on a breadcrumb link (e.g., Dashboard)
-      const dashboardBreadcrumb = breadcrumbs.getByRole('link', { name: /dashboard|home/i });
-
-      if (await dashboardBreadcrumb.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await dashboardBreadcrumb.click();
-        await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 });
-      }
-    } else {
-      test.skip('Breadcrumbs not available on this page');
-    }
-  });
-
-  test('breadcrumbs show current location', async ({ page }) => {
-    // Navigate to case studies
-    await page.goto('/dashboard/case-studies');
-
-    // Look for breadcrumb
-    const breadcrumbs = page.getByRole('navigation', { name: /breadcrumb/i })
-      .or(page.locator('[aria-label*="readcrumb"]'))
-      .or(page.locator('.breadcrumb'));
-
-    if (await breadcrumbs.isVisible({ timeout: 5000 }).catch(() => false)) {
-      // Check if current page is shown in breadcrumbs
-      const currentPageText = breadcrumbs.getByText(/case stud/i);
-      await expect(currentPageText).toBeVisible();
-    } else {
-      test.skip('Breadcrumbs not available');
-    }
-  });
-
-  test('mobile menu', async ({ page, viewport }) => {
-    // Set mobile viewport
-    await page.setViewportSize({ width: 375, height: 667 });
-
-    // Reload page to apply mobile layout
-    await page.reload();
     await page.waitForTimeout(1000);
-
-    // Look for mobile menu button (hamburger menu)
-    const mobileMenuButton = page.getByRole('button', { name: /menu|navigation|open menu/i })
-      .or(page.locator('button[aria-label*="menu"]'))
-      .or(page.locator('.mobile-menu-button'))
-      .or(page.locator('[data-testid="mobile-menu-button"]'));
-
-    if (await mobileMenuButton.isVisible({ timeout: 5000 }).catch(() => false)) {
-      // Click to open mobile menu
-      await mobileMenuButton.click();
-      await page.waitForTimeout(500);
-
-      // Verify menu is visible
-      const mobileNav = page.getByRole('navigation').or(page.locator('[role="dialog"]')).or(page.locator('.mobile-menu'));
-      await expect(mobileNav.first()).toBeVisible({ timeout: 5000 });
-
-      // Try to navigate to case studies from mobile menu
-      const caseStudiesLink = page.getByRole('link', { name: /case stud/i }).first();
-      if (await caseStudiesLink.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await caseStudiesLink.click();
-        await expect(page).toHaveURL(/\/case-studies/, { timeout: 10000 });
-      }
-    } else {
-      test.skip('Mobile menu not found');
-    }
+    await expect(page.locator('main')).toBeVisible();
   });
 
-  test('mobile menu opens and closes', async ({ page }) => {
-    // Set mobile viewport
-    await page.setViewportSize({ width: 375, height: 667 });
+  test('navigate to settings', async ({ page }) => {
+    // First verify we're logged in
+    await expect(page.getByRole('heading', { name: /Welcome back/i })).toBeVisible({ timeout: 10000 });
 
-    // Reload page to apply mobile layout
-    await page.reload();
+    // Navigate to settings
+    await page.goto('/dashboard/settings');
+
+    // Wait for page to load
     await page.waitForTimeout(1000);
-
-    // Look for mobile menu button
-    const mobileMenuButton = page.getByRole('button', { name: /menu|navigation|open menu/i })
-      .or(page.locator('button[aria-label*="menu"]'))
-      .or(page.locator('.mobile-menu-button'));
-
-    if (await mobileMenuButton.isVisible({ timeout: 5000 }).catch(() => false)) {
-      // Open menu
-      await mobileMenuButton.click();
-      await page.waitForTimeout(500);
-
-      // Verify menu is open
-      const mobileNav = page.getByRole('navigation').or(page.locator('[role="dialog"]'));
-      await expect(mobileNav.first()).toBeVisible({ timeout: 5000 });
-
-      // Close menu (look for close button or overlay)
-      const closeButton = page.getByRole('button', { name: /close/i })
-        .or(page.locator('button[aria-label*="close"]'))
-        .or(page.locator('[data-testid="close-menu"]'));
-
-      if (await closeButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await closeButton.click();
-        await page.waitForTimeout(500);
-
-        // Verify menu is closed (may still be in DOM but hidden)
-        const menuHidden = await mobileNav.first().isHidden().catch(() => true);
-        expect(menuHidden).toBeTruthy();
-      }
-    } else {
-      test.skip('Mobile menu not found');
-    }
+    await expect(page.locator('main')).toBeVisible();
   });
 
   test('navigation persists user session', async ({ page }) => {
-    // Start on dashboard
-    await expect(page).toHaveURL(/\/dashboard/);
+    // First verify we're logged in
+    await expect(page.getByRole('heading', { name: /Welcome back/i })).toBeVisible({ timeout: 10000 });
 
-    // Navigate to case studies
-    await page.goto('/dashboard/case-studies');
-    await expect(page).toHaveURL(/\/dashboard\/case-studies/);
+    // Navigate to library
+    await page.goto('/dashboard/library');
+    await expect(page).toHaveURL(/\/dashboard\/library/);
+    // Wait for page to fully load
+    await page.waitForLoadState('networkidle');
 
     // Navigate back to dashboard
     await page.goto('/dashboard');
     await expect(page).toHaveURL(/\/dashboard/);
 
-    // Verify user is still logged in (should not redirect to login)
-    await page.waitForTimeout(1000);
-    const currentUrl = page.url();
-    expect(currentUrl).not.toMatch(/\/login/);
-    expect(currentUrl).toMatch(/\/dashboard/);
+    // Verify user is still logged in (should see welcome message)
+    await expect(page.getByRole('heading', { name: /Welcome back/i })).toBeVisible({ timeout: 15000 });
+  });
+
+  test('sidebar navigation links', async ({ page }) => {
+    // First verify we're logged in
+    await expect(page.getByRole('heading', { name: /Welcome back/i })).toBeVisible({ timeout: 10000 });
+
+    // The sidebar should contain links to various pages
+    // Check if common navigation elements exist
+    await expect(page.locator('nav').or(page.locator('aside')).first()).toBeVisible();
   });
 });

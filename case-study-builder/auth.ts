@@ -33,6 +33,7 @@ providers.push(
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
+          console.log('[Auth Debug] Missing credentials');
           return null;
         }
 
@@ -44,7 +45,8 @@ providers.push(
         const DEV_PASSWORD_HASH = process.env.DEV_ADMIN_PASSWORD_HASH;
 
         if (process.env.NODE_ENV === 'development' && DEV_EMAIL && DEV_PASSWORD_HASH) {
-          if (email === DEV_EMAIL && await bcrypt.compare(password, DEV_PASSWORD_HASH)) {
+          const passwordMatch = await bcrypt.compare(password, DEV_PASSWORD_HASH);
+          if (email === DEV_EMAIL && passwordMatch) {
             let user = await prisma.user.findUnique({
               where: { email: DEV_EMAIL },
             });

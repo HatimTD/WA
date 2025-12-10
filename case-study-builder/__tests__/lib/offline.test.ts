@@ -8,6 +8,20 @@ import { describe, it, expect, jest, beforeEach } from '@jest/globals'
 describe('Offline Functionality', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    // Set up navigator.serviceWorker mock
+    Object.defineProperty(global, 'navigator', {
+      value: {
+        serviceWorker: {
+          register: jest.fn(),
+          controller: {
+            postMessage: jest.fn(),
+          },
+        },
+        onLine: true,
+      },
+      writable: true,
+      configurable: true,
+    })
   })
 
   describe('Service Worker Registration', () => {
