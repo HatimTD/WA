@@ -19,6 +19,11 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
+    "test:e2e:smoke": "playwright test e2e/smoke.spec.ts",
+    "test:e2e:security": "playwright test e2e/security.spec.ts",
+    "test:e2e:share": "playwright test e2e/share-buttons.spec.ts",
+    "test:e2e:ratelimit": "playwright test e2e/rate-limiting.spec.ts",
+    "test:all": "npm run test && npm run test:e2e",
     "sbom:generate": "cyclonedx-npm --output-format JSON --output-file sbom/sbom.json",
     "sbom:generate:xml": "cyclonedx-npm --output-format XML --output-file sbom/sbom.xml",
     "security:sbom": "npm run sbom:generate && npm run sbom:generate:xml"
