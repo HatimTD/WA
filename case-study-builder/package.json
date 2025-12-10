@@ -18,7 +18,10 @@
     "test:ci": "jest --ci --coverage --maxWorkers=2",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e:headed": "playwright test --headed",
+    "sbom:generate": "cyclonedx-npm --output-format JSON --output-file sbom/sbom.json",
+    "sbom:generate:xml": "cyclonedx-npm --output-format XML --output-file sbom/sbom.xml",
+    "security:sbom": "npm run sbom:generate && npm run sbom:generate:xml"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.0.0",
@@ -70,6 +73,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@cyclonedx/cyclonedx-npm": "^4.1.2",
     "@playwright/test": "^1.57.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
@@ -87,6 +91,7 @@
     "postcss": "^8.4.47",
     "prisma": "^6.19.0",
     "tailwindcss": "^3.4.17",
+    "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.1",
     "typescript": "^5.6"
