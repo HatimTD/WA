@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, FileText, Clock, CheckCircle2, XCircle, Eye } from 'lucide-react';
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
+import { CompletionIndicator } from '@/components/completion-indicator';
+import { calculateCompletionPercentage, getFieldBreakdown } from '@/lib/utils/case-quality';
 
 
 export const metadata: Metadata = {
@@ -42,6 +44,8 @@ export default async function MyCasesPage({
           email: true,
         },
       },
+      wps: true,
+      costCalculator: true,
     },
     orderBy: {
       createdAt: 'desc',
@@ -101,6 +105,94 @@ export default async function MyCasesPage({
       default:
         return 'bg-gray-50 text-gray-600';
     }
+  };
+
+  // Render a case study card with completion indicator
+  const renderCaseCard = (caseStudy: typeof caseStudies[0]) => {
+    const completionPercentage = calculateCompletionPercentage(
+      caseStudy,
+      caseStudy.wps,
+      caseStudy.costCalculator
+    );
+    const breakdown = getFieldBreakdown(
+      caseStudy,
+      caseStudy.wps,
+      caseStudy.costCalculator
+    );
+
+    return (
+      <div
+        key={caseStudy.id}
+        className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:border-border dark:hover:border-primary dark:hover:bg-card transition-colors"
+      >
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-2">
+            <Badge className={getTypeColor(caseStudy.type)}>
+              {caseStudy.type}
+            </Badge>
+            <Badge variant="outline" className={`${getStatusColor(caseStudy.status)} dark:border-border`}>
+              <span className="flex items-center gap-1">
+                {getStatusIcon(caseStudy.status)}
+                {caseStudy.status}
+              </span>
+            </Badge>
+            <CompletionIndicator
+              percentage={completionPercentage}
+              variant="badge"
+              showTooltip={true}
+              missingFields={breakdown.missingFields}
+            />
+          </div>
+          <h3 className="font-semibold text-lg text-gray-900 dark:text-foreground">
+            {caseStudy.customerName} - {caseStudy.componentWorkpiece}
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-muted-foreground mt-1">
+            {caseStudy.location} • {caseStudy.waProduct}
+          </p>
+          <div className="flex items-center gap-4 mt-2">
+            <p className="text-xs text-gray-500 dark:text-muted-foreground">
+              Created {new Date(caseStudy.createdAt).toLocaleDateString()} •
+              Updated {new Date(caseStudy.updatedAt).toLocaleDateString()}
+            </p>
+            <CompletionIndicator
+              percentage={completionPercentage}
+              variant="compact"
+              showTooltip={false}
+              className="ml-auto"
+            />
+          </div>
+          {caseStudy.status === 'REJECTED' && caseStudy.rejectionReason && (
+            <div className="mt-3 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-md">
+              <div className="flex items-start gap-2">
+                <XCircle className="h-4 w-4 text-red-600 dark:text-red-500 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-red-900 dark:text-red-400">Rejection Feedback</p>
+                  <p className="text-sm text-red-800 dark:text-red-300 mt-1">{caseStudy.rejectionReason}</p>
+                  {caseStudy.rejectedAt && (
+                    <p className="text-xs text-red-600 dark:text-red-500 mt-2">
+                      Rejected {new Date(caseStudy.rejectedAt).toLocaleDateString()}
+                      {caseStudy.rejector && ` by ${caseStudy.rejector.name}`}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="flex gap-2 ml-4">
+          <Link href={`/dashboard/cases/${caseStudy.id}`}>
+            <Button variant="outline" size="sm" className="dark:border-border">
+              View
+            </Button>
+          </Link>
+          {caseStudy.status === 'DRAFT' && (
+            <Link href={`/dashboard/cases/${caseStudy.id}/edit`}>
+              <Button size="sm">Edit</Button>
+            </Link>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -228,65 +320,7 @@ export default async function MyCasesPage({
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {caseStudies.map((caseStudy) => (
-                    <div
-                      key={caseStudy.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:border-border dark:hover:border-primary dark:hover:bg-card transition-colors"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <Badge className={getTypeColor(caseStudy.type)}>
-                            {caseStudy.type}
-                          </Badge>
-                          <Badge variant="outline" className={`${getStatusColor(caseStudy.status)} dark:border-border`}>
-                            <span className="flex items-center gap-1">
-                              {getStatusIcon(caseStudy.status)}
-                              {caseStudy.status}
-                            </span>
-                          </Badge>
-                        </div>
-                        <h3 className="font-semibold text-lg text-gray-900 dark:text-foreground">
-                          {caseStudy.customerName} - {caseStudy.componentWorkpiece}
-                        </h3>
-                        <p className="text-sm text-gray-600 dark:text-muted-foreground mt-1">
-                          {caseStudy.location} • {caseStudy.waProduct}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-muted-foreground mt-2">
-                          Created {new Date(caseStudy.createdAt).toLocaleDateString()} •
-                          Updated {new Date(caseStudy.updatedAt).toLocaleDateString()}
-                        </p>
-                        {caseStudy.status === 'REJECTED' && caseStudy.rejectionReason && (
-                          <div className="mt-3 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-md">
-                            <div className="flex items-start gap-2">
-                              <XCircle className="h-4 w-4 text-red-600 dark:text-red-500 mt-0.5 flex-shrink-0" />
-                              <div className="flex-1">
-                                <p className="text-sm font-medium text-red-900 dark:text-red-400">Rejection Feedback</p>
-                                <p className="text-sm text-red-800 dark:text-red-300 mt-1">{caseStudy.rejectionReason}</p>
-                                {caseStudy.rejectedAt && (
-                                  <p className="text-xs text-red-600 dark:text-red-500 mt-2">
-                                    Rejected {new Date(caseStudy.rejectedAt).toLocaleDateString()}
-                                    {caseStudy.rejector && ` by ${caseStudy.rejector.name}`}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <Link href={`/dashboard/cases/${caseStudy.id}`}>
-                          <Button variant="outline" size="sm" className="dark:border-border">
-                            View
-                          </Button>
-                        </Link>
-                        {caseStudy.status === 'DRAFT' && (
-                          <Link href={`/dashboard/cases/${caseStudy.id}/edit`}>
-                            <Button size="sm">Edit</Button>
-                          </Link>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                  {caseStudies.map(renderCaseCard)}
                 </div>
               )}
             </CardContent>
@@ -316,46 +350,7 @@ export default async function MyCasesPage({
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {caseStudies.filter((c) => c.status === 'DRAFT').map((caseStudy) => (
-                    <div
-                      key={caseStudy.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:border-border dark:hover:border-primary dark:hover:bg-card transition-colors"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <Badge className={getTypeColor(caseStudy.type)}>
-                            {caseStudy.type}
-                          </Badge>
-                          <Badge variant="outline" className={`${getStatusColor(caseStudy.status)} dark:border-border`}>
-                            <span className="flex items-center gap-1">
-                              {getStatusIcon(caseStudy.status)}
-                              {caseStudy.status}
-                            </span>
-                          </Badge>
-                        </div>
-                        <h3 className="font-semibold text-lg text-gray-900 dark:text-foreground">
-                          {caseStudy.customerName} - {caseStudy.componentWorkpiece}
-                        </h3>
-                        <p className="text-sm text-gray-600 dark:text-muted-foreground mt-1">
-                          {caseStudy.location} • {caseStudy.waProduct}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-muted-foreground mt-2">
-                          Created {new Date(caseStudy.createdAt).toLocaleDateString()} •
-                          Updated {new Date(caseStudy.updatedAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Link href={`/dashboard/cases/${caseStudy.id}`}>
-                          <Button variant="outline" size="sm" className="dark:border-border">
-                            View
-                          </Button>
-                        </Link>
-                        <Link href={`/dashboard/cases/${caseStudy.id}/edit`}>
-                          <Button size="sm">Edit</Button>
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
+                  {caseStudies.filter((c) => c.status === 'DRAFT').map(renderCaseCard)}
                 </div>
               )}
             </CardContent>
@@ -385,43 +380,7 @@ export default async function MyCasesPage({
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {caseStudies.filter((c) => c.status === 'SUBMITTED').map((caseStudy) => (
-                    <div
-                      key={caseStudy.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:border-border dark:hover:border-primary dark:hover:bg-card transition-colors"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <Badge className={getTypeColor(caseStudy.type)}>
-                            {caseStudy.type}
-                          </Badge>
-                          <Badge variant="outline" className={`${getStatusColor(caseStudy.status)} dark:border-border`}>
-                            <span className="flex items-center gap-1">
-                              {getStatusIcon(caseStudy.status)}
-                              {caseStudy.status}
-                            </span>
-                          </Badge>
-                        </div>
-                        <h3 className="font-semibold text-lg text-gray-900 dark:text-foreground">
-                          {caseStudy.customerName} - {caseStudy.componentWorkpiece}
-                        </h3>
-                        <p className="text-sm text-gray-600 dark:text-muted-foreground mt-1">
-                          {caseStudy.location} • {caseStudy.waProduct}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-muted-foreground mt-2">
-                          Created {new Date(caseStudy.createdAt).toLocaleDateString()} •
-                          Updated {new Date(caseStudy.updatedAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Link href={`/dashboard/cases/${caseStudy.id}`}>
-                          <Button variant="outline" size="sm" className="dark:border-border">
-                            View
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
+                  {caseStudies.filter((c) => c.status === 'SUBMITTED').map(renderCaseCard)}
                 </div>
               )}
             </CardContent>
@@ -451,43 +410,7 @@ export default async function MyCasesPage({
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {caseStudies.filter((c) => c.status === 'APPROVED').map((caseStudy) => (
-                    <div
-                      key={caseStudy.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:border-border dark:hover:border-primary dark:hover:bg-card transition-colors"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <Badge className={getTypeColor(caseStudy.type)}>
-                            {caseStudy.type}
-                          </Badge>
-                          <Badge variant="outline" className={`${getStatusColor(caseStudy.status)} dark:border-border`}>
-                            <span className="flex items-center gap-1">
-                              {getStatusIcon(caseStudy.status)}
-                              {caseStudy.status}
-                            </span>
-                          </Badge>
-                        </div>
-                        <h3 className="font-semibold text-lg text-gray-900 dark:text-foreground">
-                          {caseStudy.customerName} - {caseStudy.componentWorkpiece}
-                        </h3>
-                        <p className="text-sm text-gray-600 dark:text-muted-foreground mt-1">
-                          {caseStudy.location} • {caseStudy.waProduct}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-muted-foreground mt-2">
-                          Created {new Date(caseStudy.createdAt).toLocaleDateString()} •
-                          Updated {new Date(caseStudy.updatedAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Link href={`/dashboard/cases/${caseStudy.id}`}>
-                          <Button variant="outline" size="sm" className="dark:border-border">
-                            View
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
+                  {caseStudies.filter((c) => c.status === 'APPROVED').map(renderCaseCard)}
                 </div>
               )}
             </CardContent>
@@ -517,60 +440,7 @@ export default async function MyCasesPage({
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {caseStudies.filter((c) => c.status === 'REJECTED').map((caseStudy) => (
-                    <div
-                      key={caseStudy.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:border-border dark:hover:border-primary dark:hover:bg-card transition-colors"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <Badge className={getTypeColor(caseStudy.type)}>
-                            {caseStudy.type}
-                          </Badge>
-                          <Badge variant="outline" className={`${getStatusColor(caseStudy.status)} dark:border-border`}>
-                            <span className="flex items-center gap-1">
-                              {getStatusIcon(caseStudy.status)}
-                              {caseStudy.status}
-                            </span>
-                          </Badge>
-                        </div>
-                        <h3 className="font-semibold text-lg text-gray-900 dark:text-foreground">
-                          {caseStudy.customerName} - {caseStudy.componentWorkpiece}
-                        </h3>
-                        <p className="text-sm text-gray-600 dark:text-muted-foreground mt-1">
-                          {caseStudy.location} • {caseStudy.waProduct}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-muted-foreground mt-2">
-                          Created {new Date(caseStudy.createdAt).toLocaleDateString()} •
-                          Updated {new Date(caseStudy.updatedAt).toLocaleDateString()}
-                        </p>
-                        {caseStudy.rejectionReason && (
-                          <div className="mt-3 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-md">
-                            <div className="flex items-start gap-2">
-                              <XCircle className="h-4 w-4 text-red-600 dark:text-red-500 mt-0.5 flex-shrink-0" />
-                              <div className="flex-1">
-                                <p className="text-sm font-medium text-red-900 dark:text-red-400">Rejection Feedback</p>
-                                <p className="text-sm text-red-800 dark:text-red-300 mt-1">{caseStudy.rejectionReason}</p>
-                                {caseStudy.rejectedAt && (
-                                  <p className="text-xs text-red-600 dark:text-red-500 mt-2">
-                                    Rejected {new Date(caseStudy.rejectedAt).toLocaleDateString()}
-                                    {caseStudy.rejector && ` by ${caseStudy.rejector.name}`}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <Link href={`/dashboard/cases/${caseStudy.id}`}>
-                          <Button variant="outline" size="sm" className="dark:border-border">
-                            View
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
+                  {caseStudies.filter((c) => c.status === 'REJECTED').map(renderCaseCard)}
                 </div>
               )}
             </CardContent>
@@ -600,43 +470,7 @@ export default async function MyCasesPage({
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {caseStudies.filter((c) => c.status === 'PUBLISHED').map((caseStudy) => (
-                    <div
-                      key={caseStudy.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:border-border dark:hover:border-primary dark:hover:bg-card transition-colors"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <Badge className={getTypeColor(caseStudy.type)}>
-                            {caseStudy.type}
-                          </Badge>
-                          <Badge variant="outline" className={`${getStatusColor(caseStudy.status)} dark:border-border`}>
-                            <span className="flex items-center gap-1">
-                              {getStatusIcon(caseStudy.status)}
-                              {caseStudy.status}
-                            </span>
-                          </Badge>
-                        </div>
-                        <h3 className="font-semibold text-lg text-gray-900 dark:text-foreground">
-                          {caseStudy.customerName} - {caseStudy.componentWorkpiece}
-                        </h3>
-                        <p className="text-sm text-gray-600 dark:text-muted-foreground mt-1">
-                          {caseStudy.location} • {caseStudy.waProduct}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-muted-foreground mt-2">
-                          Created {new Date(caseStudy.createdAt).toLocaleDateString()} •
-                          Updated {new Date(caseStudy.updatedAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Link href={`/dashboard/cases/${caseStudy.id}`}>
-                          <Button variant="outline" size="sm" className="dark:border-border">
-                            View
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
+                  {caseStudies.filter((c) => c.status === 'PUBLISHED').map(renderCaseCard)}
                 </div>
               )}
             </CardContent>
