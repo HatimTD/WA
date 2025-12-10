@@ -1,0 +1,11 @@
+2025-12-10T16:26:11.427Z INFO SharedStateManager initialized
+2025-12-10T16:26:11.429Z INFO Is remote: false
+2025-12-10T16:26:11.429Z INFO Starting Local. Installation path: c:\Users\Dell\AppData\Roaming\Claude
+2025-12-10T16:26:11.430Z INFO [MainProvider] Creating new MainProvider instance...
+2025-12-10T16:26:11.431Z INFO [TabsManager] Code view listener set up at initialization
+2025-12-10T16:26:11.432Z INFO Installation path exists: c:\Users\Dell\AppData\Roaming\Claude
+2025-12-10T16:26:11.433Z INFO Initializing database with URL: file:c:\Users\Dell\AppData\Roaming\Claude\pythagora-core\data\database\pythagora.db
+2025-12-10T16:26:11.437Z INFO Database file exists, skipping prisma generate/push for faster startup
+2025-12-10T16:26:11.438Z INFO Database initialized successfully
+2025-12-10T16:26:11.439Z INFO [Migration] Checking for database migration...
+2025-12-10T16:26:11.591Z INFO [Migration] No migration needed

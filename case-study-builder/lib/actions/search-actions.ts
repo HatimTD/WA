@@ -9,6 +9,7 @@ type SearchFilters = {
   industry?: string;
   location?: string;
   status?: string;
+  tags?: string[];
 };
 
 export async function searchCaseStudies(filters: SearchFilters) {
@@ -39,6 +40,13 @@ export async function searchCaseStudies(filters: SearchFilters) {
       where.location = {
         contains: filters.location,
         mode: 'insensitive',
+      };
+    }
+
+    // Tags filter (case-insensitive array contains)
+    if (filters.tags && filters.tags.length > 0) {
+      where.tags = {
+        hasSome: filters.tags,
       };
     }
 
@@ -79,6 +87,11 @@ export async function searchCaseStudies(filters: SearchFilters) {
           componentWorkpiece: {
             contains: filters.query,
             mode: 'insensitive',
+          },
+        },
+        {
+          tags: {
+            has: filters.query.toLowerCase(),
           },
         },
       ];
