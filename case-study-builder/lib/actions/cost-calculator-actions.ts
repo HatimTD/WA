@@ -12,6 +12,15 @@ type CostCalculationData = {
   downtimeCostAfter: number;
   maintenanceFrequencyBefore: number;
   maintenanceFrequencyAfter: number;
+  costOfPart?: number;
+  oldSolutionLifetimeDays?: number;
+  waSolutionLifetimeDays?: number;
+  partsUsedPerYear?: number;
+  maintenanceRepairCostBefore?: number;
+  maintenanceRepairCostAfter?: number;
+  disassemblyCostBefore?: number;
+  disassemblyCostAfter?: number;
+  extraBenefits?: string;
   totalCostBefore: number;
   totalCostAfter: number;
   annualSavings: number;
@@ -49,6 +58,15 @@ export async function saveCostCalculation(data: CostCalculationData) {
           downtimeCostAfter: data.downtimeCostAfter,
           maintenanceFrequencyBefore: data.maintenanceFrequencyBefore,
           maintenanceFrequencyAfter: data.maintenanceFrequencyAfter,
+          costOfPart: data.costOfPart,
+          oldSolutionLifetimeDays: data.oldSolutionLifetimeDays,
+          waSolutionLifetimeDays: data.waSolutionLifetimeDays,
+          partsUsedPerYear: data.partsUsedPerYear,
+          maintenanceRepairCostBefore: data.maintenanceRepairCostBefore,
+          maintenanceRepairCostAfter: data.maintenanceRepairCostAfter,
+          disassemblyCostBefore: data.disassemblyCostBefore,
+          disassemblyCostAfter: data.disassemblyCostAfter,
+          extraBenefits: data.extraBenefits,
           totalCostBefore: data.totalCostBefore,
           totalCostAfter: data.totalCostAfter,
           annualSavings: data.annualSavings,
@@ -69,6 +87,15 @@ export async function saveCostCalculation(data: CostCalculationData) {
           downtimeCostAfter: data.downtimeCostAfter,
           maintenanceFrequencyBefore: data.maintenanceFrequencyBefore,
           maintenanceFrequencyAfter: data.maintenanceFrequencyAfter,
+          costOfPart: data.costOfPart,
+          oldSolutionLifetimeDays: data.oldSolutionLifetimeDays,
+          waSolutionLifetimeDays: data.waSolutionLifetimeDays,
+          partsUsedPerYear: data.partsUsedPerYear,
+          maintenanceRepairCostBefore: data.maintenanceRepairCostBefore,
+          maintenanceRepairCostAfter: data.maintenanceRepairCostAfter,
+          disassemblyCostBefore: data.disassemblyCostBefore,
+          disassemblyCostAfter: data.disassemblyCostAfter,
+          extraBenefits: data.extraBenefits,
           totalCostBefore: data.totalCostBefore,
           totalCostAfter: data.totalCostAfter,
           annualSavings: data.annualSavings,
