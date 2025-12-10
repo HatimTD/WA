@@ -50,6 +50,7 @@ export type CaseStudyFormData = {
   customerSavingsAmount: string;
   images: string[];
   supportingDocs: string[];
+  tags: string[];
 
   // Step WPS: Welding Procedure Specification (TECH & STAR only)
   wps?: {
@@ -131,6 +132,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
     customerSavingsAmount: caseStudy.customerSavingsAmount ? caseStudy.customerSavingsAmount.toString() : '',
     images: caseStudy.images as string[],
     supportingDocs: caseStudy.supportingDocs as string[],
+    tags: (caseStudy as any).tags || [],
     wps: wpsData ? {
       baseMetalType: wpsData.baseMetalType || undefined,
       baseMetalGrade: wpsData.baseMetalGrade || undefined,
