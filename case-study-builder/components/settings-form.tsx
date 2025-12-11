@@ -35,6 +35,7 @@ export default function SettingsForm({ user }: Props) {
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isSwitchingRole, setIsSwitchingRole] = useState(false);
+  const [isRequestingDeletion, setIsRequestingDeletion] = useState(false);
 
   // Avatar upload state
   const [avatarUrl, setAvatarUrl] = useState(user.image || '');
@@ -250,6 +251,41 @@ export default function SettingsForm({ user }: Props) {
       toast.error('Failed to export data');
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  // GDPR Article 17 - Right to Erasure
+  const handleGdprDeletionRequest = async () => {
+    if (!confirm('Are you sure you want to request account deletion? This will initiate the GDPR data deletion process. You will receive a verification email to confirm your request.')) {
+      return;
+    }
+
+    setIsRequestingDeletion(true);
+    try {
+      const response = await fetch('/api/gdpr/deletion-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        toast.success(
+          'Deletion request submitted! Please check your email for verification instructions.',
+          { duration: 6000 }
+        );
+        // In development, show the verification token
+        if (process.env.NODE_ENV === 'development' && data.verificationToken) {
+          console.log('[GDPR] Verification token (dev only):', data.verificationToken);
+        }
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to submit deletion request');
+      }
+    } catch (error) {
+      console.error('[Settings] GDPR deletion request error:', error);
+      toast.error('Failed to submit deletion request. Please try again.');
+    } finally {
+      setIsRequestingDeletion(false);
     }
   };
 
@@ -728,13 +764,10 @@ export default function SettingsForm({ user }: Props) {
             </p>
             <Button
               variant="destructive"
-              onClick={() => {
-                if (confirm('Are you sure you want to request account deletion? This action cannot be undone.')) {
-                  toast.info('Account deletion request sent to administrators');
-                }
-              }}
+              onClick={handleGdprDeletionRequest}
+              disabled={isRequestingDeletion}
             >
-              Request Account Deletion
+              {isRequestingDeletion ? 'Submitting Request...' : 'Request Account Deletion'}
             </Button>
           </div>
         </CardContent>

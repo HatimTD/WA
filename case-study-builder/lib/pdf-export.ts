@@ -35,20 +35,54 @@ export interface CaseStudyPDFData {
   approvedAt?: Date;
 }
 
-export function generateCaseStudyPDF(caseStudy: CaseStudyPDFData): jsPDF {
+// BRD 5.4.3 - PDF export options with personalized watermark
+export interface PDFExportOptions {
+  /** Name of the user downloading the PDF (for watermark) */
+  exportedByName?: string;
+  /** Email of the user downloading the PDF (for watermark) */
+  exportedByEmail?: string;
+}
+
+// BRD 5.4.3 - Helper to add watermark with personalization and "Internal Use Only"
+function addWatermark(doc: jsPDF, options?: PDFExportOptions): void {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+
+  // Main diagonal watermark
+  doc.setTextColor(220, 220, 220);
+  doc.setFontSize(50);
+  doc.text('WELDING ALLOYS', pageWidth / 2, pageHeight / 2 - 10, {
+    align: 'center',
+    angle: 45,
+  });
+
+  // BRD 5.4.3 - Add "Internal Use Only" notice
+  doc.setFontSize(20);
+  doc.text('INTERNAL USE ONLY', pageWidth / 2, pageHeight / 2 + 15, {
+    align: 'center',
+    angle: 45,
+  });
+
+  // BRD 5.4.3 - Add personalized watermark with user name if provided
+  if (options?.exportedByName) {
+    doc.setFontSize(12);
+    doc.text(`Downloaded by: ${options.exportedByName}`, pageWidth / 2, pageHeight / 2 + 35, {
+      align: 'center',
+      angle: 45,
+    });
+  }
+
+  doc.setTextColor(0, 0, 0);
+}
+
+export function generateCaseStudyPDF(caseStudy: CaseStudyPDFData, options?: PDFExportOptions): jsPDF {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   let yPos = 20;
 
-  // Add watermark
-  doc.setTextColor(220, 220, 220);
-  doc.setFontSize(60);
-  doc.text('WELDING ALLOYS', pageWidth / 2, pageHeight / 2, {
-    align: 'center',
-    angle: 45,
-  });
-  doc.setTextColor(0, 0, 0);
+  // Add watermark with personalization per BRD 5.4.3
+  addWatermark(doc, options);
 
   // Header
   doc.setFillColor(37, 99, 235); // Blue color
@@ -112,13 +146,7 @@ export function generateCaseStudyPDF(caseStudy: CaseStudyPDFData): jsPDF {
     doc.addPage();
     yPos = 20;
     // Add watermark to new page
-    doc.setTextColor(220, 220, 220);
-    doc.setFontSize(60);
-    doc.text('WELDING ALLOYS', pageWidth / 2, pageHeight / 2, {
-      align: 'center',
-      angle: 45,
-    });
-    doc.setTextColor(0, 0, 0);
+    addWatermark(doc, options);
   }
 
   // Technical Details Table
@@ -155,13 +183,7 @@ export function generateCaseStudyPDF(caseStudy: CaseStudyPDFData): jsPDF {
     doc.addPage();
     yPos = 20;
     // Add watermark to new page
-    doc.setTextColor(220, 220, 220);
-    doc.setFontSize(60);
-    doc.text('WELDING ALLOYS', pageWidth / 2, pageHeight / 2, {
-      align: 'center',
-      angle: 45,
-    });
-    doc.setTextColor(0, 0, 0);
+    addWatermark(doc, options);
   }
 
   // WA Solution Section
@@ -195,13 +217,7 @@ export function generateCaseStudyPDF(caseStudy: CaseStudyPDFData): jsPDF {
       doc.addPage();
       yPos = 20;
       // Add watermark to new page
-      doc.setTextColor(220, 220, 220);
-      doc.setFontSize(60);
-      doc.text('WELDING ALLOYS', pageWidth / 2, pageHeight / 2, {
-        align: 'center',
-        angle: 45,
-      });
-      doc.setTextColor(0, 0, 0);
+      addWatermark(doc, options);
     }
 
     doc.setFontSize(14);
@@ -221,13 +237,7 @@ export function generateCaseStudyPDF(caseStudy: CaseStudyPDFData): jsPDF {
       doc.addPage();
       yPos = 20;
       // Add watermark to new page
-      doc.setTextColor(220, 220, 220);
-      doc.setFontSize(60);
-      doc.text('WELDING ALLOYS', pageWidth / 2, pageHeight / 2, {
-        align: 'center',
-        angle: 45,
-      });
-      doc.setTextColor(0, 0, 0);
+      addWatermark(doc, options);
     }
 
     const financialData = [];
@@ -253,18 +263,19 @@ export function generateCaseStudyPDF(caseStudy: CaseStudyPDFData): jsPDF {
     yPos = (doc as any).lastAutoTable.finalY + 10;
   }
 
-  // Footer on all pages
+  // Footer on all pages - BRD 5.4.3 compliant
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     doc.setFontSize(8);
     doc.setTextColor(150, 150, 150);
-    doc.text(
-      `© ${new Date().getFullYear()} Welding Alloys Group - Confidential`,
-      pageWidth / 2,
-      pageHeight - 10,
-      { align: 'center' }
-    );
+
+    // BRD 5.4.3 - Add "INTERNAL USE ONLY" and personalized footer
+    const footerText = options?.exportedByName
+      ? `© ${new Date().getFullYear()} Welding Alloys Group - INTERNAL USE ONLY - Downloaded by: ${options.exportedByName}`
+      : `© ${new Date().getFullYear()} Welding Alloys Group - INTERNAL USE ONLY`;
+
+    doc.text(footerText, pageWidth / 2, pageHeight - 10, { align: 'center' });
     doc.text(`Page ${i} of ${pageCount}`, pageWidth - 20, pageHeight - 10, { align: 'right' });
     doc.text(`Generated: ${new Date().toLocaleDateString()}`, 15, pageHeight - 10);
   }
@@ -272,8 +283,8 @@ export function generateCaseStudyPDF(caseStudy: CaseStudyPDFData): jsPDF {
   return doc;
 }
 
-export function downloadCaseStudyPDF(caseStudy: CaseStudyPDFData): void {
-  const doc = generateCaseStudyPDF(caseStudy);
+export function downloadCaseStudyPDF(caseStudy: CaseStudyPDFData, options?: PDFExportOptions): void {
+  const doc = generateCaseStudyPDF(caseStudy, options);
   const fileName = `${caseStudy.customerName.replace(/\s+/g, '_')}_${caseStudy.componentWorkpiece.replace(/\s+/g, '_')}_CaseStudy.pdf`;
   doc.save(fileName);
 }

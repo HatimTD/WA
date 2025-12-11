@@ -16,7 +16,32 @@ import {
   DollarSign,
   Calendar,
   FileText,
+  Globe,
+  Languages,
+  AlertCircle,
 } from 'lucide-react';
+
+// BRD 5.4.4 - Language display names for translation notice
+const languageNames: Record<string, string> = {
+  en: 'English',
+  es: 'Spanish',
+  fr: 'French',
+  de: 'German',
+  pt: 'Portuguese',
+  it: 'Italian',
+  zh: 'Chinese',
+  ja: 'Japanese',
+  ko: 'Korean',
+  ar: 'Arabic',
+  ru: 'Russian',
+  nl: 'Dutch',
+  pl: 'Polish',
+  tr: 'Turkish',
+};
+
+function getLanguageName(code: string): string {
+  return languageNames[code.toLowerCase()] || code.toUpperCase();
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -101,6 +126,29 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
           </div>
         </div>
       </div>
+
+      {/* BRD 5.4.4 - Translation Status Notice */}
+      {caseStudy.originalLanguage && caseStudy.originalLanguage !== 'en' && (
+        <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <Languages className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <div>
+              <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                Auto-translated from {getLanguageName(caseStudy.originalLanguage)}
+              </p>
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
+                This content has been automatically translated. Some technical terms may vary.
+              </p>
+            </div>
+            {caseStudy.translationAvailable && (
+              <Badge variant="outline" className="ml-auto text-blue-600 border-blue-300">
+                <Globe className="h-3 w-3 mr-1" />
+                Original Available
+              </Badge>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Key Information */}

@@ -3,14 +3,19 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Download, Loader2 } from 'lucide-react';
-import { downloadCaseStudyPDF, CaseStudyPDFData } from '@/lib/pdf-export';
+import { downloadCaseStudyPDF, CaseStudyPDFData, PDFExportOptions } from '@/lib/pdf-export';
 import { toast } from 'sonner';
 
+// BRD 5.4.3 - Props with user info for personalized watermark
 type Props = {
   caseStudy: CaseStudyPDFData;
+  /** Current user's name for personalized PDF watermark */
+  userName?: string;
+  /** Current user's email for personalized PDF watermark */
+  userEmail?: string;
 };
 
-export default function PDFExportButton({ caseStudy }: Props) {
+export default function PDFExportButton({ caseStudy, userName, userEmail }: Props) {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleExport = async () => {
@@ -18,10 +23,14 @@ export default function PDFExportButton({ caseStudy }: Props) {
       setIsGenerating(true);
       console.log('[PDFExport] Generating PDF for case study:', caseStudy.id);
 
-      // Generate and download PDF
-      downloadCaseStudyPDF(caseStudy);
+      // BRD 5.4.3 - Generate PDF with personalized watermark
+      const pdfOptions: PDFExportOptions = {
+        exportedByName: userName,
+        exportedByEmail: userEmail,
+      };
+      downloadCaseStudyPDF(caseStudy, pdfOptions);
 
-      console.log('[PDFExport] PDF generated successfully');
+      console.log('[PDFExport] PDF generated successfully with watermark for:', userName);
       toast.success('PDF exported successfully!');
     } catch (error) {
       console.error('[PDFExport] Error generating PDF:', error);
