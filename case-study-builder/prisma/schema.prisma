@@ -410,3 +410,141 @@ enum EmailTemplateType {
   WELCOME
   SYSTEM_ANNOUNCEMENT
 }
+
+// =====================================================
+// IMMUTABLE AUDIT LOG (WA Policy Section 5.2)
+// Write-once audit trail with hash verification
+// =====================================================
+model AuditLog {
+  id            String   @id @default(cuid())
+
+  // Action details
+  actionType    AuditActionType
+  userId        String
+  userEmail     String
+
+  // Resource information
+  resourceId    String?
+  resourceType  String?
+
+  // State tracking
+  previousState Json?
+  newState      Json?
+
+  // Request context
+  ipAddress     String?
+  userAgent     String?
+  sessionId     String?
+
+  // Integrity verification (immutability)
+  contentHash   String   // SHA-256 hash of the log content
+  previousHash  String?  // Hash of the previous log entry (blockchain-like)
+
+  // Timestamp (immutable)
+  createdAt     DateTime @default(now())
+
+  // Indexes for efficient querying
+  @@index([userId])
+  @@index([resourceId])
+  @@index([actionType])
+  @@index([createdAt])
+  @@index([contentHash])
+}
+
+enum AuditActionType {
+  // Authentication
+  LOGIN
+  LOGOUT
+  LOGIN_FAILED
+
+  // Break-Glass (WA Policy Section 3.1)
+  BREAK_GLASS_ACCESS
+  BREAK_GLASS_ACCESS_FAILED
+  BREAK_GLASS_ACTION
+  BREAK_GLASS_SESSION_TERMINATED
+
+  // Case Study Actions
+  CASE_CREATED
+  CASE_UPDATED
+  CASE_DELETED
+  CASE_SUBMITTED
+  CASE_APPROVED
+  CASE_REJECTED
+  CASE_PUBLISHED
+
+  // User Actions
+  USER_CREATED
+  USER_UPDATED
+  USER_DELETED
+  USER_ROLE_CHANGED
+
+  // GDPR Actions (WA Policy Section 7.5)
+  DATA_EXPORT
+  DATA_DELETION_REQUEST
+  DATA_ANONYMIZED
+  CONSENT_GIVEN
+  CONSENT_WITHDRAWN
+
+  // System Actions
+  SYSTEM_CONFIG_CHANGED
+  BULK_OPERATION
+  RETENTION_CLEANUP
+}
+
+// =====================================================
+// DATA RETENTION TRACKING (WA Policy Section 7.5.4)
+// Tracks data lifecycle for compliance
+// =====================================================
+model DataRetentionPolicy {
+  id                String   @id @default(cuid())
+  dataType          String   @unique // e.g., 'User', 'CaseStudy', 'AuditLog'
+  retentionDays     Int      // Number of days to retain data
+  archiveAfterDays  Int?     // Days before archiving (optional)
+  description       String?
+  legalBasis        String?  // GDPR legal basis for retention
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+// =====================================================
+// GDPR DATA DELETION REQUESTS (WA Policy Section 7.5.1)
+// Tracks right-to-be-forgotten requests
+// =====================================================
+model GdprDeletionRequest {
+  id              String                @id @default(cuid())
+  userId          String
+  userEmail       String
+  status          GdprDeletionStatus    @default(PENDING)
+
+  // Request details
+  requestedAt     DateTime              @default(now())
+  processedAt     DateTime?
+  processedBy     String?
+
+  // Verification
+  verificationToken String?             @unique
+  verifiedAt      DateTime?
+
+  // Completion tracking
+  deletedData     Json?                 // Summary of what was deleted
+  anonymizedData  Json?                 // Summary of what was anonymized
+
+  // Notes
+  notes           String?               @db.Text
+
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+enum GdprDeletionStatus {
+  PENDING           // Request received, awaiting verification
+  VERIFIED          // User identity verified
+  IN_PROGRESS       // Deletion/anonymization in progress
+  COMPLETED         // Successfully processed
+  REJECTED          // Request rejected (with reason)
+  CANCELLED         // Cancelled by user
+}
