@@ -39,8 +39,89 @@ jobs:
           SKIP_ENV_VALIDATION: true
           POSTGRES_URL: postgresql://test:test@localhost:5432/test
 
-  deploy:
+  # SBOM Generation (WA Policy Section 7.5 - Software Composition Analysis)
+  sbom:
+    runs-on: ubuntu-latest
     needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create SBOM directory
+        run: mkdir -p sbom
+
+      - name: Generate SBOM (JSON)
+        run: npx @cyclonedx/cyclonedx-npm --output-format JSON --output-file sbom/sbom.json
+
+      - name: Generate SBOM (XML)
+        run: npx @cyclonedx/cyclonedx-npm --output-format XML --output-file sbom/sbom.xml
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-reports
+          path: sbom/
+          retention-days: 90
+
+  # DAST Scanning with OWASP ZAP (WA Policy Section 4.1 - Security Testing)
+  dast:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+        env:
+          SKIP_ENV_VALIDATION: true
+          POSTGRES_URL: postgresql://test:test@localhost:5432/test
+
+      - name: Start application for DAST
+        run: |
+          npm run start &
+          sleep 10
+        env:
+          SKIP_ENV_VALIDATION: true
+          POSTGRES_URL: postgresql://test:test@localhost:5432/test
+          NODE_ENV: production
+
+      - name: OWASP ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.14.0
+        with:
+          target: 'http://localhost:3010'
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a -j'
+          allow_issue_writing: false
+        continue-on-error: true
+
+      - name: Upload ZAP Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zap-report
+          path: report_html.html
+          retention-days: 30
+
+  deploy:
+    needs: [test, sbom]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:

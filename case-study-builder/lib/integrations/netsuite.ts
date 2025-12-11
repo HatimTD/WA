@@ -68,7 +68,7 @@ class NetSuiteClient {
     // Build Authorization header
     const authHeader = 'OAuth ' + Object.keys(oauthParams)
       .sort()
-      .map((key) => `${encodeURIComponent(key)}="	(encodeURIComponent(oauthParams[key])}"`)
+      .map((key) => `${encodeURIComponent(key)}="${encodeURIComponent(oauthParams[key])}"`)
       .join(', ');
 
     return authHeader;
@@ -108,9 +108,39 @@ class NetSuiteClient {
     return response.json();
   }
 
+  /**
+   * Sanitize input for SuiteQL queries to prevent SQL injection
+   * Removes dangerous characters and escapes single quotes
+   */
+  private sanitizeSearchInput(input: string): string {
+    // Remove dangerous characters: semicolons, comments, union keywords
+    const sanitized = input
+      .replace(/;/g, '')           // Remove semicolons
+      .replace(/--/g, '')          // Remove SQL comments
+      .replace(/\/\*/g, '')        // Remove block comments start
+      .replace(/\*\//g, '')        // Remove block comments end
+      .replace(/\bunion\b/gi, '')  // Remove UNION keyword
+      .replace(/\bdrop\b/gi, '')   // Remove DROP keyword
+      .replace(/\bdelete\b/gi, '') // Remove DELETE keyword
+      .replace(/\binsert\b/gi, '') // Remove INSERT keyword
+      .replace(/\bupdate\b/gi, '') // Remove UPDATE keyword
+      .replace(/'/g, "''")         // Escape single quotes
+      .trim()
+      .substring(0, 100);          // Limit length to prevent DoS
+    return sanitized;
+  }
+
   async searchCustomers(query: string): Promise<NetSuiteCustomer[]> {
     try {
-      // Use SuiteQL for searching customers
+      // Sanitize and validate input
+      const sanitizedQuery = this.sanitizeSearchInput(query);
+
+      // Validate minimum length after sanitization
+      if (sanitizedQuery.length < 2) {
+        return this.getMockCustomers(query);
+      }
+
+      // Use SuiteQL for searching customers with sanitized input
       const suiteqlQuery = `
         SELECT
           id,
@@ -123,8 +153,8 @@ class NetSuiteClient {
         FROM
           customer
         WHERE
-          LOWER(companyname) LIKE LOWER('%${query.replace(/'/g, "''")}%')
-          OR LOWER(entityid) LIKE LOWER('%${query.replace(/'/g, "''")}%')
+          LOWER(companyname) LIKE LOWER('%${sanitizedQuery}%')
+          OR LOWER(entityid) LIKE LOWER('%${sanitizedQuery}%')
         ORDER BY
           companyname
         LIMIT 10

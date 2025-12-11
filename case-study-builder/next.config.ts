@@ -68,24 +68,8 @@ const nextConfig: NextConfig = {
             key: 'Permissions-Policy',
             value: 'camera=(self), microphone=(self), geolocation=(), interest-cohort=()',
           },
-          {
-            key: 'Content-Security-Policy',
-            value: `
-              default-src 'self';
-              script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net;
-              style-src 'self' 'unsafe-inline';
-              img-src 'self' data: https: blob:;
-              font-src 'self' data:;
-              connect-src 'self' https://api.openai.com https://res.cloudinary.com https://*.ngrok-free.dev wss://*.ngrok-free.dev https://*.google.com https://*.googleapis.com;
-              media-src 'self';
-              object-src 'none';
-              frame-src 'none';
-              base-uri 'self';
-              form-action 'self';
-              frame-ancestors 'none';
-              upgrade-insecure-requests;
-            `.replace(/\s{2,}/g, ' ').trim(),
-          },
+          // CSP is now handled by proxy.ts with dynamic nonces (WA Policy 4.1 compliant)
+          // This removes the need for unsafe-inline/unsafe-eval
         ],
       },
     ];
