@@ -12,7 +12,10 @@ import {
   CheckCircle,
   XCircle,
   Settings,
-  BarChart3
+  BarChart3,
+  Shield,
+  Database,
+  Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -411,6 +414,24 @@ export default async function AdminDashboardPage() {
                 <Button variant="outline" className="w-full gap-2 dark:border-border dark:text-foreground dark:hover:bg-background">
                   <Settings className="h-4 w-4" />
                   System Settings
+                </Button>
+              </Link>
+              <Link href="/dashboard/admin/audit-logs">
+                <Button variant="outline" className="w-full gap-2 dark:border-border dark:text-foreground dark:hover:bg-background">
+                  <Shield className="h-4 w-4" />
+                  Audit Logs
+                </Button>
+              </Link>
+              <Link href="/dashboard/admin/retention">
+                <Button variant="outline" className="w-full gap-2 dark:border-border dark:text-foreground dark:hover:bg-background">
+                  <Database className="h-4 w-4" />
+                  Data Retention
+                </Button>
+              </Link>
+              <Link href="/dashboard/admin/gdpr">
+                <Button variant="outline" className="w-full gap-2 dark:border-border dark:text-foreground dark:hover:bg-background">
+                  <Trash2 className="h-4 w-4" />
+                  GDPR Requests
                 </Button>
               </Link>
             </div>
