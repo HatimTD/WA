@@ -5,6 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { CaseStudyFormData } from '@/app/dashboard/new/page';
 import NetSuiteCustomerSearch from '@/components/netsuite-customer-search';
 import { NetSuiteCustomer } from '@/lib/integrations/netsuite';
+import LocationAutocomplete from '@/components/location-autocomplete';
 
 type Props = {
   formData: CaseStudyFormData;
@@ -94,29 +95,29 @@ export default function StepTwo({ formData, updateFormData }: Props) {
           </Select>
         </div>
 
-        {/* Location */}
-        <div className="space-y-2">
-          <Label htmlFor="location" className="dark:text-foreground">
-            Location (City/Plant) <span className="text-red-500 dark:text-red-400">*</span>
-          </Label>
-          <Input
-            id="location"
-            value={formData.location}
-            onChange={(e) => updateFormData({ location: e.target.value })}
-            placeholder="e.g., Perth Plant"
-            className="dark:bg-input dark:border-border dark:text-foreground"
-            required
-          />
-        </div>
+        {/* Location - Google Places Autocomplete */}
+        <LocationAutocomplete
+          value={formData.location}
+          onChange={(value) => updateFormData({ location: value })}
+          onPlaceSelect={(place) => {
+            updateFormData({
+              location: place.city || place.fullAddress,
+              country: place.country || formData.country,
+            });
+          }}
+          label="Location (City/Plant)"
+          required
+          placeholder="Search for a city..."
+        />
 
-        {/* Country */}
+        {/* Country - Auto-filled from location selection */}
         <div className="space-y-2">
           <Label htmlFor="country" className="dark:text-foreground">Country</Label>
           <Input
             id="country"
             value={formData.country}
             onChange={(e) => updateFormData({ country: e.target.value })}
-            placeholder="e.g., Australia"
+            placeholder="Auto-filled from location or enter manually"
             className="dark:bg-input dark:border-border dark:text-foreground"
           />
         </div>

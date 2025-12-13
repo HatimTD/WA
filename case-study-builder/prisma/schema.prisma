@@ -548,3 +548,77 @@ enum GdprDeletionStatus {
   REJECTED          // Request rejected (with reason)
   CANCELLED         // Cancelled by user
 }
+
+// =====================================================
+// NETSUITE CUSTOMER CACHE (BRD 5.9.3)
+// Local cache of NetSuite customers for faster search
+// =====================================================
+model NetSuiteCustomerCache {
+  id              String   @id @default(cuid())
+
+  // NetSuite identifiers
+  netsuiteId      String   @unique  // NetSuite internal ID
+  entityId        String?           // NetSuite entity ID (customer code)
+
+  // Customer information
+  companyName     String
+  address         String?
+  city            String?
+  state           String?
+  country         String?
+  postalCode      String?
+  industry        String?
+
+  // Contact information
+  email           String?
+  phone           String?
+
+  // Sync metadata
+  lastSyncedAt    DateTime @default(now())
+  syncStatus      SyncStatus @default(SYNCED)
+  syncError       String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([companyName])
+  @@index([city])
+  @@index([industry])
+  @@index([lastSyncedAt])
+}
+
+enum SyncStatus {
+  SYNCED
+  PENDING
+  ERROR
+}
+
+// Sync job tracking
+model NetSuiteSyncJob {
+  id              String   @id @default(cuid())
+
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+
+  status          JobStatus @default(RUNNING)
+
+  // Statistics
+  totalRecords    Int      @default(0)
+  newRecords      Int      @default(0)
+  updatedRecords  Int      @default(0)
+  failedRecords   Int      @default(0)
+
+  errorMessage    String?
+
+  createdAt       DateTime @default(now())
+
+  @@index([status])
+  @@index([startedAt])
+}
+
+enum JobStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
