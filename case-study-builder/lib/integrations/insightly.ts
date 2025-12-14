@@ -328,6 +328,154 @@ Status: ${caseStudy.status}
   }
 
   /**
+   * Attach a PDF file to an opportunity
+   * BRD 3.4D - PDF Push to CRM on publication
+   */
+  async attachPDFToOpportunity(
+    opportunityId: number,
+    pdfBuffer: Buffer,
+    fileName: string
+  ): Promise<{ success: boolean; fileId?: number; error?: string }> {
+    try {
+      if (!this.isConfigured()) {
+        console.log('[Insightly] Mock: Would attach PDF to opportunity', opportunityId);
+        return { success: true, fileId: Math.floor(Math.random() * 100000) };
+      }
+
+      // Insightly File Attachment API endpoint
+      const url = `${this.baseUrl}/FileAttachments`;
+
+      // Create multipart form data
+      const boundary = '----InsightlyBoundary' + Date.now();
+      const contentType = `multipart/form-data; boundary=${boundary}`;
+
+      // Build multipart body
+      const body = [
+        `--${boundary}`,
+        `Content-Disposition: form-data; name="file"; filename="${fileName}"`,
+        'Content-Type: application/pdf',
+        '',
+        pdfBuffer.toString('base64'),
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="FILE_NAME"',
+        '',
+        fileName,
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="CONTENT_TYPE"',
+        '',
+        'application/pdf',
+        `--${boundary}--`,
+      ].join('\r\n');
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: this.authHeader,
+          'Content-Type': contentType,
+        },
+        body,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to upload file: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      const fileId = result.FILE_ATTACHMENT_ID;
+
+      // Link the file to the opportunity
+      await this.linkFileToOpportunity(fileId, opportunityId);
+
+      return { success: true, fileId };
+    } catch (error) {
+      console.error('[Insightly] Attach PDF error:', error);
+      return {
+        success: false,
+        error: (error as Error).message,
+      };
+    }
+  }
+
+  /**
+   * Link an uploaded file to an opportunity
+   */
+  private async linkFileToOpportunity(fileId: number, opportunityId: number): Promise<void> {
+    try {
+      if (!this.isConfigured()) {
+        return;
+      }
+
+      const endpoint = `/Opportunities/${opportunityId}/FileAttachments`;
+      const payload = {
+        FILE_ATTACHMENT_ID: fileId,
+      };
+
+      await this.makeRequest(endpoint, 'POST', payload);
+    } catch (error) {
+      console.error('[Insightly] Link file error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Sync case study with PDF attachment
+   * This is the main method for BRD 3.4D - PDF Push to CRM
+   */
+  async syncCaseStudyWithPDF(
+    caseStudy: {
+      id: string;
+      customerName: string;
+      title: string;
+      industry: string;
+      location: string;
+      financialImpact?: number;
+      status: string;
+    },
+    pdfBuffer: Buffer,
+    fileName: string
+  ): Promise<{
+    opportunityId: number;
+    fileId?: number;
+    synced: boolean;
+    pdfAttached: boolean;
+  }> {
+    try {
+      // First sync the case study data
+      const syncResult = await this.syncCaseStudy(caseStudy);
+
+      if (!syncResult.synced) {
+        return {
+          opportunityId: 0,
+          synced: false,
+          pdfAttached: false,
+        };
+      }
+
+      // Then attach the PDF
+      const attachResult = await this.attachPDFToOpportunity(
+        syncResult.opportunityId,
+        pdfBuffer,
+        fileName
+      );
+
+      return {
+        opportunityId: syncResult.opportunityId,
+        fileId: attachResult.fileId,
+        synced: true,
+        pdfAttached: attachResult.success,
+      };
+    } catch (error) {
+      console.error('[Insightly] Sync with PDF error:', error);
+      return {
+        opportunityId: 0,
+        synced: false,
+        pdfAttached: false,
+      };
+    }
+  }
+
+  /**
    * Test the connection to Insightly
    */
   async testConnection(): Promise<{ success: boolean; message: string }> {

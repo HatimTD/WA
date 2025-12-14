@@ -4,6 +4,15 @@ import { insightlyClient, type InsightlyOrganization, type InsightlyContact } fr
 import { prisma } from '@/lib/prisma';
 
 /**
+ * BRD 3.4D - PDF Push to CRM on Publication
+ *
+ * When a case study is published (approved), this action:
+ * 1. Generates the PDF
+ * 2. Syncs the case study data to Insightly
+ * 3. Attaches the PDF to the CRM opportunity
+ */
+
+/**
  * Search Insightly organizations (customers)
  */
 export async function searchInsightlyOrganizations(query: string): Promise<{
@@ -66,10 +75,10 @@ export async function syncCaseStudyToInsightly(caseStudyId: string): Promise<{
       select: {
         id: true,
         customerName: true,
-        title: true,
+        componentWorkpiece: true,
         industry: true,
         location: true,
-        financialImpact: true,
+        solutionValueRevenue: true,
         status: true,
         insightlyOpportunityId: true,
       },
@@ -79,14 +88,17 @@ export async function syncCaseStudyToInsightly(caseStudyId: string): Promise<{
       return { success: false, error: 'Case study not found' };
     }
 
+    // Derive title from customer + component
+    const derivedTitle = `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`;
+
     // Sync to Insightly
     const result = await insightlyClient.syncCaseStudy({
       id: caseStudy.id,
       customerName: caseStudy.customerName,
-      title: caseStudy.title,
+      title: derivedTitle,
       industry: caseStudy.industry,
       location: caseStudy.location,
-      financialImpact: caseStudy.financialImpact ? Number(caseStudy.financialImpact) : undefined,
+      financialImpact: caseStudy.solutionValueRevenue ? Number(caseStudy.solutionValueRevenue) : undefined,
       status: caseStudy.status,
     });
 
@@ -144,23 +156,26 @@ export async function batchSyncToInsightly(limit: number = 50): Promise<{
       select: {
         id: true,
         customerName: true,
-        title: true,
+        componentWorkpiece: true,
         industry: true,
         location: true,
-        financialImpact: true,
+        solutionValueRevenue: true,
         status: true,
       },
     });
 
     for (const cs of caseStudies) {
       try {
+        // Derive title from customer + component
+        const derivedTitle = `${cs.customerName} - ${cs.componentWorkpiece}`;
+
         const result = await insightlyClient.syncCaseStudy({
           id: cs.id,
           customerName: cs.customerName,
-          title: cs.title,
+          title: derivedTitle,
           industry: cs.industry,
           location: cs.location,
-          financialImpact: cs.financialImpact ? Number(cs.financialImpact) : undefined,
+          financialImpact: cs.solutionValueRevenue ? Number(cs.solutionValueRevenue) : undefined,
           status: cs.status,
         });
 
@@ -189,5 +204,127 @@ export async function batchSyncToInsightly(limit: number = 50): Promise<{
       failed,
       errors: [...errors, (error as Error).message],
     };
+  }
+}
+
+/**
+ * Push PDF to CRM on case study publication (BRD 3.4D)
+ *
+ * This is called when a case study is approved/published.
+ * It syncs the case study to Insightly and attaches the generated PDF.
+ */
+export async function pushPDFToCRM(
+  caseStudyId: string,
+  pdfBase64: string
+): Promise<{
+  success: boolean;
+  opportunityId?: number;
+  fileId?: number;
+  error?: string;
+}> {
+  try {
+    // Fetch the case study
+    const caseStudy = await prisma.caseStudy.findUnique({
+      where: { id: caseStudyId },
+      select: {
+        id: true,
+        customerName: true,
+        componentWorkpiece: true,
+        industry: true,
+        location: true,
+        solutionValueRevenue: true,
+        status: true,
+        insightlyOpportunityId: true,
+      },
+    });
+
+    if (!caseStudy) {
+      return { success: false, error: 'Case study not found' };
+    }
+
+    if (caseStudy.status !== 'APPROVED') {
+      return { success: false, error: 'Case study must be approved before pushing to CRM' };
+    }
+
+    // Derive title from customer + component
+    const derivedTitle = `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`;
+
+    // Convert base64 PDF to buffer
+    const pdfBuffer = Buffer.from(pdfBase64, 'base64');
+    const fileName = `CaseStudy_${caseStudy.id.slice(-8)}_${caseStudy.customerName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+
+    // Sync to Insightly with PDF
+    const result = await insightlyClient.syncCaseStudyWithPDF(
+      {
+        id: caseStudy.id,
+        customerName: caseStudy.customerName,
+        title: derivedTitle,
+        industry: caseStudy.industry,
+        location: caseStudy.location,
+        financialImpact: caseStudy.solutionValueRevenue
+          ? Number(caseStudy.solutionValueRevenue)
+          : undefined,
+        status: caseStudy.status,
+      },
+      pdfBuffer,
+      fileName
+    );
+
+    if (result.synced) {
+      // Update case study with Insightly IDs
+      await prisma.caseStudy.update({
+        where: { id: caseStudyId },
+        data: {
+          insightlyOpportunityId: result.opportunityId,
+          insightlySyncedAt: new Date(),
+        },
+      });
+
+      return {
+        success: true,
+        opportunityId: result.opportunityId,
+        fileId: result.fileId,
+      };
+    }
+
+    return { success: false, error: 'Failed to sync to CRM' };
+  } catch (error) {
+    console.error('[Insightly Actions] Push PDF to CRM error:', error);
+    return {
+      success: false,
+      error: 'Failed to push PDF to CRM',
+    };
+  }
+}
+
+/**
+ * Check if a case study is synced to CRM
+ */
+export async function getCRMSyncStatus(caseStudyId: string): Promise<{
+  isSynced: boolean;
+  opportunityId?: number;
+  syncedAt?: Date;
+}> {
+  try {
+    const caseStudy = await prisma.caseStudy.findUnique({
+      where: { id: caseStudyId },
+      select: {
+        insightlyOpportunityId: true,
+        insightlySyncedAt: true,
+      },
+    });
+
+    if (!caseStudy) {
+      return { isSynced: false };
+    }
+
+    return {
+      isSynced: !!caseStudy.insightlyOpportunityId,
+      opportunityId: caseStudy.insightlyOpportunityId ?? undefined,
+      syncedAt: caseStudy.insightlySyncedAt ?? undefined,
+    };
+  } catch (error) {
+    console.error('[Insightly Actions] Get sync status error:', error);
+    return { isSynced: false };
   }
 }

@@ -3,8 +3,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CaseStudyFormData } from '@/app/dashboard/new/page';
-import NetSuiteCustomerSearch from '@/components/netsuite-customer-search';
-import { NetSuiteCustomer } from '@/lib/integrations/netsuite';
+import CRMCustomerSearch, { CRMCustomer } from '@/components/crm-customer-search';
 import LocationAutocomplete from '@/components/location-autocomplete';
 
 type Props = {
@@ -44,10 +43,10 @@ export default function StepTwo({ formData, updateFormData }: Props) {
     updateFormData({ wearType: updated });
   };
 
-  const handleNetSuiteCustomerSelect = (customer: NetSuiteCustomer) => {
-    // Auto-fill fields from NetSuite data
+  const handleCRMCustomerSelect = (customer: CRMCustomer) => {
+    // Auto-fill fields from CRM data (Insightly or NetSuite)
     const updates: Partial<CaseStudyFormData> = {
-      customerName: customer.companyName,
+      customerName: customer.name,
     };
 
     if (customer.city) {
@@ -60,20 +59,24 @@ export default function StepTwo({ formData, updateFormData }: Props) {
       updates.industry = customer.industry;
     }
 
+    // Store CRM source for tracking (could be added to form data if needed)
+    console.log(`[CRM] Customer selected from ${customer.source}:`, customer.name);
+
     updateFormData(updates);
   };
 
   return (
     <div className="space-y-6">
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Customer Name - NetSuite Integration */}
-        <NetSuiteCustomerSearch
+        {/* Customer Name - Dual CRM Integration (BRD 3.4D) */}
+        <CRMCustomerSearch
           value={formData.customerName}
           onChange={(value) => updateFormData({ customerName: value })}
-          onCustomerSelect={handleNetSuiteCustomerSelect}
+          onCustomerSelect={handleCRMCustomerSelect}
           label="Customer Name"
           required
-          placeholder="Search NetSuite customers or enter manually..."
+          placeholder="Search CRM customers or enter new..."
+          defaultCRM="insightly"
         />
 
         {/* Industry */}
@@ -174,6 +177,18 @@ export default function StepTwo({ formData, updateFormData }: Props) {
             value={formData.generalDimensions}
             onChange={(e) => updateFormData({ generalDimensions: e.target.value })}
             placeholder="e.g., 500mm x 200mm"
+            className="dark:bg-input dark:border-border dark:text-foreground"
+          />
+        </div>
+
+        {/* OEM - Original Equipment Manufacturer (BRD Section 5) */}
+        <div className="space-y-2">
+          <Label htmlFor="oem" className="dark:text-foreground">OEM (Original Equipment Manufacturer)</Label>
+          <Input
+            id="oem"
+            value={formData.oem}
+            onChange={(e) => updateFormData({ oem: e.target.value })}
+            placeholder="e.g., Caterpillar, Komatsu, Liebherr"
             className="dark:bg-input dark:border-border dark:text-foreground"
           />
         </div>
