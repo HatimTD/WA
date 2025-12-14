@@ -1,5 +1,6 @@
 import NextAuth from 'next-auth';
 import Google from 'next-auth/providers/google';
+import Okta from 'next-auth/providers/okta';
 import Credentials from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { authConfig } from './auth.config';
@@ -22,6 +23,34 @@ const providers: Provider[] = [
     },
   }),
 ];
+
+// Add Okta SSO provider if configured (BRD 5.1 - SSO Integration)
+if (process.env.OKTA_CLIENT_ID && process.env.OKTA_CLIENT_SECRET && process.env.OKTA_ISSUER) {
+  providers.push(
+    Okta({
+      clientId: process.env.OKTA_CLIENT_ID,
+      clientSecret: process.env.OKTA_CLIENT_SECRET,
+      issuer: process.env.OKTA_ISSUER,
+      authorization: {
+        params: {
+          scope: 'openid email profile',
+        },
+      },
+      profile(profile) {
+        // Map Okta profile to our user model
+        return {
+          id: profile.sub,
+          name: profile.name || profile.preferred_username,
+          email: profile.email,
+          image: profile.picture || null,
+          // Okta can pass custom claims for role/region
+          role: profile.role || 'CONTRIBUTOR',
+          region: profile.region || null,
+        };
+      },
+    })
+  );
+}
 
 // Add credentials provider for testing (available in production for testing purposes)
 providers.push(
@@ -126,6 +155,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // Allow credentials provider for testing
       if (account?.provider === 'credentials') {
         return true;
+      }
+
+      // Allow Okta SSO provider (trusted identity provider)
+      if (account?.provider === 'okta') {
+        // Okta is a trusted SSO provider - accept users from company domain
+        if (user.email?.endsWith('@weldingalloys.com')) {
+          return true;
+        }
+        // Optionally allow all Okta users if SSO is the sole auth method
+        // return true;
+        return false;
       }
 
       // Check if email is from weldingalloys.com domain

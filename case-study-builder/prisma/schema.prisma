@@ -130,6 +130,9 @@ model CaseStudy {
   annualPotentialRevenue Decimal? @db.Decimal(12, 2)
   customerSavingsAmount  Decimal? @db.Decimal(12, 2)
 
+  // OEM Information (BRD Section 5 - Search Filter)
+  oem String?  // Original Equipment Manufacturer
+
   // Location
   location String
   country  String?
@@ -162,6 +165,20 @@ model CaseStudy {
   netsuiteCustomerId String?
   netsuiteSyncedAt   DateTime?
 
+  // Insightly CRM Integration (BRD 5.9)
+  insightlyOpportunityId Int?
+  insightlySyncedAt      DateTime?
+
+  // Challenge Qualifier (BRD 3.1) - Determines if case counts toward 10K target
+  qualifierType        QualifierType?
+  isTarget             Boolean       @default(false)  // Counts toward BHAG 10,000 goal
+  customerLastPurchase DateTime?                      // For 3-year purchase check
+
+  // Flag System (BRD 3.2) - Case Study Tiers
+  hasApplicationFlag   Boolean       @default(false)  // General + Problem/Solution filled
+  hasWpsFlag           Boolean       @default(false)  // WPS Details filled
+  hasCostFlag          Boolean       @default(false)  // Cost Calculator filled
+
   // Metadata
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -176,6 +193,13 @@ enum CaseType {
   APPLICATION // 1 point
   TECH // 2 points
   STAR // 3 points
+}
+
+// Challenge Qualifier Type (BRD 3.1)
+enum QualifierType {
+  NEW_CUSTOMER  // No purchase in 3 years - COUNTS toward target
+  CROSS_SELL    // Existing customer, new product - COUNTS toward target
+  MAINTENANCE   // Existing customer, existing product - NOT counted
 }
 
 enum Status {

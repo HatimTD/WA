@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { downloadComparisonPDF, type ComparisonPDFData } from '@/lib/pdf-export';
 
 type CaseStudySummary = {
   id: string;
@@ -182,6 +183,36 @@ export default function ComparePage() {
   };
 
   const handleExport = () => {
+    // BRD 3.4F - Side-by-side comparison PDF with highlighted metrics
+    const pdfCases = selectedCases.map(cs => {
+      if (!cs) return null;
+      return {
+        id: cs.id,
+        type: cs.type,
+        customerName: cs.customerName,
+        industry: cs.industry,
+        location: cs.location,
+        country: cs.country,
+        componentWorkpiece: cs.componentWorkpiece,
+        workType: cs.workType,
+        wearType: cs.wearType,
+        problemDescription: cs.problemDescription,
+        waSolution: cs.waSolution,
+        waProduct: cs.waProduct,
+        technicalAdvantages: cs.technicalAdvantages,
+        expectedServiceLife: cs.expectedServiceLife,
+        previousServiceLife: cs.previousServiceLife,
+        solutionValueRevenue: cs.solutionValueRevenue,
+        annualPotentialRevenue: cs.annualPotentialRevenue,
+        customerSavingsAmount: cs.customerSavingsAmount,
+      } as ComparisonPDFData;
+    });
+
+    downloadComparisonPDF(pdfCases);
+    toast.success('Comparison PDF downloaded');
+  };
+
+  const handlePrint = () => {
     setIsPrintMode(true);
     setTimeout(() => {
       window.print();
@@ -587,7 +618,16 @@ export default function ComparePage() {
               className="gap-2 bg-wa-green-600 hover:bg-wa-green-700"
             >
               <Download className="h-4 w-4" />
-              Export / Print
+              Download PDF
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrint}
+              className="gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              Print
             </Button>
           </div>
         </div>

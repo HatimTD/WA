@@ -3,8 +3,8 @@ import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Target, TrendingUp, Globe, Building2 } from 'lucide-react';
-import { getBHAGProgress, getRegionalBHAGProgress, getIndustryBHAGProgress } from '@/lib/actions/bhag-actions';
+import { Target, TrendingUp, Globe, Building2, Users, UserCheck, UserPlus, RefreshCw } from 'lucide-react';
+import { getBHAGProgress, getRegionalBHAGProgress, getIndustryBHAGProgress, getQualifierTypeBHAGProgress, getContributorRegionBHAGProgress } from '@/lib/actions/bhag-actions';
 import type { Metadata } from 'next';
 
 
@@ -24,10 +24,12 @@ export default async function BHAGPage() {
     redirect('/login');
   }
 
-  const [bhagResult, regionalResult, industryResult] = await Promise.all([
+  const [bhagResult, regionalResult, industryResult, qualifierResult, contributorRegionResult] = await Promise.all([
     getBHAGProgress(),
     getRegionalBHAGProgress(),
     getIndustryBHAGProgress(),
+    getQualifierTypeBHAGProgress(),
+    getContributorRegionBHAGProgress(),
   ]);
 
   if (!bhagResult.success || !bhagResult.bhag) {
@@ -41,6 +43,8 @@ export default async function BHAGPage() {
   const { uniqueCount, totalCount, target, percentage, byType } = bhagResult.bhag;
   const regionalData = regionalResult.regionalData || [];
   const industryData = industryResult.industryData || [];
+  const qualifierData = qualifierResult.qualifierData;
+  const contributorRegionData = contributorRegionResult.contributorRegionData || [];
 
   return (
     <div className="max-w-7xl mx-auto p-8 space-y-8">
@@ -130,7 +134,7 @@ export default async function BHAGPage() {
 
             <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-6 text-center dark:bg-accent dark:border-accent">
               <Badge className="bg-yellow-100 text-yellow-700 mb-3 text-sm dark:bg-accent dark:text-white dark:border dark:border-white">STAR</Badge>
-              <p className="text-4xl font-bold text-yellow-600 dark:text-white mb-2">{byType.STAR}</p>
+              <p className="text-4xl font-bold text-yellow-700 dark:text-white mb-2">{byType.STAR}</p>
               <p className="text-sm text-gray-600 dark:text-white dark:opacity-80 mb-3">unique cases</p>
               <Progress value={(byType.STAR / uniqueCount) * 100} className="h-2" />
               <p className="text-xs text-gray-500 dark:text-white dark:opacity-70 mt-2">
@@ -141,15 +145,120 @@ export default async function BHAGPage() {
         </CardContent>
       </Card>
 
+      {/* Qualifier Type Breakdown - NEW vs CROSS-SELL (BRD 3.5) */}
+      {qualifierData && (
+        <Card role="article" className="dark:bg-card dark:border-border">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 dark:text-foreground">
+              <UserCheck className="h-5 w-5 dark:text-primary" />
+              Challenge Qualifier Breakdown
+            </CardTitle>
+            <CardDescription className="dark:text-muted-foreground">
+              New Customer vs. Cross-Sell (BRD 3.5)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* New Customer */}
+              <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 text-center dark:bg-green-900/20 dark:border-green-700">
+                <UserPlus className="h-6 w-6 mx-auto text-green-600 dark:text-green-400 mb-2" />
+                <Badge className="bg-green-100 text-green-700 mb-2 dark:bg-green-900 dark:text-green-300">
+                  {qualifierData.newCustomer.label}
+                </Badge>
+                <p className="text-3xl font-bold text-green-600 dark:text-green-400">{qualifierData.newCustomer.count}</p>
+                <p className="text-xs text-gray-600 dark:text-muted-foreground mt-1">{qualifierData.newCustomer.description}</p>
+                {qualifierData.newCustomer.countsTowardTarget && (
+                  <Badge className="mt-2 bg-green-600 text-white text-xs">Counts to Target</Badge>
+                )}
+              </div>
+
+              {/* Cross-Sell */}
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 text-center dark:bg-blue-900/20 dark:border-blue-700">
+                <Users className="h-6 w-6 mx-auto text-blue-600 dark:text-blue-400 mb-2" />
+                <Badge className="bg-blue-100 text-blue-700 mb-2 dark:bg-blue-900 dark:text-blue-300">
+                  {qualifierData.crossSell.label}
+                </Badge>
+                <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{qualifierData.crossSell.count}</p>
+                <p className="text-xs text-gray-600 dark:text-muted-foreground mt-1">{qualifierData.crossSell.description}</p>
+                {qualifierData.crossSell.countsTowardTarget && (
+                  <Badge className="mt-2 bg-blue-600 text-white text-xs">Counts to Target</Badge>
+                )}
+              </div>
+
+              {/* Maintenance */}
+              <div className="bg-orange-50 border-2 border-orange-200 rounded-lg p-4 text-center dark:bg-orange-900/20 dark:border-orange-700">
+                <RefreshCw className="h-6 w-6 mx-auto text-orange-600 dark:text-orange-400 mb-2" />
+                <Badge className="bg-orange-100 text-orange-700 mb-2 dark:bg-orange-900 dark:text-orange-300">
+                  {qualifierData.maintenance.label}
+                </Badge>
+                <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">{qualifierData.maintenance.count}</p>
+                <p className="text-xs text-gray-600 dark:text-muted-foreground mt-1">{qualifierData.maintenance.description}</p>
+              </div>
+
+              {/* Unqualified */}
+              <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 text-center dark:bg-gray-800 dark:border-gray-600">
+                <Target className="h-6 w-6 mx-auto text-gray-600 dark:text-gray-400 mb-2" />
+                <Badge className="bg-gray-100 text-gray-700 mb-2 dark:bg-gray-700 dark:text-gray-300">
+                  {qualifierData.unqualified.label}
+                </Badge>
+                <p className="text-3xl font-bold text-gray-600 dark:text-gray-400">{qualifierData.unqualified.count}</p>
+                <p className="text-xs text-gray-600 dark:text-muted-foreground mt-1">{qualifierData.unqualified.description}</p>
+              </div>
+            </div>
+
+            {/* Target Count Summary */}
+            <div className="mt-6 p-4 bg-wa-green-50 border border-wa-green-200 rounded-lg dark:bg-primary dark:border-primary">
+              <p className="text-center dark:text-white">
+                <span className="font-bold text-wa-green-700 dark:text-white">
+                  {qualifierData.newCustomer.count + qualifierData.crossSell.count}
+                </span>
+                <span className="text-gray-700 dark:text-white dark:opacity-90"> cases count toward the {target.toLocaleString()} target</span>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Contributor Region Breakdown (BRD 3.5) */}
+      {contributorRegionData.length > 0 && (
+        <Card role="article" className="dark:bg-card dark:border-border">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 dark:text-foreground">
+              <Users className="h-5 w-5 dark:text-primary" />
+              By Contributor Region
+            </CardTitle>
+            <CardDescription className="dark:text-muted-foreground">
+              Unique cases grouped by contributor's assigned region (BRD 3.5)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {contributorRegionData.slice(0, 8).map((region) => (
+                <div key={region.region} className="bg-purple-50 border border-purple-200 rounded-lg p-4 dark:bg-purple-900/20 dark:border-purple-700">
+                  <p className="text-sm font-medium text-purple-700 dark:text-purple-300 mb-1">{region.region}</p>
+                  <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{region.uniqueCount}</p>
+                  <p className="text-xs text-gray-500 dark:text-muted-foreground">unique cases</p>
+                </div>
+              ))}
+            </div>
+            {contributorRegionData.length > 8 && (
+              <p className="text-sm text-gray-500 dark:text-muted-foreground mt-4 text-center">
+                + {contributorRegionData.length - 8} more regions
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Regional Breakdown */}
       {regionalData.length > 0 && (
         <Card role="article" className="dark:bg-card dark:border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 dark:text-foreground">
               <Globe className="h-5 w-5 dark:text-primary" />
-              Regional Distribution
+              By Case Study Location
             </CardTitle>
-            <CardDescription className="dark:text-muted-foreground">Unique cases by location</CardDescription>
+            <CardDescription className="dark:text-muted-foreground">Unique cases by case study location (original)</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

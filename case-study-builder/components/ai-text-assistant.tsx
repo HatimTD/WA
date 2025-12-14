@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Sparkles, Languages, RefreshCw, Loader2 } from 'lucide-react';
+import { Sparkles, Languages, RefreshCw, Loader2, ListTree } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { summarizeText, translateText, improveText } from '@/lib/actions/openai-actions';
+import { convertBulletsToProse } from '@/lib/actions/auto-prompt-actions';
 
 type Props = {
   text: string;
@@ -75,6 +76,40 @@ export default function AITextAssistant({ text, onTextChange, fieldType = 'gener
     }
   };
 
+  // Map component fieldType to server action fieldType
+  const bulletFieldTypeMap: Record<string, 'problem' | 'solution' | 'advantages' | 'general'> = {
+    problem: 'problem',
+    solution: 'solution',
+    technical: 'advantages',
+    general: 'general',
+  };
+
+  const handleBulletsToProse = async () => {
+    if (!text || text.trim().length === 0) {
+      toast.error('No text to convert');
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const result = await convertBulletsToProse(
+        text,
+        bulletFieldTypeMap[fieldType] || 'general'
+      );
+      if (result.success && result.prose) {
+        onTextChange(result.prose);
+        toast.success('Converted bullets to professional prose');
+      } else {
+        toast.error(result.error || 'Failed to convert bullets');
+      }
+    } catch (error) {
+      console.error('[AITextAssistant] Error:', error);
+      toast.error('An error occurred');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleTranslate = async (language: string) => {
     if (!text || text.trim().length === 0) {
       toast.error('No text to translate');
@@ -122,6 +157,14 @@ export default function AITextAssistant({ text, onTextChange, fieldType = 'gener
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuItem onClick={handleBulletsToProse}>
+          <ListTree className="h-4 w-4 mr-2 text-blue-600" />
+          <div>
+            <div className="font-medium">Bullets to Prose</div>
+            <div className="text-xs text-muted-foreground">Convert notes to professional text</div>
+          </div>
+        </DropdownMenuItem>
+
         <DropdownMenuItem onClick={handleImprove}>
           <RefreshCw className="h-4 w-4 mr-2 text-wa-green-600" />
           <div>
