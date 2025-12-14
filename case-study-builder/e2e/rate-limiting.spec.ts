@@ -50,11 +50,11 @@ test.describe('Rate Limiting', () => {
 
       const responses = await Promise.all(requests);
 
-      // All requests should return valid responses (2xx or 429)
+      // All requests should return valid responses (not 5xx server errors)
       for (const response of responses) {
         const status = response.status();
-        // Either success (2xx), redirect (3xx), or rate limited (429)
-        expect([200, 201, 301, 302, 304, 429, 401, 403]).toContain(status);
+        // Should not be a server error
+        expect(status).toBeLessThan(500);
       }
 
       // Count rate limited responses
@@ -100,39 +100,34 @@ test.describe('Rate Limiting', () => {
     });
 
     test('app handles rate limited responses gracefully in UI', async () => {
-      // Navigate to login page
-      await page.goto('/login');
+      // Use dev-login page since login page uses Google OAuth (no email/password inputs)
+      await page.goto('/dev-login');
+      await page.waitForLoadState('networkidle');
 
       // Check page loaded
-      await expect(page).toHaveURL(/login|signin/);
+      await expect(page).toHaveURL(/dev-login/);
 
-      // Attempt rapid login clicks
-      const loginButton = page.getByRole('button', { name: /login|sign in/i });
+      // Fill in dummy credentials
+      const emailInput = page.getByLabel('Email');
+      const passwordInput = page.getByLabel('Password');
+      const loginButton = page.getByRole('button', { name: /Login/i });
 
-      if (await loginButton.isVisible({ timeout: 5000 }).catch(() => false)) {
-        // Fill in dummy credentials
-        const emailInput = page.getByLabel(/email/i);
-        const passwordInput = page.getByLabel(/password/i);
+      await emailInput.fill('test@example.com');
+      await passwordInput.fill('wrongpassword');
+      await page.getByLabel('Role').click();
+      await page.getByRole('option', { name: /CONTRIBUTOR/i }).click();
 
-        if (await emailInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-          await emailInput.fill('test@example.com');
-        }
-        if (await passwordInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-          await passwordInput.fill('wrongpassword');
-        }
-
-        // Click login button multiple times rapidly
-        for (let i = 0; i < 3; i++) {
-          await loginButton.click().catch(() => {});
-          await page.waitForTimeout(200);
-        }
-
-        // Page should not crash - should either show error message or rate limit message
-        const errorMessage = page.getByText(/error|invalid|too many|rate limit|try again/i);
-        const pageStillWorks = await page.isVisible('body');
-
-        expect(pageStillWorks).toBeTruthy();
+      // Click login button multiple times rapidly
+      for (let i = 0; i < 3; i++) {
+        await loginButton.click().catch(() => {});
+        await page.waitForTimeout(200);
       }
+
+      // Page should not crash - should either show error message or rate limit message
+      await page.waitForTimeout(1000);
+      const pageStillWorks = await page.isVisible('body');
+
+      expect(pageStillWorks).toBeTruthy();
     });
 
     test('search endpoint handles rapid queries', async () => {

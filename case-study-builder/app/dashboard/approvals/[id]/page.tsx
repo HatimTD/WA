@@ -93,7 +93,7 @@ export default async function ApprovalReviewPage({ params }: Props) {
       case 'TECH':
         return 'bg-purple-50 text-purple-600 border-purple-200';
       case 'STAR':
-        return 'bg-yellow-50 text-yellow-600 border-yellow-200';
+        return 'bg-yellow-50 text-yellow-700 border-yellow-200'; /* Changed from yellow-600 for WCAG AA contrast */
       default:
         return 'bg-gray-50 text-gray-600 border-gray-200';
     }

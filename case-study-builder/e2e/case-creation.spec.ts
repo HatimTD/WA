@@ -3,12 +3,13 @@ import { test, expect } from '@playwright/test';
 // Helper function to login before each test
 async function login(page: any) {
   await page.goto('/dev-login');
-  await page.getByLabel('Email').fill('admin@weldingalloys.com');
-  await page.getByLabel('Password').fill('TestPassword123');
+  await page.waitForLoadState('networkidle');
+  await page.getByLabel('Email').fill('tidihatim@gmail.com');
+  await page.getByLabel('Password').fill('Godofwar@3');
   await page.getByLabel('Role').click();
   await page.getByRole('option', { name: /ADMIN/i }).click();
   await page.getByRole('button', { name: /Login/i }).click();
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+  await expect(page).toHaveURL(/\/dashboard/, { timeout: 20000 });
 }
 
 test.describe('Case Study Creation', () => {

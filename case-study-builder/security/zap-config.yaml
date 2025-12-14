@@ -1,0 +1,139 @@
+# OWASP ZAP Configuration for Case Study Builder
+# Dynamic Application Security Testing (DAST)
+#
+# Prerequisites:
+# 1. Install OWASP ZAP: https://www.zaproxy.org/download/
+# 2. Start the application: npm run dev
+# 3. Run ZAP: zap.sh -cmd -autorun zap-config.yaml
+#
+# For Docker:
+# docker run -v $(pwd):/zap/wrk/:rw -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+#   -t http://localhost:3000 -g gen.conf -r zap-report.html
+
+env:
+  contexts:
+    - name: "CaseStudyBuilder"
+      urls:
+        - "http://localhost:3000"
+      includePaths:
+        - "http://localhost:3000.*"
+      excludePaths:
+        - ".*\\.js$"
+        - ".*\\.css$"
+        - ".*\\.png$"
+        - ".*\\.jpg$"
+        - ".*\\.gif$"
+        - ".*\\.svg$"
+        - ".*\\.woff2?$"
+        - ".*\\/_next\\/static\\/.*"
+      authentication:
+        method: "form"
+        parameters:
+          loginUrl: "http://localhost:3000/dev-login"
+          loginRequestData: "email={%username%}&password={%password%}"
+        verification:
+          method: "response"
+          loggedInRegex: "\\Qdashboard\\E"
+          loggedOutRegex: "\\Qlogin\\E"
+      sessionManagement:
+        method: "cookie"
+        parameters: {}
+      users:
+        - name: "test-user"
+          credentials:
+            username: "tidihatim@gmail.com"
+            password: "Godofwar@3"
+
+jobs:
+  # Spider job to discover all URLs
+  - type: spider
+    parameters:
+      context: "CaseStudyBuilder"
+      user: "test-user"
+      maxDuration: 5
+      maxDepth: 10
+      maxChildren: 10
+
+  # AJAX Spider for JavaScript-heavy pages
+  - type: spiderAjax
+    parameters:
+      context: "CaseStudyBuilder"
+      user: "test-user"
+      maxDuration: 5
+      maxCrawlDepth: 10
+      numberOfBrowsers: 1
+
+  # Passive scan (runs during spidering)
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 10
+
+  # Active scan for vulnerability testing
+  - type: activeScan
+    parameters:
+      context: "CaseStudyBuilder"
+      user: "test-user"
+      policy: "Default Policy"
+      maxRuleDurationInMins: 5
+      maxScanDurationInMins: 30
+
+  # Generate HTML report
+  - type: report
+    parameters:
+      template: "traditional-html"
+      reportDir: "/zap/wrk/reports"
+      reportFile: "zap-report.html"
+      reportTitle: "Case Study Builder Security Report"
+      reportDescription: "OWASP ZAP DAST Security Scan Results"
+
+  # Generate JSON report for CI/CD
+  - type: report
+    parameters:
+      template: "traditional-json"
+      reportDir: "/zap/wrk/reports"
+      reportFile: "zap-report.json"
+
+# Alert filters to reduce false positives
+alertFilters:
+  # Ignore Content Security Policy warnings for now (handled separately)
+  - ruleId: 10038
+    newRisk: "Info"
+    context: "CaseStudyBuilder"
+    urlRegex: ".*"
+
+  # Ignore cookie same-site attribute (handled by NextAuth)
+  - ruleId: 10054
+    newRisk: "Info"
+    context: "CaseStudyBuilder"
+    urlRegex: ".*"
+
+# Scan policy customization
+scanPolicy:
+  name: "CaseStudyBuilder-Policy"
+  defaultStrength: "Medium"
+  defaultThreshold: "Medium"
+  rules:
+    # SQL Injection - High priority
+    - id: 40018
+      strength: "High"
+      threshold: "Low"
+    # XSS - High priority
+    - id: 40012
+      strength: "High"
+      threshold: "Low"
+    # Path Traversal
+    - id: 6
+      strength: "High"
+      threshold: "Low"
+    # Remote File Inclusion
+    - id: 7
+      strength: "Medium"
+      threshold: "Medium"
+    # Server Side Include
+    - id: 40009
+      strength: "Medium"
+      threshold: "Medium"
+    # CSRF
+    - id: 20012
+      strength: "High"
+      threshold: "Low"

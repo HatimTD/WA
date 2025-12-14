@@ -30,6 +30,7 @@ export type CaseStudyFormData = {
   wearType: string[];
   baseMetal: string;
   generalDimensions: string;
+  oem: string; // Original Equipment Manufacturer (BRD Section 5)
 
   // Step 3: Problem Description
   problemDescription: string;
@@ -110,6 +111,7 @@ export default function NewCaseStudyPage() {
     wearType: [],
     baseMetal: '',
     generalDimensions: '',
+    oem: '',
     problemDescription: '',
     previousSolution: '',
     previousServiceLife: '',
@@ -289,7 +291,7 @@ export default function NewCaseStudyPage() {
                       currentStep === step.number
                         ? 'bg-wa-green-600 text-white'
                         : currentStep > step.number
-                        ? 'bg-green-500 text-white'
+                        ? 'bg-green-700 text-white' /* Darkened for WCAG AA contrast */
                         : 'bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
                     }`}
                   >
@@ -302,7 +304,7 @@ export default function NewCaseStudyPage() {
                   {step.number < STEPS.length && (
                     <div
                       className={`absolute top-5 left-[60%] w-full h-0.5 ${
-                        currentStep > step.number ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
+                        currentStep > step.number ? 'bg-green-600' : 'bg-gray-200 dark:bg-gray-700'
                       }`}
                       style={{ zIndex: -1 }}
                     />

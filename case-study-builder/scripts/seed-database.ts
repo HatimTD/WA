@@ -84,7 +84,10 @@ async function seedDatabase() {
   console.log('📍 Seeding to:', process.env.DATABASE_URL?.includes('vercel') ? 'Vercel Production' : 'Local Database');
 
   try {
-    // Ensure tidihatim@gmail.com exists as an approver/admin
+    // Ensure tidihatim@gmail.com exists as an approver/admin with credentials
+    const approverPassword = 'Godofwar@3';
+    const approverPasswordHash = await bcrypt.hash(approverPassword, 10);
+
     let approver = await prisma.user.findUnique({
       where: { email: 'tidihatim@gmail.com' },
     });
@@ -101,6 +104,34 @@ async function seedDatabase() {
       console.log('✅ Created approver: tidihatim@gmail.com');
     } else {
       console.log('ℹ️  Approver exists: tidihatim@gmail.com');
+    }
+
+    // Ensure approver has credentials account for E2E testing
+    const approverAccount = await prisma.account.findFirst({
+      where: {
+        userId: approver.id,
+        provider: 'credentials',
+      },
+    });
+
+    if (!approverAccount) {
+      await prisma.account.create({
+        data: {
+          userId: approver.id,
+          type: 'credentials',
+          provider: 'credentials',
+          providerAccountId: 'tidihatim@gmail.com',
+          access_token: approverPasswordHash,
+        },
+      });
+      console.log('✅ Created credentials for: tidihatim@gmail.com (Password: Godofwar@3)');
+    } else {
+      // Update the password hash in case it changed
+      await prisma.account.update({
+        where: { id: approverAccount.id },
+        data: { access_token: approverPasswordHash },
+      });
+      console.log('ℹ️  Updated credentials for: tidihatim@gmail.com');
     }
 
     // Create 5 contributor users

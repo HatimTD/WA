@@ -124,7 +124,7 @@ export default function ApprovalsClient({ userId }: ApprovalsClientProps) {
       case 'TECH':
         return 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400';
       case 'STAR':
-        return 'bg-yellow-50 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400';
+        return 'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'; /* Changed from yellow-600 for WCAG AA contrast */
       default:
         return 'bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
     }

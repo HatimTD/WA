@@ -18,6 +18,7 @@ type CreateCaseStudyInput = {
   wearType: string[];
   baseMetal: string;
   generalDimensions: string;
+  oem?: string; // Original Equipment Manufacturer (BRD Section 5)
   problemDescription: string;
   previousSolution: string;
   previousServiceLife: string;
@@ -67,6 +68,7 @@ export async function createCaseStudy(data: CreateCaseStudyInput) {
         wearType: data.wearType as any,
         baseMetal: data.baseMetal || null,
         generalDimensions: data.generalDimensions || null,
+        oem: data.oem || null,
         problemDescription: data.problemDescription,
         previousSolution: data.previousSolution || null,
         previousServiceLife: data.previousServiceLife || null,
@@ -179,6 +181,7 @@ export async function updateCaseStudy(id: string, data: any) {
     if (data.competitorName === '') updateData.competitorName = null;
     if (data.technicalAdvantages === '') updateData.technicalAdvantages = null;
     if (data.expectedServiceLife === '') updateData.expectedServiceLife = null;
+    if (data.oem === '') updateData.oem = null;
 
     updateData.updatedAt = new Date();
 

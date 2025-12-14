@@ -37,6 +37,8 @@ import dynamic from 'next/dynamic';
 import type { CaseStudyPDFData } from '@/lib/pdf-export';
 import { CompletionIndicator } from '@/components/completion-indicator';
 import { calculateCompletionPercentage, getFieldBreakdown } from '@/lib/utils/case-quality';
+import QualityScoreBadge from '@/components/quality-score-badge';
+import type { CaseStudyWithRelations } from '@/lib/utils/quality-score';
 
 // Dynamic import for PDF export (saves ~200KB from jspdf)
 const PDFExportButton = dynamic(() => import('@/components/pdf-export-button'), {
@@ -197,7 +199,7 @@ export default async function CaseStudyDetailPage({ params }: Props) {
       case 'TECH':
         return 'bg-purple-50 text-purple-600 border-purple-200';
       case 'STAR':
-        return 'bg-yellow-50 text-yellow-600 border-yellow-200';
+        return 'bg-yellow-50 text-yellow-700 border-yellow-200'; /* Changed from yellow-600 for WCAG AA contrast */
       default:
         return 'bg-gray-50 text-gray-600 border-gray-200';
     }
@@ -272,6 +274,13 @@ export default async function CaseStudyDetailPage({ params }: Props) {
                 {caseStudy.status}
               </span>
             </Badge>
+            <QualityScoreBadge
+              caseStudy={{
+                ...caseStudy,
+                wps: existingWPS,
+                costCalculator: existingCostCalc,
+              } as CaseStudyWithRelations}
+            />
           </div>
         </div>
       </div>

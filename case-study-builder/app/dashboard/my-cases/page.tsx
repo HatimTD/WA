@@ -101,7 +101,7 @@ export default async function MyCasesPage({
       case 'TECH':
         return 'bg-purple-50 text-purple-600';
       case 'STAR':
-        return 'bg-yellow-50 text-yellow-600';
+        return 'bg-yellow-50 text-yellow-700'; /* Changed from yellow-600 for WCAG AA contrast */
       default:
         return 'bg-gray-50 text-gray-600';
     }

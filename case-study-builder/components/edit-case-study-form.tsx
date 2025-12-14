@@ -31,6 +31,7 @@ export type CaseStudyFormData = {
   wearType: string[];
   baseMetal: string;
   generalDimensions: string;
+  oem: string; // Original Equipment Manufacturer (BRD Section 5)
 
   // Step 3: Problem Description
   problemDescription: string;
@@ -119,6 +120,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
     wearType: caseStudy.wearType as string[],
     baseMetal: caseStudy.baseMetal || '',
     generalDimensions: caseStudy.generalDimensions || '',
+    oem: (caseStudy as any).oem || '',
     problemDescription: caseStudy.problemDescription,
     previousSolution: caseStudy.previousSolution || '',
     previousServiceLife: caseStudy.previousServiceLife || '',
@@ -365,7 +367,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
                       currentStep === step.number
                         ? 'bg-wa-green-600 text-white'
                         : currentStep > step.number
-                        ? 'bg-green-500 text-white'
+                        ? 'bg-green-700 text-white' /* Darkened for WCAG AA contrast */
                         : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
                     }`}
                   >
@@ -378,7 +380,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
                   {step.number < STEPS.length && (
                     <div
                       className={`absolute top-5 left-[60%] w-full h-0.5 ${
-                        currentStep > step.number ? 'bg-green-500 dark:bg-green-500' : 'bg-gray-200 dark:bg-border'
+                        currentStep > step.number ? 'bg-green-600 dark:bg-green-600' : 'bg-gray-200 dark:bg-border'
                       }`}
                       style={{ zIndex: -1 }}
                     />

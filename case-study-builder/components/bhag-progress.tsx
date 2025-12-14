@@ -64,7 +64,7 @@ export default async function BHAGProgress() {
             </div>
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center dark:bg-accent dark:border-accent">
               <Badge className="bg-yellow-100 text-yellow-700 mb-1 dark:bg-accent dark:text-white dark:border-white dark:border">STAR</Badge>
-              <p className="text-2xl font-bold text-yellow-600 dark:text-white">{byType.STAR}</p>
+              <p className="text-2xl font-bold text-yellow-700 dark:text-white">{byType.STAR}</p>
               <p className="text-xs text-gray-600 dark:text-white dark:opacity-80">unique cases</p>
             </div>
           </div>

@@ -7,6 +7,8 @@ import AxeBuilder from '@axe-core/playwright';
  * Per research: axe-core can find ~57% of WCAG issues automatically
  */
 test.describe('Accessibility Tests (WCAG 2.1 AA)', () => {
+  // Increase timeout for accessibility tests since they scan the DOM
+  test.setTimeout(60000);
   test.describe('Public Pages', () => {
     test('homepage should have no critical accessibility violations', async ({ page }) => {
       await page.goto('/');
@@ -56,12 +58,13 @@ test.describe('Accessibility Tests (WCAG 2.1 AA)', () => {
     test.beforeEach(async ({ page }) => {
       // Login first
       await page.goto('/dev-login');
+      await page.waitForLoadState('networkidle');
       await page.getByLabel('Email').fill('tidihatim@gmail.com');
       await page.getByLabel('Password').fill('Godofwar@3');
       await page.getByLabel('Role').click();
       await page.getByRole('option', { name: /CONTRIBUTOR/i }).click();
       await page.getByRole('button', { name: /Login/i }).click();
-      await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+      await expect(page).toHaveURL(/\/dashboard/, { timeout: 20000 });
     });
 
     test('dashboard should have no critical accessibility violations', async ({ page }) => {
@@ -283,6 +286,8 @@ test.describe('Accessibility Tests (WCAG 2.1 AA)', () => {
 
   test.describe('Accessibility Summary Report', () => {
     test('generate full accessibility report for key pages', async ({ page }) => {
+      test.setTimeout(120000); // Increase timeout for this comprehensive test
+
       const pages = [
         { name: 'Homepage', url: '/', requiresAuth: false },
         { name: 'Login', url: '/login', requiresAuth: false },
@@ -292,16 +297,19 @@ test.describe('Accessibility Tests (WCAG 2.1 AA)', () => {
 
       const report: { page: string; violations: number; critical: number; serious: number; moderate: number; minor: number }[] = [];
 
+      let isLoggedIn = false;
       for (const pageConfig of pages) {
-        if (pageConfig.requiresAuth) {
-          // Login
+        if (pageConfig.requiresAuth && !isLoggedIn) {
+          // Login once for all authenticated pages
           await page.goto('/dev-login');
+          await page.waitForLoadState('networkidle');
           await page.getByLabel('Email').fill('tidihatim@gmail.com');
           await page.getByLabel('Password').fill('Godofwar@3');
           await page.getByLabel('Role').click();
           await page.getByRole('option', { name: /CONTRIBUTOR/i }).click();
           await page.getByRole('button', { name: /Login/i }).click();
-          await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+          await expect(page).toHaveURL(/\/dashboard/, { timeout: 20000 });
+          isLoggedIn = true;
         }
 
         await page.goto(pageConfig.url);

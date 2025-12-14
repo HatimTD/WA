@@ -35,8 +35,8 @@ export function OfflineIndicator() {
     <div
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isOnline
-          ? 'bg-green-500'
-          : 'bg-orange-500'
+          ? 'bg-green-700' /* Darkened for WCAG AA contrast ratio with white text */
+          : 'bg-orange-600' /* Darkened for WCAG AA contrast ratio */
       }`}
     >
       <div className="container mx-auto px-4 py-2">
