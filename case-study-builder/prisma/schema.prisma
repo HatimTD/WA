@@ -76,11 +76,14 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+// BRD Section 2.2 - Key Stakeholders/Roles
 enum Role {
-  CONTRIBUTOR
-  APPROVER
-  ADMIN
-  VIEWER
+  CONTRIBUTOR     // Field engineers who submit case studies
+  APPROVER        // Technical leads who approve/reject submissions
+  ADMIN           // System administrators with full access
+  VIEWER          // Read-only access users
+  IT_DEPARTMENT   // IT team for system configuration and integration
+  MARKETING       // Marketing team for content management and campaigns
 }
 
 enum Badge {

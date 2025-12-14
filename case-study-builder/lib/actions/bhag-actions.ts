@@ -4,32 +4,52 @@ import { prisma } from '@/lib/prisma';
 import { getBHAGTarget } from './system-config-actions';
 
 /**
+ * BHAG Deduplication Key Generator (BRD Section 5)
+ *
+ * A solved challenge is counted ONCE when Customer Name, Location,
+ * Component, and WA Solution are unique. Duplicates are treated as updates.
+ *
+ * @param cs Case study with required fields
+ * @returns Unique key string: "customerName|location|componentWorkpiece|waProduct"
+ */
+function createUniqueKey(cs: {
+  customerName: string;
+  location: string;
+  componentWorkpiece: string;
+  waProduct: string;
+}): string {
+  return `${cs.customerName.toLowerCase().trim()}|${cs.location.toLowerCase().trim()}|${cs.componentWorkpiece.toLowerCase().trim()}|${cs.waProduct.toLowerCase().trim()}`;
+}
+
+/**
  * Get BHAG progress with deduplication logic
- * Deduplication: Count unique combinations of industry + location + component
+ *
+ * BRD Section 5 - BHAG Counting Rule:
+ * A solved challenge is counted ONCE when Customer Name, Location, Component,
+ * and WA Solution are unique. Duplicates are treated as updates.
+ *
+ * Deduplication Key: customerName + location + componentWorkpiece + waProduct
  * Only count APPROVED case studies
  */
 export async function getBHAGProgress() {
   try {
-    // Get all approved case studies with deduplication fields
+    // Get all approved case studies with deduplication fields (BRD Section 5)
     const approvedCases = await prisma.caseStudy.findMany({
       where: {
         status: 'APPROVED',
       },
       select: {
-        industry: true,
+        customerName: true,
         location: true,
         componentWorkpiece: true,
+        waProduct: true,
         type: true,
       },
     });
 
-    // Create unique identifier for each case
-    // Format: "industry|location|componentWorkpiece"
-    const uniqueCases = new Set(
-      approvedCases.map((cs) =>
-        `${cs.industry.toLowerCase().trim()}|${cs.location.toLowerCase().trim()}|${cs.componentWorkpiece.toLowerCase().trim()}`
-      )
-    );
+    // Create unique identifier for each case per BRD Section 5
+    // Format: "customerName|location|componentWorkpiece|waProduct"
+    const uniqueCases = new Set(approvedCases.map(createUniqueKey));
 
     const uniqueCount = uniqueCases.size;
     const totalCount = approvedCases.length;
@@ -48,7 +68,7 @@ export async function getBHAGProgress() {
     };
 
     approvedCases.forEach((cs) => {
-      const uniqueKey = `${cs.industry.toLowerCase().trim()}|${cs.location.toLowerCase().trim()}|${cs.componentWorkpiece.toLowerCase().trim()}`;
+      const uniqueKey = createUniqueKey(cs);
       uniqueByType[cs.type].add(uniqueKey);
     });
 
@@ -81,6 +101,7 @@ export async function getBHAGProgress() {
 
 /**
  * Get regional breakdown of case studies
+ * Uses BRD Section 5 deduplication logic
  */
 export async function getRegionalBHAGProgress() {
   try {
@@ -89,9 +110,10 @@ export async function getRegionalBHAGProgress() {
         status: 'APPROVED',
       },
       select: {
+        customerName: true,
         location: true,
-        industry: true,
         componentWorkpiece: true,
+        waProduct: true,
       },
     });
 
@@ -100,7 +122,7 @@ export async function getRegionalBHAGProgress() {
 
     approvedCases.forEach((cs) => {
       const region = cs.location;
-      const uniqueKey = `${cs.industry.toLowerCase().trim()}|${cs.location.toLowerCase().trim()}|${cs.componentWorkpiece.toLowerCase().trim()}`;
+      const uniqueKey = createUniqueKey(cs);
 
       if (!byRegion[region]) {
         byRegion[region] = new Set();
@@ -131,6 +153,7 @@ export async function getRegionalBHAGProgress() {
 
 /**
  * Get industry breakdown
+ * Uses BRD Section 5 deduplication logic
  */
 export async function getIndustryBHAGProgress() {
   try {
@@ -139,9 +162,11 @@ export async function getIndustryBHAGProgress() {
         status: 'APPROVED',
       },
       select: {
+        customerName: true,
         industry: true,
         location: true,
         componentWorkpiece: true,
+        waProduct: true,
       },
     });
 
@@ -150,7 +175,7 @@ export async function getIndustryBHAGProgress() {
 
     approvedCases.forEach((cs) => {
       const industry = cs.industry;
-      const uniqueKey = `${cs.industry.toLowerCase().trim()}|${cs.location.toLowerCase().trim()}|${cs.componentWorkpiece.toLowerCase().trim()}`;
+      const uniqueKey = createUniqueKey(cs);
 
       if (!byIndustry[industry]) {
         byIndustry[industry] = new Set();
@@ -182,6 +207,7 @@ export async function getIndustryBHAGProgress() {
 /**
  * Get BHAG progress split by Qualifier Type (BRD 3.5)
  * NEW_CUSTOMER vs CROSS_SELL vs MAINTENANCE
+ * Uses BRD Section 5 deduplication logic
  */
 export async function getQualifierTypeBHAGProgress() {
   try {
@@ -190,9 +216,10 @@ export async function getQualifierTypeBHAGProgress() {
         status: 'APPROVED',
       },
       select: {
-        industry: true,
+        customerName: true,
         location: true,
         componentWorkpiece: true,
+        waProduct: true,
         qualifierType: true,
         isTarget: true,
       },
@@ -209,7 +236,7 @@ export async function getQualifierTypeBHAGProgress() {
     let targetCount = 0;
 
     approvedCases.forEach((cs) => {
-      const uniqueKey = `${cs.industry.toLowerCase().trim()}|${cs.location.toLowerCase().trim()}|${cs.componentWorkpiece.toLowerCase().trim()}`;
+      const uniqueKey = createUniqueKey(cs);
 
       if (cs.isTarget) {
         targetCount++;
@@ -270,6 +297,7 @@ export async function getQualifierTypeBHAGProgress() {
 /**
  * Get BHAG progress split by Contributor's Region (BRD 3.5)
  * Groups by user.region instead of case study location
+ * Uses BRD Section 5 deduplication logic
  */
 export async function getContributorRegionBHAGProgress() {
   try {
@@ -278,9 +306,10 @@ export async function getContributorRegionBHAGProgress() {
         status: 'APPROVED',
       },
       select: {
-        industry: true,
+        customerName: true,
         location: true,
         componentWorkpiece: true,
+        waProduct: true,
         contributor: {
           select: {
             region: true,
@@ -294,7 +323,7 @@ export async function getContributorRegionBHAGProgress() {
 
     approvedCases.forEach((cs) => {
       const region = cs.contributor?.region || 'Unknown';
-      const uniqueKey = `${cs.industry.toLowerCase().trim()}|${cs.location.toLowerCase().trim()}|${cs.componentWorkpiece.toLowerCase().trim()}`;
+      const uniqueKey = createUniqueKey(cs);
 
       if (!byContributorRegion[region]) {
         byContributorRegion[region] = new Set();

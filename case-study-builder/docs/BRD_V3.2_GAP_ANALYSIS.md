@@ -251,15 +251,19 @@ Sources: [NetSuite REST API](https://docs.oracle.com/en/cloud/saas/netsuite/ns-o
 
 ---
 
-### 13. Duplicate Detection (BRD Section 5)
+### 13. Duplicate Detection (BRD Section 5) - ✅ FIXED
 
 **BRD Requirement:**
 - BHAG Counting Rule: A solved challenge is counted once when Customer Name, Location, Component, and WA Solution are unique
 - Duplicates treated as updates
 
 **Current Implementation:**
-- Basic check in [bhag-actions.ts](lib/actions/bhag-actions.ts)
-- ❓ Need to verify uniqueness algorithm
+- ✅ FIXED: [bhag-actions.ts](lib/actions/bhag-actions.ts) now uses correct deduplication key
+- Deduplication Key: `customerName|location|componentWorkpiece|waProduct`
+- All BHAG functions updated: `getBHAGProgress`, `getRegionalBHAGProgress`, `getIndustryBHAGProgress`, `getQualifierTypeBHAGProgress`, `getContributorRegionBHAGProgress`
+- Schema has matching unique constraint: `@@unique([customerName, location, componentWorkpiece, waProduct])`
+
+**Note:** Also added IT_DEPARTMENT and MARKETING roles per BRD Section 2.2
 
 ---
 
