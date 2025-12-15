@@ -49,9 +49,31 @@ function getClientIp(headers: Headers): string {
 }
 
 /**
- * Build Content Security Policy with nonce (no unsafe-inline/unsafe-eval)
+ * Build Content Security Policy with nonce (no unsafe-inline/unsafe-eval in production)
+ * In development mode, we allow unsafe-inline/unsafe-eval for HMR and Radix UI
  */
 function buildCSP(nonce: string): string {
+  const isDevelopment = process.env.NODE_ENV === 'development';
+
+  if (isDevelopment) {
+    // Development CSP - more permissive for HMR, Radix UI, and dev tools
+    return [
+      `default-src 'self'`,
+      `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net`,
+      `style-src 'self' 'unsafe-inline'`,
+      `img-src 'self' data: https: blob:`,
+      `font-src 'self' data:`,
+      `connect-src 'self' ws: wss: https://api.openai.com https://res.cloudinary.com https://*.ngrok-free.dev wss://*.ngrok-free.dev https://*.google.com https://*.googleapis.com`,
+      `media-src 'self'`,
+      `object-src 'none'`,
+      `frame-src 'none'`,
+      `base-uri 'self'`,
+      `form-action 'self'`,
+      `frame-ancestors 'none'`,
+    ].join('; ');
+  }
+
+  // Production CSP - strict with nonce
   return [
     `default-src 'self'`,
     `script-src 'self' 'nonce-${nonce}' https://cdn.jsdelivr.net`,

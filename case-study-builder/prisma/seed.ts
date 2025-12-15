@@ -57,6 +57,43 @@ async function main() {
   // Create test users
   const users = [];
 
+  // Create ADMIN user with credentials (password: TestPassword123)
+  const adminPasswordHash = await bcrypt.hash('TestPassword123', 10);
+  const admin = await prisma.user.upsert({
+    where: { email: 'admin@weldingalloys.com' },
+    update: {},
+    create: {
+      email: 'admin@weldingalloys.com',
+      name: 'Admin User',
+      role: 'ADMIN',
+      emailVerified: new Date(),
+      totalPoints: 100,
+      badges: [],
+    },
+  });
+
+  // Create credentials account for admin
+  await prisma.account.upsert({
+    where: {
+      provider_providerAccountId: {
+        provider: 'credentials',
+        providerAccountId: admin.id,
+      },
+    },
+    update: {
+      access_token: adminPasswordHash,
+    },
+    create: {
+      userId: admin.id,
+      type: 'credentials',
+      provider: 'credentials',
+      providerAccountId: admin.id,
+      access_token: adminPasswordHash, // Store hashed password here
+    },
+  });
+  users.push(admin);
+  console.log('Created admin user with credentials');
+
   // Create APPROVER user
   const approver = await prisma.user.upsert({
     where: { email: 'approver@weldingalloys.com' },

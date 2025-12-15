@@ -112,7 +112,9 @@ describe('Challenge Qualifier Offline Functionality', () => {
 
   describe('Network Independence Verification', () => {
     it('should not require fetch for qualification logic', () => {
-      const fetchSpy = jest.spyOn(global, 'fetch' as any);
+      // Define a mock fetch on global to verify it's never called
+      const mockFetch = jest.fn();
+      (global as any).fetch = mockFetch;
 
       // Simulate the qualifier flow decision tree
       const decisions = {
@@ -123,10 +125,11 @@ describe('Challenge Qualifier Offline Functionality', () => {
       // The qualification logic doesn't call fetch
       const result = decisions.question1 ? 'CONTINUE_TO_Q2' : 'NEW_CUSTOMER';
 
-      expect(fetchSpy).not.toHaveBeenCalled();
+      expect(mockFetch).not.toHaveBeenCalled();
       expect(result).toBe('NEW_CUSTOMER');
 
-      fetchSpy.mockRestore();
+      // Clean up
+      delete (global as any).fetch;
     });
 
     it('should store qualifier result in client-side state only', () => {

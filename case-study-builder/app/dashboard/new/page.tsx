@@ -12,15 +12,23 @@ import StepThree from '@/components/case-study-form/step-three';
 import StepFour from '@/components/case-study-form/step-four';
 import StepFive from '@/components/case-study-form/step-five';
 import StepWPS from '@/components/case-study-form/step-wps';
+import ChallengeQualifier, { type QualifierResult } from '@/components/case-study-form/challenge-qualifier';
 import { createCaseStudy } from '@/lib/actions/case-study-actions';
 import { saveWeldingProcedure } from '@/lib/actions/wps-actions';
 import { toast } from 'sonner';
+import { Label } from '@/components/ui/label';
+import CRMCustomerSearch, { type CRMCustomer } from '@/components/crm-customer-search';
 
 export type CaseStudyFormData = {
   // Step 1: Case Type
   type: 'APPLICATION' | 'TECH' | 'STAR';
 
-  // Step 2: Basic Information
+  // Step 2: Challenge Qualifier (BRD 3.1)
+  qualifierType?: 'NEW_CUSTOMER' | 'CROSS_SELL' | 'MAINTENANCE';
+  isTarget: boolean; // Counts toward BHAG 10,000 goal
+  qualifierCompleted: boolean; // Whether qualifier questions were answered
+
+  // Step 3: Basic Information
   customerName: string;
   industry: string;
   location: string;
@@ -102,6 +110,9 @@ export default function NewCaseStudyPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<CaseStudyFormData>({
     type: 'APPLICATION',
+    qualifierType: undefined,
+    isTarget: false,
+    qualifierCompleted: false,
     customerName: '',
     industry: '',
     location: '',
@@ -133,14 +144,15 @@ export default function NewCaseStudyPage() {
   const STEPS = useMemo(() => {
     const baseSteps = [
       { number: 1, title: 'Case Type', description: 'Select case study type' },
-      { number: 2, title: 'Basic Info', description: 'Customer and component details' },
-      { number: 3, title: 'Problem', description: 'Describe the challenge' },
-      { number: 4, title: 'Solution', description: 'WA solution details' },
+      { number: 2, title: 'Qualifier', description: 'Challenge qualification (BRD 3.1)' },
+      { number: 3, title: 'Basic Info', description: 'Customer and component details' },
+      { number: 4, title: 'Problem', description: 'Describe the challenge' },
+      { number: 5, title: 'Solution', description: 'WA solution details' },
     ];
 
     // Add WPS step for TECH and STAR cases
     if (formData.type === 'TECH' || formData.type === 'STAR') {
-      baseSteps.push({ number: 5, title: 'WPS', description: 'Welding procedure specification' });
+      baseSteps.push({ number: 6, title: 'WPS', description: 'Welding procedure specification' });
     }
 
     // Always add Review step last
@@ -164,6 +176,9 @@ export default function NewCaseStudyPage() {
     switch (currentStepData.title) {
       case 'Case Type':
         return !!formData.type;
+      case 'Qualifier':
+        // Customer name required and qualifier questions must be answered
+        return !!(formData.customerName && formData.qualifierCompleted);
       case 'Basic Info':
         return !!(
           formData.customerName &&
@@ -326,6 +341,68 @@ export default function NewCaseStudyPage() {
         <CardContent className="space-y-6">
           {STEPS[currentStep - 1]?.title === 'Case Type' && (
             <StepOne formData={formData} updateFormData={updateFormData} />
+          )}
+          {STEPS[currentStep - 1]?.title === 'Qualifier' && (
+            <div className="space-y-6">
+              {/* Customer Name Search - BRD 3.1 + 3.4D Insightly Integration */}
+              <CRMCustomerSearch
+                value={formData.customerName}
+                onChange={(value) => updateFormData({ customerName: value })}
+                onCustomerSelect={(customer: CRMCustomer) => {
+                  // Auto-fill fields from CRM data
+                  const updates: Partial<CaseStudyFormData> = {
+                    customerName: customer.name,
+                  };
+                  if (customer.city) updates.location = customer.city;
+                  if (customer.country) updates.country = customer.country;
+                  if (customer.industry) updates.industry = customer.industry;
+
+                  updateFormData(updates);
+                  console.log(`[Qualifier] Customer selected from ${customer.source}:`, customer.name);
+                }}
+                label="Customer Name"
+                required
+                placeholder="Search Insightly/NetSuite or enter new customer..."
+                defaultCRM="insightly"
+              />
+              <p className="text-sm text-muted-foreground -mt-4">
+                Search for existing customers in CRM or enter a new customer name
+              </p>
+
+              {/* Challenge Qualifier - only show once customer name is entered */}
+              {formData.customerName && (
+                <ChallengeQualifier
+                  customerName={formData.customerName}
+                  onComplete={(result: QualifierResult) => {
+                    updateFormData({
+                      qualifierType: result.qualifierType,
+                      isTarget: result.isTarget,
+                      qualifierCompleted: true,
+                    });
+                  }}
+                />
+              )}
+
+              {/* Show qualification result summary */}
+              {formData.qualifierCompleted && (
+                <div className={`p-4 rounded-lg border ${
+                  formData.isTarget
+                    ? 'bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800'
+                    : 'bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-sm font-medium ${
+                      formData.isTarget ? 'text-green-700 dark:text-green-300' : 'text-blue-700 dark:text-blue-300'
+                    }`}>
+                      {formData.isTarget ? '✓ Counts toward BHAG 10,000 goal' : 'ℹ Maintenance case (does not count toward BHAG)'}
+                    </span>
+                  </div>
+                  <p className="text-sm mt-1 text-gray-600 dark:text-gray-400">
+                    Qualifier Type: {formData.qualifierType?.replace('_', ' ')}
+                  </p>
+                </div>
+              )}
+            </div>
           )}
           {STEPS[currentStep - 1]?.title === 'Basic Info' && (
             <StepTwo formData={formData} updateFormData={updateFormData} />

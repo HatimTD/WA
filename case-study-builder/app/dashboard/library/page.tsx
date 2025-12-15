@@ -17,6 +17,7 @@ interface SearchParams {
   q?: string;
   type?: string;
   industry?: string;
+  oem?: string;
   page?: string;
 }
 
@@ -29,6 +30,7 @@ export default async function LibraryPage({
   const query = params.q || '';
   const typeFilter = params.type || '';
   const industryFilter = params.industry || '';
+  const oemFilter = params.oem || '';
   const page = parseInt(params.page || '1');
   const perPage = 12;
 
@@ -44,6 +46,7 @@ export default async function LibraryPage({
       { componentWorkpiece: { contains: query, mode: 'insensitive' } },
       { waProduct: { contains: query, mode: 'insensitive' } },
       { location: { contains: query, mode: 'insensitive' } },
+      { oem: { contains: query, mode: 'insensitive' } },
     ];
   }
 
@@ -55,8 +58,12 @@ export default async function LibraryPage({
     where.industry = { contains: industryFilter, mode: 'insensitive' };
   }
 
+  if (oemFilter) {
+    where.oem = { contains: oemFilter, mode: 'insensitive' };
+  }
+
   // Fetch cases with pagination
-  const [cases, totalCount, industries, typeCounts] = await Promise.all([
+  const [cases, totalCount, industries, oems, typeCounts] = await Promise.all([
     prisma.caseStudy.findMany({
       where,
       select: {
@@ -79,6 +86,11 @@ export default async function LibraryPage({
       where: { status: 'APPROVED' },
       select: { industry: true },
       distinct: ['industry'],
+    }),
+    prisma.caseStudy.findMany({
+      where: { status: 'APPROVED', oem: { not: null } },
+      select: { oem: true },
+      distinct: ['oem'],
     }),
     prisma.caseStudy.groupBy({
       by: ['type'],
@@ -122,10 +134,12 @@ export default async function LibraryPage({
             <CardContent className="space-y-6">
               <LibraryFilters
                 industries={industries}
+                oems={oems}
                 typeCounts={typeCounts}
                 initialQuery={query}
                 typeFilter={typeFilter}
                 industryFilter={industryFilter}
+                oemFilter={oemFilter}
               />
             </CardContent>
           </Card>
@@ -139,7 +153,7 @@ export default async function LibraryPage({
               Showing {(page - 1) * perPage + 1}-{Math.min(page * perPage, totalCount)} of{' '}
               {totalCount} cases
             </p>
-            {(query || typeFilter || industryFilter) && (
+            {(query || typeFilter || industryFilter || oemFilter) && (
               <Link href="/dashboard/library">
                 <Button variant="outline" size="sm" className="dark:border-border dark:text-foreground dark:hover:bg-accent">
                   Clear Filters
@@ -219,6 +233,7 @@ export default async function LibraryPage({
                   ...(query && { q: query }),
                   ...(typeFilter && { type: typeFilter }),
                   ...(industryFilter && { industry: industryFilter }),
+                  ...(oemFilter && { oem: oemFilter }),
                 }).toString()}`}
               >
                 <Button variant="outline" disabled={page === 1}>
@@ -247,6 +262,7 @@ export default async function LibraryPage({
                         ...(query && { q: query }),
                         ...(typeFilter && { type: typeFilter }),
                         ...(industryFilter && { industry: industryFilter }),
+                        ...(oemFilter && { oem: oemFilter }),
                       }).toString()}`}
                     >
                       <Button
@@ -267,6 +283,7 @@ export default async function LibraryPage({
                   ...(query && { q: query }),
                   ...(typeFilter && { type: typeFilter }),
                   ...(industryFilter && { industry: industryFilter }),
+                  ...(oemFilter && { oem: oemFilter }),
                 }).toString()}`}
               >
                 <Button variant="outline" disabled={page === totalPages}>

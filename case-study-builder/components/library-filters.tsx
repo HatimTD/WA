@@ -9,18 +9,22 @@ import Link from 'next/link';
 
 interface LibraryFiltersProps {
   industries: { industry: string }[];
+  oems: { oem: string | null }[];
   typeCounts: { type: string; _count: number }[];
   initialQuery: string;
   typeFilter: string;
   industryFilter: string;
+  oemFilter: string;
 }
 
 export function LibraryFilters({
   industries,
+  oems,
   typeCounts,
   initialQuery,
   typeFilter,
   industryFilter,
+  oemFilter,
 }: LibraryFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -72,6 +76,7 @@ export function LibraryFilters({
             href={`/dashboard/library?${new URLSearchParams({
               ...(query && { q: query }),
               ...(industryFilter && { industry: industryFilter }),
+              ...(oemFilter && { oem: oemFilter }),
             }).toString()}`}
             className={`block px-3 py-2 rounded-md text-sm transition-colors ${
               !typeFilter
@@ -88,6 +93,7 @@ export function LibraryFilters({
                 type: typeCount.type,
                 ...(query && { q: query }),
                 ...(industryFilter && { industry: industryFilter }),
+                ...(oemFilter && { oem: oemFilter }),
               }).toString()}`}
               className={`block px-3 py-2 rounded-md text-sm transition-colors ${
                 typeFilter === typeCount.type
@@ -109,6 +115,7 @@ export function LibraryFilters({
             href={`/dashboard/library?${new URLSearchParams({
               ...(query && { q: query }),
               ...(typeFilter && { type: typeFilter }),
+              ...(oemFilter && { oem: oemFilter }),
             }).toString()}`}
             className={`block px-3 py-2 rounded-md text-sm transition-colors ${
               !industryFilter
@@ -125,6 +132,7 @@ export function LibraryFilters({
                 industry: ind.industry,
                 ...(query && { q: query }),
                 ...(typeFilter && { type: typeFilter }),
+                ...(oemFilter && { oem: oemFilter }),
               }).toString()}`}
               className={`block px-3 py-2 rounded-md text-sm transition-colors ${
                 industryFilter === ind.industry
@@ -137,6 +145,47 @@ export function LibraryFilters({
           ))}
         </div>
       </div>
+
+      {/* OEM Filter */}
+      {oems.length > 0 && (
+        <div>
+          <label className="text-sm font-medium mb-2 block dark:text-foreground">OEM</label>
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            <Link
+              href={`/dashboard/library?${new URLSearchParams({
+                ...(query && { q: query }),
+                ...(typeFilter && { type: typeFilter }),
+                ...(industryFilter && { industry: industryFilter }),
+              }).toString()}`}
+              className={`block px-3 py-2 rounded-md text-sm transition-colors ${
+                !oemFilter
+                  ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
+                  : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
+              }`}
+            >
+              All OEMs
+            </Link>
+            {oems.filter(o => o.oem).slice(0, 15).map((oemItem) => (
+              <Link
+                key={oemItem.oem}
+                href={`/dashboard/library?${new URLSearchParams({
+                  oem: oemItem.oem!,
+                  ...(query && { q: query }),
+                  ...(typeFilter && { type: typeFilter }),
+                  ...(industryFilter && { industry: industryFilter }),
+                }).toString()}`}
+                className={`block px-3 py-2 rounded-md text-sm transition-colors ${
+                  oemFilter === oemItem.oem
+                    ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
+                    : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
+                }`}
+              >
+                {oemItem.oem}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
     </>
   );
 }
