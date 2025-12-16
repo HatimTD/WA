@@ -1,11 +1,11 @@
-import { getBHAGProgress } from '@/lib/actions/bhag-actions';
+import { waGetBhagProgress } from '@/lib/actions/waBhagActions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Target, TrendingUp } from 'lucide-react';
 
 export default async function BHAGProgress() {
-  const result = await getBHAGProgress();
+  const result = await waGetBhagProgress();
 
   if (!result.success || !result.bhag) {
     return null;

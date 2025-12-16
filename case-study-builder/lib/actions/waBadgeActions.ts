@@ -5,7 +5,7 @@ import { Badge, CaseType } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 
 // Badge thresholds
-const BADGE_REQUIREMENTS = {
+const WA_BADGE_REQUIREMENTS = {
   EXPLORER: { type: 'APPLICATION' as CaseType, count: 10 },
   EXPERT: { type: 'TECH' as CaseType, count: 10 },
   CHAMPION: { type: 'STAR' as CaseType, count: 10 },
@@ -15,7 +15,7 @@ const BADGE_REQUIREMENTS = {
  * Check and award badges to a user based on their approved case studies
  * Call this after approving a case study
  */
-export async function checkAndAwardBadges(userId: string) {
+export async function waCheckAndAwardBadges(userId: string) {
   try {
     // Get user's current badges
     const user = await prisma.user.findUnique({
@@ -31,7 +31,7 @@ export async function checkAndAwardBadges(userId: string) {
     const newBadges: Badge[] = [];
 
     // Check each badge type
-    for (const [badgeName, requirement] of Object.entries(BADGE_REQUIREMENTS)) {
+    for (const [badgeName, requirement] of Object.entries(WA_BADGE_REQUIREMENTS)) {
       const badge = badgeName as Badge;
 
       // Skip if user already has this badge
@@ -83,7 +83,7 @@ export async function checkAndAwardBadges(userId: string) {
 /**
  * Get badge progress for a user
  */
-export async function getUserBadgeProgress(userId: string) {
+export async function waGetUserBadgeProgress(userId: string) {
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -95,7 +95,7 @@ export async function getUserBadgeProgress(userId: string) {
     }
 
     const progress = await Promise.all(
-      Object.entries(BADGE_REQUIREMENTS).map(async ([badgeName, requirement]) => {
+      Object.entries(WA_BADGE_REQUIREMENTS).map(async ([badgeName, requirement]) => {
         const badge = badgeName as Badge;
         const earned = (user.badges as Badge[]).includes(badge);
 

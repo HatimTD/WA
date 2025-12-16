@@ -12,7 +12,7 @@ import { getBHAGTarget } from './system-config-actions';
  * @param cs Case study with required fields
  * @returns Unique key string: "customerName|location|componentWorkpiece|waProduct"
  */
-function createUniqueKey(cs: {
+function waCreateUniqueKey(cs: {
   customerName: string;
   location: string;
   componentWorkpiece: string;
@@ -31,7 +31,7 @@ function createUniqueKey(cs: {
  * Deduplication Key: customerName + location + componentWorkpiece + waProduct
  * Only count APPROVED case studies
  */
-export async function getBHAGProgress() {
+export async function waGetBhagProgress() {
   try {
     // Get all approved case studies with deduplication fields (BRD Section 5)
     const approvedCases = await prisma.caseStudy.findMany({
@@ -49,7 +49,7 @@ export async function getBHAGProgress() {
 
     // Create unique identifier for each case per BRD Section 5
     // Format: "customerName|location|componentWorkpiece|waProduct"
-    const uniqueCases = new Set(approvedCases.map(createUniqueKey));
+    const uniqueCases = new Set(approvedCases.map(waCreateUniqueKey));
 
     const uniqueCount = uniqueCases.size;
     const totalCount = approvedCases.length;
@@ -68,7 +68,7 @@ export async function getBHAGProgress() {
     };
 
     approvedCases.forEach((cs) => {
-      const uniqueKey = createUniqueKey(cs);
+      const uniqueKey = waCreateUniqueKey(cs);
       uniqueByType[cs.type].add(uniqueKey);
     });
 
@@ -103,7 +103,7 @@ export async function getBHAGProgress() {
  * Get regional breakdown of case studies
  * Uses BRD Section 5 deduplication logic
  */
-export async function getRegionalBHAGProgress() {
+export async function waGetRegionalBhagProgress() {
   try {
     const approvedCases = await prisma.caseStudy.findMany({
       where: {
@@ -122,7 +122,7 @@ export async function getRegionalBHAGProgress() {
 
     approvedCases.forEach((cs) => {
       const region = cs.location;
-      const uniqueKey = createUniqueKey(cs);
+      const uniqueKey = waCreateUniqueKey(cs);
 
       if (!byRegion[region]) {
         byRegion[region] = new Set();
@@ -155,7 +155,7 @@ export async function getRegionalBHAGProgress() {
  * Get industry breakdown
  * Uses BRD Section 5 deduplication logic
  */
-export async function getIndustryBHAGProgress() {
+export async function waGetIndustryBhagProgress() {
   try {
     const approvedCases = await prisma.caseStudy.findMany({
       where: {
@@ -175,7 +175,7 @@ export async function getIndustryBHAGProgress() {
 
     approvedCases.forEach((cs) => {
       const industry = cs.industry;
-      const uniqueKey = createUniqueKey(cs);
+      const uniqueKey = waCreateUniqueKey(cs);
 
       if (!byIndustry[industry]) {
         byIndustry[industry] = new Set();
@@ -209,7 +209,7 @@ export async function getIndustryBHAGProgress() {
  * NEW_CUSTOMER vs CROSS_SELL vs MAINTENANCE
  * Uses BRD Section 5 deduplication logic
  */
-export async function getQualifierTypeBHAGProgress() {
+export async function waGetQualifierTypeBhagProgress() {
   try {
     const approvedCases = await prisma.caseStudy.findMany({
       where: {
@@ -236,7 +236,7 @@ export async function getQualifierTypeBHAGProgress() {
     let targetCount = 0;
 
     approvedCases.forEach((cs) => {
-      const uniqueKey = createUniqueKey(cs);
+      const uniqueKey = waCreateUniqueKey(cs);
 
       if (cs.isTarget) {
         targetCount++;
@@ -299,7 +299,7 @@ export async function getQualifierTypeBHAGProgress() {
  * Groups by user.region instead of case study location
  * Uses BRD Section 5 deduplication logic
  */
-export async function getContributorRegionBHAGProgress() {
+export async function waGetContributorRegionBhagProgress() {
   try {
     const approvedCases = await prisma.caseStudy.findMany({
       where: {
@@ -323,7 +323,7 @@ export async function getContributorRegionBHAGProgress() {
 
     approvedCases.forEach((cs) => {
       const region = cs.contributor?.region || 'Unknown';
-      const uniqueKey = createUniqueKey(cs);
+      const uniqueKey = waCreateUniqueKey(cs);
 
       if (!byContributorRegion[region]) {
         byContributorRegion[region] = new Set();

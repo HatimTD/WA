@@ -4,7 +4,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 import { revalidatePath } from 'next/cache';
-import { checkAndAwardBadges } from './badge-actions';
+import { waCheckAndAwardBadges } from './waBadgeActions';
 import { createNotification } from './notification-actions';
 
 export async function approveCaseStudy(caseStudyId: string) {
@@ -76,7 +76,7 @@ export async function approveCaseStudy(caseStudyId: string) {
     ]);
 
     // Check and award badges based on approved case counts
-    const badgeResult = await checkAndAwardBadges(caseStudy.contributorId);
+    const badgeResult = await waCheckAndAwardBadges(caseStudy.contributorId);
 
     // Send approval notification to contributor
     await createNotification({

@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Target, TrendingUp, Globe, Building2, Users, UserCheck, UserPlus, RefreshCw } from 'lucide-react';
-import { getBHAGProgress, getRegionalBHAGProgress, getIndustryBHAGProgress, getQualifierTypeBHAGProgress, getContributorRegionBHAGProgress } from '@/lib/actions/bhag-actions';
+import { waGetBhagProgress, waGetRegionalBhagProgress, waGetIndustryBhagProgress, waGetQualifierTypeBhagProgress, waGetContributorRegionBhagProgress } from '@/lib/actions/waBhagActions';
 import type { Metadata } from 'next';
 
 
@@ -25,11 +25,11 @@ export default async function BHAGPage() {
   }
 
   const [bhagResult, regionalResult, industryResult, qualifierResult, contributorRegionResult] = await Promise.all([
-    getBHAGProgress(),
-    getRegionalBHAGProgress(),
-    getIndustryBHAGProgress(),
-    getQualifierTypeBHAGProgress(),
-    getContributorRegionBHAGProgress(),
+    waGetBhagProgress(),
+    waGetRegionalBhagProgress(),
+    waGetIndustryBhagProgress(),
+    waGetQualifierTypeBhagProgress(),
+    waGetContributorRegionBhagProgress(),
   ]);
 
   if (!bhagResult.success || !bhagResult.bhag) {
