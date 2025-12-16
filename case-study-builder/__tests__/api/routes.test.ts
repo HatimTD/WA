@@ -293,45 +293,45 @@ describe('API Routes', () => {
   })
 
   describe('Announcements API', () => {
-    it('should fetch active announcements', async () => {
-      const mockAnnouncements = [
-        {
-          id: 'ann-1',
+    it('should fetch announcement from system config', async () => {
+      const mockConfig = {
+        key: 'announcement',
+        value: JSON.stringify({
           title: 'Important Update',
           content: 'System update tonight',
           isActive: true,
-        },
-      ]
-
-      ;(prisma.announcement.findMany as jest.Mock).mockResolvedValue(mockAnnouncements)
-
-      const announcements = await prisma.announcement.findMany({
-        where: { isActive: true },
-      })
-
-      expect(announcements).toHaveLength(1)
-      expect(announcements[0].isActive).toBe(true)
-    })
-
-    it('should create announcement (ADMIN)', async () => {
-      const mockAnnouncement = {
-        id: 'ann-new',
-        title: 'New Announcement',
-        content: 'Important message',
-        isActive: true,
+        }),
       }
 
-      ;(prisma.announcement.create as jest.Mock).mockResolvedValue(mockAnnouncement)
+      ;(prisma.waSystemConfig.findUnique as jest.Mock).mockResolvedValue(mockConfig)
 
-      const created = await prisma.announcement.create({
-        data: {
+      const config = await prisma.waSystemConfig.findUnique({
+        where: { key: 'announcement' },
+      })
+
+      expect(config).toBeDefined()
+      expect(config?.key).toBe('announcement')
+    })
+
+    it('should update announcement in system config (ADMIN)', async () => {
+      const mockConfig = {
+        key: 'announcement',
+        value: JSON.stringify({
           title: 'New Announcement',
           content: 'Important message',
           isActive: true,
-        },
+        }),
+      }
+
+      ;(prisma.waSystemConfig.upsert as jest.Mock).mockResolvedValue(mockConfig)
+
+      const updated = await prisma.waSystemConfig.upsert({
+        where: { key: 'announcement' },
+        update: { value: mockConfig.value },
+        create: { key: 'announcement', value: mockConfig.value },
       })
 
-      expect(created.title).toBe('New Announcement')
+      expect(updated.key).toBe('announcement')
     })
   })
 
@@ -342,13 +342,13 @@ describe('API Routes', () => {
           id: 'notif-1',
           userId: 'user-123',
           type: 'CASE_PUBLISHED',
-          isRead: false,
+          read: false,
         },
         {
           id: 'notif-2',
           userId: 'user-123',
           type: 'COMMENT_ADDED',
-          isRead: true,
+          read: true,
         },
       ]
 
@@ -365,7 +365,7 @@ describe('API Routes', () => {
       ;(prisma.waNotification.count as jest.Mock).mockResolvedValue(5)
 
       const count = await prisma.waNotification.count({
-        where: { userId: 'user-123', isRead: false },
+        where: { userId: 'user-123', read: false },
       })
 
       expect(count).toBe(5)
@@ -374,17 +374,17 @@ describe('API Routes', () => {
     it('should mark notification as read', async () => {
       const mockUpdated = {
         id: 'notif-1',
-        isRead: true,
+        read: true,
       }
 
       ;(prisma.waNotification.update as jest.Mock).mockResolvedValue(mockUpdated)
 
       const updated = await prisma.waNotification.update({
         where: { id: 'notif-1' },
-        data: { isRead: true },
+        data: { read: true },
       })
 
-      expect(updated.isRead).toBe(true)
+      expect(updated.read).toBe(true)
     })
   })
 
