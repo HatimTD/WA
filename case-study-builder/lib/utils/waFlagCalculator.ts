@@ -39,7 +39,7 @@ export type FlagCalculationResult = {
  * Check if Application Case Study flag should be set
  * Requires: General Information + Problem & Solution sections filled
  */
-export function calculateApplicationFlag(caseStudy: CaseStudyWithRelations): boolean {
+export function waCalculateApplicationFlag(caseStudy: CaseStudyWithRelations): boolean {
   const requiredFields = [
     caseStudy.customerName,
     caseStudy.location,
@@ -62,7 +62,7 @@ export function calculateApplicationFlag(caseStudy: CaseStudyWithRelations): boo
  * Check if Tech Case Study flag should be set
  * Requires: All WPS Details filled
  */
-export function calculateWpsFlag(caseStudy: CaseStudyWithRelations): boolean {
+export function waCalculateWpsFlag(caseStudy: CaseStudyWithRelations): boolean {
   const wps = caseStudy.weldingProcedure;
   if (!wps) return false;
 
@@ -88,7 +88,7 @@ export function calculateWpsFlag(caseStudy: CaseStudyWithRelations): boolean {
  * Check if Star Case Study flag should be set
  * Requires: All Cost Calculator fields filled
  */
-export function calculateCostFlag(caseStudy: CaseStudyWithRelations): boolean {
+export function waCalculateCostFlag(caseStudy: CaseStudyWithRelations): boolean {
   const cost = caseStudy.costCalculator;
   if (!cost) return false;
 
@@ -110,18 +110,18 @@ export function calculateCostFlag(caseStudy: CaseStudyWithRelations): boolean {
 /**
  * Calculate all flags for a case study
  */
-export function calculateAllFlags(caseStudy: CaseStudyWithRelations): Pick<FlagCalculationResult, 'hasApplicationFlag' | 'hasWpsFlag' | 'hasCostFlag'> {
+export function waCalculateAllFlags(caseStudy: CaseStudyWithRelations): Pick<FlagCalculationResult, 'hasApplicationFlag' | 'hasWpsFlag' | 'hasCostFlag'> {
   return {
-    hasApplicationFlag: calculateApplicationFlag(caseStudy),
-    hasWpsFlag: calculateWpsFlag(caseStudy),
-    hasCostFlag: calculateCostFlag(caseStudy),
+    hasApplicationFlag: waCalculateApplicationFlag(caseStudy),
+    hasWpsFlag: waCalculateWpsFlag(caseStudy),
+    hasCostFlag: waCalculateCostFlag(caseStudy),
   };
 }
 
 /**
  * Get case study tier based on flags
  */
-export function getCaseStudyTier(flags: { hasApplicationFlag: boolean; hasWpsFlag: boolean; hasCostFlag: boolean }): FlagCalculationResult['tier'] {
+export function waGetCaseStudyTier(flags: { hasApplicationFlag: boolean; hasWpsFlag: boolean; hasCostFlag: boolean }): FlagCalculationResult['tier'] {
   if (flags.hasCostFlag && flags.hasWpsFlag && flags.hasApplicationFlag) {
     return 'COMPLETE'; // All 3 flags
   }
@@ -140,7 +140,7 @@ export function getCaseStudyTier(flags: { hasApplicationFlag: boolean; hasWpsFla
 /**
  * Get tier label for display
  */
-export function getTierLabel(tier: FlagCalculationResult['tier']): string {
+export function waGetTierLabel(tier: FlagCalculationResult['tier']): string {
   const labels: Record<FlagCalculationResult['tier'], string> = {
     INCOMPLETE: 'Incomplete',
     APPLICATION: 'Application Case Study',
@@ -154,7 +154,7 @@ export function getTierLabel(tier: FlagCalculationResult['tier']): string {
 /**
  * Get tier description
  */
-export function getTierDescription(tier: FlagCalculationResult['tier']): string {
+export function waGetTierDescription(tier: FlagCalculationResult['tier']): string {
   const descriptions: Record<FlagCalculationResult['tier'], string> = {
     INCOMPLETE: 'Missing required fields for Application tier',
     APPLICATION: 'General information and problem/solution complete',
@@ -168,7 +168,7 @@ export function getTierDescription(tier: FlagCalculationResult['tier']): string 
 /**
  * Calculate missing fields for next tier
  */
-export function getMissingForNextTier(
+export function waGetMissingForNextTier(
   caseStudy: CaseStudyWithRelations,
   currentTier: FlagCalculationResult['tier']
 ): string[] {
@@ -216,8 +216,8 @@ export function getMissingForNextTier(
 /**
  * Calculate completion percentage
  */
-export function calculateCompletionPercentage(caseStudy: CaseStudyWithRelations): number {
-  const flags = calculateAllFlags(caseStudy);
+export function waCalculateCompletionPercentage(caseStudy: CaseStudyWithRelations): number {
+  const flags = waCalculateAllFlags(caseStudy);
   let score = 0;
 
   // Application tier fields (40% of total)
@@ -272,24 +272,24 @@ export function calculateCompletionPercentage(caseStudy: CaseStudyWithRelations)
 /**
  * Full flag calculation with all metadata
  */
-export function calculateFlagResult(caseStudy: CaseStudyWithRelations): FlagCalculationResult {
-  const flags = calculateAllFlags(caseStudy);
-  const tier = getCaseStudyTier(flags);
+export function waCalculateFlagResult(caseStudy: CaseStudyWithRelations): FlagCalculationResult {
+  const flags = waCalculateAllFlags(caseStudy);
+  const tier = waGetCaseStudyTier(flags);
 
   return {
     ...flags,
     tier,
-    tierLabel: getTierLabel(tier),
-    tierDescription: getTierDescription(tier),
-    completionPercentage: calculateCompletionPercentage(caseStudy),
-    missingForNextTier: getMissingForNextTier(caseStudy, tier),
+    tierLabel: waGetTierLabel(tier),
+    tierDescription: waGetTierDescription(tier),
+    completionPercentage: waCalculateCompletionPercentage(caseStudy),
+    missingForNextTier: waGetMissingForNextTier(caseStudy, tier),
   };
 }
 
 /**
  * Get points for a tier (for gamification)
  */
-export function getTierPoints(tier: FlagCalculationResult['tier']): number {
+export function waGetTierPoints(tier: FlagCalculationResult['tier']): number {
   const points: Record<FlagCalculationResult['tier'], number> = {
     INCOMPLETE: 0,
     APPLICATION: 1,

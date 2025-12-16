@@ -47,7 +47,7 @@ export type ObfuscatedCaseStudy<T extends CaseStudyWithUser> = T & {
  * - Approvers/Managers in the workflow
  * - System Administrators
  */
-export function hasPrivilegedAccess(
+export function waHasPrivilegedAccess(
   caseStudy: CaseStudyWithUser,
   currentUserId: string,
   currentUserRole: Role
@@ -72,7 +72,7 @@ export function hasPrivilegedAccess(
  * Obfuscate customer name for restricted users
  * Returns: "Confidential - [Industry Sector]"
  */
-export function obfuscateCustomerName(
+export function waObfuscateCustomerName(
   caseStudy: CaseStudyWithUser,
   isPrivileged: boolean
 ): string {
@@ -89,7 +89,7 @@ export function obfuscateCustomerName(
  * Obfuscate location for restricted users
  * Only show country/region, not specific plant/city
  */
-export function obfuscateLocation(
+export function waObfuscateLocation(
   caseStudy: CaseStudyWithUser,
   isPrivileged: boolean
 ): string {
@@ -105,7 +105,7 @@ export function obfuscateLocation(
 /**
  * Obfuscate specific contact information
  */
-export function obfuscateContactInfo(
+export function waObfuscateContactInfo(
   value: string | null | undefined,
   isPrivileged: boolean
 ): string | null {
@@ -123,12 +123,12 @@ export function obfuscateContactInfo(
  * @param currentUserRole - The role of the current user
  * @returns Obfuscated case study
  */
-export function obfuscateCaseStudy<T extends CaseStudyWithUser>(
+export function waObfuscateCaseStudy<T extends CaseStudyWithUser>(
   caseStudy: T,
   currentUserId: string,
   currentUserRole: Role
 ): ObfuscatedCaseStudy<T> {
-  const isPrivileged = hasPrivilegedAccess(caseStudy, currentUserId, currentUserRole);
+  const isPrivileged = waHasPrivilegedAccess(caseStudy, currentUserId, currentUserRole);
 
   // Return original data for privileged users
   if (isPrivileged) {
@@ -141,8 +141,8 @@ export function obfuscateCaseStudy<T extends CaseStudyWithUser>(
   // Apply obfuscation for restricted users
   return {
     ...caseStudy,
-    customerName: obfuscateCustomerName(caseStudy, false),
-    location: obfuscateLocation(caseStudy, false),
+    customerName: waObfuscateCustomerName(caseStudy, false),
+    location: waObfuscateLocation(caseStudy, false),
     // Null out any PII fields
     netsuiteCustomerId: null,
     _obfuscated: true,
@@ -157,19 +157,19 @@ export function obfuscateCaseStudy<T extends CaseStudyWithUser>(
  * @param currentUserRole - The role of the current user
  * @returns Array of obfuscated case studies
  */
-export function obfuscateCaseStudies<T extends CaseStudyWithUser>(
+export function waObfuscateCaseStudies<T extends CaseStudyWithUser>(
   caseStudies: T[],
   currentUserId: string,
   currentUserRole: Role
 ): ObfuscatedCaseStudy<T>[] {
-  return caseStudies.map((cs) => obfuscateCaseStudy(cs, currentUserId, currentUserRole));
+  return caseStudies.map((cs) => waObfuscateCaseStudy(cs, currentUserId, currentUserRole));
 }
 
 /**
  * Check if a case study should show obfuscated data in exports (PDF, etc.)
  * This is separate from view permissions - used for external sharing
  */
-export function shouldObfuscateForExport(
+export function waShouldObfuscateForExport(
   caseStudy: CaseStudyWithUser,
   exportingUserId: string,
   exportingUserRole: Role,
@@ -179,14 +179,14 @@ export function shouldObfuscateForExport(
   if (forceObfuscate) return true;
 
   // Otherwise, follow the same rules as view access
-  return !hasPrivilegedAccess(caseStudy, exportingUserId, exportingUserRole);
+  return !waHasPrivilegedAccess(caseStudy, exportingUserId, exportingUserRole);
 }
 
 /**
  * Get obfuscation summary for a case study
  * Useful for UI indicators
  */
-export function getObfuscationInfo(
+export function waGetObfuscationInfo(
   caseStudy: CaseStudyWithUser,
   currentUserId: string,
   currentUserRole: Role
@@ -195,7 +195,7 @@ export function getObfuscationInfo(
   reason: string;
   accessLevel: 'full' | 'restricted';
 } {
-  const isPrivileged = hasPrivilegedAccess(caseStudy, currentUserId, currentUserRole);
+  const isPrivileged = waHasPrivilegedAccess(caseStudy, currentUserId, currentUserRole);
 
   if (isPrivileged) {
     let reason = 'Full access: ';
@@ -227,7 +227,7 @@ export function getObfuscationInfo(
  * Create a shareable version of a case study with optional obfuscation
  * Used for public sharing or cross-team collaboration
  */
-export function createShareableCaseStudy<T extends CaseStudyWithUser>(
+export function waCreateShareableCaseStudy<T extends CaseStudyWithUser>(
   caseStudy: T,
   options: {
     obfuscateCustomer?: boolean;
@@ -239,12 +239,12 @@ export function createShareableCaseStudy<T extends CaseStudyWithUser>(
   const result = { ...caseStudy };
 
   if (options.obfuscateCustomer) {
-    (result as CaseStudyWithUser).customerName = obfuscateCustomerName(caseStudy, false);
+    (result as CaseStudyWithUser).customerName = waObfuscateCustomerName(caseStudy, false);
     result.netsuiteCustomerId = null;
   }
 
   if (options.obfuscateLocation) {
-    (result as CaseStudyWithUser).location = obfuscateLocation(caseStudy, false);
+    (result as CaseStudyWithUser).location = waObfuscateLocation(caseStudy, false);
   }
 
   if (options.removeImages) {
@@ -262,7 +262,7 @@ export function createShareableCaseStudy<T extends CaseStudyWithUser>(
  * Validate that obfuscation is properly applied
  * Useful for testing and compliance verification
  */
-export function validateObfuscation(
+export function waValidateObfuscation(
   original: CaseStudyWithUser,
   obfuscated: ObfuscatedCaseStudy<CaseStudyWithUser>
 ): {

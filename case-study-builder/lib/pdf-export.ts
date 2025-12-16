@@ -1,11 +1,11 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import {
-  hasPrivilegedAccess,
-  obfuscateCustomerName,
-  obfuscateLocation,
+  waHasPrivilegedAccess,
+  waObfuscateCustomerName,
+  waObfuscateLocation,
   type CaseStudyWithUser,
-} from '@/lib/utils/data-obfuscation';
+} from '@/lib/utils/waDataObfuscation';
 import type { Role } from '@prisma/client';
 
 export interface CaseStudyPDFData {
@@ -102,7 +102,7 @@ export function generateCaseStudyPDF(caseStudy: CaseStudyPDFData, options?: PDFE
 
   // If we have user context and case study data, check access permissions
   if (options?.caseStudyForObfuscation && options?.exportingUserId && options?.exportingUserRole) {
-    const isPrivileged = hasPrivilegedAccess(
+    const isPrivileged = waHasPrivilegedAccess(
       options.caseStudyForObfuscation,
       options.exportingUserId,
       options.exportingUserRole
@@ -112,11 +112,11 @@ export function generateCaseStudyPDF(caseStudy: CaseStudyPDFData, options?: PDFE
 
   // BRD 6.2 - Apply obfuscation to sensitive fields
   const displayCustomerName = shouldObfuscate && options?.caseStudyForObfuscation
-    ? obfuscateCustomerName(options.caseStudyForObfuscation, false)
+    ? waObfuscateCustomerName(options.caseStudyForObfuscation, false)
     : caseStudy.customerName;
 
   const displayLocation = shouldObfuscate && options?.caseStudyForObfuscation
-    ? obfuscateLocation(options.caseStudyForObfuscation, false)
+    ? waObfuscateLocation(options.caseStudyForObfuscation, false)
     : caseStudy.location;
 
   // Add watermark with personalization per BRD 5.4.3

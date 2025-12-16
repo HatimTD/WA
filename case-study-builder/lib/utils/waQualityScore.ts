@@ -47,7 +47,7 @@ export type QualityScoreResult = {
 /**
  * Calculate word count for a text field
  */
-function getWordCount(text: string | null | undefined): number {
+function waGetWordCount(text: string | null | undefined): number {
   if (!text) return 0;
   return text.trim().split(/\s+/).filter(w => w.length > 0).length;
 }
@@ -55,9 +55,9 @@ function getWordCount(text: string | null | undefined): number {
 /**
  * Score problem description quality (0-20 points)
  */
-function scoreProblemDescription(caseStudy: CaseStudyWithRelations): number {
+function waScoreProblemDescription(caseStudy: CaseStudyWithRelations): number {
   let score = 0;
-  const problemWords = getWordCount(caseStudy.problemDescription);
+  const problemWords = waGetWordCount(caseStudy.problemDescription);
 
   // Word count scoring
   if (problemWords >= 100) score += 10;
@@ -66,7 +66,7 @@ function scoreProblemDescription(caseStudy: CaseStudyWithRelations): number {
   else if (problemWords > 0) score += 2;
 
   // Previous solution mentioned
-  if (caseStudy.previousSolution && getWordCount(caseStudy.previousSolution) >= 10) {
+  if (caseStudy.previousSolution && waGetWordCount(caseStudy.previousSolution) >= 10) {
     score += 4;
   }
 
@@ -86,11 +86,11 @@ function scoreProblemDescription(caseStudy: CaseStudyWithRelations): number {
 /**
  * Score solution detail quality (0-20 points)
  */
-function scoreSolutionDetail(caseStudy: CaseStudyWithRelations): number {
+function waScoreSolutionDetail(caseStudy: CaseStudyWithRelations): number {
   let score = 0;
 
   // WA Solution description
-  const solutionWords = getWordCount(caseStudy.waSolution);
+  const solutionWords = waGetWordCount(caseStudy.waSolution);
   if (solutionWords >= 50) score += 6;
   else if (solutionWords >= 25) score += 4;
   else if (solutionWords > 0) score += 2;
@@ -99,7 +99,7 @@ function scoreSolutionDetail(caseStudy: CaseStudyWithRelations): number {
   if (caseStudy.waProduct) score += 4;
 
   // Technical advantages described
-  const techAdvWords = getWordCount(caseStudy.technicalAdvantages);
+  const techAdvWords = waGetWordCount(caseStudy.technicalAdvantages);
   if (techAdvWords >= 30) score += 6;
   else if (techAdvWords >= 15) score += 4;
   else if (techAdvWords > 0) score += 2;
@@ -113,7 +113,7 @@ function scoreSolutionDetail(caseStudy: CaseStudyWithRelations): number {
 /**
  * Score visual documentation (0-20 points)
  */
-function scoreVisualDocumentation(caseStudy: CaseStudyWithRelations): number {
+function waScoreVisualDocumentation(caseStudy: CaseStudyWithRelations): number {
   let score = 0;
   const imageCount = caseStudy.images?.length || 0;
   const docCount = caseStudy.supportingDocs?.length || 0;
@@ -135,7 +135,7 @@ function scoreVisualDocumentation(caseStudy: CaseStudyWithRelations): number {
 /**
  * Score cost analysis depth (0-20 points)
  */
-function scoreCostAnalysis(caseStudy: CaseStudyWithRelations): number {
+function waScoreCostAnalysis(caseStudy: CaseStudyWithRelations): number {
   let score = 0;
   const cost = caseStudy.costCalculator;
 
@@ -156,7 +156,7 @@ function scoreCostAnalysis(caseStudy: CaseStudyWithRelations): number {
 /**
  * Score searchability/discoverability (0-10 points)
  */
-function scoreSearchability(caseStudy: CaseStudyWithRelations): number {
+function waScoreSearchability(caseStudy: CaseStudyWithRelations): number {
   let score = 0;
   const tagCount = caseStudy.tags?.length || 0;
 
@@ -180,7 +180,7 @@ function scoreSearchability(caseStudy: CaseStudyWithRelations): number {
 /**
  * Score technical depth (0-10 points)
  */
-function scoreTechnicalDepth(caseStudy: CaseStudyWithRelations): number {
+function waScoreTechnicalDepth(caseStudy: CaseStudyWithRelations): number {
   let score = 0;
   const wps = caseStudy.wps;
 
@@ -203,7 +203,7 @@ function scoreTechnicalDepth(caseStudy: CaseStudyWithRelations): number {
 /**
  * Get grade from score
  */
-function getGrade(score: number): 'A' | 'B' | 'C' | 'D' | 'F' {
+function waGetGrade(score: number): 'A' | 'B' | 'C' | 'D' | 'F' {
   if (score >= 90) return 'A';
   if (score >= 80) return 'B';
   if (score >= 70) return 'C';
@@ -214,14 +214,14 @@ function getGrade(score: number): 'A' | 'B' | 'C' | 'D' | 'F' {
 /**
  * Generate improvement recommendations
  */
-function getRecommendations(
+function waGetRecommendations(
   breakdown: QualityScoreResult['breakdown'],
   caseStudy: CaseStudyWithRelations
 ): string[] {
   const recommendations: string[] = [];
 
   if (breakdown.problemDescription < 15) {
-    if (getWordCount(caseStudy.problemDescription) < 50) {
+    if (waGetWordCount(caseStudy.problemDescription) < 50) {
       recommendations.push('Expand problem description with more detail (aim for 50+ words)');
     }
     if (!caseStudy.previousSolution) {
@@ -233,7 +233,7 @@ function getRecommendations(
   }
 
   if (breakdown.solutionDetail < 15) {
-    if (getWordCount(caseStudy.technicalAdvantages) < 30) {
+    if (waGetWordCount(caseStudy.technicalAdvantages) < 30) {
       recommendations.push('Describe technical advantages in more detail');
     }
     if (!caseStudy.expectedServiceLife) {
@@ -279,7 +279,7 @@ function getRecommendations(
 /**
  * Identify strengths
  */
-function getStrengths(
+function waGetStrengths(
   breakdown: QualityScoreResult['breakdown'],
   caseStudy: CaseStudyWithRelations
 ): string[] {
@@ -319,32 +319,32 @@ function getStrengths(
 /**
  * Calculate full quality score
  */
-export function calculateQualityScore(caseStudy: CaseStudyWithRelations): QualityScoreResult {
+export function waCalculateQualityScore(caseStudy: CaseStudyWithRelations): QualityScoreResult {
   const breakdown = {
-    problemDescription: scoreProblemDescription(caseStudy),
-    solutionDetail: scoreSolutionDetail(caseStudy),
-    visualDocumentation: scoreVisualDocumentation(caseStudy),
-    costAnalysis: scoreCostAnalysis(caseStudy),
-    searchability: scoreSearchability(caseStudy),
-    technicalDepth: scoreTechnicalDepth(caseStudy),
+    problemDescription: waScoreProblemDescription(caseStudy),
+    solutionDetail: waScoreSolutionDetail(caseStudy),
+    visualDocumentation: waScoreVisualDocumentation(caseStudy),
+    costAnalysis: waScoreCostAnalysis(caseStudy),
+    searchability: waScoreSearchability(caseStudy),
+    technicalDepth: waScoreTechnicalDepth(caseStudy),
   };
 
   const totalScore = Object.values(breakdown).reduce((sum, val) => sum + val, 0);
-  const grade = getGrade(totalScore);
+  const grade = waGetGrade(totalScore);
 
   return {
     totalScore,
     grade,
     breakdown,
-    recommendations: getRecommendations(breakdown, caseStudy),
-    strengths: getStrengths(breakdown, caseStudy),
+    recommendations: waGetRecommendations(breakdown, caseStudy),
+    strengths: waGetStrengths(breakdown, caseStudy),
   };
 }
 
 /**
  * Get quality score color for UI
  */
-export function getQualityScoreColor(grade: QualityScoreResult['grade']): string {
+export function waGetQualityScoreColor(grade: QualityScoreResult['grade']): string {
   const colors: Record<QualityScoreResult['grade'], string> = {
     'A': 'text-green-600 bg-green-100',
     'B': 'text-blue-600 bg-blue-100',
@@ -358,7 +358,7 @@ export function getQualityScoreColor(grade: QualityScoreResult['grade']): string
 /**
  * Get quality score label
  */
-export function getQualityScoreLabel(grade: QualityScoreResult['grade']): string {
+export function waGetQualityScoreLabel(grade: QualityScoreResult['grade']): string {
   const labels: Record<QualityScoreResult['grade'], string> = {
     'A': 'Excellent',
     'B': 'Good',

@@ -16,12 +16,12 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import {
-  calculateQualityScore,
-  getQualityScoreColor,
-  getQualityScoreLabel,
+  waCalculateQualityScore,
+  waGetQualityScoreColor,
+  waGetQualityScoreLabel,
   type QualityScoreResult,
   type CaseStudyWithRelations,
-} from '@/lib/utils/quality-score';
+} from '@/lib/utils/waQualityScore';
 
 type Props = {
   caseStudy: CaseStudyWithRelations;
@@ -31,7 +31,7 @@ type Props = {
 
 export default function QualityScoreBadge({ caseStudy, showDetails = true, compact = false }: Props) {
   const [isOpen, setIsOpen] = useState(false);
-  const score = calculateQualityScore(caseStudy);
+  const score = waCalculateQualityScore(caseStudy);
 
   const gradeColors: Record<QualityScoreResult['grade'], string> = {
     'A': 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800',
@@ -93,7 +93,7 @@ export default function QualityScoreBadge({ caseStudy, showDetails = true, compa
                 </span>
               </h4>
               <p className="text-sm text-muted-foreground">
-                {getQualityScoreLabel(score.grade)} - {score.totalScore}/100 points
+                {waGetQualityScoreLabel(score.grade)} - {score.totalScore}/100 points
               </p>
             </div>
           </div>

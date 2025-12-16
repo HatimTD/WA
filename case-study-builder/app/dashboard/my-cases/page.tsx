@@ -9,7 +9,7 @@ import { Plus, FileText, Clock, CheckCircle2, XCircle, Eye } from 'lucide-react'
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { CompletionIndicator } from '@/components/completion-indicator';
-import { calculateCompletionPercentage, getFieldBreakdown } from '@/lib/utils/case-quality';
+import { waCalculateCompletionPercentage, waGetFieldBreakdown } from '@/lib/utils/waCaseQuality';
 
 
 export const metadata: Metadata = {
@@ -109,12 +109,12 @@ export default async function MyCasesPage({
 
   // Render a case study card with completion indicator
   const renderCaseCard = (caseStudy: typeof caseStudies[0]) => {
-    const completionPercentage = calculateCompletionPercentage(
+    const completionPercentage = waCalculateCompletionPercentage(
       caseStudy,
       caseStudy.wps,
       caseStudy.costCalculator
     );
-    const breakdown = getFieldBreakdown(
+    const breakdown = waGetFieldBreakdown(
       caseStudy,
       caseStudy.wps,
       caseStudy.costCalculator

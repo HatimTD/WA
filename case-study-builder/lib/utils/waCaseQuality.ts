@@ -85,7 +85,7 @@ interface FieldInfo {
 /**
  * Check if a field value is considered "filled"
  */
-function isFieldFilled(value: any): boolean {
+function waIsFieldFilled(value: any): boolean {
   if (value === null || value === undefined) return false;
   if (typeof value === 'string') return value.trim().length > 0;
   if (typeof value === 'number') return true; // Even 0 is considered filled
@@ -99,7 +99,7 @@ function isFieldFilled(value: any): boolean {
  * @param costCalc - Optional cost calculator (required for STAR type)
  * @returns Completion percentage (0-100)
  */
-export function calculateCompletionPercentage(
+export function waCalculateCompletionPercentage(
   caseStudy: CaseStudy,
   wps?: WeldingProcedure | null,
   costCalc?: CostCalculator | null
@@ -121,7 +121,7 @@ export function calculateCompletionPercentage(
   requiredCoreFields.forEach(field => {
     fields.push({
       name: field.key,
-      filled: isFieldFilled(field.value),
+      filled: waIsFieldFilled(field.value),
       category: 'required',
     });
   });
@@ -141,7 +141,7 @@ export function calculateCompletionPercentage(
   optionalFields.forEach(field => {
     fields.push({
       name: field.key,
-      filled: isFieldFilled(field.value),
+      filled: waIsFieldFilled(field.value),
       category: 'optional',
     });
   });
@@ -171,7 +171,7 @@ export function calculateCompletionPercentage(
       wpsFields.forEach(field => {
         fields.push({
           name: field.key,
-          filled: isFieldFilled(field.value),
+          filled: waIsFieldFilled(field.value),
           category: 'wps',
         });
       });
@@ -209,7 +209,7 @@ export function calculateCompletionPercentage(
       costFields.forEach(field => {
         fields.push({
           name: field.key,
-          filled: isFieldFilled(field.value),
+          filled: waIsFieldFilled(field.value),
           category: 'cost',
         });
       });
@@ -238,7 +238,7 @@ export function calculateCompletionPercentage(
 /**
  * Get quality level based on completion percentage
  */
-export function getQualityLevel(percentage: number): 'low' | 'medium' | 'high' {
+export function waGetQualityLevel(percentage: number): 'low' | 'medium' | 'high' {
   if (percentage < 50) return 'low';
   if (percentage < 80) return 'medium';
   return 'high';
@@ -247,13 +247,13 @@ export function getQualityLevel(percentage: number): 'low' | 'medium' | 'high' {
 /**
  * Get color class for quality level
  */
-export function getQualityColor(percentage: number): {
+export function waGetQualityColor(percentage: number): {
   bg: string;
   text: string;
   border: string;
   ring: string;
 } {
-  const level = getQualityLevel(percentage);
+  const level = waGetQualityLevel(percentage);
 
   switch (level) {
     case 'low':
@@ -283,7 +283,7 @@ export function getQualityColor(percentage: number): {
 /**
  * Get detailed field breakdown for a case study
  */
-export function getFieldBreakdown(
+export function waGetFieldBreakdown(
   caseStudy: CaseStudy,
   wps?: WeldingProcedure | null,
   costCalc?: CostCalculator | null
@@ -330,7 +330,7 @@ export function getFieldBreakdown(
   // Process required fields
   requiredCoreFields.forEach(field => {
     breakdown.required.total++;
-    const filled = isFieldFilled(field.value);
+    const filled = waIsFieldFilled(field.value);
     if (filled) {
       breakdown.required.filled++;
     } else {
@@ -341,7 +341,7 @@ export function getFieldBreakdown(
   // Process optional fields
   optionalFields.forEach(field => {
     breakdown.optional.total++;
-    if (isFieldFilled(field.value)) {
+    if (waIsFieldFilled(field.value)) {
       breakdown.optional.filled++;
     }
   });
@@ -368,7 +368,7 @@ export function getFieldBreakdown(
 
       wpsFields.forEach(field => {
         breakdown.wps.total++;
-        if (isFieldFilled(field.value)) {
+        if (waIsFieldFilled(field.value)) {
           breakdown.wps.filled++;
         } else {
           breakdown.missingFields.push(`WPS: ${field.label}`);
@@ -395,7 +395,7 @@ export function getFieldBreakdown(
 
       costFields.forEach(field => {
         breakdown.cost.total++;
-        if (isFieldFilled(field.value)) {
+        if (waIsFieldFilled(field.value)) {
           breakdown.cost.filled++;
         } else {
           breakdown.missingFields.push(`Cost: ${field.label}`);

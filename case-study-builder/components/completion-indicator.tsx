@@ -4,7 +4,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { getQualityLevel, getQualityColor } from '@/lib/utils/case-quality';
+import { waGetQualityLevel, waGetQualityColor } from '@/lib/utils/waCaseQuality';
 import { CheckCircle2, AlertCircle, XCircle, Info } from 'lucide-react';
 
 interface CompletionIndicatorProps {
@@ -26,8 +26,8 @@ export function CompletionIndicator({
   missingFields = [],
   className,
 }: CompletionIndicatorProps) {
-  const quality = getQualityLevel(percentage);
-  const colors = getQualityColor(percentage);
+  const quality = waGetQualityLevel(percentage);
+  const colors = waGetQualityColor(percentage);
 
   // Get icon based on quality level
   const getIcon = () => {
@@ -231,7 +231,7 @@ export function CircularCompletionIndicator({
   strokeWidth?: number;
   className?: string;
 }) {
-  const quality = getQualityLevel(percentage);
+  const quality = waGetQualityLevel(percentage);
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (percentage / 100) * circumference;
@@ -247,7 +247,7 @@ export function CircularCompletionIndicator({
     }
   };
 
-  const colors = getQualityColor(percentage);
+  const colors = waGetQualityColor(percentage);
 
   return (
     <div className={cn('relative inline-flex items-center justify-center', className)}>

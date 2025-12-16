@@ -36,9 +36,9 @@ import { waGetComments } from '@/lib/actions/waCommentActions';
 import dynamic from 'next/dynamic';
 import type { CaseStudyPDFData } from '@/lib/pdf-export';
 import { CompletionIndicator } from '@/components/completion-indicator';
-import { calculateCompletionPercentage, getFieldBreakdown } from '@/lib/utils/case-quality';
+import { waCalculateCompletionPercentage, waGetFieldBreakdown } from '@/lib/utils/waCaseQuality';
 import QualityScoreBadge from '@/components/quality-score-badge';
-import type { CaseStudyWithRelations } from '@/lib/utils/quality-score';
+import type { CaseStudyWithRelations } from '@/lib/utils/waQualityScore';
 
 // Dynamic import for PDF export (saves ~200KB from jspdf)
 const PDFExportButton = dynamic(() => import('@/components/pdf-export-button'), {
@@ -112,12 +112,12 @@ export default async function CaseStudyDetailPage({ params }: Props) {
   const canEdit = isOwner && caseStudy.status === 'DRAFT';
 
   // Calculate completion percentage
-  const completionPercentage = calculateCompletionPercentage(
+  const completionPercentage = waCalculateCompletionPercentage(
     caseStudy,
     existingWPS,
     existingCostCalc
   );
-  const breakdown = getFieldBreakdown(
+  const breakdown = waGetFieldBreakdown(
     caseStudy,
     existingWPS,
     existingCostCalc
