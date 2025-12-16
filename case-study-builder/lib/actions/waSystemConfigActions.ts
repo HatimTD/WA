@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache';
 /**
  * Get all system configuration values
  */
-export async function getSystemConfig() {
+export async function waGetSystemConfig() {
   try {
     const configs = await prisma.systemConfig.findMany({
       orderBy: { key: 'asc' },
@@ -21,7 +21,7 @@ export async function getSystemConfig() {
 
     return { success: true, config: configObject };
   } catch (error) {
-    console.error('[getSystemConfig] Error:', error);
+    console.error('[waGetSystemConfig] Error:', error);
     return { success: false, error: 'Failed to fetch system configuration' };
   }
 }
@@ -29,7 +29,7 @@ export async function getSystemConfig() {
 /**
  * Get a specific configuration value by key
  */
-export async function getConfigValue(key: string): Promise<string | null> {
+export async function waGetConfigValue(key: string): Promise<string | null> {
   try {
     const config = await prisma.systemConfig.findUnique({
       where: { key },
@@ -37,7 +37,7 @@ export async function getConfigValue(key: string): Promise<string | null> {
 
     return config?.value || null;
   } catch (error) {
-    console.error(`[getConfigValue] Error for key ${key}:`, error);
+    console.error(`[waGetConfigValue] Error for key ${key}:`, error);
     return null;
   }
 }
@@ -45,7 +45,7 @@ export async function getConfigValue(key: string): Promise<string | null> {
 /**
  * Update system configuration (ADMIN only)
  */
-export async function updateSystemConfig(configs: Record<string, string>) {
+export async function waUpdateSystemConfig(configs: Record<string, string>) {
   try {
     const session = await auth();
 
@@ -87,7 +87,7 @@ export async function updateSystemConfig(configs: Record<string, string>) {
 
     return { success: true, message: 'System configuration updated successfully' };
   } catch (error) {
-    console.error('[updateSystemConfig] Error:', error);
+    console.error('[waUpdateSystemConfig] Error:', error);
     return { success: false, error: 'Failed to update system configuration' };
   }
 }
@@ -95,19 +95,19 @@ export async function updateSystemConfig(configs: Record<string, string>) {
 /**
  * Get BHAG target from system config
  */
-export async function getBHAGTarget(): Promise<number> {
-  const target = await getConfigValue('bhag_target');
+export async function waGetBHAGTarget(): Promise<number> {
+  const target = await waGetConfigValue('bhag_target');
   return target ? parseInt(target, 10) : 1000; // Default to 1000
 }
 
 /**
  * Get point values for case types
  */
-export async function getPointValues() {
+export async function waGetPointValues() {
   const [appPoints, techPoints, starPoints] = await Promise.all([
-    getConfigValue('points_application'),
-    getConfigValue('points_tech'),
-    getConfigValue('points_star'),
+    waGetConfigValue('points_application'),
+    waGetConfigValue('points_tech'),
+    waGetConfigValue('points_star'),
   ]);
 
   return {
@@ -120,11 +120,11 @@ export async function getPointValues() {
 /**
  * Get badge thresholds
  */
-export async function getBadgeThresholds() {
+export async function waGetBadgeThresholds() {
   const [explorer, expert, champion] = await Promise.all([
-    getConfigValue('badge_explorer_threshold'),
-    getConfigValue('badge_expert_threshold'),
-    getConfigValue('badge_champion_threshold'),
+    waGetConfigValue('badge_explorer_threshold'),
+    waGetConfigValue('badge_expert_threshold'),
+    waGetConfigValue('badge_champion_threshold'),
   ]);
 
   return {

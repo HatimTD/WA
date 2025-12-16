@@ -48,7 +48,7 @@ export interface MultiImageAnalysisResult {
  * @param imageUrl - URL of the image to analyze (Cloudinary URL or base64)
  * @returns Promise resolving to tags and metadata
  */
-export async function analyzeImageForTags(imageUrl: string): Promise<ImageTagsResult> {
+export async function waAnalyzeImageForTags(imageUrl: string): Promise<ImageTagsResult> {
   try {
     console.log('[Image Recognition] Analyzing image for tags:', imageUrl.substring(0, 50) + '...');
 
@@ -160,7 +160,7 @@ Format your response as JSON:
  * @param imageUrls - Array of image URLs to analyze
  * @returns Promise resolving to combined tags
  */
-export async function analyzeMultipleImagesForTags(
+export async function waAnalyzeMultipleImagesForTags(
   imageUrls: string[]
 ): Promise<MultiImageAnalysisResult> {
   try {
@@ -178,7 +178,7 @@ export async function analyzeMultipleImagesForTags(
 
     // Analyze each image
     const results = await Promise.all(
-      imagesToAnalyze.map((url) => analyzeImageForTags(url))
+      imagesToAnalyze.map((url) => waAnalyzeImageForTags(url))
     );
 
     // Combine and deduplicate tags
@@ -214,7 +214,7 @@ export async function analyzeMultipleImagesForTags(
  * @param existingTags - Existing tags to merge with
  * @returns Promise resolving to suggested tags
  */
-export async function generateImageBasedTags(
+export async function waGenerateImageBasedTags(
   imageUrls: string[],
   existingTags: string[] = []
 ): Promise<{ success: boolean; suggestedTags?: string[]; error?: string }> {
@@ -223,7 +223,7 @@ export async function generateImageBasedTags(
       return { success: true, suggestedTags: existingTags };
     }
 
-    const result = await analyzeMultipleImagesForTags(imageUrls);
+    const result = await waAnalyzeMultipleImagesForTags(imageUrls);
 
     if (!result.success || !result.combinedTags) {
       return { success: true, suggestedTags: existingTags };
@@ -254,7 +254,7 @@ export async function generateImageBasedTags(
  * @param imageUrl - URL of the image
  * @returns Promise resolving to extracted text
  */
-export async function extractTextFromImage(
+export async function waExtractTextFromImage(
   imageUrl: string
 ): Promise<{ success: boolean; text?: string; error?: string }> {
   try {

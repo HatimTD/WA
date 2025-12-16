@@ -32,7 +32,7 @@ export interface ImproveTextResult {
  * @param maxLength - Maximum length of summary in words (default: 100)
  * @returns SummarizeResult with summary or error
  */
-export async function summarizeText(text: string, maxLength: number = 100): Promise<SummarizeResult> {
+export async function waSummarizeText(text: string, maxLength: number = 100): Promise<SummarizeResult> {
   try {
     console.log('[OpenAI] Starting text summarization');
 
@@ -96,7 +96,7 @@ export async function summarizeText(text: string, maxLength: number = 100): Prom
  * @param targetLanguage - The target language (e.g., 'Spanish', 'French', 'German')
  * @returns TranslateResult with translated text or error
  */
-export async function translateText(text: string, targetLanguage: string): Promise<TranslateResult> {
+export async function waTranslateText(text: string, targetLanguage: string): Promise<TranslateResult> {
   try {
     console.log('[OpenAI] Starting text translation to', targetLanguage);
 
@@ -161,7 +161,7 @@ export async function translateText(text: string, targetLanguage: string): Promi
  * @param context - Context about what kind of text this is (e.g., 'problem description', 'solution')
  * @returns ImproveTextResult with improved text or error
  */
-export async function improveText(text: string, context?: string): Promise<ImproveTextResult> {
+export async function waImproveText(text: string, context?: string): Promise<ImproveTextResult> {
   try {
     console.log('[OpenAI] Starting text improvement');
 
@@ -230,7 +230,7 @@ export async function improveText(text: string, context?: string): Promise<Impro
  * @param problemDescription - Brief problem description
  * @returns Suggested title
  */
-export async function generateTitle(
+export async function waGenerateTitle(
   customerName: string,
   component: string,
   problemDescription: string

@@ -23,7 +23,7 @@ export interface TranslateCaseStudyResult {
 /**
  * Translate a case study to a target language
  */
-export async function translateCaseStudy(
+export async function waTranslateCaseStudy(
   caseStudyId: string,
   targetLanguage: LanguageCode
 ): Promise<TranslateCaseStudyResult> {
@@ -127,7 +127,7 @@ export async function translateCaseStudy(
 /**
  * Get available translations for a case study
  */
-export async function getCaseStudyTranslation(caseStudyId: string): Promise<{
+export async function waGetCaseStudyTranslation(caseStudyId: string): Promise<{
   success: boolean;
   hasTranslation: boolean;
   translation?: {
@@ -174,7 +174,7 @@ export async function getCaseStudyTranslation(caseStudyId: string): Promise<{
 /**
  * Batch translate multiple case studies
  */
-export async function batchTranslateCaseStudies(
+export async function waBatchTranslateCaseStudies(
   caseStudyIds: string[],
   targetLanguage: LanguageCode
 ): Promise<{
@@ -188,7 +188,7 @@ export async function batchTranslateCaseStudies(
   let failed = 0;
 
   for (const id of caseStudyIds) {
-    const result = await translateCaseStudy(id, targetLanguage);
+    const result = await waTranslateCaseStudy(id, targetLanguage);
     if (result.success) {
       translated++;
     } else {
@@ -208,7 +208,7 @@ export async function batchTranslateCaseStudies(
 /**
  * Get supported languages
  */
-export async function getSupportedLanguages(): Promise<{
+export async function waGetSupportedLanguages(): Promise<{
   success: boolean;
   languages: Array<{ code: string; name: string }>;
 }> {
@@ -226,7 +226,7 @@ export async function getSupportedLanguages(): Promise<{
 /**
  * Detect the language of case study content
  */
-export async function detectCaseStudyLanguage(caseStudyId: string): Promise<{
+export async function waDetectCaseStudyLanguage(caseStudyId: string): Promise<{
   success: boolean;
   detectedLanguage?: string;
   confidence?: number;

@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { devRegister } from '@/lib/actions/dev-register-action';
+import { waDevRegister } from '@/lib/actions/waDevRegisterAction';
 import { toast } from 'sonner';
 import { AlertCircle, UserPlus, ArrowLeft } from 'lucide-react';
 
@@ -48,7 +48,7 @@ export default function DevRegisterPage() {
     setIsLoading(true);
 
     try {
-      const result = await devRegister({
+      const result = await waDevRegister({
         email: formData.email,
         password: formData.password,
         name: formData.name,

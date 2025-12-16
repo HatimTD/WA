@@ -4,7 +4,7 @@ import { signIn } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { AuthError } from 'next-auth';
 
-export async function devLogin(email: string, password: string, role?: string) {
+export async function waDevLogin(email: string, password: string, role?: string) {
   // Now available in production for testing
   try {
     await signIn('credentials', {

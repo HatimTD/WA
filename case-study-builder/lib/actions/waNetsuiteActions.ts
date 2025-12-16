@@ -2,7 +2,7 @@
 
 import { netsuiteClient, NetSuiteCustomer } from '@/lib/integrations/netsuite';
 
-export async function searchNetSuiteCustomers(
+export async function waSearchNetSuiteCustomers(
   query: string
 ): Promise<{ success: boolean; customers?: NetSuiteCustomer[]; error?: string }> {
   try {
@@ -21,7 +21,7 @@ export async function searchNetSuiteCustomers(
   }
 }
 
-export async function getNetSuiteCustomer(
+export async function waGetNetSuiteCustomer(
   customerId: string
 ): Promise<{ success: boolean; customer?: NetSuiteCustomer; error?: string }> {
   try {
@@ -45,7 +45,7 @@ export async function getNetSuiteCustomer(
   }
 }
 
-export async function syncCustomerToNetSuite(
+export async function waSyncCustomerToNetSuite(
   caseStudyId: string,
   netsuiteCustomerId: string
 ): Promise<{ success: boolean; error?: string }> {

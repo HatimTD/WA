@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { devLogin } from '@/lib/actions/dev-login-action';
+import { waDevLogin } from '@/lib/actions/waDevLoginAction';
 import { toast } from 'sonner';
 import { AlertCircle } from 'lucide-react';
 
@@ -30,7 +30,7 @@ export default function DevLoginPage() {
     setIsLoading(true);
 
     try {
-      const result = await devLogin(email, password, role);
+      const result = await waDevLogin(email, password, role);
 
       if (result?.success) {
         toast.success(`Login successful as ${role}!`);

@@ -33,7 +33,7 @@ async function verifyAdmin() {
 /**
  * Toggle maintenance mode
  */
-export async function toggleMaintenanceMode(enabled: boolean) {
+export async function waToggleMaintenanceMode(enabled: boolean) {
   try {
     await verifyAdmin();
 
@@ -60,7 +60,7 @@ export async function toggleMaintenanceMode(enabled: boolean) {
 /**
  * Update maintenance message
  */
-export async function updateMaintenanceMessage(message: string) {
+export async function waUpdateMaintenanceMessage(message: string) {
   try {
     await verifyAdmin();
 
@@ -87,7 +87,7 @@ export async function updateMaintenanceMessage(message: string) {
 /**
  * Get maintenance mode status
  */
-export async function getMaintenanceMode() {
+export async function waGetMaintenanceMode() {
   try {
     const config = await prisma.systemConfig.findUnique({
       where: { key: 'maintenance_mode' },
@@ -119,7 +119,7 @@ export async function getMaintenanceMode() {
 /**
  * Get all email templates
  */
-export async function getEmailTemplates() {
+export async function waGetEmailTemplates() {
   try {
     await verifyAdmin();
 
@@ -222,7 +222,7 @@ export async function upsertEmailTemplate({
 /**
  * Delete email template
  */
-export async function deleteEmailTemplate(type: EmailTemplateType) {
+export async function waDeleteEmailTemplate(type: EmailTemplateType) {
   try {
     await verifyAdmin();
 
@@ -562,7 +562,7 @@ export async function toggleSpecificNotification(notificationType: string, enabl
 /**
  * Get announcement banner
  */
-export async function getAnnouncement() {
+export async function waGetAnnouncement() {
   try {
     const config = await prisma.systemConfig.findUnique({
       where: { key: 'announcement' },
@@ -593,7 +593,7 @@ export async function getAnnouncement() {
 /**
  * Update announcement banner
  */
-export async function updateAnnouncement({
+export async function waUpdateAnnouncement({
   enabled,
   title,
   message,

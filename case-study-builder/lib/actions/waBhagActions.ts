@@ -1,7 +1,7 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { getBHAGTarget } from './system-config-actions';
+import { waGetBHAGTarget } from './waSystemConfigActions';
 
 /**
  * BHAG Deduplication Key Generator (BRD Section 5)
@@ -77,7 +77,7 @@ export async function waGetBhagProgress() {
     byType.STAR = uniqueByType.STAR.size;
 
     // BHAG target (read from system configuration)
-    const target = await getBHAGTarget();
+    const target = await waGetBHAGTarget();
     const percentage = Math.min(100, Math.round((uniqueCount / target) * 100));
 
     return {

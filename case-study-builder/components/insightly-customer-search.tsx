@@ -10,7 +10,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { searchInsightlyOrganizations } from '@/lib/actions/insightly-actions';
+import { waSearchInsightlyOrganizations } from '@/lib/actions/waInsightlyActions';
 import { InsightlyOrganization } from '@/lib/integrations/insightly';
 import { Loader2, Building2, MapPin, Globe, Factory, Phone, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -69,7 +69,7 @@ export default function InsightlyCustomerSearch({
     setIsLoading(true);
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        const result = await searchInsightlyOrganizations(searchQuery);
+        const result = await waSearchInsightlyOrganizations(searchQuery);
         if (result.success && result.organizations) {
           setCustomers(result.organizations);
           setIsOpen(result.organizations.length > 0);

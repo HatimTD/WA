@@ -12,7 +12,7 @@ interface RegisterData {
   region?: string;
 }
 
-export async function devRegister(data: RegisterData) {
+export async function waDevRegister(data: RegisterData) {
   // Available in production for testing
   try {
     const { email, password, name, role, region } = data;
@@ -65,7 +65,7 @@ export async function devRegister(data: RegisterData) {
   }
 }
 
-export async function listTestUsers() {
+export async function waListTestUsers() {
   // Function to list all test users (for debugging/testing)
   try {
     const users = await prisma.user.findMany({

@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-import { summarizeText, translateText, improveText } from '@/lib/actions/openai-actions';
+import { waSummarizeText, waTranslateText, waImproveText } from '@/lib/actions/waOpenaiActions';
 import { waConvertBulletsToProse } from '@/lib/actions/waAutoPromptActions';
 
 type Props = {
@@ -38,7 +38,7 @@ export default function AITextAssistant({ text, onTextChange, fieldType = 'gener
 
     setIsProcessing(true);
     try {
-      const result = await summarizeText(text, 100);
+      const result = await waSummarizeText(text, 100);
       if (result.success && result.summary) {
         onTextChange(result.summary);
         toast.success('Text summarized successfully');
@@ -61,7 +61,7 @@ export default function AITextAssistant({ text, onTextChange, fieldType = 'gener
 
     setIsProcessing(true);
     try {
-      const result = await improveText(text, contextMap[fieldType]);
+      const result = await waImproveText(text, contextMap[fieldType]);
       if (result.success && result.improvedText) {
         onTextChange(result.improvedText);
         toast.success('Text improved successfully');
@@ -118,7 +118,7 @@ export default function AITextAssistant({ text, onTextChange, fieldType = 'gener
 
     setIsProcessing(true);
     try {
-      const result = await translateText(text, language);
+      const result = await waTranslateText(text, language);
       if (result.success && result.translatedText) {
         onTextChange(result.translatedText);
         toast.success(`Translated to ${language} successfully`);

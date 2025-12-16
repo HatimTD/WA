@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { uploadImage } from '@/lib/actions/image-upload-actions';
+import { waUploadImage } from '@/lib/actions/waImageUploadActions';
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     uploadFormData.append('file', file);
 
     // Upload to Cloudinary
-    const uploadResult = await uploadImage(uploadFormData);
+    const uploadResult = await waUploadImage(uploadFormData);
 
     if (!uploadResult.success || !uploadResult.url) {
       return NextResponse.json(

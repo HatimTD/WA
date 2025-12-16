@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { searchNetSuiteCustomers } from '@/lib/actions/netsuite-actions';
+import { waSearchNetSuiteCustomers } from '@/lib/actions/waNetsuiteActions';
 import { NetSuiteCustomer } from '@/lib/integrations/netsuite';
 import { Loader2, Building2, MapPin, Globe, Factory } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -62,7 +62,7 @@ export default function NetSuiteCustomerSearch({
     setIsLoading(true);
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        const result = await searchNetSuiteCustomers(searchQuery);
+        const result = await waSearchNetSuiteCustomers(searchQuery);
         if (result.success && result.customers) {
           setCustomers(result.customers);
           setIsOpen(result.customers.length > 0);

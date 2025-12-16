@@ -16,8 +16,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { searchInsightlyOrganizations } from '@/lib/actions/insightly-actions';
-import { searchNetSuiteCustomers } from '@/lib/actions/netsuite-actions';
+import { waSearchInsightlyOrganizations } from '@/lib/actions/waInsightlyActions';
+import { waSearchNetSuiteCustomers } from '@/lib/actions/waNetsuiteActions';
 import { InsightlyOrganization } from '@/lib/integrations/insightly';
 import { NetSuiteCustomer } from '@/lib/integrations/netsuite';
 import { Loader2, Building2, MapPin, Globe, Factory, Phone, Plus } from 'lucide-react';
@@ -98,7 +98,7 @@ export default function CRMCustomerSearch({
 
         // Search Insightly
         if (activeCRM === 'insightly' || activeCRM === 'both') {
-          const insightlyResult = await searchInsightlyOrganizations(searchQuery);
+          const insightlyResult = await waSearchInsightlyOrganizations(searchQuery);
           if (insightlyResult.success && insightlyResult.organizations) {
             results.push(
               ...insightlyResult.organizations.map((org): CRMCustomer => ({
@@ -119,7 +119,7 @@ export default function CRMCustomerSearch({
 
         // Search NetSuite
         if (activeCRM === 'netsuite' || activeCRM === 'both') {
-          const netsuiteResult = await searchNetSuiteCustomers(searchQuery);
+          const netsuiteResult = await waSearchNetSuiteCustomers(searchQuery);
           if (netsuiteResult.success && netsuiteResult.customers) {
             results.push(
               ...netsuiteResult.customers.map((cust): CRMCustomer => ({

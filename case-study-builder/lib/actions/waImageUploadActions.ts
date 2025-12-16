@@ -32,7 +32,7 @@ export interface UploadResult {
  * @param formData - FormData containing the image file
  * @returns UploadResult with URL or error
  */
-export async function uploadImage(formData: FormData): Promise<UploadResult> {
+export async function waUploadImage(formData: FormData): Promise<UploadResult> {
   try {
     console.log('[ImageUpload] Starting image upload');
     console.log('[ImageUpload] Cloudinary config:', {
@@ -126,7 +126,7 @@ export async function uploadImage(formData: FormData): Promise<UploadResult> {
  * @param publicId - Public ID of the image to delete
  * @returns Success status
  */
-export async function deleteImage(publicId: string): Promise<{ success: boolean; error?: string }> {
+export async function waDeleteImage(publicId: string): Promise<{ success: boolean; error?: string }> {
   try {
     console.log('[ImageUpload] Deleting image:', publicId);
 
@@ -148,7 +148,7 @@ export async function deleteImage(publicId: string): Promise<{ success: boolean;
  * @param formData - FormData containing multiple image files
  * @returns Array of UploadResults
  */
-export async function uploadMultipleImages(formData: FormData): Promise<UploadResult[]> {
+export async function waUploadMultipleImages(formData: FormData): Promise<UploadResult[]> {
   try {
     console.log('[ImageUpload] Starting multiple image upload');
 
@@ -179,7 +179,7 @@ export async function uploadMultipleImages(formData: FormData): Promise<UploadRe
     const uploadPromises = files.map(async (file) => {
       const fileFormData = new FormData();
       fileFormData.append('file', file);
-      return uploadImage(fileFormData);
+      return waUploadImage(fileFormData);
     });
 
     const results = await Promise.all(uploadPromises);

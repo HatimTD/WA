@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Upload, X, Loader2, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
-import { uploadImage, deleteImage } from '@/lib/actions/image-upload-actions';
+import { waUploadImage, waDeleteImage } from '@/lib/actions/waImageUploadActions';
 import Image from 'next/image';
 
 interface UploadedImage {
@@ -47,7 +47,7 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
         formData.append('file', file);
 
         console.log('[ImageUpload] Uploading file:', file.name);
-        const result = await uploadImage(formData);
+        const result = await waUploadImage(formData);
 
         if (result.success && result.url && result.publicId) {
           console.log('[ImageUpload] Upload successful:', result.url);
@@ -86,7 +86,7 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
 
       // Only delete from Cloudinary if it's not an existing image
       if (!existingImages.includes(imageToRemove.url)) {
-        await deleteImage(imageToRemove.publicId);
+        await waDeleteImage(imageToRemove.publicId);
       }
 
       const newImages = images.filter((_, i) => i !== index);

@@ -15,7 +15,7 @@ import { prisma } from '@/lib/prisma';
 /**
  * Search Insightly organizations (customers)
  */
-export async function searchInsightlyOrganizations(query: string): Promise<{
+export async function waSearchInsightlyOrganizations(query: string): Promise<{
   success: boolean;
   organizations?: InsightlyOrganization[];
   error?: string;
@@ -39,7 +39,7 @@ export async function searchInsightlyOrganizations(query: string): Promise<{
 /**
  * Search Insightly contacts
  */
-export async function searchInsightlyContacts(query: string): Promise<{
+export async function waSearchInsightlyContacts(query: string): Promise<{
   success: boolean;
   contacts?: InsightlyContact[];
   error?: string;
@@ -63,7 +63,7 @@ export async function searchInsightlyContacts(query: string): Promise<{
 /**
  * Sync a case study to Insightly CRM
  */
-export async function syncCaseStudyToInsightly(caseStudyId: string): Promise<{
+export async function waSyncCaseStudyToInsightly(caseStudyId: string): Promise<{
   success: boolean;
   opportunityId?: number;
   error?: string;
@@ -125,7 +125,7 @@ export async function syncCaseStudyToInsightly(caseStudyId: string): Promise<{
 /**
  * Test Insightly connection
  */
-export async function testInsightlyConnection(): Promise<{
+export async function waTestInsightlyConnection(): Promise<{
   success: boolean;
   message: string;
 }> {
@@ -135,7 +135,7 @@ export async function testInsightlyConnection(): Promise<{
 /**
  * Batch sync approved case studies to Insightly
  */
-export async function batchSyncToInsightly(limit: number = 50): Promise<{
+export async function waBatchSyncToInsightly(limit: number = 50): Promise<{
   success: boolean;
   synced: number;
   failed: number;
@@ -213,7 +213,7 @@ export async function batchSyncToInsightly(limit: number = 50): Promise<{
  * This is called when a case study is approved/published.
  * It syncs the case study to Insightly and attaches the generated PDF.
  */
-export async function pushPDFToCRM(
+export async function waPushPDFToCRM(
   caseStudyId: string,
   pdfBase64: string
 ): Promise<{
@@ -300,7 +300,7 @@ export async function pushPDFToCRM(
 /**
  * Check if a case study is synced to CRM
  */
-export async function getCRMSyncStatus(caseStudyId: string): Promise<{
+export async function waGetCRMSyncStatus(caseStudyId: string): Promise<{
   isSynced: boolean;
   opportunityId?: number;
   syncedAt?: Date;

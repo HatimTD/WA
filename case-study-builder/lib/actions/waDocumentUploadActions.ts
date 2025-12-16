@@ -32,7 +32,7 @@ export interface DocumentUploadResult {
  * @param formData - FormData containing the document file
  * @returns DocumentUploadResult with URL or error
  */
-export async function uploadDocument(formData: FormData): Promise<DocumentUploadResult> {
+export async function waUploadDocument(formData: FormData): Promise<DocumentUploadResult> {
   try {
     console.log('[DocumentUpload] Starting document upload');
 
@@ -128,7 +128,7 @@ export async function uploadDocument(formData: FormData): Promise<DocumentUpload
  * @param publicId - Public ID of the document to delete
  * @returns Success status
  */
-export async function deleteDocument(publicId: string): Promise<{ success: boolean; error?: string }> {
+export async function waDeleteDocument(publicId: string): Promise<{ success: boolean; error?: string }> {
   try {
     console.log('[DocumentUpload] Deleting document:', publicId);
 
@@ -150,7 +150,7 @@ export async function deleteDocument(publicId: string): Promise<{ success: boole
  * @param formData - FormData containing multiple document files
  * @returns Array of DocumentUploadResults
  */
-export async function uploadMultipleDocuments(formData: FormData): Promise<DocumentUploadResult[]> {
+export async function waUploadMultipleDocuments(formData: FormData): Promise<DocumentUploadResult[]> {
   try {
     console.log('[DocumentUpload] Starting multiple document upload');
 
@@ -181,7 +181,7 @@ export async function uploadMultipleDocuments(formData: FormData): Promise<Docum
     const uploadPromises = files.map(async (file) => {
       const fileFormData = new FormData();
       fileFormData.append('file', file);
-      return uploadDocument(fileFormData);
+      return waUploadDocument(fileFormData);
     });
 
     const results = await Promise.all(uploadPromises);
