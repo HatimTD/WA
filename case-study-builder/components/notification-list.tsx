@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react';
 import { Check, CheckCheck, Trash2, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
-  getRecentNotifications,
-  markNotificationAsRead,
-  markAllNotificationsAsRead,
-  deleteNotification,
-} from '@/lib/actions/notification-actions';
+  waGetRecentNotifications,
+  waMarkNotificationAsRead,
+  waMarkAllNotificationsAsRead,
+  waDeleteNotification,
+} from '@/lib/actions/waNotificationActions';
 import { Notification } from '@prisma/client';
 import { useRouter } from 'next/navigation';
 
@@ -28,13 +28,13 @@ export function NotificationList({ onUpdate, onClose }: NotificationListProps) {
 
   async function loadNotifications() {
     setLoading(true);
-    const data = await getRecentNotifications(20);
+    const data = await waGetRecentNotifications(20);
     setNotifications(data);
     setLoading(false);
   }
 
   async function handleMarkAsRead(notificationId: string, link?: string | null) {
-    await markNotificationAsRead(notificationId);
+    await waMarkNotificationAsRead(notificationId);
     await loadNotifications();
     onUpdate?.();
 
@@ -45,14 +45,14 @@ export function NotificationList({ onUpdate, onClose }: NotificationListProps) {
   }
 
   async function handleMarkAllAsRead() {
-    await markAllNotificationsAsRead();
+    await waMarkAllNotificationsAsRead();
     await loadNotifications();
     onUpdate?.();
   }
 
   async function handleDelete(notificationId: string, e: React.MouseEvent) {
     e.stopPropagation();
-    await deleteNotification(notificationId);
+    await waDeleteNotification(notificationId);
     await loadNotifications();
     onUpdate?.();
   }

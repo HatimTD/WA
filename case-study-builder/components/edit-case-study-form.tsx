@@ -12,7 +12,7 @@ import StepThree from '@/components/case-study-form/step-three';
 import StepFour from '@/components/case-study-form/step-four';
 import StepFive from '@/components/case-study-form/step-five';
 import StepWPS from '@/components/case-study-form/step-wps';
-import { updateCaseStudy } from '@/lib/actions/case-study-actions';
+import { waUpdateCaseStudy } from '@/lib/actions/waCaseStudyActions';
 import { saveWeldingProcedure } from '@/lib/actions/wps-actions';
 import { toast } from 'sonner';
 import { CaseStudy, WeldingProcedure, CostCalculator } from '@prisma/client';
@@ -256,7 +256,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
         customerSavingsAmount: formData.customerSavingsAmount ? parseFloat(formData.customerSavingsAmount) : null,
       };
 
-      await updateCaseStudy(caseStudy.id, updateData);
+      await waUpdateCaseStudy(caseStudy.id, updateData);
 
       // If TECH or STAR and WPS data exists, save WPS
       if (hasWPS && formData.wps && formData.wps.waProductName && formData.wps.weldingProcess) {
@@ -306,7 +306,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
         submittedAt: newStatus === 'SUBMITTED' ? new Date() : caseStudy.submittedAt,
       };
 
-      await updateCaseStudy(caseStudy.id, updateData);
+      await waUpdateCaseStudy(caseStudy.id, updateData);
 
       // If TECH or STAR and WPS data exists, save WPS
       if (hasWPS && formData.wps) {

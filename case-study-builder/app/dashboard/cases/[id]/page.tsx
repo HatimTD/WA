@@ -32,7 +32,7 @@ import { getCostCalculation } from '@/lib/actions/cost-calculator-actions';
 import WeldingProcedureForm from '@/components/welding-procedure-form';
 import { getWeldingProcedure } from '@/lib/actions/wps-actions';
 import EnhancedCommentsSection from '@/components/enhanced-comments-section';
-import { getComments } from '@/lib/actions/comment-actions';
+import { waGetComments } from '@/lib/actions/waCommentActions';
 import dynamic from 'next/dynamic';
 import type { CaseStudyPDFData } from '@/lib/pdf-export';
 import { CompletionIndicator } from '@/components/completion-indicator';
@@ -96,7 +96,7 @@ export default async function CaseStudyDetailPage({ params }: Props) {
   const existingWPS = wpsResult.wps;
 
   // Fetch comments
-  const commentsResult = await getComments(id);
+  const commentsResult = await waGetComments(id);
   const comments = commentsResult.comments || [];
 
   // Get current user info

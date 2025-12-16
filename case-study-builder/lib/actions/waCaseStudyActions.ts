@@ -6,7 +6,7 @@ import { logger } from '@/lib/logger';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
-type CreateCaseStudyInput = {
+type WaCreateCaseStudyInput = {
   type: 'APPLICATION' | 'TECH' | 'STAR';
   status?: 'DRAFT' | 'SUBMITTED';
   customerName: string;
@@ -35,7 +35,7 @@ type CreateCaseStudyInput = {
   tags: string[];
 };
 
-export async function createCaseStudy(data: CreateCaseStudyInput) {
+export async function waCreateCaseStudy(data: WaCreateCaseStudyInput) {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -114,7 +114,7 @@ export async function createCaseStudy(data: CreateCaseStudyInput) {
   }
 }
 
-export async function updateCaseStudy(id: string, data: any) {
+export async function waUpdateCaseStudy(id: string, data: any) {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -211,7 +211,7 @@ export async function updateCaseStudy(id: string, data: any) {
   }
 }
 
-export async function deleteCaseStudy(id: string) {
+export async function waDeleteCaseStudy(id: string) {
   const session = await auth();
 
   if (!session?.user?.id) {

@@ -13,7 +13,7 @@ import StepFour from '@/components/case-study-form/step-four';
 import StepFive from '@/components/case-study-form/step-five';
 import StepWPS from '@/components/case-study-form/step-wps';
 import ChallengeQualifier, { type QualifierResult } from '@/components/case-study-form/challenge-qualifier';
-import { createCaseStudy } from '@/lib/actions/case-study-actions';
+import { waCreateCaseStudy } from '@/lib/actions/waCaseStudyActions';
 import { saveWeldingProcedure } from '@/lib/actions/wps-actions';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
@@ -220,7 +220,7 @@ export default function NewCaseStudyPage() {
       const hasWPS = formData.type === 'TECH' || formData.type === 'STAR';
 
       // Create the case study draft
-      const result = await createCaseStudy({ ...formData, status: 'DRAFT' });
+      const result = await waCreateCaseStudy({ ...formData, status: 'DRAFT' });
 
       // If TECH or STAR and WPS data exists, save WPS
       if (hasWPS && formData.wps && result.id && formData.wps.waProductName && formData.wps.weldingProcess) {
@@ -255,7 +255,7 @@ export default function NewCaseStudyPage() {
     setIsSubmitting(true);
     try {
       // Create the case study
-      const result = await createCaseStudy({ ...formData, status: 'SUBMITTED' });
+      const result = await waCreateCaseStudy({ ...formData, status: 'SUBMITTED' });
 
       // If TECH or STAR and WPS data exists, save WPS
       if (hasWPS && formData.wps && result.id) {

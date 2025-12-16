@@ -3,9 +3,9 @@
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { revalidatePath } from 'next/cache';
-import { createNotification } from './notification-actions';
+import { waCreateNotification } from './waNotificationActions';
 
-export async function getComments(caseStudyId: string) {
+export async function waGetComments(caseStudyId: string) {
   try {
     const comments = await prisma.comment.findMany({
       where: { caseStudyId },
@@ -42,7 +42,7 @@ export async function getComments(caseStudyId: string) {
   }
 }
 
-export async function createComment(caseStudyId: string, content: string) {
+export async function waCreateComment(caseStudyId: string, content: string) {
   try {
     const session = await auth();
 
@@ -84,7 +84,7 @@ export async function createComment(caseStudyId: string, content: string) {
 
     // Send notification to case study author (if not commenting on own case)
     if (caseStudy && caseStudy.contributorId !== session.user.id) {
-      await createNotification({
+      await waCreateNotification({
         userId: caseStudy.contributorId,
         type: 'NEW_COMMENT',
         title: 'New Comment on Your Case Study',
@@ -105,7 +105,7 @@ export async function createComment(caseStudyId: string, content: string) {
   }
 }
 
-export async function likeComment(commentId: string) {
+export async function waLikeComment(commentId: string) {
   try {
     const session = await auth();
 
@@ -134,7 +134,7 @@ export async function likeComment(commentId: string) {
   }
 }
 
-export async function deleteComment(commentId: string) {
+export async function waDeleteComment(commentId: string) {
   try {
     const session = await auth();
 

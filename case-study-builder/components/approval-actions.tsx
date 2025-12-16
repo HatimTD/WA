@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { CheckCircle2, XCircle } from 'lucide-react';
-import { approveCaseStudy, rejectCaseStudy } from '@/lib/actions/approval-actions';
+import { waApproveCaseStudy, waRejectCaseStudy } from '@/lib/actions/waApprovalActions';
 import { toast } from 'sonner';
 
 type Props = {
@@ -26,7 +26,7 @@ export default function ApprovalActions({ caseStudyId }: Props) {
 
     setIsSubmitting(true);
     try {
-      const result = await approveCaseStudy(caseStudyId);
+      const result = await waApproveCaseStudy(caseStudyId);
 
       if (result.success) {
         toast.success('Case study approved successfully!');
@@ -66,7 +66,7 @@ export default function ApprovalActions({ caseStudyId }: Props) {
 
     setIsSubmitting(true);
     try {
-      const result = await rejectCaseStudy(caseStudyId, rejectionReason);
+      const result = await waRejectCaseStudy(caseStudyId, rejectionReason);
 
       if (result.success) {
         toast.success('Case study rejected');

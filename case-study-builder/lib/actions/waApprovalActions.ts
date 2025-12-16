@@ -5,9 +5,9 @@ import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 import { revalidatePath } from 'next/cache';
 import { waCheckAndAwardBadges } from './waBadgeActions';
-import { createNotification } from './notification-actions';
+import { waCreateNotification } from './waNotificationActions';
 
-export async function approveCaseStudy(caseStudyId: string) {
+export async function waApproveCaseStudy(caseStudyId: string) {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -79,7 +79,7 @@ export async function approveCaseStudy(caseStudyId: string) {
     const badgeResult = await waCheckAndAwardBadges(caseStudy.contributorId);
 
     // Send approval notification to contributor
-    await createNotification({
+    await waCreateNotification({
       userId: caseStudy.contributorId,
       type: 'CASE_APPROVED',
       title: 'Case Study Approved!',
@@ -90,7 +90,7 @@ export async function approveCaseStudy(caseStudyId: string) {
     // Send badge notification if new badges were awarded
     if (badgeResult.success && badgeResult.newBadges && badgeResult.newBadges.length > 0) {
       for (const badge of badgeResult.newBadges) {
-        await createNotification({
+        await waCreateNotification({
           userId: caseStudy.contributorId,
           type: 'BADGE_EARNED',
           title: 'New Badge Earned!',
@@ -127,7 +127,7 @@ export async function approveCaseStudy(caseStudyId: string) {
   }
 }
 
-export async function rejectCaseStudy(caseStudyId: string, reason: string) {
+export async function waRejectCaseStudy(caseStudyId: string, reason: string) {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -180,7 +180,7 @@ export async function rejectCaseStudy(caseStudyId: string, reason: string) {
     });
 
     // Send rejection notification to contributor
-    await createNotification({
+    await waCreateNotification({
       userId: caseStudy.contributorId,
       type: 'CASE_REJECTED',
       title: 'Case Study Needs Revision',

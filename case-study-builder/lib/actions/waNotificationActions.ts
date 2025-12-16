@@ -9,7 +9,7 @@ import { sendEmailNotification } from '@/lib/email';
 /**
  * Create a new notification for a user
  */
-export async function createNotification({
+export async function waCreateNotification({
   userId,
   type,
   title,
@@ -127,7 +127,7 @@ export async function createNotification({
 /**
  * Mark a single notification as read
  */
-export async function markNotificationAsRead(notificationId: string) {
+export async function waMarkNotificationAsRead(notificationId: string) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -158,7 +158,7 @@ export async function markNotificationAsRead(notificationId: string) {
 /**
  * Mark all notifications as read for the current user
  */
-export async function markAllNotificationsAsRead() {
+export async function waMarkAllNotificationsAsRead() {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -189,7 +189,7 @@ export async function markAllNotificationsAsRead() {
 /**
  * Get unread notification count for current user
  */
-export async function getUnreadNotificationCount() {
+export async function waGetUnreadNotificationCount() {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -213,7 +213,7 @@ export async function getUnreadNotificationCount() {
 /**
  * Get recent notifications for current user
  */
-export async function getRecentNotifications(limit = 10) {
+export async function waGetRecentNotifications(limit = 10) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -240,7 +240,7 @@ export async function getRecentNotifications(limit = 10) {
 /**
  * Delete a notification
  */
-export async function deleteNotification(notificationId: string) {
+export async function waDeleteNotification(notificationId: string) {
   try {
     const session = await auth();
     if (!session?.user?.id) {

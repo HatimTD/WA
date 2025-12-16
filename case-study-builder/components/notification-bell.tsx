@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { NotificationList } from './notification-list';
-import { getUnreadNotificationCount } from '@/lib/actions/notification-actions';
+import { waGetUnreadNotificationCount } from '@/lib/actions/waNotificationActions';
 
 export function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
@@ -25,7 +25,7 @@ export function NotificationBell() {
   }, []);
 
   async function loadUnreadCount() {
-    const count = await getUnreadNotificationCount();
+    const count = await waGetUnreadNotificationCount();
     setUnreadCount(count);
   }
 
