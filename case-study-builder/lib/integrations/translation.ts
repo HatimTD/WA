@@ -224,7 +224,7 @@ class TranslationService {
   ): Promise<TranslationResult> {
     try {
       // Dynamic import to avoid issues if OpenAI is not configured
-      const { translateText } = await import('@/lib/actions/openai-actions');
+      const { waTranslateText: translateText } = await import('@/lib/actions/waOpenaiActions');
 
       const languageName = SUPPORTED_LANGUAGES[targetLanguage] || targetLanguage;
       const result = await translateText(text, languageName);

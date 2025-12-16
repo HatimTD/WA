@@ -26,7 +26,7 @@ export async function waApproveCaseStudy(caseStudyId: string) {
     }
 
     // Check if case study exists and is submitted
-    const caseStudy = await prisma.caseStudy.findUnique({
+    const caseStudy = await prisma.waCaseStudy.findUnique({
       where: { id: caseStudyId },
       select: {
         status: true,
@@ -56,7 +56,7 @@ export async function waApproveCaseStudy(caseStudyId: string) {
     // Update case study and award points in a transaction
     await prisma.$transaction([
       // Approve case study
-      prisma.caseStudy.update({
+      prisma.waCaseStudy.update({
         where: { id: caseStudyId },
         data: {
           status: 'APPROVED',
@@ -150,7 +150,7 @@ export async function waRejectCaseStudy(caseStudyId: string, reason: string) {
     }
 
     // Check if case study exists and is submitted
-    const caseStudy = await prisma.caseStudy.findUnique({
+    const caseStudy = await prisma.waCaseStudy.findUnique({
       where: { id: caseStudyId },
       select: {
         status: true,
@@ -169,7 +169,7 @@ export async function waRejectCaseStudy(caseStudyId: string, reason: string) {
     }
 
     // Reject case study with reason
-    await prisma.caseStudy.update({
+    await prisma.waCaseStudy.update({
       where: { id: caseStudyId },
       data: {
         status: 'REJECTED',

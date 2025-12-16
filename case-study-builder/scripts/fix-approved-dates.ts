@@ -6,7 +6,7 @@ async function fixApprovedDates() {
   console.log('Fixing approved dates...');
 
   // Get all APPROVED cases without approvedAt
-  const approvedCases = await prisma.caseStudy.findMany({
+  const approvedCases = await prisma.waCaseStudy.findMany({
     where: {
       status: 'APPROVED',
       approvedAt: null,
@@ -17,7 +17,7 @@ async function fixApprovedDates() {
 
   // Update each one with their createdAt or current date
   for (const caseStudy of approvedCases) {
-    await prisma.caseStudy.update({
+    await prisma.waCaseStudy.update({
       where: { id: caseStudy.id },
       data: {
         approvedAt: caseStudy.createdAt, // Use createdAt as approvedAt

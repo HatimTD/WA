@@ -20,7 +20,7 @@ export async function PATCH(
     // Await params in Next.js 16
     const { id } = await params;
 
-    const notification = await prisma.notification.update({
+    const notification = await prisma.waNotification.update({
       where: {
         id,
         userId: session.user.id,
@@ -58,7 +58,7 @@ export async function DELETE(
     // Await params in Next.js 16
     const { id } = await params;
 
-    await prisma.notification.delete({
+    await prisma.waNotification.delete({
       where: {
         id,
         userId: session.user.id,

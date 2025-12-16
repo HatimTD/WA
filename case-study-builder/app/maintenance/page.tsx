@@ -5,7 +5,7 @@ import MaintenanceCheckButton from '@/components/maintenance-check-button';
 
 export default async function MaintenancePage() {
   // Get maintenance message from system config
-  const maintenanceMessage = await prisma.systemConfig.findUnique({
+  const maintenanceMessage = await prisma.waSystemConfig.findUnique({
     where: { key: 'maintenance_message' },
   });
 

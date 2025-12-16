@@ -9,7 +9,7 @@ import {
   waMarkAllNotificationsAsRead,
   waDeleteNotification,
 } from '@/lib/actions/waNotificationActions';
-import { Notification } from '@prisma/client';
+import { WaNotification } from '@prisma/client';
 import { useRouter } from 'next/navigation';
 
 interface NotificationListProps {
@@ -18,7 +18,7 @@ interface NotificationListProps {
 }
 
 export function NotificationList({ onUpdate, onClose }: NotificationListProps) {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<WaNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 

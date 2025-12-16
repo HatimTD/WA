@@ -40,15 +40,15 @@ export default async function RetentionManagementPage() {
   }
 
   // Fetch retention policies
-  const retentionPolicies = await prisma.dataRetentionPolicy.findMany({
+  const retentionPolicies = await prisma.waDataRetentionPolicy.findMany({
     orderBy: { dataType: 'asc' },
   });
 
   // Calculate stats for each data type
   const stats = await Promise.all([
     // Notifications
-    prisma.notification.count(),
-    prisma.notification.count({
+    prisma.waNotification.count(),
+    prisma.waNotification.count({
       where: {
         read: true,
         createdAt: { lt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) },
@@ -62,8 +62,8 @@ export default async function RetentionManagementPage() {
     // Users (soft deleted)
     prisma.user.count({ where: { isActive: false } }),
     // Case Studies
-    prisma.caseStudy.count(),
-    prisma.caseStudy.count({
+    prisma.waCaseStudy.count(),
+    prisma.waCaseStudy.count({
       where: {
         isActive: true,
         status: { in: ['APPROVED', 'PUBLISHED'] },
@@ -71,9 +71,9 @@ export default async function RetentionManagementPage() {
       },
     }),
     // Audit Logs
-    prisma.auditLog.count(),
+    prisma.waAuditLog.count(),
     // GDPR Requests
-    prisma.gdprDeletionRequest.count({
+    prisma.waGdprDeletionRequest.count({
       where: { status: { in: ['COMPLETED', 'CANCELLED', 'REJECTED'] } },
     }),
   ]);

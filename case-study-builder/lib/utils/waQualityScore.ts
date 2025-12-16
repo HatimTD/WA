@@ -22,11 +22,11 @@
  * @since 2025-12-14
  */
 
-import type { CaseStudy, WeldingProcedure, CostCalculator } from '@prisma/client';
+import type { WaCaseStudy, WaWeldingProcedure, WaCostCalculator } from '@prisma/client';
 
-export type CaseStudyWithRelations = CaseStudy & {
-  wps?: WeldingProcedure | null;
-  costCalculator?: CostCalculator | null;
+export type CaseStudyWithRelations = WaCaseStudy & {
+  wps?: WaWeldingProcedure | null;
+  costCalculator?: WaCostCalculator | null;
 };
 
 export type QualityScoreResult = {

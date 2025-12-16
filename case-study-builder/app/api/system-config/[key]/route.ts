@@ -31,7 +31,7 @@ export async function GET(
       return NextResponse.json({ error: 'Key parameter is required' }, { status: 400 });
     }
 
-    const config = await prisma.systemConfig.findUnique({
+    const config = await prisma.waSystemConfig.findUnique({
       where: { key },
     });
 

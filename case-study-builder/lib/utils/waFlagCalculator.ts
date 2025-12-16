@@ -15,12 +15,12 @@
  * @since 2025-12-13
  */
 
-import type { CaseStudy, WeldingProcedure, CostCalculator } from '@prisma/client';
+import type { WaCaseStudy, WaWeldingProcedure, WaCostCalculator } from '@prisma/client';
 
 // Type for case study with relations
-export type CaseStudyWithRelations = CaseStudy & {
-  weldingProcedure?: WeldingProcedure | null;
-  costCalculator?: CostCalculator | null;
+export type CaseStudyWithRelations = WaCaseStudy & {
+  weldingProcedure?: WaWeldingProcedure | null;
+  costCalculator?: WaCostCalculator | null;
 };
 
 // Result type for flag calculations

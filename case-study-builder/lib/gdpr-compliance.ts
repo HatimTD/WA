@@ -90,7 +90,7 @@ export async function createDeletionRequest(
 ): Promise<{ requestId: string; verificationToken: string }> {
   const verificationToken = generateVerificationToken();
 
-  const request = await prisma.gdprDeletionRequest.create({
+  const request = await prisma.waGdprDeletionRequest.create({
     data: {
       userId,
       userEmail,
@@ -126,7 +126,7 @@ export async function verifyDeletionRequest(
   requestId: string,
   verificationToken: string
 ): Promise<boolean> {
-  const request = await prisma.gdprDeletionRequest.findUnique({
+  const request = await prisma.waGdprDeletionRequest.findUnique({
     where: { id: requestId },
   });
 
@@ -138,7 +138,7 @@ export async function verifyDeletionRequest(
     return false;
   }
 
-  await prisma.gdprDeletionRequest.update({
+  await prisma.waGdprDeletionRequest.update({
     where: { id: requestId },
     data: {
       status: 'VERIFIED',
@@ -165,7 +165,7 @@ export async function processDeletionRequest(
   requestId: string,
   processedBy: string
 ): Promise<GdprDeletionResult> {
-  const request = await prisma.gdprDeletionRequest.findUnique({
+  const request = await prisma.waGdprDeletionRequest.findUnique({
     where: { id: requestId },
   });
 
@@ -188,7 +188,7 @@ export async function processDeletionRequest(
   }
 
   // Update status to in progress
-  await prisma.gdprDeletionRequest.update({
+  await prisma.waGdprDeletionRequest.update({
     where: { id: requestId },
     data: { status: 'IN_PROGRESS' },
   });
@@ -200,22 +200,22 @@ export async function processDeletionRequest(
     // Start transaction for data deletion
     const result = await prisma.$transaction(async (tx) => {
       // 1. Delete user's saved cases
-      const deletedSavedCases = await tx.savedCase.deleteMany({
+      const deletedSavedCases = await tx.waSavedCase.deleteMany({
         where: { userId },
       });
 
       // 2. Delete user's notifications
-      const deletedNotifications = await tx.notification.deleteMany({
+      const deletedNotifications = await tx.waNotification.deleteMany({
         where: { userId },
       });
 
       // 3. Delete user's comments (or anonymize if needed for context)
-      const deletedComments = await tx.comment.deleteMany({
+      const deletedComments = await tx.waComment.deleteMany({
         where: { userId },
       });
 
       // 4. Handle case studies - delete drafts, anonymize published
-      const userCaseStudies = await tx.caseStudy.findMany({
+      const userCaseStudies = await tx.waCaseStudy.findMany({
         where: { contributorId: userId },
       });
 
@@ -225,11 +225,11 @@ export async function processDeletionRequest(
       for (const caseStudy of userCaseStudies) {
         if (caseStudy.status === 'DRAFT' || caseStudy.status === 'REJECTED') {
           // Delete unpublished case studies
-          await tx.caseStudy.delete({ where: { id: caseStudy.id } });
+          await tx.waCaseStudy.delete({ where: { id: caseStudy.id } });
           deletedCaseStudies++;
         } else {
           // Anonymize published case studies (keep for business records)
-          await tx.caseStudy.update({
+          await tx.waCaseStudy.update({
             where: { id: caseStudy.id },
             data: {
               contributorId: anonymousId,
@@ -243,13 +243,13 @@ export async function processDeletionRequest(
       }
 
       // 5. Update case studies where user was approver (anonymize)
-      const approverUpdate = await tx.caseStudy.updateMany({
+      const approverUpdate = await tx.waCaseStudy.updateMany({
         where: { approverId: userId },
         data: { approverId: anonymousId },
       });
 
       // 6. Update case studies where user was rejector (anonymize)
-      await tx.caseStudy.updateMany({
+      await tx.waCaseStudy.updateMany({
         where: { rejectedBy: userId },
         data: { rejectedBy: anonymousId },
       });
@@ -291,7 +291,7 @@ export async function processDeletionRequest(
     });
 
     // Update request status
-    await prisma.gdprDeletionRequest.update({
+    await prisma.waGdprDeletionRequest.update({
       where: { id: requestId },
       data: {
         status: 'COMPLETED',
@@ -342,7 +342,7 @@ export async function processDeletionRequest(
     };
   } catch (error) {
     // Update request status on failure
-    await prisma.gdprDeletionRequest.update({
+    await prisma.waGdprDeletionRequest.update({
       where: { id: requestId },
       data: {
         status: 'REJECTED',
@@ -390,17 +390,17 @@ export async function exportUserData(userId: string): Promise<{
           createdAt: true,
         },
       }),
-      prisma.caseStudy.findMany({
+      prisma.waCaseStudy.findMany({
         where: { contributorId: userId },
         include: {
           wps: true,
           costCalculator: true,
         },
       }),
-      prisma.comment.findMany({
+      prisma.waComment.findMany({
         where: { userId },
       }),
-      prisma.savedCase.findMany({
+      prisma.waSavedCase.findMany({
         where: { userId },
         include: {
           caseStudy: {
@@ -412,10 +412,10 @@ export async function exportUserData(userId: string): Promise<{
           },
         },
       }),
-      prisma.notification.findMany({
+      prisma.waNotification.findMany({
         where: { userId },
       }),
-      prisma.auditLog.findMany({
+      prisma.waAuditLog.findMany({
         where: { userId },
         orderBy: { createdAt: 'desc' },
         take: 1000,
@@ -458,7 +458,7 @@ export async function exportUserData(userId: string): Promise<{
  * @returns Current status of the request
  */
 export async function getDeletionRequestStatus(requestId: string) {
-  return prisma.gdprDeletionRequest.findUnique({
+  return prisma.waGdprDeletionRequest.findUnique({
     where: { id: requestId },
     select: {
       id: true,
@@ -484,7 +484,7 @@ export async function getDeletionRequests(options?: {
   limit?: number;
   offset?: number;
 }) {
-  return prisma.gdprDeletionRequest.findMany({
+  return prisma.waGdprDeletionRequest.findMany({
     where: options?.status ? { status: options.status } : undefined,
     orderBy: { requestedAt: 'desc' },
     take: options?.limit || 50,
@@ -503,7 +503,7 @@ export async function cancelDeletionRequest(
   requestId: string,
   cancelledBy: string
 ): Promise<boolean> {
-  const request = await prisma.gdprDeletionRequest.findUnique({
+  const request = await prisma.waGdprDeletionRequest.findUnique({
     where: { id: requestId },
   });
 
@@ -515,7 +515,7 @@ export async function cancelDeletionRequest(
     return false;
   }
 
-  await prisma.gdprDeletionRequest.update({
+  await prisma.waGdprDeletionRequest.update({
     where: { id: requestId },
     data: {
       status: 'CANCELLED',

@@ -42,7 +42,7 @@ export async function runNetSuiteSync(): Promise<SyncResult> {
   const startTime = Date.now();
 
   // Create sync job record
-  const job = await prisma.netSuiteSyncJob.create({
+  const job = await prisma.waNetSuiteSyncJob.create({
     data: {
       status: 'RUNNING',
     },
@@ -79,7 +79,7 @@ export async function runNetSuiteSync(): Promise<SyncResult> {
     }
 
     // Update job status
-    await prisma.netSuiteSyncJob.update({
+    await prisma.waNetSuiteSyncJob.update({
       where: { id: job.id },
       data: {
         status: 'COMPLETED',
@@ -107,7 +107,7 @@ export async function runNetSuiteSync(): Promise<SyncResult> {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
     // Update job status with error
-    await prisma.netSuiteSyncJob.update({
+    await prisma.waNetSuiteSyncJob.update({
       where: { id: job.id },
       data: {
         status: 'FAILED',
@@ -170,13 +170,13 @@ async function fetchAllNetSuiteCustomers(): Promise<NetSuiteCustomer[]> {
 async function upsertCustomerCache(
   customer: NetSuiteCustomer
 ): Promise<'created' | 'updated' | 'unchanged'> {
-  const existing = await prisma.netSuiteCustomerCache.findUnique({
+  const existing = await prisma.waNetSuiteCustomerCache.findUnique({
     where: { netsuiteId: customer.id },
   });
 
   if (!existing) {
     // Create new record
-    await prisma.netSuiteCustomerCache.create({
+    await prisma.waNetSuiteCustomerCache.create({
       data: {
         netsuiteId: customer.id,
         entityId: customer.internalId,
@@ -201,7 +201,7 @@ async function upsertCustomerCache(
     existing.industry !== customer.industry;
 
   if (hasChanges) {
-    await prisma.netSuiteCustomerCache.update({
+    await prisma.waNetSuiteCustomerCache.update({
       where: { netsuiteId: customer.id },
       data: {
         entityId: customer.internalId,
@@ -219,7 +219,7 @@ async function upsertCustomerCache(
   }
 
   // Just update last synced time
-  await prisma.netSuiteCustomerCache.update({
+  await prisma.waNetSuiteCustomerCache.update({
     where: { netsuiteId: customer.id },
     data: {
       lastSyncedAt: new Date(),
@@ -240,7 +240,7 @@ export async function searchCachedCustomers(query: string): Promise<NetSuiteCust
     return [];
   }
 
-  const cached = await prisma.netSuiteCustomerCache.findMany({
+  const cached = await prisma.waNetSuiteCustomerCache.findMany({
     where: {
       OR: [
         { companyName: { contains: query, mode: 'insensitive' } },
@@ -268,12 +268,12 @@ export async function searchCachedCustomers(query: string): Promise<NetSuiteCust
  */
 export async function getSyncStats() {
   const [totalCached, lastSync, recentJobs] = await Promise.all([
-    prisma.netSuiteCustomerCache.count(),
-    prisma.netSuiteSyncJob.findFirst({
+    prisma.waNetSuiteCustomerCache.count(),
+    prisma.waNetSuiteSyncJob.findFirst({
       where: { status: 'COMPLETED' },
       orderBy: { completedAt: 'desc' },
     }),
-    prisma.netSuiteSyncJob.findMany({
+    prisma.waNetSuiteSyncJob.findMany({
       orderBy: { startedAt: 'desc' },
       take: 5,
     }),

@@ -109,7 +109,7 @@ export async function initializeRetentionPolicies(): Promise<number> {
   let count = 0;
 
   for (const [dataType, policy] of Object.entries(DEFAULT_RETENTION_POLICIES)) {
-    await prisma.dataRetentionPolicy.upsert({
+    await prisma.waDataRetentionPolicy.upsert({
       where: { dataType },
       create: {
         dataType,
@@ -140,7 +140,7 @@ export async function initializeRetentionPolicies(): Promise<number> {
 export async function getRetentionPolicy(
   dataType: string
 ): Promise<RetentionPolicy | null> {
-  return prisma.dataRetentionPolicy.findUnique({
+  return prisma.waDataRetentionPolicy.findUnique({
     where: { dataType },
   });
 }
@@ -151,7 +151,7 @@ export async function getRetentionPolicy(
  * @returns All configured retention policies
  */
 export async function getAllRetentionPolicies(): Promise<RetentionPolicy[]> {
-  return prisma.dataRetentionPolicy.findMany({
+  return prisma.waDataRetentionPolicy.findMany({
     orderBy: { dataType: 'asc' },
   });
 }
@@ -170,7 +170,7 @@ export async function updateRetentionPolicy(
 ): Promise<RetentionPolicy> {
   const previous = await getRetentionPolicy(dataType);
 
-  const updated = await prisma.dataRetentionPolicy.update({
+  const updated = await prisma.waDataRetentionPolicy.update({
     where: { dataType },
     data: updates,
   });
@@ -217,7 +217,7 @@ async function cleanupNotifications(
   };
 
   try {
-    const deleted = await prisma.notification.deleteMany({
+    const deleted = await prisma.waNotification.deleteMany({
       where: {
         createdAt: { lt: cutoffDate },
         read: true, // Only delete read notifications
@@ -285,7 +285,7 @@ async function cleanupGdprRequests(
 
   try {
     // Only delete completed or cancelled requests
-    const deleted = await prisma.gdprDeletionRequest.deleteMany({
+    const deleted = await prisma.waGdprDeletionRequest.deleteMany({
       where: {
         processedAt: { lt: cutoffDate },
         status: { in: ['COMPLETED', 'CANCELLED', 'REJECTED'] },
@@ -334,8 +334,8 @@ async function cleanupDeletedUsers(
       await prisma.$transaction([
         prisma.account.deleteMany({ where: { userId: user.id } }),
         prisma.session.deleteMany({ where: { userId: user.id } }),
-        prisma.notification.deleteMany({ where: { userId: user.id } }),
-        prisma.savedCase.deleteMany({ where: { userId: user.id } }),
+        prisma.waNotification.deleteMany({ where: { userId: user.id } }),
+        prisma.waSavedCase.deleteMany({ where: { userId: user.id } }),
         prisma.user.delete({ where: { id: user.id } }),
       ]);
       result.deletedCount++;
@@ -372,7 +372,7 @@ async function archiveCaseStudies(
   const archiveCutoff = calculateCutoffDate(policy.archiveAfterDays);
 
   try {
-    const archived = await prisma.caseStudy.updateMany({
+    const archived = await prisma.waCaseStudy.updateMany({
       where: {
         createdAt: { lt: archiveCutoff },
         isActive: true,
@@ -500,8 +500,8 @@ export async function getRetentionStats() {
 
     switch (policy.dataType) {
       case 'Notification':
-        totalRecords = await prisma.notification.count();
-        expiredRecords = await prisma.notification.count({
+        totalRecords = await prisma.waNotification.count();
+        expiredRecords = await prisma.waNotification.count({
           where: { createdAt: { lt: cutoffDate }, read: true },
         });
         break;
@@ -518,9 +518,9 @@ export async function getRetentionStats() {
         });
         break;
       case 'CaseStudy':
-        totalRecords = await prisma.caseStudy.count();
+        totalRecords = await prisma.waCaseStudy.count();
         if (archiveCutoff) {
-          archivableRecords = await prisma.caseStudy.count({
+          archivableRecords = await prisma.waCaseStudy.count({
             where: {
               createdAt: { lt: archiveCutoff },
               isActive: true,
@@ -530,7 +530,7 @@ export async function getRetentionStats() {
         }
         break;
       case 'AuditLog':
-        totalRecords = await prisma.auditLog.count();
+        totalRecords = await prisma.waAuditLog.count();
         break;
     }
 

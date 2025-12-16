@@ -52,7 +52,7 @@ export async function waSyncCustomerToNetSuite(
   try {
     const { prisma } = await import('@/lib/prisma');
 
-    await prisma.caseStudy.update({
+    await prisma.waCaseStudy.update({
       where: { id: caseStudyId },
       data: {
         netsuiteCustomerId,

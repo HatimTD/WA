@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
       logs = await getAuditLogsByActionType(actionType, { limit, offset });
     } else {
       // Get recent logs
-      logs = await prisma.auditLog.findMany({
+      logs = await prisma.waAuditLog.findMany({
         orderBy: { createdAt: 'desc' },
         take: limit,
         skip: offset,

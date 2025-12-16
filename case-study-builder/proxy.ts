@@ -212,7 +212,7 @@ export default auth(async (req) => {
   try {
     // ==== MAINTENANCE MODE CHECK ====
     if (!isExemptPath) {
-      const maintenanceConfig = await prisma.systemConfig.findUnique({
+      const maintenanceConfig = await prisma.waSystemConfig.findUnique({
         where: { key: 'maintenance_mode' },
       });
 

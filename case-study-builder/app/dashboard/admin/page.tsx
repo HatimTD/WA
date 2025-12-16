@@ -51,20 +51,20 @@ export default async function AdminDashboardPage() {
     prisma.user.count(),
 
     // Total case studies count
-    prisma.caseStudy.count(),
+    prisma.waCaseStudy.count(),
 
     // Pending cases count (status: SUBMITTED = awaiting approval)
-    prisma.caseStudy.count({
+    prisma.waCaseStudy.count({
       where: { status: 'SUBMITTED' },
     }),
 
     // Approved cases count
-    prisma.caseStudy.count({
+    prisma.waCaseStudy.count({
       where: { status: 'APPROVED' },
     }),
 
     // Rejected cases count
-    prisma.caseStudy.count({
+    prisma.waCaseStudy.count({
       where: { status: 'REJECTED' },
     }),
 
@@ -82,7 +82,7 @@ export default async function AdminDashboardPage() {
     }),
 
     // Recent case submissions (last 5)
-    prisma.caseStudy.findMany({
+    prisma.waCaseStudy.findMany({
       take: 5,
       orderBy: { createdAt: 'desc' },
       select: {
@@ -101,7 +101,7 @@ export default async function AdminDashboardPage() {
     }),
 
     // Recent approvals/rejections (last 5)
-    prisma.caseStudy.findMany({
+    prisma.waCaseStudy.findMany({
       take: 5,
       where: {
         status: { in: ['APPROVED', 'REJECTED'] },

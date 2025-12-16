@@ -54,7 +54,7 @@ export async function waCreateCaseStudy(data: WaCreateCaseStudyInput) {
       ? parseFloat(data.customerSavingsAmount)
       : null;
 
-    const caseStudy = await prisma.caseStudy.create({
+    const caseStudy = await prisma.waCaseStudy.create({
       data: {
         type: data.type,
         status: data.status || 'DRAFT',
@@ -123,7 +123,7 @@ export async function waUpdateCaseStudy(id: string, data: any) {
 
   try {
     // Verify ownership or approver role
-    const caseStudy = await prisma.caseStudy.findUnique({
+    const caseStudy = await prisma.waCaseStudy.findUnique({
       where: { id },
     });
 
@@ -185,7 +185,7 @@ export async function waUpdateCaseStudy(id: string, data: any) {
 
     updateData.updatedAt = new Date();
 
-    const updated = await prisma.caseStudy.update({
+    const updated = await prisma.waCaseStudy.update({
       where: { id },
       data: updateData,
     });
@@ -219,7 +219,7 @@ export async function waDeleteCaseStudy(id: string) {
   }
 
   try {
-    const caseStudy = await prisma.caseStudy.findUnique({
+    const caseStudy = await prisma.waCaseStudy.findUnique({
       where: { id },
     });
 
@@ -231,7 +231,7 @@ export async function waDeleteCaseStudy(id: string) {
       throw new Error('Unauthorized to delete this case study');
     }
 
-    await prisma.caseStudy.delete({
+    await prisma.waCaseStudy.delete({
       where: { id },
     });
 

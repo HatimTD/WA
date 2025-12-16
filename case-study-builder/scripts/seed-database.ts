@@ -247,7 +247,7 @@ async function seedDatabase() {
         ...(i % 2 === 0 ? [wearTypes[(i + 1) % 5]] : []), // Some cases have multiple wear types
       ];
 
-      const caseStudy = await prisma.caseStudy.create({
+      const caseStudy = await prisma.waCaseStudy.create({
         data: {
           type: caseType,
           status: statusInfo.status,
@@ -311,11 +311,11 @@ async function seedDatabase() {
     console.log('================');
 
     const totalUsers = await prisma.user.count({ where: { role: 'CONTRIBUTOR' } });
-    const totalCases = await prisma.caseStudy.count();
-    const draftCases = await prisma.caseStudy.count({ where: { status: 'DRAFT' } });
-    const submittedCases = await prisma.caseStudy.count({ where: { status: 'SUBMITTED' } });
-    const approvedCases = await prisma.caseStudy.count({ where: { status: 'APPROVED' } });
-    const rejectedCases = await prisma.caseStudy.count({ where: { status: 'REJECTED' } });
+    const totalCases = await prisma.waCaseStudy.count();
+    const draftCases = await prisma.waCaseStudy.count({ where: { status: 'DRAFT' } });
+    const submittedCases = await prisma.waCaseStudy.count({ where: { status: 'SUBMITTED' } });
+    const approvedCases = await prisma.waCaseStudy.count({ where: { status: 'APPROVED' } });
+    const rejectedCases = await prisma.waCaseStudy.count({ where: { status: 'REJECTED' } });
 
     console.log(`Total Contributor Users: ${totalUsers}`);
     console.log(`Total Case Studies: ${totalCases}`);

@@ -15,7 +15,7 @@ import StepWPS from '@/components/case-study-form/step-wps';
 import { waUpdateCaseStudy } from '@/lib/actions/waCaseStudyActions';
 import { waSaveWeldingProcedure } from '@/lib/actions/waWpsActions';
 import { toast } from 'sonner';
-import { CaseStudy, WeldingProcedure, CostCalculator } from '@prisma/client';
+import { WaCaseStudy, WaWeldingProcedure, WaCostCalculator } from '@prisma/client';
 
 export type CaseStudyFormData = {
   // Step 1: Case Type
@@ -98,9 +98,9 @@ export type CaseStudyFormData = {
 };
 
 type Props = {
-  caseStudy: CaseStudy;
-  wpsData?: WeldingProcedure | null;
-  costCalcData?: CostCalculator | null;
+  caseStudy: WaCaseStudy;
+  wpsData?: WaWeldingProcedure | null;
+  costCalcData?: WaCostCalculator | null;
 };
 
 export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: Props) {

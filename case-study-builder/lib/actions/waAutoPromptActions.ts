@@ -313,7 +313,7 @@ export async function waGetNextFieldToFill(
   caseStudy: CaseStudyContext,
   targetTier: TargetTier
 ): Promise<MissingField | null> {
-  const missingFields = await generateAutoPrompts(caseStudy, targetTier);
+  const missingFields = await waGenerateAutoPrompts(caseStudy, targetTier);
 
   if (missingFields.length === 0) {
     return null;
@@ -335,7 +335,7 @@ export async function waGetPromptsBySection(
   caseStudy: CaseStudyContext,
   targetTier: TargetTier
 ): Promise<Record<MissingField['section'], MissingField[]>> {
-  const missingFields = await generateAutoPrompts(caseStudy, targetTier);
+  const missingFields = await waGenerateAutoPrompts(caseStudy, targetTier);
 
   return {
     application: missingFields.filter((f) => f.section === 'application'),

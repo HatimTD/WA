@@ -34,7 +34,7 @@ function waCreateUniqueKey(cs: {
 export async function waGetBhagProgress() {
   try {
     // Get all approved case studies with deduplication fields (BRD Section 5)
-    const approvedCases = await prisma.caseStudy.findMany({
+    const approvedCases = await prisma.waCaseStudy.findMany({
       where: {
         status: 'APPROVED',
       },
@@ -105,7 +105,7 @@ export async function waGetBhagProgress() {
  */
 export async function waGetRegionalBhagProgress() {
   try {
-    const approvedCases = await prisma.caseStudy.findMany({
+    const approvedCases = await prisma.waCaseStudy.findMany({
       where: {
         status: 'APPROVED',
       },
@@ -157,7 +157,7 @@ export async function waGetRegionalBhagProgress() {
  */
 export async function waGetIndustryBhagProgress() {
   try {
-    const approvedCases = await prisma.caseStudy.findMany({
+    const approvedCases = await prisma.waCaseStudy.findMany({
       where: {
         status: 'APPROVED',
       },
@@ -211,7 +211,7 @@ export async function waGetIndustryBhagProgress() {
  */
 export async function waGetQualifierTypeBhagProgress() {
   try {
-    const approvedCases = await prisma.caseStudy.findMany({
+    const approvedCases = await prisma.waCaseStudy.findMany({
       where: {
         status: 'APPROVED',
       },
@@ -301,7 +301,7 @@ export async function waGetQualifierTypeBhagProgress() {
  */
 export async function waGetContributorRegionBhagProgress() {
   try {
-    const approvedCases = await prisma.caseStudy.findMany({
+    const approvedCases = await prisma.waCaseStudy.findMany({
       where: {
         status: 'APPROVED',
       },

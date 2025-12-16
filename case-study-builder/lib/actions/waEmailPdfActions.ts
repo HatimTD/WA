@@ -40,7 +40,7 @@ export async function waEmailCaseStudyPDF({
     }
 
     // Fetch case study with all required data
-    const caseStudy = await prisma.caseStudy.findUnique({
+    const caseStudy = await prisma.waCaseStudy.findUnique({
       where: { id: caseId },
       include: {
         contributor: {
@@ -207,7 +207,7 @@ export async function waTagUsersInCaseStudy({
     }
 
     // Fetch case study
-    const caseStudy = await prisma.caseStudy.findUnique({
+    const caseStudy = await prisma.waCaseStudy.findUnique({
       where: { id: caseId },
       include: {
         contributor: {
@@ -247,7 +247,7 @@ export async function waTagUsersInCaseStudy({
     const newTaggedIds = userIds.filter(id => !currentTaggedIds.includes(id));
 
     // Update tagged users
-    await prisma.caseStudy.update({
+    await prisma.waCaseStudy.update({
       where: { id: caseId },
       data: {
         taggedUsers: {
@@ -267,7 +267,7 @@ export async function waTagUsersInCaseStudy({
 
     // Send notifications to newly tagged users
     for (const userId of newTaggedIds) {
-      await prisma.notification.create({
+      await prisma.waNotification.create({
         data: {
           userId,
           type: 'NEW_COMMENT', // Using existing type, you could add a new TAGGED_IN_CASE type
@@ -300,7 +300,7 @@ export async function waGetTaggedUsers(caseId: string) {
       return { success: false, error: 'Unauthorized', users: [] };
     }
 
-    const caseStudy = await prisma.caseStudy.findUnique({
+    const caseStudy = await prisma.waCaseStudy.findUnique({
       where: { id: caseId },
       include: {
         taggedUsers: {

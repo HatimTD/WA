@@ -7,7 +7,7 @@ import { waCreateNotification } from './waNotificationActions';
 
 export async function waGetComments(caseStudyId: string) {
   try {
-    const comments = await prisma.comment.findMany({
+    const comments = await prisma.waComment.findMany({
       where: { caseStudyId },
       include: {
         user: {
@@ -55,7 +55,7 @@ export async function waCreateComment(caseStudyId: string, content: string) {
     }
 
     // Get case study details for notification
-    const caseStudy = await prisma.caseStudy.findUnique({
+    const caseStudy = await prisma.waCaseStudy.findUnique({
       where: { id: caseStudyId },
       select: {
         contributorId: true,
@@ -64,7 +64,7 @@ export async function waCreateComment(caseStudyId: string, content: string) {
       },
     });
 
-    const comment = await prisma.comment.create({
+    const comment = await prisma.waComment.create({
       data: {
         content: content.trim(),
         caseStudyId,
@@ -113,7 +113,7 @@ export async function waLikeComment(commentId: string) {
       return { success: false, error: 'Unauthorized' };
     }
 
-    const comment = await prisma.comment.update({
+    const comment = await prisma.waComment.update({
       where: { id: commentId },
       data: {
         likes: {
@@ -143,7 +143,7 @@ export async function waDeleteComment(commentId: string) {
     }
 
     // Check if user owns the comment or is an approver
-    const comment = await prisma.comment.findUnique({
+    const comment = await prisma.waComment.findUnique({
       where: { id: commentId },
       include: {
         user: true,
@@ -167,7 +167,7 @@ export async function waDeleteComment(commentId: string) {
       return { success: false, error: 'Not authorized to delete this comment' };
     }
 
-    await prisma.comment.delete({
+    await prisma.waComment.delete({
       where: { id: commentId },
     });
 

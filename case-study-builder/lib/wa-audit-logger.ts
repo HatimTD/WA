@@ -155,7 +155,7 @@ export async function waLogAuditTrail(
     };
 
     // Log to SystemConfig for now (temporary storage)
-    await prisma.systemConfig.create({
+    await prisma.waSystemConfig.create({
       data: {
         key: `audit_log_${auditEntry.id}`,
         value: JSON.stringify(auditEntry),
@@ -195,7 +195,7 @@ export async function waGetUserAuditLogs(
   limit: number = 100
 ): Promise<WaAuditLogEntry[]> {
   try {
-    const logs = await prisma.systemConfig.findMany({
+    const logs = await prisma.waSystemConfig.findMany({
       where: {
         key: {
           startsWith: 'audit_log_',
@@ -243,7 +243,7 @@ export async function waGetResourceAuditLogs(
   limit: number = 50
 ): Promise<WaAuditLogEntry[]> {
   try {
-    const logs = await prisma.systemConfig.findMany({
+    const logs = await prisma.waSystemConfig.findMany({
       where: {
         key: {
           startsWith: 'audit_log_',
@@ -299,7 +299,7 @@ export async function waGetAuditLogsByDateRange(
   limit: number = 200
 ): Promise<WaAuditLogEntry[]> {
   try {
-    const logs = await prisma.systemConfig.findMany({
+    const logs = await prisma.waSystemConfig.findMany({
       where: {
         key: {
           startsWith: 'audit_log_',

@@ -58,14 +58,14 @@ export default async function GdprRequestsPage({
 
   // Fetch GDPR requests
   const [requests, totalCount, statusCounts] = await Promise.all([
-    prisma.gdprDeletionRequest.findMany({
+    prisma.waGdprDeletionRequest.findMany({
       where,
       orderBy: { requestedAt: 'desc' },
       skip,
       take: pageSize,
     }),
-    prisma.gdprDeletionRequest.count({ where }),
-    prisma.gdprDeletionRequest.groupBy({
+    prisma.waGdprDeletionRequest.count({ where }),
+    prisma.waGdprDeletionRequest.groupBy({
       by: ['status'],
       _count: { id: true },
     }),

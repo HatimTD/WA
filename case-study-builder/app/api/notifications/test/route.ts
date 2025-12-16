@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     const targetUserId = userId || session.user.id
 
     // Create a test notification
-    const notification = await prisma.notification.create({
+    const notification = await prisma.waNotification.create({
       data: {
         userId: targetUserId,
         type: 'SYSTEM_ANNOUNCEMENT',

@@ -40,7 +40,7 @@ export async function waCheckAndAwardBadges(userId: string) {
       }
 
       // Count approved cases of this type
-      const approvedCount = await prisma.caseStudy.count({
+      const approvedCount = await prisma.waCaseStudy.count({
         where: {
           contributorId: userId,
           status: 'APPROVED',
@@ -99,7 +99,7 @@ export async function waGetUserBadgeProgress(userId: string) {
         const badge = badgeName as Badge;
         const earned = (user.badges as Badge[]).includes(badge);
 
-        const count = await prisma.caseStudy.count({
+        const count = await prisma.waCaseStudy.count({
           where: {
             contributorId: userId,
             status: 'APPROVED',

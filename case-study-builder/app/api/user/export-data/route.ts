@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Fetch all case studies created by this user
-    const caseStudies = await prisma.caseStudy.findMany({
+    const caseStudies = await prisma.waCaseStudy.findMany({
       where: { contributorId: session.user.id },
       select: {
         id: true,

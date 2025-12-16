@@ -40,7 +40,7 @@ Example: ["GMAW", "abrasion resistance", "crusher hammers", "hardfacing"]`;
 
 export async function waSuggestLocations(customerName: string) {
   try {
-    const existing = await prisma.caseStudy.findMany({
+    const existing = await prisma.waCaseStudy.findMany({
       where: {
         customerName: { contains: customerName, mode: 'insensitive' },
         status: 'APPROVED',

@@ -29,7 +29,7 @@ export async function waTranslateCaseStudy(
 ): Promise<TranslateCaseStudyResult> {
   try {
     // Fetch the case study
-    const caseStudy = await prisma.caseStudy.findUnique({
+    const caseStudy = await prisma.waCaseStudy.findUnique({
       where: { id: caseStudyId },
       select: {
         id: true,
@@ -94,7 +94,7 @@ export async function waTranslateCaseStudy(
     });
 
     // Update case study with translation
-    await prisma.caseStudy.update({
+    await prisma.waCaseStudy.update({
       where: { id: caseStudyId },
       data: {
         translatedText: translatedJson,
@@ -139,7 +139,7 @@ export async function waGetCaseStudyTranslation(caseStudyId: string): Promise<{
   error?: string;
 }> {
   try {
-    const caseStudy = await prisma.caseStudy.findUnique({
+    const caseStudy = await prisma.waCaseStudy.findUnique({
       where: { id: caseStudyId },
       select: {
         translatedText: true,
@@ -233,7 +233,7 @@ export async function waDetectCaseStudyLanguage(caseStudyId: string): Promise<{
   error?: string;
 }> {
   try {
-    const caseStudy = await prisma.caseStudy.findUnique({
+    const caseStudy = await prisma.waCaseStudy.findUnique({
       where: { id: caseStudyId },
       select: {
         problemDescription: true,
@@ -248,7 +248,7 @@ export async function waDetectCaseStudyLanguage(caseStudyId: string): Promise<{
 
     if (result.success) {
       // Update the case study with detected language
-      await prisma.caseStudy.update({
+      await prisma.waCaseStudy.update({
         where: { id: caseStudyId },
         data: { originalLanguage: result.detectedLanguage },
       });

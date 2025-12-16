@@ -51,7 +51,7 @@ export async function waGetAdminAnalytics(): Promise<AdminAnalytics> {
       const startDate = new Date(year, month - 1, 1);
       const endDate = new Date(year, month, 0, 23, 59, 59);
 
-      const count = await prisma.caseStudy.count({
+      const count = await prisma.waCaseStudy.count({
         where: {
           createdAt: {
             gte: startDate,
@@ -65,19 +65,19 @@ export async function waGetAdminAnalytics(): Promise<AdminAnalytics> {
   );
 
   // Cases by type
-  const casesByType = await prisma.caseStudy.groupBy({
+  const casesByType = await prisma.waCaseStudy.groupBy({
     by: ['type'],
     _count: true,
   });
 
   // Cases by status
-  const casesByStatus = await prisma.caseStudy.groupBy({
+  const casesByStatus = await prisma.waCaseStudy.groupBy({
     by: ['status'],
     _count: true,
   });
 
   // Cases by industry (top 10)
-  const casesByIndustry = await prisma.caseStudy.groupBy({
+  const casesByIndustry = await prisma.waCaseStudy.groupBy({
     by: ['industry'],
     _count: true,
     orderBy: {
@@ -117,7 +117,7 @@ export async function waGetAdminAnalytics(): Promise<AdminAnalytics> {
       const startDate = new Date(year, month - 1, 1);
       const endDate = new Date(year, month, 0, 23, 59, 59);
 
-      const submitted = await prisma.caseStudy.count({
+      const submitted = await prisma.waCaseStudy.count({
         where: {
           submittedAt: {
             gte: startDate,
@@ -126,7 +126,7 @@ export async function waGetAdminAnalytics(): Promise<AdminAnalytics> {
         },
       });
 
-      const approved = await prisma.caseStudy.count({
+      const approved = await prisma.waCaseStudy.count({
         where: {
           approvedAt: {
             gte: startDate,
@@ -142,12 +142,12 @@ export async function waGetAdminAnalytics(): Promise<AdminAnalytics> {
   );
 
   // Summary stats
-  const totalCases = await prisma.caseStudy.count();
+  const totalCases = await prisma.waCaseStudy.count();
   const totalUsers = await prisma.user.count();
-  const approvedCases = await prisma.caseStudy.count({
+  const approvedCases = await prisma.waCaseStudy.count({
     where: { status: 'APPROVED' },
   });
-  const pendingCases = await prisma.caseStudy.count({
+  const pendingCases = await prisma.waCaseStudy.count({
     where: { status: 'SUBMITTED' },
   });
 
@@ -197,7 +197,7 @@ export async function waGetContributorAnalytics(): Promise<ContributorAnalytics>
       const startDate = new Date(year, month - 1, 1);
       const endDate = new Date(year, month, 0, 23, 59, 59);
 
-      const count = await prisma.caseStudy.count({
+      const count = await prisma.waCaseStudy.count({
         where: {
           contributorId: userId,
           createdAt: {
@@ -212,7 +212,7 @@ export async function waGetContributorAnalytics(): Promise<ContributorAnalytics>
   );
 
   // Cases by type
-  const casesByType = await prisma.caseStudy.groupBy({
+  const casesByType = await prisma.waCaseStudy.groupBy({
     by: ['type'],
     where: {
       contributorId: userId,
@@ -221,7 +221,7 @@ export async function waGetContributorAnalytics(): Promise<ContributorAnalytics>
   });
 
   // Cases by status
-  const casesByStatus = await prisma.caseStudy.groupBy({
+  const casesByStatus = await prisma.waCaseStudy.groupBy({
     by: ['status'],
     where: {
       contributorId: userId,
@@ -247,7 +247,7 @@ export async function waGetContributorAnalytics(): Promise<ContributorAnalytics>
     },
   });
 
-  const approvedByType = await prisma.caseStudy.groupBy({
+  const approvedByType = await prisma.waCaseStudy.groupBy({
     by: ['type'],
     where: {
       contributorId: userId,
@@ -315,7 +315,7 @@ export async function waGetApproverAnalytics(): Promise<ApproverAnalytics> {
       const startDate = new Date(year, month - 1, 1);
       const endDate = new Date(year, month, 0, 23, 59, 59);
 
-      const approved = await prisma.caseStudy.count({
+      const approved = await prisma.waCaseStudy.count({
         where: {
           approverId: userId,
           approvedAt: {
@@ -325,7 +325,7 @@ export async function waGetApproverAnalytics(): Promise<ApproverAnalytics> {
         },
       });
 
-      const rejected = await prisma.caseStudy.count({
+      const rejected = await prisma.waCaseStudy.count({
         where: {
           rejectedBy: userId,
           rejectedAt: {
@@ -340,16 +340,16 @@ export async function waGetApproverAnalytics(): Promise<ApproverAnalytics> {
   );
 
   // Approval vs rejection rate
-  const totalApproved = await prisma.caseStudy.count({
+  const totalApproved = await prisma.waCaseStudy.count({
     where: { approverId: userId },
   });
 
-  const totalRejected = await prisma.caseStudy.count({
+  const totalRejected = await prisma.waCaseStudy.count({
     where: { rejectedBy: userId },
   });
 
   // Average review time (in days)
-  const reviewedCases = await prisma.caseStudy.findMany({
+  const reviewedCases = await prisma.waCaseStudy.findMany({
     where: {
       OR: [
         { approverId: userId },
@@ -390,7 +390,7 @@ export async function waGetApproverAnalytics(): Promise<ApproverAnalytics> {
   });
 
   // Cases by type reviewed
-  const reviewedByType = await prisma.caseStudy.groupBy({
+  const reviewedByType = await prisma.waCaseStudy.groupBy({
     by: ['type'],
     where: {
       OR: [
@@ -402,7 +402,7 @@ export async function waGetApproverAnalytics(): Promise<ApproverAnalytics> {
   });
 
   // Pending cases count
-  const pendingCases = await prisma.caseStudy.count({
+  const pendingCases = await prisma.waCaseStudy.count({
     where: {
       status: 'SUBMITTED',
     },
@@ -436,7 +436,7 @@ export async function waGetViewerAnalytics(): Promise<ViewerAnalytics> {
   }
 
   // Only approved cases for viewers
-  const approvedCases = await prisma.caseStudy.findMany({
+  const approvedCases = await prisma.waCaseStudy.findMany({
     where: {
       status: 'APPROVED',
     },

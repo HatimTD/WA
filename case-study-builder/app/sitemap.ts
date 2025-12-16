@@ -5,7 +5,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://casestudy.weldingalloys.com';
 
   // Fetch approved case studies for the public library
-  const approvedCases = await prisma.caseStudy.findMany({
+  const approvedCases = await prisma.waCaseStudy.findMany({
     where: { status: 'APPROVED' },
     select: {
       id: true,

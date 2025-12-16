@@ -62,7 +62,7 @@ export default async function CaseStudyDetailPage({ params }: Props) {
 
   const { id } = await params;
 
-  const caseStudy = await prisma.caseStudy.findUnique({
+  const caseStudy = await prisma.waCaseStudy.findUnique({
     where: { id },
     include: {
       contributor: {

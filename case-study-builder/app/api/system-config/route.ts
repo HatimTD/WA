@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Upsert system config
-    const config = await prisma.systemConfig.upsert({
+    const config = await prisma.waSystemConfig.upsert({
       where: { key },
       update: {
         value,

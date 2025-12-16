@@ -109,7 +109,7 @@ export default async function AnalyticsPage() {
   }
 
   // Fetch basic stats for export (all roles get this)
-  const userCases = await prisma.caseStudy.findMany({
+  const userCases = await prisma.waCaseStudy.findMany({
     where: { contributorId: user.id },
     select: {
       type: true,

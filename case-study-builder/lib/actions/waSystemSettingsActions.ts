@@ -37,7 +37,7 @@ export async function waToggleMaintenanceMode(enabled: boolean) {
   try {
     await verifyAdmin();
 
-    await prisma.systemConfig.upsert({
+    await prisma.waSystemConfig.upsert({
       where: { key: 'maintenance_mode' },
       update: { value: enabled ? 'true' : 'false' },
       create: {
@@ -64,7 +64,7 @@ export async function waUpdateMaintenanceMessage(message: string) {
   try {
     await verifyAdmin();
 
-    await prisma.systemConfig.upsert({
+    await prisma.waSystemConfig.upsert({
       where: { key: 'maintenance_message' },
       update: { value: message },
       create: {
@@ -89,11 +89,11 @@ export async function waUpdateMaintenanceMessage(message: string) {
  */
 export async function waGetMaintenanceMode() {
   try {
-    const config = await prisma.systemConfig.findUnique({
+    const config = await prisma.waSystemConfig.findUnique({
       where: { key: 'maintenance_mode' },
     });
 
-    const messageConfig = await prisma.systemConfig.findUnique({
+    const messageConfig = await prisma.waSystemConfig.findUnique({
       where: { key: 'maintenance_message' },
     });
 
@@ -123,7 +123,7 @@ export async function waGetEmailTemplates() {
   try {
     await verifyAdmin();
 
-    const templates = await prisma.emailTemplate.findMany({
+    const templates = await prisma.waEmailTemplate.findMany({
       orderBy: { type: 'asc' },
     });
 
@@ -141,11 +141,11 @@ export async function waGetEmailTemplates() {
 /**
  * Get single email template by type
  */
-export async function getEmailTemplate(type: EmailTemplateType) {
+export async function waGetEmailTemplate(type: EmailTemplateType) {
   try {
     await verifyAdmin();
 
-    const template = await prisma.emailTemplate.findUnique({
+    const template = await prisma.waEmailTemplate.findUnique({
       where: { type },
     });
 
@@ -163,7 +163,7 @@ export async function getEmailTemplate(type: EmailTemplateType) {
 /**
  * Create or update email template
  */
-export async function upsertEmailTemplate({
+export async function waUpsertEmailTemplate({
   type,
   name,
   subject,
@@ -185,7 +185,7 @@ export async function upsertEmailTemplate({
   try {
     await verifyAdmin();
 
-    const template = await prisma.emailTemplate.upsert({
+    const template = await prisma.waEmailTemplate.upsert({
       where: { type },
       update: {
         name,
@@ -226,7 +226,7 @@ export async function waDeleteEmailTemplate(type: EmailTemplateType) {
   try {
     await verifyAdmin();
 
-    await prisma.emailTemplate.delete({
+    await prisma.waEmailTemplate.delete({
       where: { type },
     });
 
@@ -244,7 +244,7 @@ export async function waDeleteEmailTemplate(type: EmailTemplateType) {
 /**
  * Initialize default email templates
  */
-export async function initializeDefaultTemplates() {
+export async function waInitializeDefaultTemplates() {
   try {
     await verifyAdmin();
 
@@ -361,7 +361,7 @@ export async function initializeDefaultTemplates() {
     ];
 
     for (const template of defaultTemplates) {
-      await prisma.emailTemplate.upsert({
+      await prisma.waEmailTemplate.upsert({
         where: { type: template.type },
         update: template,
         create: template,
@@ -386,13 +386,13 @@ export async function initializeDefaultTemplates() {
 /**
  * Get global notification statistics
  */
-export async function getNotificationStats() {
+export async function waGetNotificationStats() {
   try {
     await verifyAdmin();
 
     const totalUsers = await prisma.user.count();
-    const totalNotifications = await prisma.notification.count();
-    const unreadNotifications = await prisma.notification.count({
+    const totalNotifications = await prisma.waNotification.count();
+    const unreadNotifications = await prisma.waNotification.count({
       where: { read: false },
     });
 
@@ -430,7 +430,7 @@ export async function getNotificationStats() {
 /**
  * Disable notifications for all users
  */
-export async function disableGlobalNotifications(type: 'email' | 'inApp' | 'all') {
+export async function waDisableGlobalNotifications(type: 'email' | 'inApp' | 'all') {
   try {
     await verifyAdmin();
 
@@ -477,7 +477,7 @@ export async function disableGlobalNotifications(type: 'email' | 'inApp' | 'all'
 /**
  * Enable notifications for all users
  */
-export async function enableGlobalNotifications(type: 'email' | 'inApp' | 'all') {
+export async function waEnableGlobalNotifications(type: 'email' | 'inApp' | 'all') {
   try {
     await verifyAdmin();
 
@@ -524,7 +524,7 @@ export async function enableGlobalNotifications(type: 'email' | 'inApp' | 'all')
 /**
  * Toggle specific notification type for all users
  */
-export async function toggleSpecificNotification(notificationType: string, enable: boolean) {
+export async function waToggleSpecificNotification(notificationType: string, enable: boolean) {
   try {
     await verifyAdmin();
 
@@ -564,7 +564,7 @@ export async function toggleSpecificNotification(notificationType: string, enabl
  */
 export async function waGetAnnouncement() {
   try {
-    const config = await prisma.systemConfig.findUnique({
+    const config = await prisma.waSystemConfig.findUnique({
       where: { key: 'announcement' },
     });
 
@@ -614,7 +614,7 @@ export async function waUpdateAnnouncement({
       type,
     };
 
-    await prisma.systemConfig.upsert({
+    await prisma.waSystemConfig.upsert({
       where: { key: 'announcement' },
       update: { value: JSON.stringify(announcement) },
       create: {

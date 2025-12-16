@@ -69,7 +69,7 @@ export async function waCreateNotification({
       const shouldCreateInApp = !inAppPreferenceKey || prefs[inAppPreferenceKey] !== false;
 
       if (shouldCreateInApp) {
-        notification = await prisma.notification.create({
+        notification = await prisma.waNotification.create({
           data: {
             userId,
             type,
@@ -134,7 +134,7 @@ export async function waMarkNotificationAsRead(notificationId: string) {
       return { success: false, error: 'Unauthorized' };
     }
 
-    const notification = await prisma.notification.update({
+    const notification = await prisma.waNotification.update({
       where: {
         id: notificationId,
         userId: session.user.id,
@@ -165,7 +165,7 @@ export async function waMarkAllNotificationsAsRead() {
       return { success: false, error: 'Unauthorized' };
     }
 
-    await prisma.notification.updateMany({
+    await prisma.waNotification.updateMany({
       where: {
         userId: session.user.id,
         read: false,
@@ -196,7 +196,7 @@ export async function waGetUnreadNotificationCount() {
       return 0;
     }
 
-    const count = await prisma.notification.count({
+    const count = await prisma.waNotification.count({
       where: {
         userId: session.user.id,
         read: false,
@@ -220,7 +220,7 @@ export async function waGetRecentNotifications(limit = 10) {
       return [];
     }
 
-    const notifications = await prisma.notification.findMany({
+    const notifications = await prisma.waNotification.findMany({
       where: {
         userId: session.user.id,
       },
@@ -247,7 +247,7 @@ export async function waDeleteNotification(notificationId: string) {
       return { success: false, error: 'Unauthorized' };
     }
 
-    await prisma.notification.delete({
+    await prisma.waNotification.delete({
       where: {
         id: notificationId,
         userId: session.user.id,

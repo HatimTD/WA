@@ -12,7 +12,7 @@ export async function waGetSearchSuggestions(query: string) {
 
   try {
     // Search approved case studies for autocomplete
-    const results = await prisma.caseStudy.findMany({
+    const results = await prisma.waCaseStudy.findMany({
       where: {
         status: 'APPROVED',
         OR: [

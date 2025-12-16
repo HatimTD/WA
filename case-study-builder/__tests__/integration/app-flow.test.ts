@@ -33,8 +33,8 @@ describe('Application Integration Tests', () => {
         contributorId: 'contributor-123',
         status: 'DRAFT',
       }
-      ;(prisma.caseStudy.create as jest.Mock).mockResolvedValue(mockCase)
-      const createdCase = await prisma.caseStudy.create({
+      ;(prisma.waCaseStudy.create as jest.Mock).mockResolvedValue(mockCase)
+      const createdCase = await prisma.waCaseStudy.create({
         data: {
           title: 'New Case Study',
           contributorId: 'contributor-123',
@@ -45,8 +45,8 @@ describe('Application Integration Tests', () => {
 
       // Step 3: User publishes case study
       const mockPublishedCase = { ...mockCase, status: 'PUBLISHED' }
-      ;(prisma.caseStudy.update as jest.Mock).mockResolvedValue(mockPublishedCase)
-      const publishedCase = await prisma.caseStudy.update({
+      ;(prisma.waCaseStudy.update as jest.Mock).mockResolvedValue(mockPublishedCase)
+      const publishedCase = await prisma.waCaseStudy.update({
         where: { id: 'case-new' },
         data: { status: 'PUBLISHED' },
       })
@@ -59,8 +59,8 @@ describe('Application Integration Tests', () => {
         type: 'CASE_PUBLISHED',
         isRead: false,
       }
-      ;(prisma.notification.create as jest.Mock).mockResolvedValue(mockNotification)
-      const notification = await prisma.notification.create({
+      ;(prisma.waNotification.create as jest.Mock).mockResolvedValue(mockNotification)
+      const notification = await prisma.waNotification.create({
         data: {
           userId: 'contributor-123',
           type: 'CASE_PUBLISHED',
@@ -89,8 +89,8 @@ describe('Application Integration Tests', () => {
         userId: 'viewer-123',
         caseStudyId: 'case-1',
       }
-      ;(prisma.savedCase.create as jest.Mock).mockResolvedValue(mockSavedCase)
-      const savedCase = await prisma.savedCase.create({
+      ;(prisma.waSavedCase.create as jest.Mock).mockResolvedValue(mockSavedCase)
+      const savedCase = await prisma.waSavedCase.create({
         data: {
           userId: 'viewer-123',
           caseStudyId: 'case-1',
@@ -99,15 +99,15 @@ describe('Application Integration Tests', () => {
       expect(savedCase.userId).toBe('viewer-123')
 
       // Step 3: User fetches saved cases
-      ;(prisma.savedCase.findMany as jest.Mock).mockResolvedValue([mockSavedCase])
-      const savedCases = await prisma.savedCase.findMany({
+      ;(prisma.waSavedCase.findMany as jest.Mock).mockResolvedValue([mockSavedCase])
+      const savedCases = await prisma.waSavedCase.findMany({
         where: { userId: 'viewer-123' },
       })
       expect(savedCases).toHaveLength(1)
 
       // Step 4: User unsaves the case study
-      ;(prisma.savedCase.delete as jest.Mock).mockResolvedValue(mockSavedCase)
-      const deleted = await prisma.savedCase.delete({
+      ;(prisma.waSavedCase.delete as jest.Mock).mockResolvedValue(mockSavedCase)
+      const deleted = await prisma.waSavedCase.delete({
         where: { id: 'saved-1' },
       })
       expect(deleted.id).toBe('saved-1')
@@ -151,8 +151,8 @@ describe('Application Integration Tests', () => {
         value: 'true',
         updatedBy: 'admin-123',
       }
-      ;(prisma.systemConfig.upsert as jest.Mock).mockResolvedValue(mockConfig)
-      const config = await prisma.systemConfig.upsert({
+      ;(prisma.waSystemConfig.upsert as jest.Mock).mockResolvedValue(mockConfig)
+      const config = await prisma.waSystemConfig.upsert({
         where: { key: 'maintenance_mode' },
         update: { value: 'true', updatedBy: 'admin-123' },
         create: { key: 'maintenance_mode', value: 'true', updatedBy: 'admin-123' },
@@ -181,8 +181,8 @@ describe('Application Integration Tests', () => {
           },
         }),
       }
-      ;(prisma.systemConfig.findUnique as jest.Mock).mockResolvedValue(mockConfig)
-      const currentConfig = await prisma.systemConfig.findUnique({
+      ;(prisma.waSystemConfig.findUnique as jest.Mock).mockResolvedValue(mockConfig)
+      const currentConfig = await prisma.waSystemConfig.findUnique({
         where: { key: 'offline_config' },
       })
       expect(JSON.parse(currentConfig?.value || '{}')).toHaveProperty('enabled')
@@ -198,8 +198,8 @@ describe('Application Integration Tests', () => {
           },
         }),
       }
-      ;(prisma.systemConfig.upsert as jest.Mock).mockResolvedValue(newConfig)
-      const updated = await prisma.systemConfig.upsert({
+      ;(prisma.waSystemConfig.upsert as jest.Mock).mockResolvedValue(newConfig)
+      const updated = await prisma.waSystemConfig.upsert({
         where: { key: 'offline_config' },
         update: { value: newConfig.value },
         create: newConfig,
@@ -218,8 +218,8 @@ describe('Application Integration Tests', () => {
         userId: 'user-123',
         caseStudyId: 'case-1',
       }
-      ;(prisma.comment.create as jest.Mock).mockResolvedValue(mockComment)
-      const comment = await prisma.comment.create({
+      ;(prisma.waComment.create as jest.Mock).mockResolvedValue(mockComment)
+      const comment = await prisma.waComment.create({
         data: {
           content: 'Great case study!',
           userId: 'user-123',
@@ -233,8 +233,8 @@ describe('Application Integration Tests', () => {
         id: 'case-1',
         contributorId: 'contributor-123',
       }
-      ;(prisma.caseStudy.findUnique as jest.Mock).mockResolvedValue(mockCase)
-      const caseStudy = await prisma.caseStudy.findUnique({
+      ;(prisma.waCaseStudy.findUnique as jest.Mock).mockResolvedValue(mockCase)
+      const caseStudy = await prisma.waCaseStudy.findUnique({
         where: { id: 'case-1' },
       })
 
@@ -245,8 +245,8 @@ describe('Application Integration Tests', () => {
         type: 'COMMENT_ADDED',
         isRead: false,
       }
-      ;(prisma.notification.create as jest.Mock).mockResolvedValue(mockNotification)
-      const notification = await prisma.notification.create({
+      ;(prisma.waNotification.create as jest.Mock).mockResolvedValue(mockNotification)
+      const notification = await prisma.waNotification.create({
         data: {
           userId: caseStudy?.contributorId,
           type: 'COMMENT_ADDED',
@@ -285,8 +285,8 @@ describe('Application Integration Tests', () => {
         userId: 'user-123',
         caseStudyId: 'case-1',
       }
-      ;(prisma.savedCase.create as jest.Mock).mockResolvedValue(mockSavedCase)
-      const syncedCase = await prisma.savedCase.create({
+      ;(prisma.waSavedCase.create as jest.Mock).mockResolvedValue(mockSavedCase)
+      const syncedCase = await prisma.waSavedCase.create({
         data: pendingChange.data,
       })
       expect(syncedCase.userId).toBe('user-123')
@@ -313,8 +313,8 @@ describe('Application Integration Tests', () => {
           waProduct: 'Weld-Pro',
         },
       ]
-      ;(prisma.caseStudy.findMany as jest.Mock).mockResolvedValue(mockResults)
-      const results = await prisma.caseStudy.findMany({
+      ;(prisma.waCaseStudy.findMany as jest.Mock).mockResolvedValue(mockResults)
+      const results = await prisma.waCaseStudy.findMany({
         where: {
           OR: [
             { title: { contains: searchTerm } },
@@ -337,25 +337,25 @@ describe('Application Integration Tests', () => {
         { id: 'notif-1', isRead: false, type: 'CASE_PUBLISHED' },
         { id: 'notif-2', isRead: false, type: 'COMMENT_ADDED' },
       ]
-      ;(prisma.notification.findMany as jest.Mock).mockResolvedValue(mockNotifications)
-      const notifications = await prisma.notification.findMany({
+      ;(prisma.waNotification.findMany as jest.Mock).mockResolvedValue(mockNotifications)
+      const notifications = await prisma.waNotification.findMany({
         where: { userId: 'user-123', isRead: false },
       })
       expect(notifications).toHaveLength(2)
 
       // Step 2: Count unread
-      ;(prisma.notification.count as jest.Mock).mockResolvedValue(2)
-      const unreadCount = await prisma.notification.count({
+      ;(prisma.waNotification.count as jest.Mock).mockResolvedValue(2)
+      const unreadCount = await prisma.waNotification.count({
         where: { userId: 'user-123', isRead: false },
       })
       expect(unreadCount).toBe(2)
 
       // Step 3: Mark as read
-      ;(prisma.notification.update as jest.Mock).mockResolvedValue({
+      ;(prisma.waNotification.update as jest.Mock).mockResolvedValue({
         id: 'notif-1',
         isRead: true,
       })
-      const marked = await prisma.notification.update({
+      const marked = await prisma.waNotification.update({
         where: { id: 'notif-1' },
         data: { isRead: true },
       })

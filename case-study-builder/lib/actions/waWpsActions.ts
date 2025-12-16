@@ -52,21 +52,21 @@ export async function waSaveWeldingProcedure(data: WaWpsFormData) {
     const { caseStudyId, ...wpsData } = data;
 
     // Check if WPS already exists
-    const existingWPS = await prisma.weldingProcedure.findUnique({
+    const existingWPS = await prisma.waWeldingProcedure.findUnique({
       where: { caseStudyId },
     });
 
     let wps;
     if (existingWPS) {
       // Update existing WPS
-      wps = await prisma.weldingProcedure.update({
+      wps = await prisma.waWeldingProcedure.update({
         where: { caseStudyId },
         data: wpsData,
       });
       console.log('[WPS Actions] WPS updated successfully');
     } else {
       // Create new WPS
-      wps = await prisma.weldingProcedure.create({
+      wps = await prisma.waWeldingProcedure.create({
         data: {
           caseStudyId,
           ...wpsData,
@@ -89,7 +89,7 @@ export async function waGetWeldingProcedure(caseStudyId: string) {
   try {
     console.log('[WPS Actions] Fetching welding procedure for case study:', caseStudyId);
 
-    const wps = await prisma.weldingProcedure.findUnique({
+    const wps = await prisma.waWeldingProcedure.findUnique({
       where: { caseStudyId },
     });
 

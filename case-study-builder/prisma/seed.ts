@@ -173,7 +173,7 @@ async function main() {
     const selectedWorkType = workTypes[Math.floor(Math.random() * workTypes.length)];
 
     // Create case study directly inline
-    await prisma.caseStudy.create({
+    await prisma.waCaseStudy.create({
       data: {
         type: caseType,
         status: status,
@@ -238,7 +238,7 @@ async function main() {
   ];
 
   for (const config of configDefaults) {
-    await prisma.systemConfig.upsert({
+    await prisma.waSystemConfig.upsert({
       where: { key: config.key },
       update: {},
       create: config,
@@ -250,7 +250,7 @@ async function main() {
   // Update user points based on approved cases
   for (const user of users) {
     if (user.role === 'CONTRIBUTOR') {
-      const approvedCases = await prisma.caseStudy.findMany({
+      const approvedCases = await prisma.waCaseStudy.findMany({
         where: {
           contributorId: user.id,
           status: 'APPROVED',

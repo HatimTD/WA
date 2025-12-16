@@ -64,7 +64,7 @@ export default async function PublicLibraryPage({
 
   // Fetch cases with pagination
   const [cases, totalCount, industries, typeCounts] = await Promise.all([
-    prisma.caseStudy.findMany({
+    prisma.waCaseStudy.findMany({
       where,
       select: {
         id: true,
@@ -81,13 +81,13 @@ export default async function PublicLibraryPage({
       take: perPage,
       skip: (page - 1) * perPage,
     }),
-    prisma.caseStudy.count({ where }),
-    prisma.caseStudy.findMany({
+    prisma.waCaseStudy.count({ where }),
+    prisma.waCaseStudy.findMany({
       where: { status: 'APPROVED' },
       select: { industry: true },
       distinct: ['industry'],
     }),
-    prisma.caseStudy.groupBy({
+    prisma.waCaseStudy.groupBy({
       by: ['type'],
       where: { status: 'APPROVED' },
       _count: true,

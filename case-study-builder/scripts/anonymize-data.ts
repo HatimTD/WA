@@ -210,11 +210,11 @@ async function anonymizeDatabase(): Promise<void> {
 
     // 4. Anonymize case studies
     console.log('4️⃣  Anonymizing case studies...');
-    const caseStudies = await prisma.caseStudy.findMany();
+    const caseStudies = await prisma.waCaseStudy.findMany();
     let caseCount = 0;
 
     for (const cs of caseStudies) {
-      await prisma.caseStudy.update({
+      await prisma.waCaseStudy.update({
         where: { id: cs.id },
         data: {
           customerName: anonymizeCaseStudyContent(cs.customerName, 'customerName'),
@@ -240,11 +240,11 @@ async function anonymizeDatabase(): Promise<void> {
 
     // 5. Anonymize comments
     console.log('5️⃣  Anonymizing comments...');
-    const comments = await prisma.comment.findMany();
+    const comments = await prisma.waComment.findMany();
     let commentCount = 0;
 
     for (const comment of comments) {
-      await prisma.comment.update({
+      await prisma.waComment.update({
         where: { id: comment.id },
         data: {
           content: anonymizeComment(comment.content),
@@ -256,20 +256,20 @@ async function anonymizeDatabase(): Promise<void> {
 
     // 6. Anonymize notifications
     console.log('6️⃣  Anonymizing notifications...');
-    await prisma.notification.updateMany({
+    await prisma.waNotification.updateMany({
       data: {
         message: 'Notification content anonymized',
       },
     });
-    const notificationCount = await prisma.notification.count();
+    const notificationCount = await prisma.waNotification.count();
     console.log(`   ✓ Anonymized ${notificationCount} notifications\n`);
 
     // 7. Clear audit logs (or anonymize if needed for testing)
     console.log('7️⃣  Clearing sensitive audit data...');
     // Note: In a real scenario, you might want to anonymize rather than delete
     // depending on test requirements
-    const auditCount = await prisma.auditLog.count();
-    await prisma.auditLog.updateMany({
+    const auditCount = await prisma.waAuditLog.count();
+    await prisma.waAuditLog.updateMany({
       data: {
         ipAddress: '0.0.0.0',
         userAgent: 'Anonymized',

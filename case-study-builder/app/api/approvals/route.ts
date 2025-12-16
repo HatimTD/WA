@@ -21,7 +21,7 @@ export async function GET() {
     }
 
     // Fetch pending cases
-    const pendingCases = await prisma.caseStudy.findMany({
+    const pendingCases = await prisma.waCaseStudy.findMany({
       where: {
         status: 'SUBMITTED',
       },
@@ -58,7 +58,7 @@ export async function GET() {
     });
 
     // Fetch recently reviewed by this user
-    const recentlyReviewed = await prisma.caseStudy.findMany({
+    const recentlyReviewed = await prisma.waCaseStudy.findMany({
       where: {
         status: {
           in: ['APPROVED', 'REJECTED'],
@@ -84,13 +84,13 @@ export async function GET() {
     const stats = {
       pending: pendingCases.length,
       totalPending: pendingCases.length,
-      approvedByMe: await prisma.caseStudy.count({
+      approvedByMe: await prisma.waCaseStudy.count({
         where: {
           status: 'APPROVED',
           approverId: session.user.id,
         },
       }),
-      rejectedByMe: await prisma.caseStudy.count({
+      rejectedByMe: await prisma.waCaseStudy.count({
         where: {
           status: 'REJECTED',
           approverId: session.user.id,

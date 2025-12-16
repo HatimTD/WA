@@ -15,7 +15,7 @@ type WaSearchFilters = {
 export async function waSearchCaseStudies(filters: WaSearchFilters) {
   try {
     // Build the where clause dynamically based on filters
-    const where: Prisma.CaseStudyWhereInput = {};
+    const where: Prisma.WaCaseStudyWhereInput = {};
 
     // Status filter (default to APPROVED)
     if (filters.status) {
@@ -98,7 +98,7 @@ export async function waSearchCaseStudies(filters: WaSearchFilters) {
     }
 
     // Perform the search
-    const caseStudies = await prisma.caseStudy.findMany({
+    const caseStudies = await prisma.waCaseStudy.findMany({
       where,
       include: {
         contributor: {
@@ -145,7 +145,7 @@ export async function waSearchCaseStudies(filters: WaSearchFilters) {
 export async function waGetSearchFilterOptions() {
   try {
     // Get distinct industries and locations from approved cases
-    const caseStudies = await prisma.caseStudy.findMany({
+    const caseStudies = await prisma.waCaseStudy.findMany({
       where: { status: 'APPROVED' },
       select: {
         industry: true,

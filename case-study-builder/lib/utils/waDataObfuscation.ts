@@ -18,10 +18,10 @@
  * @since 2025-12-13
  */
 
-import type { CaseStudy, User, Role } from '@prisma/client';
+import type { WaCaseStudy, User, Role } from '@prisma/client';
 
 // Type for case study with optional user relations
-export type CaseStudyWithUser = CaseStudy & {
+export type CaseStudyWithUser = WaCaseStudy & {
   contributor?: User | null;
   approver?: User | null;
 };

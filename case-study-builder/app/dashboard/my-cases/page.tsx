@@ -33,7 +33,7 @@ export default async function MyCasesPage({
     redirect('/login');
   }
 
-  const caseStudies = await prisma.caseStudy.findMany({
+  const caseStudies = await prisma.waCaseStudy.findMany({
     where: {
       contributorId: session.user.id,
     },

@@ -9,7 +9,7 @@ import { revalidatePath } from 'next/cache';
  */
 export async function waGetSystemConfig() {
   try {
-    const configs = await prisma.systemConfig.findMany({
+    const configs = await prisma.waSystemConfig.findMany({
       orderBy: { key: 'asc' },
     });
 
@@ -31,7 +31,7 @@ export async function waGetSystemConfig() {
  */
 export async function waGetConfigValue(key: string): Promise<string | null> {
   try {
-    const config = await prisma.systemConfig.findUnique({
+    const config = await prisma.waSystemConfig.findUnique({
       where: { key },
     });
 
@@ -65,7 +65,7 @@ export async function waUpdateSystemConfig(configs: Record<string, string>) {
 
     // Update all configs
     for (const [key, value] of Object.entries(configs)) {
-      await prisma.systemConfig.upsert({
+      await prisma.waSystemConfig.upsert({
         where: { key },
         update: {
           value,

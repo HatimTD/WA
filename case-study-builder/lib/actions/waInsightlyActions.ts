@@ -70,7 +70,7 @@ export async function waSyncCaseStudyToInsightly(caseStudyId: string): Promise<{
 }> {
   try {
     // Fetch the case study
-    const caseStudy = await prisma.caseStudy.findUnique({
+    const caseStudy = await prisma.waCaseStudy.findUnique({
       where: { id: caseStudyId },
       select: {
         id: true,
@@ -104,7 +104,7 @@ export async function waSyncCaseStudyToInsightly(caseStudyId: string): Promise<{
 
     if (result.synced && result.opportunityId) {
       // Update case study with Insightly opportunity ID
-      await prisma.caseStudy.update({
+      await prisma.waCaseStudy.update({
         where: { id: caseStudyId },
         data: { insightlyOpportunityId: result.opportunityId },
       });
@@ -147,7 +147,7 @@ export async function waBatchSyncToInsightly(limit: number = 50): Promise<{
 
   try {
     // Get approved case studies without Insightly opportunity ID
-    const caseStudies = await prisma.caseStudy.findMany({
+    const caseStudies = await prisma.waCaseStudy.findMany({
       where: {
         status: 'APPROVED',
         insightlyOpportunityId: null,
@@ -180,7 +180,7 @@ export async function waBatchSyncToInsightly(limit: number = 50): Promise<{
         });
 
         if (result.synced && result.opportunityId) {
-          await prisma.caseStudy.update({
+          await prisma.waCaseStudy.update({
             where: { id: cs.id },
             data: { insightlyOpportunityId: result.opportunityId },
           });
@@ -224,7 +224,7 @@ export async function waPushPDFToCRM(
 }> {
   try {
     // Fetch the case study
-    const caseStudy = await prisma.caseStudy.findUnique({
+    const caseStudy = await prisma.waCaseStudy.findUnique({
       where: { id: caseStudyId },
       select: {
         id: true,
@@ -272,7 +272,7 @@ export async function waPushPDFToCRM(
 
     if (result.synced) {
       // Update case study with Insightly IDs
-      await prisma.caseStudy.update({
+      await prisma.waCaseStudy.update({
         where: { id: caseStudyId },
         data: {
           insightlyOpportunityId: result.opportunityId,
@@ -306,7 +306,7 @@ export async function waGetCRMSyncStatus(caseStudyId: string): Promise<{
   syncedAt?: Date;
 }> {
   try {
-    const caseStudy = await prisma.caseStudy.findUnique({
+    const caseStudy = await prisma.waCaseStudy.findUnique({
       where: { id: caseStudyId },
       select: {
         insightlyOpportunityId: true,

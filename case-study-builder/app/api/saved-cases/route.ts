@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const savedCases = await prisma.savedCase.findMany({
+    const savedCases = await prisma.waSavedCase.findMany({
       where: {
         userId: session.user.id,
       },
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if case study exists and is approved
-    const caseStudy = await prisma.caseStudy.findUnique({
+    const caseStudy = await prisma.waCaseStudy.findUnique({
       where: { id: caseStudyId },
       select: { id: true, status: true },
     });
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if already saved
-    const existingSave = await prisma.savedCase.findUnique({
+    const existingSave = await prisma.waSavedCase.findUnique({
       where: {
         userId_caseStudyId: {
           userId: session.user.id,
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create saved case
-    const savedCase = await prisma.savedCase.create({
+    const savedCase = await prisma.waSavedCase.create({
       data: {
         userId: session.user.id,
         caseStudyId,
@@ -152,7 +152,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Delete the saved case
-    await prisma.savedCase.deleteMany({
+    await prisma.waSavedCase.deleteMany({
       where: {
         userId: session.user.id,
         caseStudyId,

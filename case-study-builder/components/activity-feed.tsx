@@ -9,7 +9,7 @@ type Props = {
 };
 
 export default async function ActivityFeed({ limit = 10 }: Props) {
-  const recentApprovals = await prisma.caseStudy.findMany({
+  const recentApprovals = await prisma.waCaseStudy.findMany({
     where: {
       status: 'APPROVED',
     },

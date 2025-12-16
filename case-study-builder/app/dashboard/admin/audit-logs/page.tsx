@@ -59,14 +59,14 @@ export default async function AuditLogsPage({
 
   // Fetch audit logs with pagination
   const [auditLogs, totalCount, actionTypeCounts] = await Promise.all([
-    prisma.auditLog.findMany({
+    prisma.waAuditLog.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       skip,
       take: pageSize,
     }),
-    prisma.auditLog.count({ where }),
-    prisma.auditLog.groupBy({
+    prisma.waAuditLog.count({ where }),
+    prisma.waAuditLog.groupBy({
       by: ['actionType'],
       _count: { id: true },
     }),

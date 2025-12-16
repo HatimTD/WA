@@ -37,7 +37,7 @@ export async function waSaveCostCalculation(data: WaCostCalculationData) {
 
   try {
     // Check if calculation already exists
-    const existing = await prisma.costCalculator.findUnique({
+    const existing = await prisma.waCostCalculator.findUnique({
       where: { caseStudyId: data.caseStudyId },
     });
 
@@ -47,7 +47,7 @@ export async function waSaveCostCalculation(data: WaCostCalculationData) {
 
     if (existing) {
       // Update existing calculation
-      calculation = await prisma.costCalculator.update({
+      calculation = await prisma.waCostCalculator.update({
         where: { caseStudyId: data.caseStudyId },
         data: {
           materialCostBefore: data.materialCostBefore,
@@ -76,7 +76,7 @@ export async function waSaveCostCalculation(data: WaCostCalculationData) {
       console.log('Calculation updated successfully');
     } else {
       // Create new calculation
-      calculation = await prisma.costCalculator.create({
+      calculation = await prisma.waCostCalculator.create({
         data: {
           caseStudyId: data.caseStudyId,
           materialCostBefore: data.materialCostBefore,
@@ -121,7 +121,7 @@ export async function waSaveCostCalculation(data: WaCostCalculationData) {
 
 export async function waGetCostCalculation(caseStudyId: string) {
   try {
-    const calculation = await prisma.costCalculator.findUnique({
+    const calculation = await prisma.waCostCalculator.findUnique({
       where: { caseStudyId },
     });
 
@@ -144,7 +144,7 @@ export async function waGetCostCalculation(caseStudyId: string) {
  */
 export async function waGetCostSavingsStats() {
   try {
-    const calculations = await prisma.costCalculator.findMany({
+    const calculations = await prisma.waCostCalculator.findMany({
       include: {
         caseStudy: {
           select: {

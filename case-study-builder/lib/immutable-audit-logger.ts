@@ -119,7 +119,7 @@ function generateContentHash(content: {
  * @returns The previous hash or null if no entries exist
  */
 async function getPreviousHash(): Promise<string | null> {
-  const lastEntry = await prisma.auditLog.findFirst({
+  const lastEntry = await prisma.waAuditLog.findFirst({
     orderBy: { createdAt: 'desc' },
     select: { contentHash: true },
   });
@@ -183,7 +183,7 @@ export async function createImmutableAuditLog(
   const previousStateData = options.previousState === null ? undefined : options.previousState;
   const newStateData = options.newState === null ? undefined : options.newState;
 
-  const auditLog = await prisma.auditLog.create({
+  const auditLog = await prisma.waAuditLog.create({
     data: {
       actionType: options.actionType,
       userId: options.userId,
@@ -229,7 +229,7 @@ export async function verifyAuditLogEntry(entryId: string): Promise<{
   valid: boolean;
   reason?: string;
 }> {
-  const entry = await prisma.auditLog.findUnique({
+  const entry = await prisma.waAuditLog.findUnique({
     where: { id: entryId },
   });
 
@@ -286,7 +286,7 @@ export async function verifyAuditTrailIntegrity(options?: {
 }): Promise<VerificationResult> {
   const limit = options?.limit || 10000;
 
-  const entries = await prisma.auditLog.findMany({
+  const entries = await prisma.waAuditLog.findMany({
     where: {
       ...(options?.fromDate && { createdAt: { gte: options.fromDate } }),
       ...(options?.toDate && { createdAt: { lte: options.toDate } }),
@@ -371,7 +371,7 @@ export async function getAuditLogsByUser(
   userId: string,
   options?: { limit?: number; offset?: number }
 ) {
-  return prisma.auditLog.findMany({
+  return prisma.waAuditLog.findMany({
     where: { userId },
     orderBy: { createdAt: 'desc' },
     take: options?.limit || 100,
@@ -392,7 +392,7 @@ export async function getAuditLogsByResource(
   resourceType?: string,
   options?: { limit?: number; offset?: number }
 ) {
-  return prisma.auditLog.findMany({
+  return prisma.waAuditLog.findMany({
     where: {
       resourceId,
       ...(resourceType && { resourceType }),
@@ -414,7 +414,7 @@ export async function getAuditLogsByActionType(
   actionType: AuditActionType,
   options?: { limit?: number; offset?: number; fromDate?: Date; toDate?: Date }
 ) {
-  return prisma.auditLog.findMany({
+  return prisma.waAuditLog.findMany({
     where: {
       actionType,
       ...(options?.fromDate && { createdAt: { gte: options.fromDate } }),
@@ -433,12 +433,12 @@ export async function getAuditLogsByActionType(
  */
 export async function getAuditTrailStats() {
   const [totalCount, actionCounts, recentActivity] = await Promise.all([
-    prisma.auditLog.count(),
-    prisma.auditLog.groupBy({
+    prisma.waAuditLog.count(),
+    prisma.waAuditLog.groupBy({
       by: ['actionType'],
       _count: { id: true },
     }),
-    prisma.auditLog.findMany({
+    prisma.waAuditLog.findMany({
       orderBy: { createdAt: 'desc' },
       take: 10,
       select: {

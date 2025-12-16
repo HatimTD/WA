@@ -7,6 +7,11 @@ datasource db {
   url      = env("POSTGRES_URL")
 }
 
+// =====================================================
+// NEXTAUTH.JS STANDARD MODELS (DO NOT RENAME)
+// These follow NextAuth.js conventions
+// =====================================================
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -23,15 +28,15 @@ model User {
   displayPreferences      Json? @default("{\"theme\":\"system\",\"resultsPerPage\":10,\"defaultView\":\"grid\"}")
 
   // Relations
-  caseStudies   CaseStudy[]    @relation("Contributor")
-  approvals     CaseStudy[]    @relation("Approver")
-  rejectedCases CaseStudy[]    @relation("Rejector")
-  comments      Comment[]
-  savedCases    SavedCase[]
-  notifications Notification[]
+  caseStudies   WaCaseStudy[]    @relation("Contributor")
+  approvals     WaCaseStudy[]    @relation("Approver")
+  rejectedCases WaCaseStudy[]    @relation("Rejector")
+  comments      WaComment[]
+  savedCases    WaSavedCase[]
+  notifications WaNotification[]
   accounts      Account[]
   sessions      Session[]
-  taggedInCases CaseStudy[]    @relation("TaggedInCases")
+  taggedInCases WaCaseStudy[]    @relation("TaggedInCases")
 
   // Soft delete support (WA Policy Section 5.1)
   isActive  Boolean   @default(true)
@@ -76,6 +81,10 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+// =====================================================
+// ENUMS (Keep standard names for compatibility)
+// =====================================================
+
 // BRD Section 2.2 - Key Stakeholders/Roles
 enum Role {
   CONTRIBUTOR     // Field engineers who submit case studies
@@ -92,7 +101,137 @@ enum Badge {
   CHAMPION // 10 Star Case Studies
 }
 
-model CaseStudy {
+enum CaseType {
+  APPLICATION // 1 point
+  TECH // 2 points
+  STAR // 3 points
+}
+
+// Challenge Qualifier Type (BRD 3.1)
+enum QualifierType {
+  NEW_CUSTOMER  // No purchase in 3 years - COUNTS toward target
+  CROSS_SELL    // Existing customer, new product - COUNTS toward target
+  MAINTENANCE   // Existing customer, existing product - NOT counted
+}
+
+enum Status {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  PUBLISHED
+}
+
+enum WorkType {
+  WORKSHOP
+  ON_SITE
+  BOTH
+}
+
+enum WearType {
+  ABRASION
+  IMPACT
+  CORROSION
+  TEMPERATURE
+  COMBINATION
+}
+
+enum ReactionType {
+  LIKE // 👍
+  LOVE // ❤️
+  CELEBRATE // 🎉
+  INSIGHTFUL // 💡
+  HELPFUL // 🙌
+  THUMBS_DOWN // 👎
+}
+
+enum NotificationType {
+  CASE_APPROVED
+  CASE_REJECTED
+  NEW_COMMENT
+  BADGE_EARNED
+  BHAG_MILESTONE
+  SYSTEM_ANNOUNCEMENT
+}
+
+enum EmailTemplateType {
+  CASE_APPROVED
+  CASE_REJECTED
+  NEW_COMMENT
+  BADGE_EARNED
+  BHAG_MILESTONE
+  WELCOME
+  SYSTEM_ANNOUNCEMENT
+}
+
+enum AuditActionType {
+  // Authentication
+  LOGIN
+  LOGOUT
+  LOGIN_FAILED
+
+  // Break-Glass (WA Policy Section 3.1)
+  BREAK_GLASS_ACCESS
+  BREAK_GLASS_ACCESS_FAILED
+  BREAK_GLASS_ACTION
+  BREAK_GLASS_SESSION_TERMINATED
+
+  // Case Study Actions
+  CASE_CREATED
+  CASE_UPDATED
+  CASE_DELETED
+  CASE_SUBMITTED
+  CASE_APPROVED
+  CASE_REJECTED
+  CASE_PUBLISHED
+
+  // User Actions
+  USER_CREATED
+  USER_UPDATED
+  USER_DELETED
+  USER_ROLE_CHANGED
+
+  // GDPR Actions (WA Policy Section 7.5)
+  DATA_EXPORT
+  DATA_DELETION_REQUEST
+  DATA_ANONYMIZED
+  CONSENT_GIVEN
+  CONSENT_WITHDRAWN
+
+  // System Actions
+  SYSTEM_CONFIG_CHANGED
+  BULK_OPERATION
+  RETENTION_CLEANUP
+}
+
+enum GdprDeletionStatus {
+  PENDING           // Request received, awaiting verification
+  VERIFIED          // User identity verified
+  IN_PROGRESS       // Deletion/anonymization in progress
+  COMPLETED         // Successfully processed
+  REJECTED          // Request rejected (with reason)
+  CANCELLED         // Cancelled by user
+}
+
+enum SyncStatus {
+  SYNCED
+  PENDING
+  ERROR
+}
+
+enum JobStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// =====================================================
+// WA-SPECIFIC MODELS (with Wa prefix)
+// Using @@map to keep database table names unchanged
+// =====================================================
+
+model WaCaseStudy {
   id     String   @id @default(cuid())
   type   CaseType @default(APPLICATION)
   status Status   @default(DRAFT)
@@ -153,10 +292,10 @@ model CaseStudy {
   translatedText       String? @db.Text
 
   // Relations
-  wps            WeldingProcedure?
-  costCalculator CostCalculator?
-  comments       Comment[]
-  savedBy        SavedCase[]
+  wps            WaWeldingProcedure?
+  costCalculator WaCostCalculator?
+  comments       WaComment[]
+  savedBy        WaSavedCase[]
   taggedUsers    User[]            @relation("TaggedInCases")
 
   // Soft delete support (WA Policy Section 5.1)
@@ -190,47 +329,13 @@ model CaseStudy {
   @@index([status, type])
   @@index([industry, componentWorkpiece])
   @@index([contributorId])
+  @@map("CaseStudy")
 }
 
-enum CaseType {
-  APPLICATION // 1 point
-  TECH // 2 points
-  STAR // 3 points
-}
-
-// Challenge Qualifier Type (BRD 3.1)
-enum QualifierType {
-  NEW_CUSTOMER  // No purchase in 3 years - COUNTS toward target
-  CROSS_SELL    // Existing customer, new product - COUNTS toward target
-  MAINTENANCE   // Existing customer, existing product - NOT counted
-}
-
-enum Status {
-  DRAFT
-  SUBMITTED
-  APPROVED
-  REJECTED
-  PUBLISHED
-}
-
-enum WorkType {
-  WORKSHOP
-  ON_SITE
-  BOTH
-}
-
-enum WearType {
-  ABRASION
-  IMPACT
-  CORROSION
-  TEMPERATURE
-  COMBINATION
-}
-
-model WeldingProcedure {
-  id          String    @id @default(cuid())
-  caseStudyId String    @unique
-  caseStudy   CaseStudy @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+model WaWeldingProcedure {
+  id          String       @id @default(cuid())
+  caseStudyId String       @unique
+  caseStudy   WaCaseStudy  @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
 
   // Base Metal
   baseMetalType      String?
@@ -279,12 +384,14 @@ model WeldingProcedure {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("WeldingProcedure")
 }
 
-model CostCalculator {
-  id          String    @id @default(cuid())
-  caseStudyId String    @unique
-  caseStudy   CaseStudy @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+model WaCostCalculator {
+  id          String       @id @default(cuid())
+  caseStudyId String       @unique
+  caseStudy   WaCaseStudy  @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
 
   // Material Costs
   materialCostBefore Float
@@ -321,71 +428,58 @@ model CostCalculator {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("CostCalculator")
 }
 
-model Comment {
-  id          String    @id @default(cuid())
-  content     String    @db.Text
+model WaComment {
+  id          String       @id @default(cuid())
+  content     String       @db.Text
   caseStudyId String
-  caseStudy   CaseStudy @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+  caseStudy   WaCaseStudy  @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
   userId      String
-  user        User      @relation(fields: [userId], references: [id])
-  likes       Int       @default(0)
+  user        User         @relation(fields: [userId], references: [id])
+  likes       Int          @default(0)
 
   // Enhanced reactions
-  reactions CommentReaction[]
+  reactions WaCommentReaction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([caseStudyId])
+  @@map("Comment")
 }
 
-model CommentReaction {
+model WaCommentReaction {
   id        String       @id @default(cuid())
   commentId String
-  comment   Comment      @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  comment   WaComment    @relation(fields: [commentId], references: [id], onDelete: Cascade)
   userId    String
   type      ReactionType
   createdAt DateTime     @default(now())
 
   @@unique([commentId, userId, type])
   @@index([commentId])
+  @@map("CommentReaction")
 }
 
-enum ReactionType {
-  LIKE // 👍
-  LOVE // ❤️
-  CELEBRATE // 🎉
-  INSIGHTFUL // 💡
-  HELPFUL // 🙌
-  THUMBS_DOWN // 👎
-}
-
-enum NotificationType {
-  CASE_APPROVED
-  CASE_REJECTED
-  NEW_COMMENT
-  BADGE_EARNED
-  BHAG_MILESTONE
-  SYSTEM_ANNOUNCEMENT
-}
-
-model SavedCase {
-  id          String    @id @default(cuid())
+model WaSavedCase {
+  id          String       @id @default(cuid())
   userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   caseStudyId String
-  caseStudy   CaseStudy @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+  caseStudy   WaCaseStudy  @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
   @@unique([userId, caseStudyId])
   @@index([userId])
   @@index([caseStudyId])
+  @@map("SavedCase")
 }
 
-model SystemConfig {
+model WaSystemConfig {
   id        String   @id @default(cuid())
   key       String   @unique
   value     String
@@ -393,9 +487,11 @@ model SystemConfig {
   updatedBy String?
 
   createdAt DateTime @default(now())
+
+  @@map("SystemConfig")
 }
 
-model Notification {
+model WaNotification {
   id      String           @id @default(cuid())
   userId  String
   user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -409,9 +505,10 @@ model Notification {
 
   @@index([userId, read])
   @@index([createdAt])
+  @@map("Notification")
 }
 
-model EmailTemplate {
+model WaEmailTemplate {
   id          String            @id @default(cuid())
   name        String
   type        EmailTemplateType
@@ -426,23 +523,14 @@ model EmailTemplate {
   updatedAt DateTime @updatedAt
 
   @@unique([type])
-}
-
-enum EmailTemplateType {
-  CASE_APPROVED
-  CASE_REJECTED
-  NEW_COMMENT
-  BADGE_EARNED
-  BHAG_MILESTONE
-  WELCOME
-  SYSTEM_ANNOUNCEMENT
+  @@map("EmailTemplate")
 }
 
 // =====================================================
 // IMMUTABLE AUDIT LOG (WA Policy Section 5.2)
 // Write-once audit trail with hash verification
 // =====================================================
-model AuditLog {
+model WaAuditLog {
   id            String   @id @default(cuid())
 
   // Action details
@@ -476,53 +564,14 @@ model AuditLog {
   @@index([actionType])
   @@index([createdAt])
   @@index([contentHash])
-}
-
-enum AuditActionType {
-  // Authentication
-  LOGIN
-  LOGOUT
-  LOGIN_FAILED
-
-  // Break-Glass (WA Policy Section 3.1)
-  BREAK_GLASS_ACCESS
-  BREAK_GLASS_ACCESS_FAILED
-  BREAK_GLASS_ACTION
-  BREAK_GLASS_SESSION_TERMINATED
-
-  // Case Study Actions
-  CASE_CREATED
-  CASE_UPDATED
-  CASE_DELETED
-  CASE_SUBMITTED
-  CASE_APPROVED
-  CASE_REJECTED
-  CASE_PUBLISHED
-
-  // User Actions
-  USER_CREATED
-  USER_UPDATED
-  USER_DELETED
-  USER_ROLE_CHANGED
-
-  // GDPR Actions (WA Policy Section 7.5)
-  DATA_EXPORT
-  DATA_DELETION_REQUEST
-  DATA_ANONYMIZED
-  CONSENT_GIVEN
-  CONSENT_WITHDRAWN
-
-  // System Actions
-  SYSTEM_CONFIG_CHANGED
-  BULK_OPERATION
-  RETENTION_CLEANUP
+  @@map("AuditLog")
 }
 
 // =====================================================
 // DATA RETENTION TRACKING (WA Policy Section 7.5.4)
 // Tracks data lifecycle for compliance
 // =====================================================
-model DataRetentionPolicy {
+model WaDataRetentionPolicy {
   id                String   @id @default(cuid())
   dataType          String   @unique // e.g., 'User', 'CaseStudy', 'AuditLog'
   retentionDays     Int      // Number of days to retain data
@@ -532,13 +581,15 @@ model DataRetentionPolicy {
 
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+
+  @@map("DataRetentionPolicy")
 }
 
 // =====================================================
 // GDPR DATA DELETION REQUESTS (WA Policy Section 7.5.1)
 // Tracks right-to-be-forgotten requests
 // =====================================================
-model GdprDeletionRequest {
+model WaGdprDeletionRequest {
   id              String                @id @default(cuid())
   userId          String
   userEmail       String
@@ -565,22 +616,14 @@ model GdprDeletionRequest {
 
   @@index([userId])
   @@index([status])
-}
-
-enum GdprDeletionStatus {
-  PENDING           // Request received, awaiting verification
-  VERIFIED          // User identity verified
-  IN_PROGRESS       // Deletion/anonymization in progress
-  COMPLETED         // Successfully processed
-  REJECTED          // Request rejected (with reason)
-  CANCELLED         // Cancelled by user
+  @@map("GdprDeletionRequest")
 }
 
 // =====================================================
 // NETSUITE CUSTOMER CACHE (BRD 5.9.3)
 // Local cache of NetSuite customers for faster search
 // =====================================================
-model NetSuiteCustomerCache {
+model WaNetSuiteCustomerCache {
   id              String   @id @default(cuid())
 
   // NetSuite identifiers
@@ -612,16 +655,11 @@ model NetSuiteCustomerCache {
   @@index([city])
   @@index([industry])
   @@index([lastSyncedAt])
-}
-
-enum SyncStatus {
-  SYNCED
-  PENDING
-  ERROR
+  @@map("NetSuiteCustomerCache")
 }
 
 // Sync job tracking
-model NetSuiteSyncJob {
+model WaNetSuiteSyncJob {
   id              String   @id @default(cuid())
 
   startedAt       DateTime @default(now())
@@ -641,11 +679,5 @@ model NetSuiteSyncJob {
 
   @@index([status])
   @@index([startedAt])
-}
-
-enum JobStatus {
-  RUNNING
-  COMPLETED
-  FAILED
-  CANCELLED
+  @@map("NetSuiteSyncJob")
 }

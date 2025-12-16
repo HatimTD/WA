@@ -45,7 +45,7 @@ function getLanguageName(code: string): string {
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const caseStudy = await prisma.caseStudy.findUnique({
+  const caseStudy = await prisma.waCaseStudy.findUnique({
     where: { id },
     select: { customerName: true, industry: true, status: true },
   });
@@ -64,7 +64,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function PublicCaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const caseStudy = await prisma.caseStudy.findUnique({
+  const caseStudy = await prisma.waCaseStudy.findUnique({
     where: { id },
     include: {
       contributor: {

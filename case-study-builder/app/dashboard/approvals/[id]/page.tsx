@@ -47,7 +47,7 @@ export default async function ApprovalReviewPage({ params }: Props) {
 
   const { id } = await params;
 
-  const caseStudy = await prisma.caseStudy.findUnique({
+  const caseStudy = await prisma.waCaseStudy.findUnique({
     where: { id },
     include: {
       contributor: {
@@ -73,7 +73,7 @@ export default async function ApprovalReviewPage({ params }: Props) {
   // Fetch WPS data if it's a TECH or STAR case
   let wpsData = null;
   if (caseStudy.type === 'TECH' || caseStudy.type === 'STAR') {
-    wpsData = await prisma.weldingProcedure.findUnique({
+    wpsData = await prisma.waWeldingProcedure.findUnique({
       where: { caseStudyId: id },
     });
   }
@@ -81,7 +81,7 @@ export default async function ApprovalReviewPage({ params }: Props) {
   // Fetch Cost Calculator data if it's a STAR case
   let costCalcData = null;
   if (caseStudy.type === 'STAR') {
-    costCalcData = await prisma.costCalculator.findUnique({
+    costCalcData = await prisma.waCostCalculator.findUnique({
       where: { caseStudyId: id },
     });
   }
