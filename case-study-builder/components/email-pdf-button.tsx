@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Mail, Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
-import { emailCaseStudyPDF } from '@/lib/actions/email-pdf-actions';
+import { waEmailCaseStudyPDF } from '@/lib/actions/waEmailPdfActions';
 
 interface EmailPDFButtonProps {
   caseStudyId: string;
@@ -37,7 +37,7 @@ export function EmailPDFButton({
 
     setIsSending(true);
     try {
-      const result = await emailCaseStudyPDF({
+      const result = await waEmailCaseStudyPDF({
         caseId: caseStudyId,
         recipientEmail,
         message: message || undefined,

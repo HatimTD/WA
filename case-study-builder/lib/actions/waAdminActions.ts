@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 import { revalidatePath } from 'next/cache';
 
-export async function changeUserRole(email: string, newRole: 'CONTRIBUTOR' | 'APPROVER' | 'VIEWER') {
+export async function waChangeUserRole(email: string, newRole: 'CONTRIBUTOR' | 'APPROVER' | 'VIEWER') {
   const session = await auth();
 
   try {
@@ -50,7 +50,7 @@ export async function changeUserRole(email: string, newRole: 'CONTRIBUTOR' | 'AP
   }
 }
 
-export async function getAllUsers() {
+export async function waGetAllUsers() {
   try {
     const users = await prisma.user.findMany({
       select: {

@@ -18,10 +18,10 @@ import {
 import { UserPlus, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
-  searchUsersForTagging,
-  tagUsersInCaseStudy,
-  getTaggedUsers,
-} from '@/lib/actions/email-pdf-actions';
+  waSearchUsersForTagging,
+  waTagUsersInCaseStudy,
+  waGetTaggedUsers,
+} from '@/lib/actions/waEmailPdfActions';
 
 interface User {
   id: string;
@@ -55,7 +55,7 @@ export function TagColleagues({
   useEffect(() => {
     if (open) {
       startTransition(async () => {
-        const result = await getTaggedUsers(caseStudyId);
+        const result = await waGetTaggedUsers(caseStudyId);
         if (result.success && result.users) {
           setTaggedUsers(result.users);
           setSelectedUsers(result.users);
@@ -73,7 +73,7 @@ export function TagColleagues({
 
     const timeoutId = setTimeout(async () => {
       setIsSearching(true);
-      const result = await searchUsersForTagging(searchQuery);
+      const result = await waSearchUsersForTagging(searchQuery);
       if (result.success && result.users) {
         // Filter out already selected users
         const filteredUsers = result.users.filter(
@@ -102,7 +102,7 @@ export function TagColleagues({
   const handleSave = async () => {
     startTransition(async () => {
       const userIds = selectedUsers.map((u) => u.id);
-      const result = await tagUsersInCaseStudy({
+      const result = await waTagUsersInCaseStudy({
         caseId: caseStudyId,
         userIds,
       });

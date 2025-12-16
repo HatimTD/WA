@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { Mail, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { emailCaseStudyPDF } from '@/lib/actions/email-pdf-actions';
+import { waEmailCaseStudyPDF } from '@/lib/actions/waEmailPdfActions';
 
 interface EmailPDFDialogProps {
   caseStudyId: string;
@@ -43,7 +43,7 @@ export function EmailPDFDialog({
     }
 
     startTransition(async () => {
-      const result = await emailCaseStudyPDF({
+      const result = await waEmailCaseStudyPDF({
         caseId: caseStudyId,
         recipientEmail,
         message: message || undefined,

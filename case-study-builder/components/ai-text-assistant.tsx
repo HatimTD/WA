@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { summarizeText, translateText, improveText } from '@/lib/actions/openai-actions';
-import { convertBulletsToProse } from '@/lib/actions/auto-prompt-actions';
+import { waConvertBulletsToProse } from '@/lib/actions/waAutoPromptActions';
 
 type Props = {
   text: string;
@@ -92,7 +92,7 @@ export default function AITextAssistant({ text, onTextChange, fieldType = 'gener
 
     setIsProcessing(true);
     try {
-      const result = await convertBulletsToProse(
+      const result = await waConvertBulletsToProse(
         text,
         bulletFieldTypeMap[fieldType] || 'general'
       );

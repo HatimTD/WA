@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import ImageUpload from '@/components/image-upload';
 import DocumentUpload from '@/components/document-upload';
 import CostCalculator from '@/components/cost-calculator';
-import { suggestTags } from '@/lib/actions/ai-suggestions-actions';
+import { waSuggestTags } from '@/lib/actions/waAiSuggestionsActions';
 import { toast } from 'sonner';
 
 type Props = {
@@ -43,7 +43,7 @@ export default function StepFive({ formData, updateFormData, caseStudyId, existi
 
     setIsGeneratingTags(true);
     try {
-      const result = await suggestTags(
+      const result = await waSuggestTags(
         formData.problemDescription,
         formData.industry,
         formData.componentWorkpiece

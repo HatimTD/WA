@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { changeUserRole } from '@/lib/actions/admin-actions';
+import { waChangeUserRole } from '@/lib/actions/waAdminActions';
 
 export async function POST(request: Request) {
   try {
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = await changeUserRole(email, role);
+    const result = await waChangeUserRole(email, role);
 
     if (result.success) {
       return NextResponse.json(result);

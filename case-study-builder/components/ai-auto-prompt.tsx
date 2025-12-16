@@ -20,11 +20,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Lightbulb, ChevronRight, Loader2, RefreshCw, CheckCircle2 } from 'lucide-react';
 import {
-  generateAutoPrompts,
+  waGenerateAutoPrompts,
   type MissingField,
   type CaseStudyContext,
   type TargetTier,
-} from '@/lib/actions/auto-prompt-actions';
+} from '@/lib/actions/waAutoPromptActions';
 
 type Props = {
   caseStudy: CaseStudyContext;
@@ -51,7 +51,7 @@ export default function AIAutoPrompt({
     setError(null);
 
     try {
-      const result = await generateAutoPrompts(caseStudy, targetTier);
+      const result = await waGenerateAutoPrompts(caseStudy, targetTier);
       // Filter out dismissed prompts and limit to maxPrompts
       const filteredPrompts = result
         .filter((p) => !dismissed.has(p.field))
@@ -198,7 +198,7 @@ export function AIAutoPromptCompact({
     async function fetchNext() {
       setLoading(true);
       try {
-        const prompts = await generateAutoPrompts(caseStudy, targetTier);
+        const prompts = await waGenerateAutoPrompts(caseStudy, targetTier);
         setNextField(prompts[0] || null);
       } catch {
         setNextField(null);

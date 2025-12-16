@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-export async function suggestTags(
+export async function waSuggestTags(
   description: string,
   industry: string,
   component: string
@@ -38,7 +38,7 @@ Example: ["GMAW", "abrasion resistance", "crusher hammers", "hardfacing"]`;
   }
 }
 
-export async function suggestLocations(customerName: string) {
+export async function waSuggestLocations(customerName: string) {
   try {
     const existing = await prisma.caseStudy.findMany({
       where: {

@@ -28,7 +28,7 @@ function getMonthlyDateRange(monthsBack: number = 6) {
 }
 
 // ADMIN Analytics
-export async function getAdminAnalytics(): Promise<AdminAnalytics> {
+export async function waGetAdminAnalytics(): Promise<AdminAnalytics> {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -181,7 +181,7 @@ export async function getAdminAnalytics(): Promise<AdminAnalytics> {
 }
 
 // CONTRIBUTOR Analytics
-export async function getContributorAnalytics(): Promise<ContributorAnalytics> {
+export async function waGetContributorAnalytics(): Promise<ContributorAnalytics> {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -290,7 +290,7 @@ export async function getContributorAnalytics(): Promise<ContributorAnalytics> {
 }
 
 // APPROVER Analytics
-export async function getApproverAnalytics(): Promise<ApproverAnalytics> {
+export async function waGetApproverAnalytics(): Promise<ApproverAnalytics> {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -428,7 +428,7 @@ export async function getApproverAnalytics(): Promise<ApproverAnalytics> {
 }
 
 // VIEWER Analytics
-export async function getViewerAnalytics(): Promise<ViewerAnalytics> {
+export async function waGetViewerAnalytics(): Promise<ViewerAnalytics> {
   const session = await auth();
 
   if (!session?.user?.id) {

@@ -5,11 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import dynamic from 'next/dynamic';
 import {
-  getAdminAnalytics,
-  getContributorAnalytics,
-  getApproverAnalytics,
-  getViewerAnalytics,
-} from '@/lib/actions/analytics-actions';
+  waGetAdminAnalytics,
+  waGetContributorAnalytics,
+  waGetApproverAnalytics,
+  waGetViewerAnalytics,
+} from '@/lib/actions/waAnalyticsActions';
 import {
   TrendingUp,
   FileText,
@@ -142,20 +142,20 @@ export default async function AnalyticsPage() {
 
   // Fetch role-specific analytics data
   let analyticsData:
-    | Awaited<ReturnType<typeof getAdminAnalytics>>
-    | Awaited<ReturnType<typeof getContributorAnalytics>>
-    | Awaited<ReturnType<typeof getApproverAnalytics>>
-    | Awaited<ReturnType<typeof getViewerAnalytics>>
+    | Awaited<ReturnType<typeof waGetAdminAnalytics>>
+    | Awaited<ReturnType<typeof waGetContributorAnalytics>>
+    | Awaited<ReturnType<typeof waGetApproverAnalytics>>
+    | Awaited<ReturnType<typeof waGetViewerAnalytics>>
     | undefined;
 
   if (user.role === 'ADMIN') {
-    analyticsData = await getAdminAnalytics();
+    analyticsData = await waGetAdminAnalytics();
   } else if (user.role === 'CONTRIBUTOR') {
-    analyticsData = await getContributorAnalytics();
+    analyticsData = await waGetContributorAnalytics();
   } else if (user.role === 'APPROVER') {
-    analyticsData = await getApproverAnalytics();
+    analyticsData = await waGetApproverAnalytics();
   } else if (user.role === 'VIEWER') {
-    analyticsData = await getViewerAnalytics();
+    analyticsData = await waGetViewerAnalytics();
   }
 
   return (

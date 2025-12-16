@@ -222,7 +222,7 @@ Generate a helpful, specific prompt asking for the ${fieldLabel}.`,
  * @param targetTier - The tier the user is targeting (APPLICATION, TECH, STAR)
  * @returns Array of missing fields with contextual prompts
  */
-export async function generateAutoPrompts(
+export async function waGenerateAutoPrompts(
   caseStudy: CaseStudyContext,
   targetTier: TargetTier
 ): Promise<MissingField[]> {
@@ -309,7 +309,7 @@ export async function generateAutoPrompts(
  * Get the next most important field to fill
  * Returns a single field with the highest priority
  */
-export async function getNextFieldToFill(
+export async function waGetNextFieldToFill(
   caseStudy: CaseStudyContext,
   targetTier: TargetTier
 ): Promise<MissingField | null> {
@@ -331,7 +331,7 @@ export async function getNextFieldToFill(
 /**
  * Get prompts grouped by section
  */
-export async function getPromptsBySection(
+export async function waGetPromptsBySection(
   caseStudy: CaseStudyContext,
   targetTier: TargetTier
 ): Promise<Record<MissingField['section'], MissingField[]>> {
@@ -362,7 +362,7 @@ export type BulletToProseResult = {
  * @param context - Additional context about the case study
  * @returns Converted prose text
  */
-export async function convertBulletsToProse(
+export async function waConvertBulletsToProse(
   bullets: string,
   fieldType: 'problem' | 'solution' | 'advantages' | 'general',
   context?: {
@@ -460,7 +460,7 @@ Output only the converted prose, nothing else.`,
  * Enhance existing text to be more professional and detailed
  * Similar to bullet-to-prose but for enhancing existing prose
  */
-export async function enhanceText(
+export async function waEnhanceText(
   text: string,
   fieldType: 'problem' | 'solution' | 'advantages' | 'general'
 ): Promise<BulletToProseResult> {

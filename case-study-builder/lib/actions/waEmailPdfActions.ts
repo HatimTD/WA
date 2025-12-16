@@ -12,7 +12,7 @@ const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Case Study Builder <onboard
 /**
  * Email a case study PDF to a recipient
  */
-export async function emailCaseStudyPDF({
+export async function waEmailCaseStudyPDF({
   caseId,
   recipientEmail,
   message,
@@ -192,7 +192,7 @@ export async function emailCaseStudyPDF({
 /**
  * Tag users in a case study and notify them
  */
-export async function tagUsersInCaseStudy({
+export async function waTagUsersInCaseStudy({
   caseId,
   userIds,
 }: {
@@ -293,7 +293,7 @@ export async function tagUsersInCaseStudy({
 /**
  * Get users tagged in a case study
  */
-export async function getTaggedUsers(caseId: string) {
+export async function waGetTaggedUsers(caseId: string) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -332,7 +332,7 @@ export async function getTaggedUsers(caseId: string) {
 /**
  * Search users for tagging (by name or email)
  */
-export async function searchUsersForTagging(query: string) {
+export async function waSearchUsersForTagging(query: string) {
   try {
     const session = await auth();
     if (!session?.user?.id) {

@@ -8,10 +8,10 @@ import { Avatar } from '@/components/ui/avatar';
 import { UserPlus, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
-  tagUsersInCaseStudy,
-  getTaggedUsers,
-  searchUsersForTagging,
-} from '@/lib/actions/email-pdf-actions';
+  waTagUsersInCaseStudy,
+  waGetTaggedUsers,
+  waSearchUsersForTagging,
+} from '@/lib/actions/waEmailPdfActions';
 
 interface TagColleaguesProps {
   caseStudyId: string;
@@ -53,7 +53,7 @@ export function TagColleagues({ caseStudyId, onTagsUpdated }: TagColleaguesProps
   }, [searchQuery]);
 
   const loadCurrentTags = async () => {
-    const result = await getTaggedUsers(caseStudyId);
+    const result = await waGetTaggedUsers(caseStudyId);
     if (result.success && result.users) {
       setCurrentTags(result.users);
       setSelectedUsers(result.users);
@@ -63,7 +63,7 @@ export function TagColleagues({ caseStudyId, onTagsUpdated }: TagColleaguesProps
   const handleSearch = async () => {
     setIsSearching(true);
     try {
-      const result = await searchUsersForTagging(searchQuery);
+      const result = await waSearchUsersForTagging(searchQuery);
       if (result.success && result.users) {
         // Filter out already selected users
         const filtered = result.users.filter(
@@ -94,7 +94,7 @@ export function TagColleagues({ caseStudyId, onTagsUpdated }: TagColleaguesProps
     setIsSaving(true);
     try {
       const userIds = selectedUsers.map((u) => u.id);
-      const result = await tagUsersInCaseStudy({
+      const result = await waTagUsersInCaseStudy({
         caseId: caseStudyId,
         userIds,
       });
