@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Sparkles, CheckCircle2, XCircle, Loader2, AlertCircle } from 'lucide-react';
-import { summarizeText, translateText, improveText } from '@/lib/actions/openai-actions';
+import { waSummarizeText, waTranslateText, waImproveText } from '@/lib/actions/waOpenaiActions';
 
 export default function OpenAIDiagnostics() {
   const [isRunning, setIsRunning] = useState(false);
@@ -27,7 +27,7 @@ export default function OpenAIDiagnostics() {
     // Test 1: Summarize
     console.log('[OpenAI Diagnostics] Testing summarize...');
     try {
-      const summarizeResult = await summarizeText(testText, 20);
+      const summarizeResult = await waSummarizeText(testText, 20);
       if (summarizeResult.success && summarizeResult.summary) {
         results.tests.summarize = {
           status: 'success',
@@ -55,7 +55,7 @@ export default function OpenAIDiagnostics() {
     // Test 2: Improve Text
     console.log('[OpenAI Diagnostics] Testing improve text...');
     try {
-      const improveResult = await improveText(testText);
+      const improveResult = await waImproveText(testText);
       if (improveResult.success && improveResult.improvedText) {
         results.tests.improve = {
           status: 'success',
@@ -83,7 +83,7 @@ export default function OpenAIDiagnostics() {
     // Test 3: Translate
     console.log('[OpenAI Diagnostics] Testing translate...');
     try {
-      const translateResult = await translateText(testText, 'Spanish');
+      const translateResult = await waTranslateText(testText, 'Spanish');
       if (translateResult.success && translateResult.translatedText) {
         results.tests.translate = {
           status: 'success',
