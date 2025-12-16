@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 
-type CostCalculationData = {
+type WaCostCalculationData = {
   caseStudyId: string;
   materialCostBefore: number;
   materialCostAfter: number;
@@ -27,8 +27,8 @@ type CostCalculationData = {
   savingsPercentage: number;
 };
 
-export async function saveCostCalculation(data: CostCalculationData) {
-  console.log('saveCostCalculation called with data:', {
+export async function waSaveCostCalculation(data: WaCostCalculationData) {
+  console.log('waSaveCostCalculation called with data:', {
     caseStudyId: data.caseStudyId,
     materialCostBefore: data.materialCostBefore,
     totalCostBefore: data.totalCostBefore,
@@ -119,7 +119,7 @@ export async function saveCostCalculation(data: CostCalculationData) {
   }
 }
 
-export async function getCostCalculation(caseStudyId: string) {
+export async function waGetCostCalculation(caseStudyId: string) {
   try {
     const calculation = await prisma.costCalculator.findUnique({
       where: { caseStudyId },
@@ -142,7 +142,7 @@ export async function getCostCalculation(caseStudyId: string) {
 /**
  * Get aggregate cost savings statistics
  */
-export async function getCostSavingsStats() {
+export async function waGetCostSavingsStats() {
   try {
     const calculations = await prisma.costCalculator.findMany({
       include: {

@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Calculator, TrendingDown, DollarSign, Clock, Package, Users, Wrench, Settings, Sparkles } from 'lucide-react';
-import { saveCostCalculation } from '@/lib/actions/cost-calculator-actions';
+import { waSaveCostCalculation } from '@/lib/actions/waCostCalculatorActions';
 
 type CostCalculatorProps = {
   caseStudyId: string;
@@ -112,8 +112,8 @@ export default function CostCalculator({ caseStudyId, existingData }: CostCalcul
     setSaveMessage('');
 
     try {
-      console.log('[CostCalculator] Calling saveCostCalculation...');
-      const result = await saveCostCalculation({
+      console.log('[CostCalculator] Calling waSaveCostCalculation...');
+      const result = await waSaveCostCalculation({
         caseStudyId,
         ...values,
         totalCostBefore,

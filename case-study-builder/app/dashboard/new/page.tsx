@@ -14,7 +14,7 @@ import StepFive from '@/components/case-study-form/step-five';
 import StepWPS from '@/components/case-study-form/step-wps';
 import ChallengeQualifier, { type QualifierResult } from '@/components/case-study-form/challenge-qualifier';
 import { waCreateCaseStudy } from '@/lib/actions/waCaseStudyActions';
-import { saveWeldingProcedure } from '@/lib/actions/wps-actions';
+import { waSaveWeldingProcedure } from '@/lib/actions/waWpsActions';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
 import CRMCustomerSearch, { type CRMCustomer } from '@/components/crm-customer-search';
@@ -224,7 +224,7 @@ export default function NewCaseStudyPage() {
 
       // If TECH or STAR and WPS data exists, save WPS
       if (hasWPS && formData.wps && result.id && formData.wps.waProductName && formData.wps.weldingProcess) {
-        await saveWeldingProcedure({
+        await waSaveWeldingProcedure({
           caseStudyId: result.id,
           waProductName: formData.wps.waProductName,
           weldingProcess: formData.wps.weldingProcess,
@@ -259,7 +259,7 @@ export default function NewCaseStudyPage() {
 
       // If TECH or STAR and WPS data exists, save WPS
       if (hasWPS && formData.wps && result.id) {
-        await saveWeldingProcedure({
+        await waSaveWeldingProcedure({
           caseStudyId: result.id,
           waProductName: formData.wps.waProductName || '',
           weldingProcess: formData.wps.weldingProcess || '',

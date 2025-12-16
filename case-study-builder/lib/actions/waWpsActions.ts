@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 
-export type WPSFormData = {
+export type WaWpsFormData = {
   caseStudyId: string;
   // Base Metal
   baseMetalType?: string;
@@ -45,7 +45,7 @@ export type WPSFormData = {
   additionalNotes?: string;
 };
 
-export async function saveWeldingProcedure(data: WPSFormData) {
+export async function waSaveWeldingProcedure(data: WaWpsFormData) {
   try {
     console.log('[WPS Actions] Saving welding procedure:', data);
 
@@ -85,7 +85,7 @@ export async function saveWeldingProcedure(data: WPSFormData) {
   }
 }
 
-export async function getWeldingProcedure(caseStudyId: string) {
+export async function waGetWeldingProcedure(caseStudyId: string) {
   try {
     console.log('[WPS Actions] Fetching welding procedure for case study:', caseStudyId);
 

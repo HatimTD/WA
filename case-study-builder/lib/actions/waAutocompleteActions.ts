@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 
-export async function getSearchSuggestions(query: string) {
+export async function waGetSearchSuggestions(query: string) {
   if (!query || query.length < 2) {
     return {
       success: true,

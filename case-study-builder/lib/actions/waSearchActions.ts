@@ -3,7 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 
-type SearchFilters = {
+type WaSearchFilters = {
   query?: string;
   type?: string;
   industry?: string;
@@ -12,7 +12,7 @@ type SearchFilters = {
   tags?: string[];
 };
 
-export async function searchCaseStudies(filters: SearchFilters) {
+export async function waSearchCaseStudies(filters: WaSearchFilters) {
   try {
     // Build the where clause dynamically based on filters
     const where: Prisma.CaseStudyWhereInput = {};
@@ -142,7 +142,7 @@ export async function searchCaseStudies(filters: SearchFilters) {
 /**
  * Get unique values for filter dropdowns
  */
-export async function getSearchFilterOptions() {
+export async function waGetSearchFilterOptions() {
   try {
     // Get distinct industries and locations from approved cases
     const caseStudies = await prisma.caseStudy.findMany({

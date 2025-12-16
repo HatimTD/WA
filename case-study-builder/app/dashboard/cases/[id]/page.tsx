@@ -28,9 +28,9 @@ import {
   FileText
 } from 'lucide-react';
 import CostCalculator from '@/components/cost-calculator';
-import { getCostCalculation } from '@/lib/actions/cost-calculator-actions';
+import { waGetCostCalculation } from '@/lib/actions/waCostCalculatorActions';
 import WeldingProcedureForm from '@/components/welding-procedure-form';
-import { getWeldingProcedure } from '@/lib/actions/wps-actions';
+import { waGetWeldingProcedure } from '@/lib/actions/waWpsActions';
 import EnhancedCommentsSection from '@/components/enhanced-comments-section';
 import { waGetComments } from '@/lib/actions/waCommentActions';
 import dynamic from 'next/dynamic';
@@ -88,11 +88,11 @@ export default async function CaseStudyDetailPage({ params }: Props) {
   }
 
   // Fetch cost calculation if exists
-  const costCalcResult = await getCostCalculation(id);
+  const costCalcResult = await waGetCostCalculation(id);
   const existingCostCalc = costCalcResult.calculation;
 
   // Fetch welding procedure if exists
-  const wpsResult = await getWeldingProcedure(id);
+  const wpsResult = await waGetWeldingProcedure(id);
   const existingWPS = wpsResult.wps;
 
   // Fetch comments

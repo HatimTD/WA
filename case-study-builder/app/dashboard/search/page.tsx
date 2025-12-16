@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Filter, X } from 'lucide-react';
-import { searchCaseStudies } from '@/lib/actions/search-actions';
-import { getSearchSuggestions } from '@/lib/actions/autocomplete-actions';
+import { waSearchCaseStudies } from '@/lib/actions/waSearchActions';
+import { waGetSearchSuggestions } from '@/lib/actions/waAutocompleteActions';
 import Link from 'next/link';
 import { SaveButton } from '@/components/save-button';
 
@@ -61,7 +61,7 @@ export default function SearchPage() {
       setIsLoadingSuggestions(true);
       debounceTimerRef.current = setTimeout(async () => {
         try {
-          const result = await getSearchSuggestions(filters.query);
+          const result = await waGetSearchSuggestions(filters.query);
           if (result.success) {
             setSuggestions(result.suggestions || []);
             setShowSuggestions(true);
@@ -103,7 +103,7 @@ export default function SearchPage() {
     setHasSearched(true);
 
     try {
-      const result = await searchCaseStudies(filters);
+      const result = await waSearchCaseStudies(filters);
       if (result.success && result.caseStudies) {
         setResults(result.caseStudies);
       }
