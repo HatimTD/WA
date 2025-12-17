@@ -16,6 +16,7 @@ import {
   Shield,
   Database,
   Trash2,
+  List,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -432,6 +433,12 @@ export default async function AdminDashboardPage() {
                 <Button variant="outline" className="w-full gap-2 dark:border-border dark:text-foreground dark:hover:bg-background">
                   <Trash2 className="h-4 w-4" />
                   GDPR Requests
+                </Button>
+              </Link>
+              <Link href="/dashboard/admin/master-list">
+                <Button variant="outline" className="w-full gap-2 dark:border-border dark:text-foreground dark:hover:bg-background">
+                  <List className="h-4 w-4" />
+                  Master Lists
                 </Button>
               </Link>
             </div>

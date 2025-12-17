@@ -12,6 +12,7 @@ import StepThree from '@/components/case-study-form/step-three';
 import StepFour from '@/components/case-study-form/step-four';
 import StepFive from '@/components/case-study-form/step-five';
 import StepWPS from '@/components/case-study-form/step-wps';
+import StepCostCalculator from '@/components/case-study-form/step-cost-calculator';
 import ChallengeQualifier, { type QualifierResult } from '@/components/case-study-form/challenge-qualifier';
 import { waCreateCaseStudy } from '@/lib/actions/waCaseStudyActions';
 import { waSaveWeldingProcedure } from '@/lib/actions/waWpsActions';
@@ -102,6 +103,16 @@ export type CaseStudyFormData = {
     defectsObserved?: string;
     additionalNotes?: string;
   };
+
+  // Step Cost Calculator: Cost Reduction Calculator (STAR only - BRD 3.3)
+  costCalculator?: {
+    costOfPart?: string;
+    oldSolutionLifetime?: string;
+    waSolutionLifetime?: string;
+    partsUsedPerYear?: string;
+    maintenanceDowntimeCost?: string;
+    disassemblyAssemblyCost?: string;
+  };
 };
 
 export default function NewCaseStudyPage() {
@@ -138,9 +149,10 @@ export default function NewCaseStudyPage() {
     supportingDocs: [],
     tags: [],
     wps: undefined,
+    costCalculator: undefined,
   });
 
-  // Dynamic steps based on case type
+  // Dynamic steps based on case type (BRD 3.3)
   const STEPS = useMemo(() => {
     const baseSteps = [
       { number: 1, title: 'Case Type', description: 'Select case study type' },
@@ -150,9 +162,14 @@ export default function NewCaseStudyPage() {
       { number: 5, title: 'Solution', description: 'WA solution details' },
     ];
 
-    // Add WPS step for TECH and STAR cases
+    // Add WPS step for TECH and STAR cases (BRD 3.3 - Tech Case additive requirements)
     if (formData.type === 'TECH' || formData.type === 'STAR') {
       baseSteps.push({ number: 6, title: 'WPS', description: 'Welding procedure specification' });
+    }
+
+    // Add Cost Calculator step for STAR cases only (BRD 3.3 - Star Case additive requirements)
+    if (formData.type === 'STAR') {
+      baseSteps.push({ number: baseSteps.length + 1, title: 'Cost Calculator', description: 'Cost reduction analysis' });
     }
 
     // Always add Review step last
@@ -180,23 +197,55 @@ export default function NewCaseStudyPage() {
         // Customer name required and qualifier questions must be answered
         return !!(formData.customerName && formData.qualifierCompleted);
       case 'Basic Info':
+        // BRD 3.3 - Application Case Base: Customer, Industry, Location, Component, Work Type, Wear Type, Base Metal, Dimensions
         return !!(
           formData.customerName &&
           formData.industry &&
           formData.location &&
           formData.componentWorkpiece &&
           formData.workType &&
-          formData.wearType.length > 0
+          formData.wearType.length > 0 &&
+          formData.baseMetal &&
+          formData.generalDimensions
         );
       case 'Problem':
-        return !!formData.problemDescription;
+        // BRD 3.3 - Application Case Base: Problem Description, Previous Solution
+        return !!(formData.problemDescription && formData.previousSolution);
       case 'Solution':
-        return !!(formData.waSolution && formData.waProduct);
+        // BRD 3.3 - Application Case Base: WA Solution, WA Product, Technical Advantages
+        return !!(formData.waSolution && formData.waProduct && formData.technicalAdvantages);
       case 'WPS':
-        // WPS required fields: waProductName and weldingProcess
-        return !!(formData.wps?.waProductName && formData.wps?.weldingProcess);
+        // BRD 3.3 - Tech Case Additive: All 8 WPS fields required
+        // Base Metal (Detailed), Surface Preparation, Welding Process/Params, Welding Position,
+        // Temperature Management, Shielding Gas, Oscillation Details, Additional Notes
+        return !!(
+          formData.wps?.baseMetalType &&
+          formData.wps?.surfacePreparation &&
+          formData.wps?.weldingProcess &&
+          formData.wps?.weldingPosition &&
+          (formData.wps?.preheatTemperature || formData.wps?.interpassTemperature) && // Temperature Management
+          formData.wps?.shieldingGas &&
+          (formData.wps?.oscillationWidth || formData.wps?.oscillationSpeed) && // Oscillation Details
+          formData.wps?.additionalNotes
+        );
+      case 'Cost Calculator':
+        // BRD 3.3 - Star Case Additive: All cost calculator fields required
+        return !!(
+          formData.costCalculator?.costOfPart &&
+          formData.costCalculator?.oldSolutionLifetime &&
+          formData.costCalculator?.waSolutionLifetime &&
+          formData.costCalculator?.partsUsedPerYear &&
+          formData.costCalculator?.maintenanceDowntimeCost &&
+          formData.costCalculator?.disassemblyAssemblyCost
+        );
       case 'Review':
-        return true; // Review step always valid
+        // BRD 3.3 - Application Case Base: Financial fields and at least one image required
+        return !!(
+          formData.solutionValueRevenue &&
+          formData.annualPotentialRevenue &&
+          formData.customerSavingsAmount &&
+          formData.images.length >= 1
+        );
       default:
         return false;
     }
@@ -415,6 +464,9 @@ export default function NewCaseStudyPage() {
           )}
           {STEPS[currentStep - 1]?.title === 'WPS' && (
             <StepWPS formData={formData} updateFormData={updateFormData} />
+          )}
+          {STEPS[currentStep - 1]?.title === 'Cost Calculator' && (
+            <StepCostCalculator formData={formData} updateFormData={updateFormData} />
           )}
           {STEPS[currentStep - 1]?.title === 'Review' && (
             <StepFive formData={formData} updateFormData={updateFormData} />

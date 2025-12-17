@@ -78,9 +78,21 @@ self.addEventListener('fetch', (event) => {
   }
 });
 
-// Handle SKIP_WAITING message from client
+// Handle messages from client
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
+  if (event.data) {
+    switch (event.data.type) {
+      case 'SKIP_WAITING':
+        self.skipWaiting();
+        break;
+      case 'SYNC_NOW':
+        // Trigger sync when online - notify all clients
+        self.clients.matchAll().then((clients) => {
+          clients.forEach((client) => {
+            client.postMessage({ type: 'SYNC_TRIGGERED' });
+          });
+        });
+        break;
+    }
   }
 });

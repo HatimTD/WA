@@ -122,12 +122,14 @@ test.describe('Search and Filter', () => {
     await page.goto('/dashboard/library');
     await expect(page.getByRole('heading', { name: /Case Study Library/i })).toBeVisible({ timeout: 10000 });
 
-    // Look for filters section in sidebar
-    await expect(page.getByText(/Filters/i)).toBeVisible();
+    // Look for filters section heading in sidebar (not the Advanced Filters button)
+    await expect(page.getByRole('heading', { name: 'Filters' })).toBeVisible();
 
-    // The page shows filter options for type and industry
-    // Verify the filter section exists
-    const filtersCard = page.locator('text=Filters').first();
-    await expect(filtersCard).toBeVisible();
+    // Verify basic filter sections exist
+    await expect(page.getByText('Case Type')).toBeVisible();
+    await expect(page.getByText('Industry')).toBeVisible();
+
+    // Verify Advanced Filters toggle button exists (BRD Section 5)
+    await expect(page.getByRole('button', { name: /Advanced Filters/i })).toBeVisible();
   });
 });

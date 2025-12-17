@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { waAutoTranslateOnSubmit } from './waTranslationActions';
 
 type WaCreateCaseStudyInput = {
   type: 'APPLICATION' | 'TECH' | 'STAR';
@@ -94,6 +95,18 @@ export async function waCreateCaseStudy(data: WaCreateCaseStudyInput) {
       type: data.type,
       status: data.status || 'DRAFT'
     });
+
+    // BRD: Auto-translate to Corporate English on submission
+    if (data.status === 'SUBMITTED') {
+      // Run auto-translation in background (don't block the response)
+      waAutoTranslateOnSubmit(caseStudy.id).then((result) => {
+        if (result.wasTranslated) {
+          console.log(`[Case Study] Auto-translated case ${caseStudy.id} from ${result.originalLanguage} to English`);
+        }
+      }).catch((err) => {
+        console.error(`[Case Study] Auto-translation failed for ${caseStudy.id}:`, err);
+      });
+    }
 
     return { success: true, id: caseStudy.id };
   } catch (error: any) {
@@ -198,6 +211,17 @@ export async function waUpdateCaseStudy(id: string, data: any) {
       type: updated.type,
       status: updated.status
     });
+
+    // BRD: Auto-translate to Corporate English when status changes to SUBMITTED
+    if (data.status === 'SUBMITTED' && caseStudy.status !== 'SUBMITTED') {
+      waAutoTranslateOnSubmit(id).then((result) => {
+        if (result.wasTranslated) {
+          console.log(`[Case Study] Auto-translated case ${id} from ${result.originalLanguage} to English`);
+        }
+      }).catch((err) => {
+        console.error(`[Case Study] Auto-translation failed for ${id}:`, err);
+      });
+    }
 
     return { success: true, id: updated.id };
   } catch (error: any) {

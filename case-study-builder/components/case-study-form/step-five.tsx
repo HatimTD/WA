@@ -84,23 +84,88 @@ export default function StepFive({ formData, updateFormData, caseStudyId, existi
 
   return (
     <div className="space-y-6">
+      {/* Financial Information - BRD 3.3 Required */}
+      <Card role="article" className="dark:bg-card dark:border-border">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 dark:text-foreground">
+            <DollarSign className="h-5 w-5 text-wa-green-600" />
+            Financial Information
+          </CardTitle>
+          <CardDescription className="dark:text-muted-foreground">
+            Document the business value and customer savings (all fields required per BRD 3.3)
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="solutionValueRevenue" className="dark:text-foreground">
+                Solution Value/Revenue <span className="text-red-500 dark:text-red-400">*</span>
+              </Label>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="solutionValueRevenue"
+                  value={formData.solutionValueRevenue}
+                  onChange={(e) => updateFormData({ solutionValueRevenue: e.target.value })}
+                  placeholder="e.g., 25000"
+                  className="pl-9 dark:bg-input dark:border-border dark:text-foreground"
+                  required
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Value of the WA solution sold
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="annualPotentialRevenue" className="dark:text-foreground">
+                Annual Potential Revenue <span className="text-red-500 dark:text-red-400">*</span>
+              </Label>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="annualPotentialRevenue"
+                  value={formData.annualPotentialRevenue}
+                  onChange={(e) => updateFormData({ annualPotentialRevenue: e.target.value })}
+                  placeholder="e.g., 100000"
+                  className="pl-9 dark:bg-input dark:border-border dark:text-foreground"
+                  required
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Potential annual revenue from customer
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="customerSavingsAmount" className="dark:text-foreground">
+                Customer Savings <span className="text-red-500 dark:text-red-400">*</span>
+              </Label>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="customerSavingsAmount"
+                  value={formData.customerSavingsAmount}
+                  onChange={(e) => updateFormData({ customerSavingsAmount: e.target.value })}
+                  placeholder="e.g., 50000"
+                  className="pl-9 dark:bg-input dark:border-border dark:text-foreground"
+                  required
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Estimated customer cost savings
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Cost Reduction Calculator - Only for STAR cases in edit mode */}
       {formData.type === 'STAR' && caseStudyId && (
         <CostCalculator
           caseStudyId={caseStudyId}
           existingData={existingCostCalc}
         />
-      )}
-
-      {/* Info message for STAR cases in create mode */}
-      {formData.type === 'STAR' && !caseStudyId && (
-        <Card role="article" className="bg-wa-green-50 border-wa-green-200 dark:bg-accent dark:border-primary">
-          <CardContent className="pt-6">
-            <p className="text-sm text-wa-green-800 dark:text-muted-foreground">
-              <span className="font-semibold dark:text-foreground">Note:</span> The Cost Reduction Calculator will be available after saving this case study. You'll be able to add detailed cost analysis in the edit view.
-            </p>
-          </CardContent>
-        </Card>
       )}
 
       {/* AI-Powered Tags */}
@@ -204,7 +269,7 @@ export default function StepFive({ formData, updateFormData, caseStudyId, existi
         </CardContent>
       </Card>
 
-      {/* Media Upload */}
+      {/* Media Upload - BRD 3.3 Images Required */}
       <Card role="article" className="dark:bg-card dark:border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 dark:text-foreground">
@@ -212,18 +277,25 @@ export default function StepFive({ formData, updateFormData, caseStudyId, existi
             Images & Documents
           </CardTitle>
           <CardDescription className="dark:text-muted-foreground">
-            Upload photos, videos, or supporting documents
-            {formData.type === 'STAR' && ' (Required for Star cases)'}
+            Upload photos, videos, or supporting documents. At least one image is required (BRD 3.3).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label className="dark:text-foreground">Images</Label>
+            <Label className="dark:text-foreground">
+              Images <span className="text-red-500 dark:text-red-400">*</span>
+              <span className="text-xs text-muted-foreground ml-2">(Minimum 1 required)</span>
+            </Label>
             <ImageUpload
               onImagesChange={(images) => updateFormData({ images })}
               existingImages={formData.images}
               maxImages={5}
             />
+            {formData.images.length === 0 && (
+              <p className="text-xs text-red-500 dark:text-red-400">
+                Please upload at least one image before submitting
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">

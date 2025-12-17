@@ -301,7 +301,7 @@ export default function ComparePage() {
           {Icon && <Icon className="h-4 w-4 text-wa-green-600 dark:text-primary" />}
           <h4 className="text-sm font-semibold text-gray-700 dark:text-foreground">{label}</h4>
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {values.map((value, index) => {
             const numericValues = showIndicator && typeof value === 'string' && value.includes('$')
               ? values.map(v => v ? parseFloat(v.toString().replace(/[$,]/g, '')) : null)
@@ -403,11 +403,11 @@ export default function ComparePage() {
         <div className={`${scheme.header} px-4 py-2 rounded-t-lg border-b-2 ${scheme.border}`}>
           <h4 className="font-bold text-sm uppercase tracking-wide">{title}</h4>
         </div>
-        <div className="grid grid-cols-3 gap-4 mt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
           {values.map((value, index) => (
             <div
               key={index}
-              className={`p-4 bg-gradient-to-br ${scheme.bg} rounded-lg border-2 ${scheme.border} shadow-sm hover:shadow-lg transition-all min-h-[120px]`}
+              className={`p-3 sm:p-4 bg-gradient-to-br ${scheme.bg} rounded-lg border-2 ${scheme.border} shadow-sm hover:shadow-lg transition-all min-h-[80px] sm:min-h-[120px]`}
             >
               <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap leading-relaxed">
                 {value || <span className="text-gray-400 dark:text-muted-foreground italic">Not provided</span>}

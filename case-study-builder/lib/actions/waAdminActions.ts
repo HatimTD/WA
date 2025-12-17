@@ -4,8 +4,12 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 import { revalidatePath } from 'next/cache';
+import type { Role } from '@prisma/client';
 
-export async function waChangeUserRole(email: string, newRole: 'CONTRIBUTOR' | 'APPROVER' | 'VIEWER') {
+// All valid roles from Prisma schema
+export type ValidRole = Role;
+
+export async function waChangeUserRole(email: string, newRole: ValidRole) {
   const session = await auth();
 
   try {

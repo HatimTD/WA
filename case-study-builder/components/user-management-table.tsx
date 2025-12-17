@@ -19,8 +19,21 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Search, UserCog, Trash2, Shield, Award } from 'lucide-react';
+import { Search, UserCog, Trash2, Shield, Award, Monitor, Megaphone, Eye } from 'lucide-react';
 import { toast } from 'sonner';
+
+// All roles defined in Prisma schema
+const ALL_ROLES = ['VIEWER', 'CONTRIBUTOR', 'APPROVER', 'ADMIN', 'IT_DEPARTMENT', 'MARKETING'] as const;
+
+// Role display configuration
+const ROLE_CONFIG: Record<string, { label: string; icon?: React.ReactNode; color: string }> = {
+  VIEWER: { label: 'Viewer', icon: <Eye className="h-3 w-3" />, color: 'text-gray-500' },
+  CONTRIBUTOR: { label: 'Contributor', color: 'text-green-600' },
+  APPROVER: { label: 'Approver', color: 'text-blue-600' },
+  ADMIN: { label: 'Admin', icon: <Shield className="h-3 w-3" />, color: 'text-purple-600' },
+  IT_DEPARTMENT: { label: 'IT Department', icon: <Monitor className="h-3 w-3" />, color: 'text-orange-600' },
+  MARKETING: { label: 'Marketing', icon: <Megaphone className="h-3 w-3" />, color: 'text-pink-600' },
+};
 
 type User = {
   id: string;
@@ -142,9 +155,14 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
               </SelectTrigger>
               <SelectContent className="dark:bg-popover dark:border-border">
                 <SelectItem value="ALL">All Roles</SelectItem>
-                <SelectItem value="CONTRIBUTOR">CONTRIBUTOR</SelectItem>
-                <SelectItem value="APPROVER">APPROVER</SelectItem>
-                <SelectItem value="ADMIN">ADMIN</SelectItem>
+                {ALL_ROLES.map((role) => (
+                  <SelectItem key={role} value={role}>
+                    <div className="flex items-center gap-2">
+                      {ROLE_CONFIG[role]?.icon}
+                      <span>{ROLE_CONFIG[role]?.label || role}</span>
+                    </div>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -191,16 +209,21 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
                         onValueChange={(newRole) => handleRoleChange(user.id, newRole)}
                         disabled={isUpdating === user.id}
                       >
-                        <SelectTrigger className="w-36 dark:bg-input dark:border-border dark:text-foreground">
-                          <div className="flex items-center gap-2">
-                            {user.role === 'ADMIN' && <Shield className="h-3 w-3" />}
-                            <SelectValue />
+                        <SelectTrigger className="w-40 dark:bg-input dark:border-border dark:text-foreground">
+                          <div className={`flex items-center gap-2 ${ROLE_CONFIG[user.role]?.color || ''}`}>
+                            {ROLE_CONFIG[user.role]?.icon}
+                            <span>{ROLE_CONFIG[user.role]?.label || user.role}</span>
                           </div>
                         </SelectTrigger>
                         <SelectContent className="dark:bg-popover dark:border-border">
-                          <SelectItem value="CONTRIBUTOR">CONTRIBUTOR</SelectItem>
-                          <SelectItem value="APPROVER">APPROVER</SelectItem>
-                          <SelectItem value="ADMIN">ADMIN</SelectItem>
+                          {ALL_ROLES.map((role) => (
+                            <SelectItem key={role} value={role}>
+                              <div className={`flex items-center gap-2 ${ROLE_CONFIG[role]?.color || ''}`}>
+                                {ROLE_CONFIG[role]?.icon}
+                                <span>{ROLE_CONFIG[role]?.label || role}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </TableCell>
@@ -256,23 +279,24 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
         </div>
 
         {/* Summary Stats */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-wa-green-50 dark:bg-accent border border-wa-green-200 dark:border-primary rounded-lg p-4">
-            <p className="text-sm text-wa-green-600 dark:text-primary font-medium">Total Users</p>
-            <p className="text-2xl font-bold text-wa-green-900 dark:text-foreground">{users.length}</p>
+        <div className="mt-6 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+          <div className="bg-wa-green-50 dark:bg-accent border border-wa-green-200 dark:border-primary rounded-lg p-3">
+            <p className="text-xs text-wa-green-600 dark:text-primary font-medium">Total</p>
+            <p className="text-xl font-bold text-wa-green-900 dark:text-foreground">{users.length}</p>
           </div>
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4">
-            <p className="text-sm text-green-600 dark:text-green-400 font-medium">Contributors</p>
-            <p className="text-2xl font-bold text-green-900 dark:text-foreground">
-              {users.filter((u) => u.role === 'CONTRIBUTOR').length}
-            </p>
-          </div>
-          <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg p-4">
-            <p className="text-sm text-purple-600 dark:text-purple-400 font-medium">Approvers + Admins</p>
-            <p className="text-2xl font-bold text-purple-900 dark:text-foreground">
-              {users.filter((u) => u.role === 'APPROVER' || u.role === 'ADMIN').length}
-            </p>
-          </div>
+          {ALL_ROLES.map((role) => {
+            const config = ROLE_CONFIG[role];
+            const count = users.filter((u) => u.role === role).length;
+            return (
+              <div key={role} className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                <div className={`flex items-center gap-1 text-xs font-medium ${config?.color || 'text-gray-600'}`}>
+                  {config?.icon}
+                  <span>{config?.label || role}</span>
+                </div>
+                <p className="text-xl font-bold text-gray-900 dark:text-foreground">{count}</p>
+              </div>
+            );
+          })}
         </div>
       </CardContent>
     </Card>

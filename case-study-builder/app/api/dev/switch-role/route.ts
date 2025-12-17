@@ -21,10 +21,11 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { role } = body;
 
-    // Validate role
-    if (!role || !['VIEWER', 'CONTRIBUTOR', 'APPROVER', 'ADMIN'].includes(role)) {
+    // Validate role - all 6 roles from Prisma schema
+    const validRoles = ['VIEWER', 'CONTRIBUTOR', 'APPROVER', 'ADMIN', 'IT_DEPARTMENT', 'MARKETING'];
+    if (!role || !validRoles.includes(role)) {
       return NextResponse.json(
-        { success: false, error: 'Invalid role. Must be VIEWER, CONTRIBUTOR, APPROVER, or ADMIN' },
+        { success: false, error: `Invalid role. Must be one of: ${validRoles.join(', ')}` },
         { status: 400 }
       );
     }

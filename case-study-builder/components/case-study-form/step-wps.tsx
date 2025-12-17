@@ -13,18 +13,28 @@ type Props = {
 export default function StepWPS({ formData, updateFormData }: Props) {
   return (
     <div className="space-y-6">
+      {/* BRD 3.3 Required Fields Notice */}
+      <div className="bg-wa-green-50 border border-wa-green-200 rounded-lg p-4 dark:bg-accent dark:border-primary">
+        <p className="text-sm text-wa-green-800 dark:text-muted-foreground">
+          <span className="font-semibold dark:text-foreground">Tech Case Requirement:</span> WPS (Welding Procedure Specification) documentation is required for TECH and STAR case studies. Fields marked with <span className="text-red-500">*</span> are required per BRD 3.3.
+        </p>
+      </div>
+
       {/* Base Metal Section */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground">Base Metal Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="baseMetalType" className="dark:text-foreground">Base Metal Type</Label>
+            <Label htmlFor="baseMetalType" className="dark:text-foreground">
+              Base Metal Type <span className="text-red-500 dark:text-red-400">*</span>
+            </Label>
             <Input
               id="baseMetalType"
               value={formData.wps?.baseMetalType || ''}
               onChange={(e) => updateFormData({ wps: { ...formData.wps, baseMetalType: e.target.value } })}
               placeholder="e.g., Carbon Steel, Stainless Steel"
               className="dark:bg-input dark:border-border dark:text-foreground"
+              required
             />
           </div>
 
@@ -51,13 +61,16 @@ export default function StepWPS({ formData, updateFormData }: Props) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="surfacePreparation" className="dark:text-foreground">Surface Preparation</Label>
+            <Label htmlFor="surfacePreparation" className="dark:text-foreground">
+              Surface Preparation <span className="text-red-500 dark:text-red-400">*</span>
+            </Label>
             <Input
               id="surfacePreparation"
               value={formData.wps?.surfacePreparation || ''}
               onChange={(e) => updateFormData({ wps: { ...formData.wps, surfacePreparation: e.target.value } })}
               placeholder="e.g., Grinding, Sandblasting"
               className="dark:bg-input dark:border-border dark:text-foreground"
+              required
             />
           </div>
         </div>
@@ -91,13 +104,16 @@ export default function StepWPS({ formData, updateFormData }: Props) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="shieldingGas" className="dark:text-foreground">Shielding Gas</Label>
+            <Label htmlFor="shieldingGas" className="dark:text-foreground">
+              Shielding Gas <span className="text-red-500 dark:text-red-400">*</span>
+            </Label>
             <Input
               id="shieldingGas"
               value={formData.wps?.shieldingGas || ''}
               onChange={(e) => updateFormData({ wps: { ...formData.wps, shieldingGas: e.target.value } })}
               placeholder="e.g., Ar + 20% CO2"
               className="dark:bg-input dark:border-border dark:text-foreground"
+              required
             />
           </div>
 
@@ -219,13 +235,16 @@ export default function StepWPS({ formData, updateFormData }: Props) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="weldingPosition" className="dark:text-foreground">Welding Position</Label>
+            <Label htmlFor="weldingPosition" className="dark:text-foreground">
+              Welding Position <span className="text-red-500 dark:text-red-400">*</span>
+            </Label>
             <Input
               id="weldingPosition"
               value={formData.wps?.weldingPosition || ''}
               onChange={(e) => updateFormData({ wps: { ...formData.wps, weldingPosition: e.target.value } })}
               placeholder="e.g., Flat (1G), Horizontal (2G)"
               className="dark:bg-input dark:border-border dark:text-foreground"
+              required
             />
           </div>
 
@@ -264,18 +283,23 @@ export default function StepWPS({ formData, updateFormData }: Props) {
         </div>
       </div>
 
-      {/* Oscillation Section */}
+      {/* Oscillation Section - BRD 3.3 Required */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground">Oscillation (Optional)</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground">
+          Oscillation Details <span className="text-sm font-normal text-muted-foreground">(At least width or speed required)</span>
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="oscillationWidth" className="dark:text-foreground">Oscillation Width</Label>
+            <Label htmlFor="oscillationWidth" className="dark:text-foreground">
+              Oscillation Width <span className="text-red-500 dark:text-red-400">*</span>
+            </Label>
             <Input
               id="oscillationWidth"
               value={formData.wps?.oscillationWidth || ''}
               onChange={(e) => updateFormData({ wps: { ...formData.wps, oscillationWidth: e.target.value } })}
               placeholder="e.g., 12mm"
               className="dark:bg-input dark:border-border dark:text-foreground"
+              required
             />
           </div>
 
@@ -314,18 +338,23 @@ export default function StepWPS({ formData, updateFormData }: Props) {
         </div>
       </div>
 
-      {/* Temperature Section */}
+      {/* Temperature Section - BRD 3.3 Required */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground">Temperature Control</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground">
+          Temperature Management <span className="text-sm font-normal text-muted-foreground">(At least preheat or interpass required)</span>
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="preheatTemperature" className="dark:text-foreground">Preheat Temperature</Label>
+            <Label htmlFor="preheatTemperature" className="dark:text-foreground">
+              Preheat Temperature <span className="text-red-500 dark:text-red-400">*</span>
+            </Label>
             <Input
               id="preheatTemperature"
               value={formData.wps?.preheatTemperature || ''}
               onChange={(e) => updateFormData({ wps: { ...formData.wps, preheatTemperature: e.target.value } })}
               placeholder="e.g., 150°C"
               className="dark:bg-input dark:border-border dark:text-foreground"
+              required
             />
           </div>
 
@@ -403,22 +432,24 @@ export default function StepWPS({ formData, updateFormData }: Props) {
           </div>
 
           <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="additionalNotes" className="dark:text-foreground">Additional Notes</Label>
+            <Label htmlFor="additionalNotes" className="dark:text-foreground">
+              Additional WPS Notes <span className="text-red-500 dark:text-red-400">*</span>
+            </Label>
             <Textarea
               id="additionalNotes"
               value={formData.wps?.additionalNotes || ''}
               onChange={(e) => updateFormData({ wps: { ...formData.wps, additionalNotes: e.target.value } })}
-              placeholder="Any additional observations or recommendations..."
+              placeholder="Any additional observations, recommendations, or key WPS details..."
               className="min-h-[100px] dark:bg-input dark:border-border dark:text-foreground"
+              required
             />
+            <p className="text-xs text-muted-foreground">
+              Document any additional welding considerations, safety notes, or quality observations
+            </p>
           </div>
         </div>
       </div>
 
-      <div className="bg-wa-green-50 border border-wa-green-200 rounded-lg p-4 text-sm text-wa-green-800 dark:bg-accent dark:border-primary dark:text-muted-foreground">
-        <p className="font-semibold mb-1 dark:text-foreground">Technical Requirement</p>
-        <p>WPS (Welding Procedure Specification) is required for TECH and STAR case studies to document technical welding parameters.</p>
-      </div>
     </div>
   );
 }

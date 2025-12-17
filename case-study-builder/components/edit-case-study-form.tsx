@@ -21,6 +21,11 @@ export type CaseStudyFormData = {
   // Step 1: Case Type
   type: 'APPLICATION' | 'TECH' | 'STAR';
 
+  // Qualifier (BRD 3.1) - Used by new form, optional for edit
+  qualifierType?: 'NEW_CUSTOMER' | 'CROSS_SELL' | 'MAINTENANCE';
+  isTarget: boolean; // Counts toward BHAG 10,000 goal
+  qualifierCompleted: boolean; // Whether qualifier questions were answered
+
   // Step 2: Basic Information
   customerName: string;
   industry: string;
@@ -111,6 +116,8 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
   // Pre-fill form data with existing case study values
   const [formData, setFormData] = useState<CaseStudyFormData>({
     type: caseStudy.type as 'APPLICATION' | 'TECH' | 'STAR',
+    isTarget: true, // Existing cases default to being counted
+    qualifierCompleted: true, // Existing cases don't need qualifier
     customerName: caseStudy.customerName,
     industry: caseStudy.industry,
     location: caseStudy.location,

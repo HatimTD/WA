@@ -39,6 +39,8 @@ import { CompletionIndicator } from '@/components/completion-indicator';
 import { waCalculateCompletionPercentage, waGetFieldBreakdown } from '@/lib/utils/waCaseQuality';
 import QualityScoreBadge from '@/components/quality-score-badge';
 import type { CaseStudyWithRelations } from '@/lib/utils/waQualityScore';
+import LanguageIndicator from '@/components/language-indicator';
+import TranslationPanel from '@/components/translation-panel';
 
 // Dynamic import for PDF export (saves ~200KB from jspdf)
 const PDFExportButton = dynamic(() => import('@/components/pdf-export-button'), {
@@ -51,9 +53,10 @@ const PDFExportButton = dynamic(() => import('@/components/pdf-export-button'), 
 
 type Props = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ showOriginal?: string }>;
 };
 
-export default async function CaseStudyDetailPage({ params }: Props) {
+export default async function CaseStudyDetailPage({ params, searchParams }: Props) {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -61,6 +64,10 @@ export default async function CaseStudyDetailPage({ params }: Props) {
   }
 
   const { id } = await params;
+  const { showOriginal } = await searchParams;
+
+  // Determine if we should show original content or translated
+  const displayOriginal = showOriginal === 'true';
 
   const caseStudy = await prisma.waCaseStudy.findUnique({
     where: { id },
@@ -111,6 +118,33 @@ export default async function CaseStudyDetailPage({ params }: Props) {
   const isOwner = caseStudy.contributorId === session.user.id;
   const canEdit = isOwner && caseStudy.status === 'DRAFT';
 
+  // BRD: Get display content - translated to English by default, original if requested
+  const hasTranslation = Boolean(caseStudy.translationAvailable && caseStudy.translatedText);
+  let displayContent = {
+    problemDescription: caseStudy.problemDescription,
+    previousSolution: caseStudy.previousSolution,
+    technicalAdvantages: caseStudy.technicalAdvantages,
+    waSolution: caseStudy.waSolution,
+    isTranslated: false,
+  };
+
+  // Use translated content by default (unless showOriginal=true)
+  if (hasTranslation && !displayOriginal) {
+    try {
+      const translation = JSON.parse(caseStudy.translatedText!);
+      const fields = translation.fields || {};
+      displayContent = {
+        problemDescription: fields.problemDescription || caseStudy.problemDescription,
+        previousSolution: fields.previousSolution || caseStudy.previousSolution,
+        technicalAdvantages: fields.technicalAdvantages || caseStudy.technicalAdvantages,
+        waSolution: fields.waSolution || caseStudy.waSolution,
+        isTranslated: true,
+      };
+    } catch {
+      // If parsing fails, use original content
+    }
+  }
+
   // Calculate completion percentage
   const completionPercentage = waCalculateCompletionPercentage(
     caseStudy,
@@ -156,6 +190,10 @@ export default async function CaseStudyDetailPage({ params }: Props) {
     } : undefined,
     createdAt: caseStudy.createdAt,
     approvedAt: caseStudy.approvedAt || undefined,
+    // Translation fields
+    originalLanguage: caseStudy.originalLanguage || undefined,
+    translationAvailable: caseStudy.translationAvailable || undefined,
+    translatedText: caseStudy.translatedText || undefined,
   };
 
   const getStatusIcon = (status: string) => {
@@ -263,6 +301,39 @@ export default async function CaseStudyDetailPage({ params }: Props) {
             <p className="text-lg text-gray-600 dark:text-muted-foreground mt-2">
               {caseStudy.location}, {caseStudy.country || 'N/A'}
             </p>
+            {/* Language Indicator with View Original/Translation toggle */}
+            {(caseStudy.originalLanguage !== 'en' || caseStudy.translationAvailable) && (
+              <div className="mt-3">
+                <LanguageIndicator
+                  originalLanguage={caseStudy.originalLanguage}
+                  translationAvailable={caseStudy.translationAvailable}
+                  translatedText={caseStudy.translatedText}
+                  caseStudyId={caseStudy.id}
+                  variant="inline"
+                  showLink={hasTranslation}
+                />
+                {/* Toggle link for translated content */}
+                {hasTranslation && (
+                  <div className="mt-2">
+                    {displayOriginal ? (
+                      <Link
+                        href={`/dashboard/cases/${caseStudy.id}`}
+                        className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1"
+                      >
+                        View translated (English) version
+                      </Link>
+                    ) : (
+                      <Link
+                        href={`/dashboard/cases/${caseStudy.id}?showOriginal=true`}
+                        className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1"
+                      >
+                        View original version
+                      </Link>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <div className="flex flex-col gap-2">
             <Badge className={`${getTypeColor(caseStudy.type)} border dark:border-border`}>
@@ -458,13 +529,13 @@ export default async function CaseStudyDetailPage({ params }: Props) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="prose max-w-none dark:prose-invert">
-            <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{caseStudy.problemDescription}</p>
+            <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{displayContent.problemDescription}</p>
           </div>
 
-          {caseStudy.previousSolution && (
+          {displayContent.previousSolution && (
             <div className="pt-4 border-t dark:border-border">
               <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Previous Solution</p>
-              <p className="text-base dark:text-foreground">{caseStudy.previousSolution}</p>
+              <p className="text-base dark:text-foreground">{displayContent.previousSolution}</p>
             </div>
           )}
 
@@ -492,7 +563,7 @@ export default async function CaseStudyDetailPage({ params }: Props) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="prose max-w-none dark:prose-invert">
-            <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{caseStudy.waSolution}</p>
+            <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{displayContent.waSolution}</p>
           </div>
 
           <div className="pt-4 border-t dark:border-border">
@@ -500,10 +571,10 @@ export default async function CaseStudyDetailPage({ params }: Props) {
             <p className="text-lg font-semibold text-wa-green-600 dark:text-primary">{caseStudy.waProduct}</p>
           </div>
 
-          {caseStudy.technicalAdvantages && (
+          {displayContent.technicalAdvantages && (
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Technical Advantages</p>
-              <p className="text-base dark:text-foreground whitespace-pre-wrap">{caseStudy.technicalAdvantages}</p>
+              <p className="text-base dark:text-foreground whitespace-pre-wrap">{displayContent.technicalAdvantages}</p>
             </div>
           )}
 
@@ -691,6 +762,14 @@ export default async function CaseStudyDetailPage({ params }: Props) {
         } : undefined}
         />
       )}
+
+      {/* Translation Panel */}
+      <TranslationPanel
+        caseStudyId={caseStudy.id}
+        originalLanguage={caseStudy.originalLanguage}
+        translationAvailable={caseStudy.translationAvailable}
+        translatedText={caseStudy.translatedText}
+      />
 
       {/* Tag Colleagues */}
       <Card role="article" className="dark:bg-card dark:border-border">

@@ -10,6 +10,7 @@ import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { CompletionIndicator } from '@/components/completion-indicator';
 import { waCalculateCompletionPercentage, waGetFieldBreakdown } from '@/lib/utils/waCaseQuality';
+import LanguageIndicator from '@/components/language-indicator';
 
 
 export const metadata: Metadata = {
@@ -126,7 +127,7 @@ export default async function MyCasesPage({
         className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:border-border dark:hover:border-primary dark:hover:bg-card transition-colors"
       >
         <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-3 mb-2 flex-wrap">
             <Badge className={getTypeColor(caseStudy.type)}>
               {caseStudy.type}
             </Badge>
@@ -136,6 +137,16 @@ export default async function MyCasesPage({
                 {caseStudy.status}
               </span>
             </Badge>
+            {/* Language Indicator - BRD: Show original language */}
+            {caseStudy.originalLanguage && caseStudy.originalLanguage !== 'en' && (
+              <LanguageIndicator
+                originalLanguage={caseStudy.originalLanguage}
+                translationAvailable={caseStudy.translationAvailable}
+                caseStudyId={caseStudy.id}
+                variant="badge"
+                showLink={true}
+              />
+            )}
             <CompletionIndicator
               percentage={completionPercentage}
               variant="badge"

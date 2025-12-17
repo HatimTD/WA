@@ -31,6 +31,8 @@ export async function GET(request: NextRequest) {
             problemDescription: true,
             status: true,
             approvedAt: true,
+            originalLanguage: true,
+            translationAvailable: true,
           },
         },
       },

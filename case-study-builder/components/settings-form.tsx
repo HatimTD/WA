@@ -10,8 +10,21 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { User, Settings, Download, Bell, Shield, Camera } from 'lucide-react';
+import { User, Settings, Download, Bell, Shield, Camera, Eye, Monitor, Megaphone } from 'lucide-react';
 import { toast } from 'sonner';
+
+// All roles from Prisma schema
+const ALL_ROLES = ['VIEWER', 'CONTRIBUTOR', 'APPROVER', 'ADMIN', 'IT_DEPARTMENT', 'MARKETING'] as const;
+
+// Role display configuration
+const ROLE_CONFIG: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
+  VIEWER: { label: 'Viewer', icon: <Eye className="h-3 w-3" />, color: 'text-gray-600' },
+  CONTRIBUTOR: { label: 'Contributor', icon: <User className="h-3 w-3" />, color: 'text-green-600' },
+  APPROVER: { label: 'Approver', icon: <Shield className="h-3 w-3" />, color: 'text-blue-600' },
+  ADMIN: { label: 'Admin', icon: <Shield className="h-3 w-3" />, color: 'text-purple-600' },
+  IT_DEPARTMENT: { label: 'IT Department', icon: <Monitor className="h-3 w-3" />, color: 'text-orange-600' },
+  MARKETING: { label: 'Marketing', icon: <Megaphone className="h-3 w-3" />, color: 'text-pink-600' },
+};
 
 type UserData = {
   id: string;
@@ -436,8 +449,19 @@ export default function SettingsForm({ user }: Props) {
           <div className="space-y-2">
             <Label className="dark:text-foreground">Role</Label>
             <div className="flex items-center gap-2">
-              <div className="px-3 py-2 bg-wa-green-50 text-wa-green-700 rounded-md text-sm font-medium border border-wa-green-200 dark:bg-accent dark:text-primary dark:border-primary">
-                {user.role}
+              <div className={`px-3 py-2 rounded-md text-sm font-medium border flex items-center gap-2 ${
+                ROLE_CONFIG[user.role]?.color || 'text-wa-green-700'
+              } ${
+                user.role === 'VIEWER' ? 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700' :
+                user.role === 'CONTRIBUTOR' ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-700' :
+                user.role === 'APPROVER' ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-700' :
+                user.role === 'ADMIN' ? 'bg-purple-50 border-purple-200 dark:bg-purple-900/20 dark:border-purple-700' :
+                user.role === 'IT_DEPARTMENT' ? 'bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-700' :
+                user.role === 'MARKETING' ? 'bg-pink-50 border-pink-200 dark:bg-pink-900/20 dark:border-pink-700' :
+                'bg-wa-green-50 border-wa-green-200 dark:bg-accent dark:border-primary'
+              }`}>
+                {ROLE_CONFIG[user.role]?.icon}
+                {ROLE_CONFIG[user.role]?.label || user.role}
               </div>
               <p className="text-xs text-gray-500 dark:text-muted-foreground">
                 Contact an administrator to change your role
@@ -710,16 +734,24 @@ export default function SettingsForm({ user }: Props) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="devRole" className="dark:text-orange-300">Current Role: <span className="font-bold">{user.role}</span></Label>
+            <Label htmlFor="devRole" className="dark:text-orange-300">
+              Current Role: <span className={`font-bold ${ROLE_CONFIG[user.role]?.color || ''}`}>
+                {ROLE_CONFIG[user.role]?.label || user.role}
+              </span>
+            </Label>
             <Select onValueChange={handleRoleSwitch} disabled={isSwitchingRole}>
               <SelectTrigger id="devRole" className="dark:bg-orange-950/50 dark:border-orange-800 dark:text-orange-200">
                 <SelectValue placeholder="Switch to..." />
               </SelectTrigger>
               <SelectContent className="dark:bg-popover dark:border-border">
-                <SelectItem value="VIEWER">VIEWER</SelectItem>
-                <SelectItem value="CONTRIBUTOR">CONTRIBUTOR</SelectItem>
-                <SelectItem value="APPROVER">APPROVER</SelectItem>
-                <SelectItem value="ADMIN">ADMIN</SelectItem>
+                {ALL_ROLES.map((role) => (
+                  <SelectItem key={role} value={role}>
+                    <div className={`flex items-center gap-2 ${ROLE_CONFIG[role]?.color || ''}`}>
+                      {ROLE_CONFIG[role]?.icon}
+                      <span>{ROLE_CONFIG[role]?.label || role}</span>
+                    </div>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <p className="text-xs text-orange-600 dark:text-orange-400">

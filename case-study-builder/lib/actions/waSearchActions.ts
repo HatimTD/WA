@@ -1,8 +1,13 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
+import { Prisma, WearType } from '@prisma/client';
 
+/**
+ * BRD Section 5 - Search & Filtering
+ * Database must be searchable by: Tags, Industry, Component, OEM, Wear Type,
+ * WA Product, Country, Customer, Revenue, and Contributor
+ */
 type WaSearchFilters = {
   query?: string;
   type?: string;
@@ -10,6 +15,15 @@ type WaSearchFilters = {
   location?: string;
   status?: string;
   tags?: string[];
+  // BRD Required Filters
+  componentWorkpiece?: string;
+  wearType?: string[];
+  oem?: string; // competitorName field
+  waProduct?: string;
+  country?: string;
+  contributorId?: string;
+  minRevenue?: number;
+  maxRevenue?: number;
 };
 
 export async function waSearchCaseStudies(filters: WaSearchFilters) {
@@ -48,6 +62,61 @@ export async function waSearchCaseStudies(filters: WaSearchFilters) {
       where.tags = {
         hasSome: filters.tags,
       };
+    }
+
+    // BRD: Component/Workpiece filter
+    if (filters.componentWorkpiece) {
+      where.componentWorkpiece = {
+        contains: filters.componentWorkpiece,
+        mode: 'insensitive',
+      };
+    }
+
+    // BRD: Wear Type filter (array field - hasSome for multi-select)
+    if (filters.wearType && filters.wearType.length > 0) {
+      where.wearType = {
+        hasSome: filters.wearType as WearType[],
+      };
+    }
+
+    // BRD: OEM filter (competitorName field)
+    if (filters.oem) {
+      where.competitorName = {
+        contains: filters.oem,
+        mode: 'insensitive',
+      };
+    }
+
+    // BRD: WA Product filter
+    if (filters.waProduct) {
+      where.waProduct = {
+        contains: filters.waProduct,
+        mode: 'insensitive',
+      };
+    }
+
+    // BRD: Country filter (separate from location)
+    if (filters.country) {
+      where.country = {
+        contains: filters.country,
+        mode: 'insensitive',
+      };
+    }
+
+    // BRD: Contributor filter
+    if (filters.contributorId) {
+      where.contributorId = filters.contributorId;
+    }
+
+    // BRD: Revenue filter (using annualPotentialRevenue)
+    if (filters.minRevenue !== undefined || filters.maxRevenue !== undefined) {
+      where.annualPotentialRevenue = {};
+      if (filters.minRevenue !== undefined) {
+        where.annualPotentialRevenue.gte = filters.minRevenue;
+      }
+      if (filters.maxRevenue !== undefined) {
+        where.annualPotentialRevenue.lte = filters.maxRevenue;
+      }
     }
 
     // Text search across multiple fields
@@ -141,25 +210,64 @@ export async function waSearchCaseStudies(filters: WaSearchFilters) {
 
 /**
  * Get unique values for filter dropdowns
+ * BRD Section 5 - Provides all searchable field options
  */
 export async function waGetSearchFilterOptions() {
   try {
-    // Get distinct industries and locations from approved cases
+    // Get distinct values from approved cases for all BRD-required filters
     const caseStudies = await prisma.waCaseStudy.findMany({
       where: { status: 'APPROVED' },
       select: {
         industry: true,
         location: true,
+        componentWorkpiece: true,
+        wearType: true,
+        competitorName: true,
+        waProduct: true,
+        country: true,
+        contributorId: true,
+        contributor: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 
-    const industries = [...new Set(caseStudies.map((cs) => cs.industry))].sort();
-    const locations = [...new Set(caseStudies.map((cs) => cs.location))].sort();
+    // Extract unique values for each filter
+    const industries = [...new Set(caseStudies.map((cs) => cs.industry))].filter(Boolean).sort();
+    const locations = [...new Set(caseStudies.map((cs) => cs.location))].filter(Boolean).sort();
+    const components = [...new Set(caseStudies.map((cs) => cs.componentWorkpiece))].filter(Boolean).sort();
+    const waProducts = [...new Set(caseStudies.map((cs) => cs.waProduct))].filter(Boolean).sort();
+    const countries = [...new Set(caseStudies.map((cs) => cs.country))].filter((c): c is string => c !== null).sort();
+    const oems = [...new Set(caseStudies.map((cs) => cs.competitorName))].filter((c): c is string => c !== null).sort();
+
+    // Flatten wear types array and get unique values
+    const allWearTypes = caseStudies.flatMap((cs) => cs.wearType);
+    const wearTypes = [...new Set(allWearTypes)].sort();
+
+    // Get unique contributors with their names
+    const contributorMap = new Map<string, string>();
+    caseStudies.forEach((cs) => {
+      if (cs.contributor) {
+        contributorMap.set(cs.contributorId, cs.contributor.name || cs.contributorId);
+      }
+    });
+    const contributors = Array.from(contributorMap.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
     return {
       success: true,
       industries,
       locations,
+      components,
+      wearTypes,
+      oems,
+      waProducts,
+      countries,
+      contributors,
     };
   } catch (error) {
     console.error('Error fetching filter options:', error);
@@ -167,6 +275,12 @@ export async function waGetSearchFilterOptions() {
       success: false,
       industries: [],
       locations: [],
+      components: [],
+      wearTypes: [],
+      oems: [],
+      waProducts: [],
+      countries: [],
+      contributors: [],
     };
   }
 }

@@ -63,16 +63,22 @@ export default function StepThree({ formData, updateFormData }: Props) {
         </p>
       </div>
 
-      {/* Previous Solution */}
+      {/* Previous Solution - BRD 3.3 Required */}
       <div className="space-y-2">
-        <Label htmlFor="previousSolution" className="dark:text-foreground">Previous Solution</Label>
+        <Label htmlFor="previousSolution" className="dark:text-foreground">
+          Previous Solution <span className="text-red-500 dark:text-red-400">*</span>
+        </Label>
         <Input
           id="previousSolution"
           value={formData.previousSolution}
           onChange={(e) => updateFormData({ previousSolution: e.target.value })}
           placeholder="e.g., Competitor product or previous material"
           className="dark:bg-input dark:border-border dark:text-foreground"
+          required
         />
+        <p className="text-xs text-muted-foreground">
+          What was used before the WA solution was implemented
+        </p>
       </div>
 
       {/* Previous Service Life */}

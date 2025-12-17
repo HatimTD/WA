@@ -23,6 +23,14 @@ model User {
   totalPoints   Int       @default(0)
   badges        Badge[]
 
+  // Data Model V1.6 Fields
+  ssoUid        String?       @unique // Immutable SSO ID from IdP
+  subsidiaryId  String?
+  subsidiary    WaSubsidiary? @relation(fields: [subsidiaryId], references: [id])
+  lastLoginDate DateTime?
+  status        UserStatus    @default(ACTIVE)
+  userRoles     WaUserRole[]
+
   // User Preferences
   notificationPreferences Json? @default("{\"inAppNotifications\":true,\"emailNotifications\":true,\"caseApprovalNotif\":true,\"caseRejectionNotif\":true,\"newCommentNotif\":true,\"bhagMilestones\":true,\"inAppCaseApproval\":true,\"inAppCaseRejection\":true,\"inAppNewComment\":true,\"inAppBhagMilestones\":true}")
   displayPreferences      Json? @default("{\"theme\":\"system\",\"resultsPerPage\":10,\"defaultView\":\"grid\"}")
@@ -87,12 +95,12 @@ model VerificationToken {
 
 // BRD Section 2.2 - Key Stakeholders/Roles
 enum Role {
-  CONTRIBUTOR     // Field engineers who submit case studies
-  APPROVER        // Technical leads who approve/reject submissions
-  ADMIN           // System administrators with full access
-  VIEWER          // Read-only access users
-  IT_DEPARTMENT   // IT team for system configuration and integration
-  MARKETING       // Marketing team for content management and campaigns
+  CONTRIBUTOR // Field engineers who submit case studies
+  APPROVER // Technical leads who approve/reject submissions
+  ADMIN // System administrators with full access
+  VIEWER // Read-only access users
+  IT_DEPARTMENT // IT team for system configuration and integration
+  MARKETING // Marketing team for content management and campaigns
 }
 
 enum Badge {
@@ -109,9 +117,9 @@ enum CaseType {
 
 // Challenge Qualifier Type (BRD 3.1)
 enum QualifierType {
-  NEW_CUSTOMER  // No purchase in 3 years - COUNTS toward target
-  CROSS_SELL    // Existing customer, new product - COUNTS toward target
-  MAINTENANCE   // Existing customer, existing product - NOT counted
+  NEW_CUSTOMER // No purchase in 3 years - COUNTS toward target
+  CROSS_SELL // Existing customer, new product - COUNTS toward target
+  MAINTENANCE // Existing customer, existing product - NOT counted
 }
 
 enum Status {
@@ -120,6 +128,7 @@ enum Status {
   APPROVED
   REJECTED
   PUBLISHED
+  ARCHIVED
 }
 
 enum WorkType {
@@ -205,12 +214,12 @@ enum AuditActionType {
 }
 
 enum GdprDeletionStatus {
-  PENDING           // Request received, awaiting verification
-  VERIFIED          // User identity verified
-  IN_PROGRESS       // Deletion/anonymization in progress
-  COMPLETED         // Successfully processed
-  REJECTED          // Request rejected (with reason)
-  CANCELLED         // Cancelled by user
+  PENDING // Request received, awaiting verification
+  VERIFIED // User identity verified
+  IN_PROGRESS // Deletion/anonymization in progress
+  COMPLETED // Successfully processed
+  REJECTED // Request rejected (with reason)
+  CANCELLED // Cancelled by user
 }
 
 enum SyncStatus {
@@ -224,6 +233,191 @@ enum JobStatus {
   COMPLETED
   FAILED
   CANCELLED
+}
+
+enum FileType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum LifeStatus {
+  EXPECTED
+  VERIFIED
+}
+
+// =====================================================
+// MASTER LIST SYSTEM (Data Model V1.6)
+// Generic dropdown management for admin configurability
+// =====================================================
+
+model WaListKey {
+  id          String  @id @default(cuid())
+  keyName     String  @unique // e.g., "Industry", "WearType", "DurationUnit"
+  description String?
+
+  // Relations
+  masterListItems WaMasterList[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("ListKey")
+}
+
+model WaMasterList {
+  id                 String    @id @default(cuid())
+  listKeyId          String
+  listKey            WaListKey @relation(fields: [listKeyId], references: [id], onDelete: Cascade)
+  value              String // Display value (e.g., "Cement", "Abrasion")
+  netsuiteInternalId Int?      @unique // Optional ERP sync
+  isActive           Boolean   @default(true)
+  sortOrder          Int       @default(0)
+
+  // Relations for FK usage
+  icaWearTypes      WaIcaWearType[]
+  customersIndustry WaCustomer[]    @relation("CustomerIndustry")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([listKeyId, value])
+  @@index([listKeyId])
+  @@index([isActive])
+  @@map("MasterList")
+}
+
+// =====================================================
+// MULTI-SUBSIDIARY SUPPORT (Data Model V1.6)
+// ERP-synced subsidiary/region management
+// =====================================================
+
+model WaSubsidiary {
+  id            String  @id @default(cuid())
+  integrationId String  @unique // External ERP code
+  name          String // Legal name
+  region        String // EMEA, APAC, Americas, etc.
+  currencyCode  String  @db.Char(3) // ISO currency code
+  isActive      Boolean @default(true)
+
+  // Relations
+  users       User[]
+  caseStudies WaCaseStudy[]
+  customers   WaCustomer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([region])
+  @@index([isActive])
+  @@map("Subsidiary")
+}
+
+// =====================================================
+// CUSTOMER MASTER DATA (Data Model V1.6)
+// Synced from Netsuite/Insightly CRM
+// =====================================================
+
+model WaCustomer {
+  id                 String        @id @default(cuid())
+  crmId              String?       @unique // Insightly CRM ID
+  netsuiteInternalId Int?          @unique // Netsuite ID
+  companyName        String
+  subsidiaryId       String
+  subsidiary         WaSubsidiary  @relation(fields: [subsidiaryId], references: [id])
+  industryId         String?
+  industry           WaMasterList? @relation("CustomerIndustry", fields: [industryId], references: [id])
+  lastPurchaseDate   DateTime? // For "New Customer" validation
+  syncedAt           DateTime?
+
+  // Relations
+  caseStudies WaCaseStudy[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyName])
+  @@index([subsidiaryId])
+  @@map("Customer")
+}
+
+// =====================================================
+// PRODUCT MASTER DATA (Data Model V1.6)
+// Synced from Netsuite
+// =====================================================
+
+model WaProduct {
+  id                 String  @id @default(cuid())
+  netsuiteInternalId Int     @unique
+  itemName           String
+  family             String?
+  isActive           Boolean @default(true)
+
+  // Relations
+  caseStudies WaCaseStudy[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([itemName])
+  @@index([family])
+  @@map("Product")
+}
+
+// =====================================================
+// ICA WEAR TYPE JUNCTION (Data Model V1.6)
+// Many-to-Many relationship for wear types
+// =====================================================
+
+model WaIcaWearType {
+  id           String       @id @default(cuid())
+  caseStudyId  String
+  caseStudy    WaCaseStudy  @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+  masterListId String
+  masterList   WaMasterList @relation(fields: [masterListId], references: [id])
+
+  @@unique([caseStudyId, masterListId])
+  @@index([caseStudyId])
+  @@map("IcaWearType")
+}
+
+model WaMediaAsset {
+  id          String      @id @default(cuid())
+  caseStudyId String
+  caseStudy   WaCaseStudy @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+  fileUrl     String      @db.VarChar(500)
+  fileType    FileType
+  isPrimary   Boolean     @default(false)
+  caption     String?     @db.VarChar(255)
+  aiTags      Json? // Tags from Vision API
+  uploadedAt  DateTime    @default(now())
+
+  @@index([caseStudyId])
+  @@index([fileType])
+  @@map("MediaAsset")
+}
+
+// =====================================================
+// USER ROLE JUNCTION (Data Model V1.6)
+// Many-to-Many for users with multiple roles
+// =====================================================
+
+model WaUserRole {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       Role
+  assignedAt DateTime @default(now())
+  assignedBy String? // Admin who assigned the role
+
+  @@unique([userId, role])
+  @@index([userId])
+  @@map("UserRole")
 }
 
 // =====================================================
@@ -273,7 +467,7 @@ model WaCaseStudy {
   customerSavingsAmount  Decimal? @db.Decimal(12, 2)
 
   // OEM Information (BRD Section 5 - Search Filter)
-  oem String?  // Original Equipment Manufacturer
+  oem String? // Original Equipment Manufacturer
 
   // Location
   location String
@@ -296,7 +490,7 @@ model WaCaseStudy {
   costCalculator WaCostCalculator?
   comments       WaComment[]
   savedBy        WaSavedCase[]
-  taggedUsers    User[]            @relation("TaggedInCases")
+  taggedUsers    User[]              @relation("TaggedInCases")
 
   // Soft delete support (WA Policy Section 5.1)
   isActive  Boolean   @default(true)
@@ -313,13 +507,77 @@ model WaCaseStudy {
 
   // Challenge Qualifier (BRD 3.1) - Determines if case counts toward 10K target
   qualifierType        QualifierType?
-  isTarget             Boolean       @default(false)  // Counts toward BHAG 10,000 goal
-  customerLastPurchase DateTime?                      // For 3-year purchase check
+  isTarget             Boolean        @default(false) // Counts toward BHAG 10,000 goal
+  customerLastPurchase DateTime? // For 3-year purchase check
 
   // Flag System (BRD 3.2) - Case Study Tiers
-  hasApplicationFlag   Boolean       @default(false)  // General + Problem/Solution filled
-  hasWpsFlag           Boolean       @default(false)  // WPS Details filled
-  hasCostFlag          Boolean       @default(false)  // Cost Calculator filled
+  hasApplicationFlag Boolean @default(false) // General + Problem/Solution filled
+  hasWpsFlag         Boolean @default(false) // WPS Details filled
+  hasCostFlag        Boolean @default(false) // Cost Calculator filled
+
+  // Versioning (Data Model V1.6)
+  icaNumber     String?       @unique // Format: ICAYYMMnnn
+  parentIcaId   String? // Links to previous version
+  parentIca     WaCaseStudy?  @relation("IcaVersions", fields: [parentIcaId], references: [id])
+  childVersions WaCaseStudy[] @relation("IcaVersions")
+  versionNumber Int           @default(1)
+  isLatest      Boolean       @default(true)
+
+  // Data Model V1.6 Fields
+  title             String?       @db.VarChar(255)
+  customerId        String?
+  customer          WaCustomer?   @relation(fields: [customerId], references: [id])
+  productId         String?
+  product           WaProduct?    @relation(fields: [productId], references: [id])
+  productNameManual String?       @db.VarChar(255) // Fallback if product not found
+  subsidiaryId      String?
+  subsidiary        WaSubsidiary? @relation(fields: [subsidiaryId], references: [id])
+
+  // Qualifier booleans (replacing enum)
+  isNewCustomer Boolean @default(false)
+  isCrossSell   Boolean @default(false)
+
+  // Quality Indicators
+  dataQualityScore Int? // 0-100 computed
+  securityLevel    String @default("Internal") // Internal or Confidential
+
+  // Solution description (was missing)
+  solutionDescription String? @db.Text
+
+  // Job Duration
+  jobDuration       Decimal? @db.Decimal(10, 2)
+  jobDurationUnitId String?
+
+  // Previous Service Unit
+  prevServiceUnitId String?
+
+  // Financial Fields (from Cost Calculator inline)
+  currency        String?     @db.Char(3)
+  exchangeRate    Decimal?    @db.Decimal(10, 4)
+  lifeStatus      LifeStatus?
+  costOldSolution Decimal?    @db.Decimal(15, 2)
+  costWaSolution  Decimal?    @db.Decimal(15, 2)
+  waServiceLife   Decimal?    @db.Decimal(10, 2)
+  savingsAmount   Decimal?    @db.Decimal(15, 2)
+  savingsPercent  Decimal?    @db.Decimal(5, 2)
+
+  // WPS Fields (inline per V1.6)
+  processType  String? @db.VarChar(50)
+  layersCount  Int?
+  amperageMin  Int?
+  amperageMax  Int?
+  voltageMin   Int?
+  voltageMax   Int?
+  travelSpeed  String? @db.VarChar(50)
+  wireSpeed    String? @db.VarChar(50)
+  oscillation  String? @db.VarChar(100)
+  preheating   String? @db.VarChar(100)
+  shieldingGas String? @db.VarChar(50)
+  wpsNotes     String? @db.Text
+
+  // V1.6 Relations
+  mediaAssets  WaMediaAsset[]
+  icaWearTypes WaIcaWearType[]
 
   // Metadata
   createdAt DateTime @default(now())
@@ -329,13 +587,14 @@ model WaCaseStudy {
   @@index([status, type])
   @@index([industry, componentWorkpiece])
   @@index([contributorId])
+  @@index([icaNumber])
   @@map("CaseStudy")
 }
 
 model WaWeldingProcedure {
-  id          String       @id @default(cuid())
-  caseStudyId String       @unique
-  caseStudy   WaCaseStudy  @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+  id          String      @id @default(cuid())
+  caseStudyId String      @unique
+  caseStudy   WaCaseStudy @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
 
   // Base Metal
   baseMetalType      String?
@@ -389,9 +648,9 @@ model WaWeldingProcedure {
 }
 
 model WaCostCalculator {
-  id          String       @id @default(cuid())
-  caseStudyId String       @unique
-  caseStudy   WaCaseStudy  @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+  id          String      @id @default(cuid())
+  caseStudyId String      @unique
+  caseStudy   WaCaseStudy @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
 
   // Material Costs
   materialCostBefore Float
@@ -433,13 +692,13 @@ model WaCostCalculator {
 }
 
 model WaComment {
-  id          String       @id @default(cuid())
-  content     String       @db.Text
+  id          String      @id @default(cuid())
+  content     String      @db.Text
   caseStudyId String
-  caseStudy   WaCaseStudy  @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+  caseStudy   WaCaseStudy @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
   userId      String
-  user        User         @relation(fields: [userId], references: [id])
-  likes       Int          @default(0)
+  user        User        @relation(fields: [userId], references: [id])
+  likes       Int         @default(0)
 
   // Enhanced reactions
   reactions WaCommentReaction[]
@@ -465,11 +724,11 @@ model WaCommentReaction {
 }
 
 model WaSavedCase {
-  id          String       @id @default(cuid())
+  id          String      @id @default(cuid())
   userId      String
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   caseStudyId String
-  caseStudy   WaCaseStudy  @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+  caseStudy   WaCaseStudy @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
@@ -531,32 +790,32 @@ model WaEmailTemplate {
 // Write-once audit trail with hash verification
 // =====================================================
 model WaAuditLog {
-  id            String   @id @default(cuid())
+  id String @id @default(cuid())
 
   // Action details
-  actionType    AuditActionType
-  userId        String
-  userEmail     String
+  actionType AuditActionType
+  userId     String
+  userEmail  String
 
   // Resource information
-  resourceId    String?
-  resourceType  String?
+  resourceId   String?
+  resourceType String?
 
   // State tracking
   previousState Json?
   newState      Json?
 
   // Request context
-  ipAddress     String?
-  userAgent     String?
-  sessionId     String?
+  ipAddress String?
+  userAgent String?
+  sessionId String?
 
   // Integrity verification (immutability)
-  contentHash   String   // SHA-256 hash of the log content
-  previousHash  String?  // Hash of the previous log entry (blockchain-like)
+  contentHash  String // SHA-256 hash of the log content
+  previousHash String? // Hash of the previous log entry (blockchain-like)
 
   // Timestamp (immutable)
-  createdAt     DateTime @default(now())
+  createdAt DateTime @default(now())
 
   // Indexes for efficient querying
   @@index([userId])
@@ -572,15 +831,15 @@ model WaAuditLog {
 // Tracks data lifecycle for compliance
 // =====================================================
 model WaDataRetentionPolicy {
-  id                String   @id @default(cuid())
-  dataType          String   @unique // e.g., 'User', 'CaseStudy', 'AuditLog'
-  retentionDays     Int      // Number of days to retain data
-  archiveAfterDays  Int?     // Days before archiving (optional)
-  description       String?
-  legalBasis        String?  // GDPR legal basis for retention
+  id               String  @id @default(cuid())
+  dataType         String  @unique // e.g., 'User', 'CaseStudy', 'AuditLog'
+  retentionDays    Int // Number of days to retain data
+  archiveAfterDays Int? // Days before archiving (optional)
+  description      String?
+  legalBasis       String? // GDPR legal basis for retention
 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("DataRetentionPolicy")
 }
@@ -590,29 +849,29 @@ model WaDataRetentionPolicy {
 // Tracks right-to-be-forgotten requests
 // =====================================================
 model WaGdprDeletionRequest {
-  id              String                @id @default(cuid())
-  userId          String
-  userEmail       String
-  status          GdprDeletionStatus    @default(PENDING)
+  id        String             @id @default(cuid())
+  userId    String
+  userEmail String
+  status    GdprDeletionStatus @default(PENDING)
 
   // Request details
-  requestedAt     DateTime              @default(now())
-  processedAt     DateTime?
-  processedBy     String?
+  requestedAt DateTime  @default(now())
+  processedAt DateTime?
+  processedBy String?
 
   // Verification
-  verificationToken String?             @unique
-  verifiedAt      DateTime?
+  verificationToken String?   @unique
+  verifiedAt        DateTime?
 
   // Completion tracking
-  deletedData     Json?                 // Summary of what was deleted
-  anonymizedData  Json?                 // Summary of what was anonymized
+  deletedData    Json? // Summary of what was deleted
+  anonymizedData Json? // Summary of what was anonymized
 
   // Notes
-  notes           String?               @db.Text
+  notes String? @db.Text
 
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([status])
@@ -624,32 +883,32 @@ model WaGdprDeletionRequest {
 // Local cache of NetSuite customers for faster search
 // =====================================================
 model WaNetSuiteCustomerCache {
-  id              String   @id @default(cuid())
+  id String @id @default(cuid())
 
   // NetSuite identifiers
-  netsuiteId      String   @unique  // NetSuite internal ID
-  entityId        String?           // NetSuite entity ID (customer code)
+  netsuiteId String  @unique // NetSuite internal ID
+  entityId   String? // NetSuite entity ID (customer code)
 
   // Customer information
-  companyName     String
-  address         String?
-  city            String?
-  state           String?
-  country         String?
-  postalCode      String?
-  industry        String?
+  companyName String
+  address     String?
+  city        String?
+  state       String?
+  country     String?
+  postalCode  String?
+  industry    String?
 
   // Contact information
-  email           String?
-  phone           String?
+  email String?
+  phone String?
 
   // Sync metadata
-  lastSyncedAt    DateTime @default(now())
-  syncStatus      SyncStatus @default(SYNCED)
-  syncError       String?
+  lastSyncedAt DateTime   @default(now())
+  syncStatus   SyncStatus @default(SYNCED)
+  syncError    String?
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([companyName])
   @@index([city])
@@ -660,22 +919,22 @@ model WaNetSuiteCustomerCache {
 
 // Sync job tracking
 model WaNetSuiteSyncJob {
-  id              String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  startedAt       DateTime @default(now())
-  completedAt     DateTime?
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
 
-  status          JobStatus @default(RUNNING)
+  status JobStatus @default(RUNNING)
 
   // Statistics
-  totalRecords    Int      @default(0)
-  newRecords      Int      @default(0)
-  updatedRecords  Int      @default(0)
-  failedRecords   Int      @default(0)
+  totalRecords   Int @default(0)
+  newRecords     Int @default(0)
+  updatedRecords Int @default(0)
+  failedRecords  Int @default(0)
 
-  errorMessage    String?
+  errorMessage String?
 
-  createdAt       DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([status])
   @@index([startedAt])

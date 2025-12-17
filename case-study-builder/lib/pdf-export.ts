@@ -40,7 +40,30 @@ export interface CaseStudyPDFData {
   };
   createdAt: Date;
   approvedAt?: Date;
+  // Translation fields
+  originalLanguage?: string;
+  translationAvailable?: boolean;
+  translatedText?: string | null;
 }
+
+// Language code to full name mapping
+export const LANGUAGE_NAMES: Record<string, string> = {
+  en: 'English',
+  es: 'Spanish',
+  fr: 'French',
+  de: 'German',
+  pt: 'Portuguese',
+  it: 'Italian',
+  zh: 'Chinese',
+  ja: 'Japanese',
+  ko: 'Korean',
+  ru: 'Russian',
+  ar: 'Arabic',
+  hi: 'Hindi',
+  nl: 'Dutch',
+  pl: 'Polish',
+  tr: 'Turkish',
+};
 
 // BRD 5.4.3 - PDF export options with personalized watermark
 // BRD 6.2 - Privacy & Data Security - Obfuscation support
@@ -57,6 +80,62 @@ export interface PDFExportOptions {
   exportingUserRole?: Role;
   /** BRD 6.2 - Original case study data for obfuscation context */
   caseStudyForObfuscation?: CaseStudyWithUser;
+  /** Use translated content if available */
+  useTranslation?: boolean;
+  /** Target language for PDF content (e.g., 'en', 'es', 'fr') */
+  targetLanguage?: string;
+}
+
+// Helper to parse translation data and get translated fields
+// BRD: "System automatically translates content into Corporate English for the final PDF"
+// By default, PDF uses English translation when available
+function getTranslatedContent(
+  caseStudy: CaseStudyPDFData,
+  options?: PDFExportOptions
+): {
+  problemDescription: string;
+  previousSolution?: string;
+  technicalAdvantages?: string;
+  waSolution: string;
+  isTranslated: boolean;
+  originalLanguage: string;
+  translatedToLanguage?: string;
+} {
+  const originalLanguage = caseStudy.originalLanguage || 'en';
+
+  // BRD: PDF defaults to English translation when available
+  // useTranslation: false explicitly requests original content
+  const shouldUseTranslation = options?.useTranslation !== false;
+
+  // If translation is available and we should use it, return translated content
+  if (shouldUseTranslation && caseStudy.translationAvailable && caseStudy.translatedText) {
+    try {
+      const translation = JSON.parse(caseStudy.translatedText);
+      const fields = translation.fields || {};
+
+      return {
+        problemDescription: fields.problemDescription || caseStudy.problemDescription,
+        previousSolution: fields.previousSolution || caseStudy.previousSolution,
+        technicalAdvantages: fields.technicalAdvantages || caseStudy.technicalAdvantages,
+        waSolution: fields.waSolution || caseStudy.waSolution,
+        isTranslated: true,
+        originalLanguage,
+        translatedToLanguage: translation.language,
+      };
+    } catch {
+      // If parsing fails, fall through to return original content
+    }
+  }
+
+  // Return original content
+  return {
+    problemDescription: caseStudy.problemDescription,
+    previousSolution: caseStudy.previousSolution,
+    technicalAdvantages: caseStudy.technicalAdvantages,
+    waSolution: caseStudy.waSolution,
+    isTranslated: false,
+    originalLanguage,
+  };
 }
 
 // BRD 5.4.3 - Helper to add watermark with personalization and "Internal Use Only"
@@ -96,6 +175,9 @@ export function generateCaseStudyPDF(caseStudy: CaseStudyPDFData, options?: PDFE
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   let yPos = 20;
+
+  // Get translated content if available and requested
+  const translatedContent = getTranslatedContent(caseStudy, options);
 
   // BRD 6.2 - Determine if obfuscation should be applied
   let shouldObfuscate = options?.obfuscate ?? false;
@@ -157,6 +239,17 @@ export function generateCaseStudyPDF(caseStudy: CaseStudyPDFData, options?: PDFE
   doc.setFontSize(10);
   doc.text(caseStudy.type, 30, yPos + 6, { align: 'center' });
   doc.setTextColor(0, 0, 0);
+
+  // Translation indicator badge (if translated)
+  if (translatedContent.isTranslated && translatedContent.translatedToLanguage) {
+    const langName = LANGUAGE_NAMES[translatedContent.translatedToLanguage] || translatedContent.translatedToLanguage;
+    doc.setFillColor(59, 130, 246); // Blue for translation
+    doc.roundedRect(50, yPos, 45, 8, 2, 2, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(8);
+    doc.text(`Translated: ${langName}`, 72.5, yPos + 6, { align: 'center' });
+    doc.setTextColor(0, 0, 0);
+  }
   yPos += 15;
 
   // Title - BRD 6.2: Use obfuscated customer name if applicable
@@ -176,17 +269,26 @@ export function generateCaseStudyPDF(caseStudy: CaseStudyPDFData, options?: PDFE
     yPos += 5;
     doc.text(`Approved by: ${caseStudy.approver.name}`, 15, yPos);
   }
+
+  // Original language indicator
+  if (translatedContent.originalLanguage && translatedContent.originalLanguage !== 'en') {
+    yPos += 5;
+    const origLangName = LANGUAGE_NAMES[translatedContent.originalLanguage] || translatedContent.originalLanguage;
+    doc.setTextColor(59, 130, 246);
+    doc.text(`Originally written in ${origLangName}`, 15, yPos);
+  }
+
   yPos += 12;
   doc.setTextColor(0, 0, 0);
 
-  // Problem Description Section
+  // Problem Description Section - Use translated content
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
   doc.text('Problem Description', 15, yPos);
   yPos += 7;
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  const problemLines = doc.splitTextToSize(caseStudy.problemDescription, pageWidth - 30);
+  const problemLines = doc.splitTextToSize(translatedContent.problemDescription, pageWidth - 30);
   doc.text(problemLines, 15, yPos);
   yPos += problemLines.length * 5 + 8;
 
@@ -206,8 +308,8 @@ export function generateCaseStudyPDF(caseStudy: CaseStudyPDFData, options?: PDFE
     ['Dimensions', caseStudy.generalDimensions || 'N/A'],
   ];
 
-  if (caseStudy.previousSolution) {
-    technicalData.push(['Previous Solution', caseStudy.previousSolution]);
+  if (translatedContent.previousSolution) {
+    technicalData.push(['Previous Solution', translatedContent.previousSolution]);
   }
   if (caseStudy.previousServiceLife) {
     technicalData.push(['Previous Service Life', caseStudy.previousServiceLife]);
@@ -242,7 +344,7 @@ export function generateCaseStudyPDF(caseStudy: CaseStudyPDFData, options?: PDFE
   yPos += 7;
 
   const solutionData = [
-    ['WA Solution', caseStudy.waSolution],
+    ['WA Solution', translatedContent.waSolution],
     ['WA Product', caseStudy.waProduct],
   ];
 
@@ -260,8 +362,8 @@ export function generateCaseStudyPDF(caseStudy: CaseStudyPDFData, options?: PDFE
 
   yPos = (doc as any).lastAutoTable.finalY + 10;
 
-  // Technical Advantages
-  if (caseStudy.technicalAdvantages) {
+  // Technical Advantages - Use translated content
+  if (translatedContent.technicalAdvantages) {
     if (yPos > pageHeight - 40) {
       doc.addPage();
       yPos = 20;
@@ -275,7 +377,7 @@ export function generateCaseStudyPDF(caseStudy: CaseStudyPDFData, options?: PDFE
     yPos += 7;
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    const advantagesLines = doc.splitTextToSize(caseStudy.technicalAdvantages, pageWidth - 30);
+    const advantagesLines = doc.splitTextToSize(translatedContent.technicalAdvantages, pageWidth - 30);
     doc.text(advantagesLines, 15, yPos);
     yPos += advantagesLines.length * 5 + 8;
   }

@@ -118,8 +118,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <OfflineIndicator />
-          {/* Temporarily disabled - service worker not building in production */}
-          {/* <ServiceWorkerRegister /> */}
+          <ServiceWorkerRegister />
           <StandaloneModeKeeper />
           <PWAInstallPrompt />
           <IOSPWAPrompt />

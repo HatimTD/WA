@@ -159,17 +159,17 @@ export default async function AnalyticsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-foreground">
             {user.role === 'ADMIN' && 'System Analytics'}
             {user.role === 'CONTRIBUTOR' && 'My Analytics'}
             {user.role === 'APPROVER' && 'Review Analytics'}
             {user.role === 'VIEWER' && 'Case Studies Overview'}
           </h1>
-          <p className="text-gray-600 dark:text-muted-foreground mt-2">
+          <p className="text-sm sm:text-base text-gray-600 dark:text-muted-foreground mt-1 sm:mt-2">
             {user.role === 'ADMIN' && 'Comprehensive system insights and statistics'}
             {user.role === 'CONTRIBUTOR' && 'Insights into your contributions and performance'}
             {user.role === 'APPROVER' && 'Review performance and metrics'}
@@ -202,7 +202,7 @@ export default async function AnalyticsPage() {
         analyticsData &&
         'summary' in analyticsData &&
         'totalCases' in analyticsData.summary && (
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             <Card role="article" className="dark:bg-card dark:border-border">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-gray-600 dark:text-muted-foreground">Total Cases</CardTitle>
@@ -274,7 +274,7 @@ export default async function AnalyticsPage() {
         )}
 
       {user.role === 'CONTRIBUTOR' && (
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
           <Card role="article" className="dark:bg-card dark:border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600 dark:text-muted-foreground">Total Cases</CardTitle>
@@ -342,7 +342,7 @@ export default async function AnalyticsPage() {
       )}
 
       {user.role === 'APPROVER' && analyticsData && 'pendingCases' in analyticsData && (
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
           <Card role="article" className="dark:bg-card dark:border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600 dark:text-muted-foreground">
@@ -421,7 +421,7 @@ export default async function AnalyticsPage() {
         analyticsData &&
         'summary' in analyticsData &&
         'totalApprovedCases' in analyticsData.summary && (
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             <Card role="article" className="dark:bg-card dark:border-border">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-gray-600 dark:text-muted-foreground">

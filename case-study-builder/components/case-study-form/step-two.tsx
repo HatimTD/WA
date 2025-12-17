@@ -1,3 +1,5 @@
+'use client';
+
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -5,36 +7,42 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { CaseStudyFormData } from '@/app/dashboard/new/page';
 import CRMCustomerSearch, { CRMCustomer } from '@/components/crm-customer-search';
 import LocationAutocomplete from '@/components/location-autocomplete';
+import { useMasterList } from '@/lib/hooks/use-master-list';
 
 type Props = {
   formData: CaseStudyFormData;
   updateFormData: (data: Partial<CaseStudyFormData>) => void;
 };
 
-const INDUSTRIES = [
-  'Mining & Quarrying',
-  'Cement',
-  'Steel & Metal Processing',
-  'Power Generation',
-  'Pulp & Paper',
-  'Oil & Gas',
-  'Chemical & Petrochemical',
-  'Marine',
-  'Agriculture',
-  'Construction',
-  'Recycling',
-  'Other',
+// Fallback values if Master List API fails
+const FALLBACK_INDUSTRIES = [
+  { id: 'mining', value: 'Mining & Quarrying', sortOrder: 0 },
+  { id: 'cement', value: 'Cement', sortOrder: 1 },
+  { id: 'steel', value: 'Steel & Metal Processing', sortOrder: 2 },
+  { id: 'power', value: 'Power Generation', sortOrder: 3 },
+  { id: 'pulp', value: 'Pulp & Paper', sortOrder: 4 },
+  { id: 'oil', value: 'Oil & Gas', sortOrder: 5 },
+  { id: 'chemical', value: 'Chemical & Petrochemical', sortOrder: 6 },
+  { id: 'marine', value: 'Marine', sortOrder: 7 },
+  { id: 'agriculture', value: 'Agriculture', sortOrder: 8 },
+  { id: 'construction', value: 'Construction', sortOrder: 9 },
+  { id: 'recycling', value: 'Recycling', sortOrder: 10 },
+  { id: 'other', value: 'Other', sortOrder: 11 },
 ];
 
-const WEAR_TYPES = [
-  { value: 'ABRASION', label: 'Abrasion' },
-  { value: 'IMPACT', label: 'Impact' },
-  { value: 'CORROSION', label: 'Corrosion' },
-  { value: 'TEMPERATURE', label: 'High Temperature' },
-  { value: 'COMBINATION', label: 'Combination' },
+const FALLBACK_WEAR_TYPES = [
+  { id: 'abrasion', value: 'Abrasion', sortOrder: 0 },
+  { id: 'impact', value: 'Impact', sortOrder: 1 },
+  { id: 'corrosion', value: 'Corrosion', sortOrder: 2 },
+  { id: 'temperature', value: 'High Temperature', sortOrder: 3 },
+  { id: 'combination', value: 'Combination', sortOrder: 4 },
 ];
 
 export default function StepTwo({ formData, updateFormData }: Props) {
+  // Fetch master list data from API
+  const { items: industries, isLoading: industriesLoading } = useMasterList('Industry', FALLBACK_INDUSTRIES);
+  const { items: wearTypes, isLoading: wearTypesLoading } = useMasterList('WearType', FALLBACK_WEAR_TYPES);
+
   const toggleWearType = (value: string) => {
     const current = formData.wearType || [];
     const updated = current.includes(value)
@@ -84,14 +92,14 @@ export default function StepTwo({ formData, updateFormData }: Props) {
           <Label htmlFor="industry" className="dark:text-foreground">
             Industry <span className="text-red-500 dark:text-red-400">*</span>
           </Label>
-          <Select value={formData.industry} onValueChange={(value) => updateFormData({ industry: value })}>
+          <Select value={formData.industry} onValueChange={(value) => updateFormData({ industry: value })} disabled={industriesLoading}>
             <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
-              <SelectValue placeholder="Select industry" />
+              <SelectValue placeholder={industriesLoading ? "Loading..." : "Select industry"} />
             </SelectTrigger>
             <SelectContent className="dark:bg-popover dark:border-border">
-              {INDUSTRIES.map((industry) => (
-                <SelectItem key={industry} value={industry}>
-                  {industry}
+              {industries.map((industry) => (
+                <SelectItem key={industry.id} value={industry.value}>
+                  {industry.value}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -157,27 +165,33 @@ export default function StepTwo({ formData, updateFormData }: Props) {
           </Select>
         </div>
 
-        {/* Base Metal */}
+        {/* Base Metal - BRD 3.3 Required */}
         <div className="space-y-2">
-          <Label htmlFor="baseMetal" className="dark:text-foreground">Base Metal</Label>
+          <Label htmlFor="baseMetal" className="dark:text-foreground">
+            Base Metal <span className="text-red-500 dark:text-red-400">*</span>
+          </Label>
           <Input
             id="baseMetal"
             value={formData.baseMetal}
             onChange={(e) => updateFormData({ baseMetal: e.target.value })}
             placeholder="e.g., Mild Steel"
             className="dark:bg-input dark:border-border dark:text-foreground"
+            required
           />
         </div>
 
-        {/* General Dimensions */}
+        {/* General Dimensions - BRD 3.3 Required */}
         <div className="space-y-2">
-          <Label htmlFor="generalDimensions" className="dark:text-foreground">General Dimensions</Label>
+          <Label htmlFor="generalDimensions" className="dark:text-foreground">
+            General Dimensions <span className="text-red-500 dark:text-red-400">*</span>
+          </Label>
           <Input
             id="generalDimensions"
             value={formData.generalDimensions}
             onChange={(e) => updateFormData({ generalDimensions: e.target.value })}
             placeholder="e.g., 500mm x 200mm"
             className="dark:bg-input dark:border-border dark:text-foreground"
+            required
           />
         </div>
 
@@ -199,17 +213,20 @@ export default function StepTwo({ formData, updateFormData }: Props) {
         <Label className="dark:text-foreground">
           Type of Wear <span className="text-red-500 dark:text-red-400">*</span>
         </Label>
-        <p className="text-sm text-muted-foreground dark:text-muted-foreground">Select all that apply</p>
+        <p className="text-sm text-muted-foreground dark:text-muted-foreground">
+          {wearTypesLoading ? 'Loading wear types...' : 'Select all that apply'}
+        </p>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {WEAR_TYPES.map((wear) => (
-            <div key={wear.value} className="flex items-center space-x-2">
+          {wearTypes.map((wear) => (
+            <div key={wear.id} className="flex items-center space-x-2">
               <Checkbox
-                id={wear.value}
+                id={wear.id}
                 checked={formData.wearType?.includes(wear.value)}
                 onCheckedChange={() => toggleWearType(wear.value)}
+                disabled={wearTypesLoading}
               />
-              <Label htmlFor={wear.value} className="font-normal cursor-pointer dark:text-foreground">
-                {wear.label}
+              <Label htmlFor={wear.id} className="font-normal cursor-pointer dark:text-foreground">
+                {wear.value}
               </Label>
             </div>
           ))}

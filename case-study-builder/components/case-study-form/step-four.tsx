@@ -78,10 +78,12 @@ export default function StepFour({ formData, updateFormData }: Props) {
         />
       </div>
 
-      {/* Technical Advantages */}
+      {/* Technical Advantages - BRD 3.3 Required */}
       <div className="space-y-2">
         <div className="flex justify-between items-center">
-          <Label htmlFor="technicalAdvantages" className="dark:text-foreground">Technical Advantages</Label>
+          <Label htmlFor="technicalAdvantages" className="dark:text-foreground">
+            Technical Advantages <span className="text-red-500 dark:text-red-400">*</span>
+          </Label>
           <div className="flex gap-2">
             <VoiceInput
               currentValue={formData.technicalAdvantages}
@@ -100,7 +102,11 @@ export default function StepFour({ formData, updateFormData }: Props) {
           onChange={(e) => updateFormData({ technicalAdvantages: e.target.value })}
           placeholder="Describe key technical benefits (hardness, toughness, weldability, etc.)"
           className="min-h-[100px] dark:bg-input dark:border-border dark:text-foreground"
+          required
         />
+        <p className="text-xs text-muted-foreground">
+          Why the WA solution is technically superior (e.g., hardness, wear resistance, weldability)
+        </p>
       </div>
 
       {/* Expected Service Life */}

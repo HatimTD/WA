@@ -30,11 +30,26 @@ import {
   Sliders,
   TrendingUp,
   Bookmark,
-  BookOpen
+  BookOpen,
+  Eye,
+  Monitor,
+  Megaphone,
+  User,
+  Upload
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import BadgeDisplay from '@/components/badge-display';
 import { Badge as BadgeType } from '@prisma/client';
+
+// Role display configuration for styling
+const ROLE_CONFIG: Record<string, { label: string; icon: React.ReactNode; color: string; bgColor: string }> = {
+  VIEWER: { label: 'Viewer', icon: <Eye className="h-3 w-3" />, color: 'text-gray-600', bgColor: 'bg-gray-100' },
+  CONTRIBUTOR: { label: 'Contributor', icon: <User className="h-3 w-3" />, color: 'text-green-600', bgColor: 'bg-green-100' },
+  APPROVER: { label: 'Approver', icon: <Shield className="h-3 w-3" />, color: 'text-blue-600', bgColor: 'bg-blue-100' },
+  ADMIN: { label: 'Admin', icon: <Shield className="h-3 w-3" />, color: 'text-purple-600', bgColor: 'bg-purple-100' },
+  IT_DEPARTMENT: { label: 'IT Dept', icon: <Monitor className="h-3 w-3" />, color: 'text-orange-600', bgColor: 'bg-orange-100' },
+  MARKETING: { label: 'Marketing', icon: <Megaphone className="h-3 w-3" />, color: 'text-pink-600', bgColor: 'bg-pink-100' },
+};
 
 interface DashboardNavProps {
   user: {
@@ -53,20 +68,21 @@ interface DashboardNavProps {
 const navItems = [
   { href: '/dashboard', label: 'Home', icon: Home },
   { href: '/dashboard/new', label: 'New Case Study', icon: Plus, roles: ['CONTRIBUTOR', 'APPROVER', 'ADMIN'] },
+  { href: '/dashboard/bulk-import', label: 'Bulk Import', icon: Upload, roles: ['APPROVER', 'ADMIN'] },
   { href: '/dashboard/my-cases', label: 'My Cases', icon: FileText, roles: ['CONTRIBUTOR', 'APPROVER', 'ADMIN'] },
   { href: '/dashboard/saved', label: 'Saved Cases', icon: Bookmark },
   { href: '/dashboard/library', label: 'Library', icon: BookOpen },
-  { href: '/dashboard/search', label: 'Search Database', icon: Search, roles: ['CONTRIBUTOR', 'APPROVER', 'ADMIN'] },
+  { href: '/dashboard/search', label: 'Search Database', icon: Search, roles: ['CONTRIBUTOR', 'APPROVER', 'ADMIN', 'IT_DEPARTMENT', 'MARKETING'] },
   { href: '/dashboard/compare', label: 'Compare Cases', icon: GitCompare },
   { href: '/dashboard/approvals', label: 'Approvals', icon: CheckCircle, roles: ['APPROVER', 'ADMIN'] },
-  { href: '/dashboard/analytics', label: 'My Analytics', icon: TrendingUp, roles: ['CONTRIBUTOR', 'APPROVER', 'ADMIN'] },
+  { href: '/dashboard/analytics', label: 'My Analytics', icon: TrendingUp, roles: ['CONTRIBUTOR', 'APPROVER', 'ADMIN', 'MARKETING'] },
   { href: '/dashboard/leaderboard', label: 'Leaderboard', icon: Trophy },
   { href: '/dashboard/bhag', label: 'BHAG Tracker', icon: BarChart },
-  { href: '/dashboard/diagnostics', label: 'Diagnostics', icon: Stethoscope, roles: ['CONTRIBUTOR', 'APPROVER', 'ADMIN'] },
+  { href: '/dashboard/diagnostics', label: 'Diagnostics', icon: Stethoscope, roles: ['CONTRIBUTOR', 'APPROVER', 'ADMIN', 'IT_DEPARTMENT'] },
   { href: '/dashboard/admin', label: 'Admin Dashboard', icon: Shield, roles: ['ADMIN'] },
   { href: '/dashboard/admin/users', label: 'User Management', icon: Users, roles: ['ADMIN'] },
-  { href: '/dashboard/admin/config', label: 'System Config', icon: Sliders, roles: ['ADMIN'] },
-  { href: '/dashboard/system-settings', label: 'System Settings', icon: Settings, roles: ['ADMIN'] },
+  { href: '/dashboard/admin/config', label: 'System Config', icon: Sliders, roles: ['ADMIN', 'IT_DEPARTMENT'] },
+  { href: '/dashboard/system-settings', label: 'System Settings', icon: Settings, roles: ['ADMIN', 'IT_DEPARTMENT'] },
 ];
 
 export function DashboardNav({ user, isCollapsed, onNavigate }: DashboardNavProps) {
@@ -172,10 +188,18 @@ export function DashboardNav({ user, isCollapsed, onNavigate }: DashboardNavProp
                   <p className="text-xs text-gray-500 dark:text-muted-foreground truncate">{user.region}</p>
                 )}
                 <div className="flex items-center gap-1 mt-1">
-                  <Badge variant="secondary" className="text-xs bg-wa-green-100 text-wa-green-900">
-                    {user.role}
+                  <Badge
+                    variant="secondary"
+                    className={cn(
+                      "text-xs flex items-center gap-1",
+                      ROLE_CONFIG[user.role || '']?.bgColor || 'bg-wa-green-100',
+                      ROLE_CONFIG[user.role || '']?.color || 'text-wa-green-900'
+                    )}
+                  >
+                    {ROLE_CONFIG[user.role || '']?.icon}
+                    {ROLE_CONFIG[user.role || '']?.label || user.role}
                   </Badge>
-                  {user.role !== 'VIEWER' && (
+                  {user.role !== 'VIEWER' && user.role !== 'IT_DEPARTMENT' && user.role !== 'MARKETING' && (
                     <Badge className="text-xs bg-wa-green-900 text-white">
                       {user.totalPoints || 0} pts
                     </Badge>
@@ -204,7 +228,10 @@ export function DashboardNav({ user, isCollapsed, onNavigate }: DashboardNavProp
                 <TooltipContent side="right">
                   <div>
                     <p className="font-medium dark:text-foreground">{user.name}</p>
-                    <p className="text-xs text-gray-500 dark:text-muted-foreground">{user.role}</p>
+                    <p className={cn("text-xs flex items-center gap-1", ROLE_CONFIG[user.role || '']?.color || 'text-gray-500')}>
+                      {ROLE_CONFIG[user.role || '']?.icon}
+                      {ROLE_CONFIG[user.role || '']?.label || user.role}
+                    </p>
                   </div>
                 </TooltipContent>
               </Tooltip>

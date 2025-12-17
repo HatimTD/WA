@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Bookmark, BookmarkX, ExternalLink, Loader2, Search, X } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import LanguageIndicator from '@/components/language-indicator';
 
 interface SavedCase {
   id: string;
@@ -24,6 +25,8 @@ interface SavedCase {
     problemDescription: string;
     status: string;
     approvedAt: string;
+    originalLanguage?: string;
+    translationAvailable?: boolean;
   };
 }
 
@@ -284,6 +287,16 @@ export default function SavedCasesPage() {
                 <CardDescription className="line-clamp-1 dark:text-muted-foreground">
                   {saved.caseStudy.industry} • {saved.caseStudy.location}
                 </CardDescription>
+                {/* Language Indicator - BRD: Show original language */}
+                {(saved.caseStudy.originalLanguage && saved.caseStudy.originalLanguage !== 'en') && (
+                  <LanguageIndicator
+                    originalLanguage={saved.caseStudy.originalLanguage}
+                    translationAvailable={saved.caseStudy.translationAvailable}
+                    caseStudyId={saved.caseStudy.id}
+                    variant="badge"
+                    showLink={true}
+                  />
+                )}
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="space-y-1 text-sm">

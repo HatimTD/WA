@@ -20,10 +20,19 @@ export const metadata: Metadata = {
   keywords: ['welding case studies', 'industrial solutions', 'maintenance', 'welding alloys library'],
 };
 
+/**
+ * BRD Section 5 - Search & Filtering (Public Library)
+ * Simplified filters for public access
+ */
 interface SearchParams {
   q?: string;
   type?: string;
   industry?: string;
+  oem?: string;
+  component?: string;
+  wearType?: string;
+  waProduct?: string;
+  country?: string;
   page?: string;
 }
 
@@ -36,6 +45,12 @@ export default async function PublicLibraryPage({
   const query = params.q || '';
   const typeFilter = params.type || '';
   const industryFilter = params.industry || '';
+  const oemFilter = params.oem || '';
+  // BRD Required Filters
+  const componentFilter = params.component || '';
+  const wearTypeFilter = params.wearType || '';
+  const waProductFilter = params.waProduct || '';
+  const countryFilter = params.country || '';
   const page = parseInt(params.page || '1');
   const perPage = 12;
 
@@ -51,6 +66,7 @@ export default async function PublicLibraryPage({
       { componentWorkpiece: { contains: query, mode: 'insensitive' } },
       { waProduct: { contains: query, mode: 'insensitive' } },
       { location: { contains: query, mode: 'insensitive' } },
+      { competitorName: { contains: query, mode: 'insensitive' } },
     ];
   }
 
@@ -62,8 +78,32 @@ export default async function PublicLibraryPage({
     where.industry = { contains: industryFilter, mode: 'insensitive' };
   }
 
-  // Fetch cases with pagination
-  const [cases, totalCount, industries, typeCounts] = await Promise.all([
+  if (oemFilter) {
+    where.competitorName = { contains: oemFilter, mode: 'insensitive' };
+  }
+
+  // BRD: Component filter
+  if (componentFilter) {
+    where.componentWorkpiece = { contains: componentFilter, mode: 'insensitive' };
+  }
+
+  // BRD: Wear Type filter
+  if (wearTypeFilter) {
+    where.wearType = { has: wearTypeFilter };
+  }
+
+  // BRD: WA Product filter
+  if (waProductFilter) {
+    where.waProduct = { contains: waProductFilter, mode: 'insensitive' };
+  }
+
+  // BRD: Country filter
+  if (countryFilter) {
+    where.country = { contains: countryFilter, mode: 'insensitive' };
+  }
+
+  // Fetch cases with pagination and filter options (BRD Section 5)
+  const [cases, totalCount, industries, oems, typeCounts, components, waProducts, countries, wearTypes] = await Promise.all([
     prisma.waCaseStudy.findMany({
       where,
       select: {
@@ -87,12 +127,43 @@ export default async function PublicLibraryPage({
       select: { industry: true },
       distinct: ['industry'],
     }),
+    prisma.waCaseStudy.findMany({
+      where: { status: 'APPROVED', competitorName: { not: null } },
+      select: { competitorName: true },
+      distinct: ['competitorName'],
+    }),
     prisma.waCaseStudy.groupBy({
       by: ['type'],
       where: { status: 'APPROVED' },
       _count: true,
     }),
+    // BRD: Component options
+    prisma.waCaseStudy.findMany({
+      where: { status: 'APPROVED' },
+      select: { componentWorkpiece: true },
+      distinct: ['componentWorkpiece'],
+    }),
+    // BRD: WA Product options
+    prisma.waCaseStudy.findMany({
+      where: { status: 'APPROVED' },
+      select: { waProduct: true },
+      distinct: ['waProduct'],
+    }),
+    // BRD: Country options
+    prisma.waCaseStudy.findMany({
+      where: { status: 'APPROVED', country: { not: null } },
+      select: { country: true },
+      distinct: ['country'],
+    }),
+    // BRD: Wear Type options
+    prisma.waCaseStudy.findMany({
+      where: { status: 'APPROVED' },
+      select: { wearType: true },
+    }),
   ]);
+
+  // Extract unique wear types from arrays
+  const uniqueWearTypes = [...new Set(wearTypes.flatMap(wt => wt.wearType))].sort();
 
   const totalPages = Math.ceil(totalCount / perPage);
 
@@ -146,10 +217,26 @@ export default async function PublicLibraryPage({
               <CardContent className="space-y-6">
                 <LibraryFilters
                   industries={industries}
+                  oems={oems}
                   typeCounts={typeCounts}
                   initialQuery={query}
                   typeFilter={typeFilter}
                   industryFilter={industryFilter}
+                  oemFilter={oemFilter}
+                  // BRD Required Filter Options
+                  components={components}
+                  waProducts={waProducts}
+                  countries={countries}
+                  wearTypes={uniqueWearTypes}
+                  contributors={[]} // No contributor filter on public page
+                  // BRD Current Filter Values
+                  componentFilter={componentFilter}
+                  waProductFilter={waProductFilter}
+                  countryFilter={countryFilter}
+                  wearTypeFilter={wearTypeFilter}
+                  contributorFilter=""
+                  minRevenue={null}
+                  maxRevenue={null}
                 />
               </CardContent>
             </Card>
@@ -163,7 +250,7 @@ export default async function PublicLibraryPage({
                 Showing {(page - 1) * perPage + 1}-{Math.min(page * perPage, totalCount)} of{' '}
                 {totalCount} cases
               </p>
-              {(query || typeFilter || industryFilter) && (
+              {(query || typeFilter || industryFilter || oemFilter) && (
                 <Link href="/library">
                   <Button variant="outline" size="sm">
                     Clear Filters

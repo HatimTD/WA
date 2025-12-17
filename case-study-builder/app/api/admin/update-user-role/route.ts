@@ -37,9 +37,11 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    if (!role || !['CONTRIBUTOR', 'APPROVER', 'ADMIN'].includes(role)) {
+    // Validate role - all 6 roles from Prisma schema
+    const validRoles = ['VIEWER', 'CONTRIBUTOR', 'APPROVER', 'ADMIN', 'IT_DEPARTMENT', 'MARKETING'];
+    if (!role || !validRoles.includes(role)) {
       return NextResponse.json(
-        { success: false, error: 'Invalid role. Must be CONTRIBUTOR, APPROVER, or ADMIN' },
+        { success: false, error: `Invalid role. Must be one of: ${validRoles.join(', ')}` },
         { status: 400 }
       );
     }

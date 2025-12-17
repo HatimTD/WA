@@ -60,40 +60,40 @@ export default async function BHAGPage() {
       </div>
 
       {/* Main Progress Card */}
-      <Card role="article" className="border-2 border-wa-green-200 bg-gradient-to-br from-wa-green-50 to-white dark:border-primary dark:bg-primary dark:from-primary dark:to-primary">
+      <Card role="article" className="border-2 border-wa-green-200 bg-gradient-to-br from-wa-green-50 to-white dark:border-green-700 dark:bg-gradient-to-br dark:from-green-900 dark:to-green-950">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-2xl dark:text-white">Overall Progress</CardTitle>
-              <CardDescription className="dark:text-white dark:opacity-80">Target: {target.toLocaleString()} unique case studies</CardDescription>
+              <CardTitle className="text-2xl dark:text-green-50">Overall Progress</CardTitle>
+              <CardDescription className="dark:text-green-200">Target: {target.toLocaleString()} unique case studies</CardDescription>
             </div>
-            <TrendingUp className="h-10 w-10 text-wa-green-500 dark:text-white" />
+            <TrendingUp className="h-10 w-10 text-wa-green-500 dark:text-green-400" />
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Progress Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center">
-              <p className="text-5xl font-bold text-wa-green-600 dark:text-white">{uniqueCount.toLocaleString()}</p>
-              <p className="text-sm text-gray-600 dark:text-white dark:opacity-90 mt-2">Unique Cases</p>
-              <p className="text-xs text-gray-500 dark:text-white dark:opacity-70">Deduplicated by Industry + Location + Component</p>
+              <p className="text-5xl font-bold text-wa-green-600 dark:text-green-300">{uniqueCount.toLocaleString()}</p>
+              <p className="text-sm text-gray-600 dark:text-green-100 mt-2">Unique Cases</p>
+              <p className="text-xs text-gray-500 dark:text-green-300/70">Deduplicated by Industry + Location + Component</p>
             </div>
             <div className="text-center">
-              <p className="text-5xl font-bold text-purple-600 dark:text-white">{totalCount.toLocaleString()}</p>
-              <p className="text-sm text-gray-600 dark:text-white dark:opacity-90 mt-2">Total Submissions</p>
-              <p className="text-xs text-gray-500 dark:text-white dark:opacity-70">All approved case studies</p>
+              <p className="text-5xl font-bold text-purple-600 dark:text-purple-300">{totalCount.toLocaleString()}</p>
+              <p className="text-sm text-gray-600 dark:text-green-100 mt-2">Total Submissions</p>
+              <p className="text-xs text-gray-500 dark:text-green-300/70">All approved case studies</p>
             </div>
             <div className="text-center">
-              <p className="text-5xl font-bold text-green-600 dark:text-white">{percentage}%</p>
-              <p className="text-sm text-gray-600 dark:text-white dark:opacity-90 mt-2">Complete</p>
-              <p className="text-xs text-gray-500 dark:text-white dark:opacity-70">{(target - uniqueCount).toLocaleString()} cases to go</p>
+              <p className="text-5xl font-bold text-green-600 dark:text-emerald-300">{percentage}%</p>
+              <p className="text-sm text-gray-600 dark:text-green-100 mt-2">Complete</p>
+              <p className="text-xs text-gray-500 dark:text-green-300/70">{(target - uniqueCount).toLocaleString()} cases to go</p>
             </div>
           </div>
 
           {/* Progress Bar */}
           <div>
-            <Progress value={percentage} className="h-4" />
-            <div className="flex justify-between mt-2 text-xs text-gray-500 dark:text-white dark:opacity-70">
+            <Progress value={percentage} className="h-4 bg-green-800/30 dark:bg-green-950/50 [&>div]:bg-green-500 dark:[&>div]:bg-green-400" />
+            <div className="flex justify-between mt-2 text-xs text-gray-500 dark:text-green-300/70">
               <span>0</span>
               <span>{(target / 4).toLocaleString()}</span>
               <span>{(target / 2).toLocaleString()}</span>
@@ -207,12 +207,12 @@ export default async function BHAGPage() {
             </div>
 
             {/* Target Count Summary */}
-            <div className="mt-6 p-4 bg-wa-green-50 border border-wa-green-200 rounded-lg dark:bg-primary dark:border-primary">
-              <p className="text-center dark:text-white">
-                <span className="font-bold text-wa-green-700 dark:text-white">
+            <div className="mt-6 p-4 bg-wa-green-50 border border-wa-green-200 rounded-lg dark:bg-green-900/50 dark:border-green-700">
+              <p className="text-center">
+                <span className="font-bold text-wa-green-700 dark:text-green-300">
                   {qualifierData.newCustomer.count + qualifierData.crossSell.count}
                 </span>
-                <span className="text-gray-700 dark:text-white dark:opacity-90"> cases count toward the {target.toLocaleString()} target</span>
+                <span className="text-gray-700 dark:text-green-100"> cases count toward the {target.toLocaleString()} target</span>
               </p>
             </div>
           </CardContent>
