@@ -71,7 +71,7 @@ function LoginForm() {
         </Button>
 
         <p className="text-xs text-center text-muted-foreground">
-          Only @weldingalloys.com email addresses are allowed
+          Sign in with your company Google account
         </p>
 
         <div className="relative">
