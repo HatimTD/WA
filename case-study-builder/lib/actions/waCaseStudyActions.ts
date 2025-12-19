@@ -58,6 +58,9 @@ export async function waCreateCaseStudy(data: WaCreateCaseStudyInput) {
       ? parseFloat(data.customerSavingsAmount)
       : null;
 
+    // Convert wearType values to uppercase to match Prisma enum (ABRASION, IMPACT, etc.)
+    const normalizedWearType = (data.wearType || []).map((wt: string) => wt.toUpperCase());
+
     const caseStudy = await prisma.waCaseStudy.create({
       data: {
         type: data.type,
@@ -69,7 +72,7 @@ export async function waCreateCaseStudy(data: WaCreateCaseStudyInput) {
         country: data.country || null,
         componentWorkpiece: data.componentWorkpiece,
         workType: data.workType,
-        wearType: data.wearType as any,
+        wearType: normalizedWearType as any,
         baseMetal: data.baseMetal || null,
         generalDimensions: data.generalDimensions || null,
         oem: data.oem || null,
@@ -181,9 +184,9 @@ export async function waUpdateCaseStudy(id: string, data: any) {
     // Remove WPS data from case study update (it's handled separately)
     delete updateData.wps;
 
-    // Handle wearType array conversion if present
+    // Handle wearType array conversion if present - normalize to uppercase for enum
     if (data.wearType) {
-      updateData.wearType = data.wearType as any;
+      updateData.wearType = data.wearType.map((wt: string) => wt.toUpperCase()) as any;
     }
 
     // Handle decimal conversions if present
