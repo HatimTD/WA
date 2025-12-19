@@ -34,6 +34,9 @@ type WaCreateCaseStudyInput = {
   images: string[];
   supportingDocs: string[];
   tags: string[];
+  // Challenge Qualifier fields (BRD 3.1)
+  qualifierType?: 'NEW_CUSTOMER' | 'CROSS_SELL' | 'MAINTENANCE';
+  isTarget?: boolean;
 };
 
 export async function waCreateCaseStudy(data: WaCreateCaseStudyInput) {
@@ -85,6 +88,9 @@ export async function waCreateCaseStudy(data: WaCreateCaseStudyInput) {
         supportingDocs: data.supportingDocs || [],
         tags: data.tags || [],
         submittedAt: data.status === 'SUBMITTED' ? new Date() : null,
+        // Challenge Qualifier fields (BRD 3.1)
+        qualifierType: data.qualifierType || null,
+        isTarget: data.isTarget || false,
       },
     });
 
@@ -112,7 +118,9 @@ export async function waCreateCaseStudy(data: WaCreateCaseStudyInput) {
   } catch (error: any) {
     logger.error('Case creation failed', {
       userId: session.user.id,
-      error: error.message
+      error: error.message,
+      code: error.code,
+      meta: error.meta
     });
     console.error('Error creating case study:', error);
 
@@ -123,7 +131,19 @@ export async function waCreateCaseStudy(data: WaCreateCaseStudyInput) {
       );
     }
 
-    throw new Error('Failed to create case study. Please try again.');
+    // Check for validation errors
+    if (error.code === 'P2003') {
+      throw new Error('Invalid reference: A related record was not found.');
+    }
+
+    // Check for invalid data type
+    if (error.code === 'P2005' || error.code === 'P2006') {
+      throw new Error(`Invalid data format: ${error.meta?.field_name || 'unknown field'}`);
+    }
+
+    // Return actual error message for debugging (in development)
+    const errorMessage = error.message || 'Unknown error occurred';
+    throw new Error(`Failed to create case study: ${errorMessage}`);
   }
 }
 
