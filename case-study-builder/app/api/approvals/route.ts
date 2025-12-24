@@ -73,6 +73,12 @@ export async function GET() {
             email: true,
           },
         },
+        approver: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
       orderBy: {
         approvedAt: 'desc',

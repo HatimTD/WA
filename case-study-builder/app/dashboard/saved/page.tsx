@@ -16,6 +16,7 @@ interface SavedCase {
   createdAt: string;
   caseStudy: {
     id: string;
+    title?: string | null;
     customerName: string;
     industry: string;
     location: string;
@@ -27,6 +28,8 @@ interface SavedCase {
     approvedAt: string;
     originalLanguage?: string;
     translationAvailable?: boolean;
+    contributor?: { id: string; name: string | null } | null;
+    approver?: { id: string; name: string | null } | null;
   };
 }
 
@@ -269,7 +272,7 @@ export default function SavedCasesPage() {
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="text-lg line-clamp-2 dark:text-foreground">
-                    {saved.caseStudy.customerName}
+                    {saved.caseStudy.title || `${saved.caseStudy.customerName} - ${saved.caseStudy.componentWorkpiece}`}
                   </CardTitle>
                   <Badge
                     variant={
@@ -310,6 +313,14 @@ export default function SavedCasesPage() {
                 </div>
                 <p className="text-sm text-gray-700 dark:text-foreground line-clamp-3">
                   {saved.caseStudy.problemDescription}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-muted-foreground">
+                  {saved.caseStudy.contributor?.name && (
+                    <>Created by {saved.caseStudy.contributor.name}</>
+                  )}
+                  {saved.caseStudy.approver?.name && (
+                    <> • Approved by {saved.caseStudy.approver.name}</>
+                  )}
                 </p>
                 <div className="flex gap-2 pt-2">
                   <Link href={`/dashboard/cases/${saved.caseStudy.id}`} className="flex-1">

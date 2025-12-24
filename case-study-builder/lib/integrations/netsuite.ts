@@ -9,9 +9,11 @@ interface NetSuiteConfig {
 }
 
 export interface NetSuiteCustomer {
-  id: string;
-  internalId: string;
-  companyName: string;
+  id: string;           // Numeric internal ID from NetSuite
+  internalId: string;   // Numeric internal ID (same as id)
+  entityId: string;     // Customer UID like "E9008y" or "CUST-001"
+  companyName: string;  // Company name
+  displayName: string;  // Combined: "CompanyName (EntityId)"
   address: string;
   city: string;
   country: string;
@@ -140,16 +142,17 @@ class NetSuiteClient {
         return this.getMockCustomers(query);
       }
 
-      // Use SuiteQL for searching customers with sanitized input
+      // Use SuiteQL for searching customers by Name + UID (entityid)
+      // entityid is the customer UID like "E9008y", companyname is the company name
       const suiteqlQuery = `
         SELECT
           id,
-          entityid as internalId,
-          companyname as companyName,
-          billaddress as address,
-          billcity as city,
-          billcountry as country,
-          category as industry
+          entityid,
+          companyname,
+          billaddress,
+          billcity,
+          billcountry,
+          category
         FROM
           customer
         WHERE
@@ -165,15 +168,21 @@ class NetSuiteClient {
       });
 
       if (response.items && Array.isArray(response.items)) {
-        return response.items.map((item: any) => ({
-          id: item.id?.toString() || '',
-          internalId: item.internalId || item.id?.toString() || '',
-          companyName: item.companyName || item.companyname || '',
-          address: item.address || item.billaddress || '',
-          city: item.city || item.billcity || '',
-          country: item.country || item.billcountry || '',
-          industry: item.industry || item.category || '',
-        }));
+        return response.items.map((item: any) => {
+          const companyName = item.companyname || '';
+          const entityId = item.entityid || item.id?.toString() || '';
+          return {
+            id: item.id?.toString() || '',
+            internalId: item.id?.toString() || '',
+            entityId: entityId,
+            companyName: companyName,
+            displayName: entityId ? `${companyName} (${entityId})` : companyName,
+            address: item.billaddress || '',
+            city: item.billcity || '',
+            country: item.billcountry || '',
+            industry: item.category || '',
+          };
+        });
       }
 
       return [];
@@ -192,10 +201,14 @@ class NetSuiteClient {
       const response = await this.makeRequest(`/services/rest/record/v1/customer/${id}`, 'GET');
 
       if (response) {
+        const companyName = response.companyName || '';
+        const entityId = response.entityId || response.id?.toString() || id;
         return {
           id: response.id?.toString() || id,
-          internalId: response.entityId || response.id?.toString() || id,
-          companyName: response.companyName || '',
+          internalId: response.id?.toString() || id,
+          entityId: entityId,
+          companyName: companyName,
+          displayName: entityId ? `${companyName} (${entityId})` : companyName,
           address: response.billAddr?.addr1 || '',
           city: response.billAddr?.city || '',
           country: response.billAddr?.country || '',
@@ -216,12 +229,14 @@ class NetSuiteClient {
   }
 
   private getMockCustomers(query: string): NetSuiteCustomer[] {
-    // Mock data for development/testing
+    // Mock data for development/testing with realistic NetSuite UID format
     const mockData: NetSuiteCustomer[] = [
       {
         id: '1001',
-        internalId: 'CUST-001',
+        internalId: '1001',
+        entityId: 'E9001',
         companyName: 'ABC Mining Corporation',
+        displayName: 'ABC Mining Corporation (E9001)',
         address: '123 Mining Road',
         city: 'Perth',
         country: 'Australia',
@@ -229,8 +244,10 @@ class NetSuiteClient {
       },
       {
         id: '1002',
-        internalId: 'CUST-002',
+        internalId: '1002',
+        entityId: 'E9002',
         companyName: 'Global Steel Industries',
+        displayName: 'Global Steel Industries (E9002)',
         address: '456 Steel Avenue',
         city: 'Pittsburgh',
         country: 'United States',
@@ -238,8 +255,10 @@ class NetSuiteClient {
       },
       {
         id: '1003',
-        internalId: 'CUST-003',
+        internalId: '1003',
+        entityId: 'E9003',
         companyName: 'Cement Works Ltd',
+        displayName: 'Cement Works Ltd (E9003)',
         address: '789 Industrial Park',
         city: 'Mumbai',
         country: 'India',
@@ -247,8 +266,10 @@ class NetSuiteClient {
       },
       {
         id: '1004',
-        internalId: 'CUST-004',
+        internalId: '1004',
+        entityId: 'E9004',
         companyName: 'PowerGen Energy Solutions',
+        displayName: 'PowerGen Energy Solutions (E9004)',
         address: '321 Energy Boulevard',
         city: 'Houston',
         country: 'United States',
@@ -256,8 +277,10 @@ class NetSuiteClient {
       },
       {
         id: '1005',
-        internalId: 'CUST-005',
+        internalId: '1005',
+        entityId: 'E9005',
         companyName: 'Marine Services International',
+        displayName: 'Marine Services International (E9005)',
         address: '555 Harbor Drive',
         city: 'Singapore',
         country: 'Singapore',
@@ -273,9 +296,124 @@ class NetSuiteClient {
     return mockData.filter(
       (customer) =>
         customer.companyName.toLowerCase().includes(lowerQuery) ||
-        customer.internalId.toLowerCase().includes(lowerQuery) ||
+        customer.entityId.toLowerCase().includes(lowerQuery) ||
         customer.city.toLowerCase().includes(lowerQuery)
     );
+  }
+
+  /**
+   * Upload PDF and attach to customer record via RESTlet
+   * The RESTlet must be deployed in NetSuite (see documentation)
+   * @param customerId - NetSuite internal customer ID
+   * @param pdfBuffer - PDF file as Buffer
+   * @param fileName - Name for the file in NetSuite
+   * @param metadata - Additional metadata to store
+   */
+  async waUploadPdfToCustomer(
+    customerId: string,
+    pdfBuffer: Buffer,
+    fileName: string,
+    metadata: {
+      caseStudyId: string;
+      caseStudyTitle: string;
+      caseType: string;
+      publishedAt: string;
+      createdBy: string;
+    }
+  ): Promise<{ success: boolean; fileId?: string; error?: string }> {
+    try {
+      // RESTlet endpoint for file upload (must be configured in NetSuite)
+      const restletUrl = process.env.NETSUITE_RESTLET_URL;
+
+      if (!restletUrl) {
+        console.warn('NetSuite RESTlet URL not configured, skipping PDF upload');
+        return { success: false, error: 'RESTlet URL not configured' };
+      }
+
+      // Convert PDF to base64
+      const pdfBase64 = pdfBuffer.toString('base64');
+
+      // Prepare payload for RESTlet
+      const payload = {
+        action: 'uploadAndAttach',
+        customerId: customerId,
+        fileName: fileName,
+        fileContent: pdfBase64,
+        fileType: 'PDF',
+        folderId: process.env.NETSUITE_CASE_STUDY_FOLDER_ID || '', // Folder in File Cabinet
+        metadata: {
+          ...metadata,
+          uploadedAt: new Date().toISOString(),
+          source: 'ICA Case Study Builder',
+        },
+      };
+
+      // Make request to RESTlet
+      const authHeader = this.generateOAuthHeader('POST', restletUrl);
+
+      const response = await fetch(restletUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: authHeader,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'X-NetSuite-AccountId': this.config.accountId,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('NetSuite RESTlet error:', errorText);
+        return { success: false, error: `RESTlet error: ${response.status}` };
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        console.log(`PDF uploaded to NetSuite: fileId=${result.fileId}, customerId=${customerId}`);
+        return { success: true, fileId: result.fileId };
+      } else {
+        return { success: false, error: result.error || 'Unknown error' };
+      }
+    } catch (error) {
+      console.error('NetSuite PDF upload error:', error);
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * Update customer record with case study metadata (without file)
+   * Uses standard REST API to add custom field data
+   */
+  async waUpdateCustomerCaseStudyMetadata(
+    customerId: string,
+    metadata: {
+      caseStudyId: string;
+      caseStudyTitle: string;
+      caseStudyUrl?: string;
+      publishedAt: string;
+    }
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      // This updates a custom field on the customer record
+      // Requires custom field setup in NetSuite: custentity_case_studies (text/JSON)
+      const response = await this.makeRequest(
+        `/services/rest/record/v1/customer/${customerId}`,
+        'PATCH',
+        {
+          custentity_last_case_study_id: metadata.caseStudyId,
+          custentity_last_case_study_title: metadata.caseStudyTitle,
+          custentity_last_case_study_date: metadata.publishedAt,
+          custentity_last_case_study_url: metadata.caseStudyUrl || '',
+        }
+      );
+
+      return { success: true };
+    } catch (error) {
+      console.error('NetSuite metadata update error:', error);
+      return { success: false, error: (error as Error).message };
+    }
   }
 }
 

@@ -75,8 +75,16 @@ export default function LanguageIndicator({
         {translationAvailable && translatedLangName && (
           <Badge className="text-xs gap-1 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
             <Languages className="h-3 w-3" />
-            {translatedLangName}
+            → {translatedLangName}
           </Badge>
+        )}
+        {showLink && caseStudyId && translationAvailable && (
+          <Link
+            href={`/dashboard/cases/${caseStudyId}?showOriginal=true`}
+            className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 inline-flex items-center gap-1"
+          >
+            View original <ExternalLink className="h-3 w-3" />
+          </Link>
         )}
       </div>
     );

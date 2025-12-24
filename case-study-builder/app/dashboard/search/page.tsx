@@ -431,7 +431,7 @@ export default function SearchPage() {
           {showAdvancedFilters && (
             <div className="border rounded-lg p-4 space-y-4 bg-gray-50 dark:bg-background dark:border-border">
               <p className="text-sm font-medium text-gray-600 dark:text-muted-foreground">
-                BRD Section 5: Additional Search Filters
+                Additional Search Filters
               </p>
 
               {/* Row 1: Component, WA Product, OEM */}
@@ -650,7 +650,7 @@ export default function SearchPage() {
                                 </div>
                               )}
                             </div>
-                            <h3 className="text-lg font-semibold mb-1 dark:text-foreground">{caseStudy.title}</h3>
+                            <h3 className="text-lg font-semibold mb-1 dark:text-foreground">{caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}</h3>
                             <p className="text-sm text-gray-600 dark:text-muted-foreground mb-2 line-clamp-2">
                               {caseStudy.problemDescription}
                             </p>
@@ -662,7 +662,12 @@ export default function SearchPage() {
                             </div>
                           </div>
                           <div className="text-right text-sm text-gray-500 dark:text-muted-foreground">
-                            <p className="font-medium">{caseStudy.contributor?.name}</p>
+                            {caseStudy.contributor?.name && (
+                              <p className="font-medium">Created by {caseStudy.contributor.name}</p>
+                            )}
+                            {caseStudy.approver?.name && (
+                              <p className="text-xs">Approved by {caseStudy.approver.name}</p>
+                            )}
                             <p className="text-xs">
                               {new Date(caseStudy.createdAt).toLocaleDateString()}
                             </p>

@@ -2,10 +2,10 @@ import { IOSSafeLink } from '@/components/ios-safe-link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Welding Alloys - Case Study Builder',
-  description: 'Welcome to Welding Alloys Case Study Builder. Capture, catalog, and share industrial challenge solutions. Track progress toward solving 100,000 challenges by 2030.',
+  title: 'Welding Alloys - Industrial Challenges App',
+  description: 'Welcome to Welding Alloys Industrial Challenges App (ICA). Capture, catalog, and share industrial challenge solutions. Track progress toward solving 10,000 challenges.',
   openGraph: {
-    title: 'Welding Alloys - Case Study Builder',
+    title: 'Welding Alloys - Industrial Challenges App',
     description: 'Capture and share industrial welding solutions',
   },
 };
@@ -27,7 +27,7 @@ export default function Home() {
               </div>
               <div className="hidden sm:block">
                 <h2 className="text-lg sm:text-xl font-bold text-wa-green-900">Welding Alloys</h2>
-                <p className="text-xs text-gray-600">Case Study Builder</p>
+                <p className="text-xs text-gray-600">Industrial Challenges App</p>
               </div>
             </div>
             <IOSSafeLink
@@ -59,7 +59,7 @@ export default function Home() {
             {/* Title */}
             <div className="space-y-3 sm:space-y-4">
               <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-wa-green-900 tracking-tight">
-                Case Study Builder
+                Industrial Challenges App
               </h1>
               <p className="text-xl sm:text-2xl lg:text-3xl text-gray-700 font-medium">
                 Welding Alloys Internal Platform
@@ -69,7 +69,7 @@ export default function Home() {
             {/* Description */}
             <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed px-4">
               Capture, catalog, and share industrial challenge solutions.
-              Track our progress toward solving <span className="font-semibold text-wa-green-900">100,000 challenges by 2030</span>.
+              Track our progress toward solving <span className="font-semibold text-wa-green-900">10,000 challenges</span>.
             </p>
 
             {/* CTA Buttons */}
@@ -132,7 +132,7 @@ export default function Home() {
               </div>
               <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">Track Progress</h3>
               <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
-                Monitor your journey towards solving 100,000 industrial challenges by 2030.
+                Monitor your journey towards solving 10,000 industrial challenges.
               </p>
             </div>
           </div>

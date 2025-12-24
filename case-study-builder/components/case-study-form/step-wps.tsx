@@ -16,7 +16,7 @@ export default function StepWPS({ formData, updateFormData }: Props) {
       {/* BRD 3.3 Required Fields Notice */}
       <div className="bg-wa-green-50 border border-wa-green-200 rounded-lg p-4 dark:bg-accent dark:border-primary">
         <p className="text-sm text-wa-green-800 dark:text-muted-foreground">
-          <span className="font-semibold dark:text-foreground">Tech Case Requirement:</span> WPS (Welding Procedure Specification) documentation is required for TECH and STAR case studies. Fields marked with <span className="text-red-500">*</span> are required per BRD 3.3.
+          <span className="font-semibold dark:text-foreground">Tech Case Requirement:</span> WPS (Welding Procedure Specification) documentation is required for TECH and STAR case studies. Fields marked with <span className="text-red-500">*</span> are required.
         </p>
       </div>
 

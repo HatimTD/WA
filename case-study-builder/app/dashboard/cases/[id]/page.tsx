@@ -296,12 +296,12 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">
-              {caseStudy.customerName} - {caseStudy.componentWorkpiece}
+              {caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}
             </h1>
             <p className="text-lg text-gray-600 dark:text-muted-foreground mt-2">
               {caseStudy.location}, {caseStudy.country || 'N/A'}
             </p>
-            {/* Language Indicator with View Original/Translation toggle */}
+            {/* Language Indicator with View Original link */}
             {(caseStudy.originalLanguage !== 'en' || caseStudy.translationAvailable) && (
               <div className="mt-3">
                 <LanguageIndicator
@@ -310,28 +310,8 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
                   translatedText={caseStudy.translatedText}
                   caseStudyId={caseStudy.id}
                   variant="inline"
-                  showLink={hasTranslation}
+                  showLink={true}
                 />
-                {/* Toggle link for translated content */}
-                {hasTranslation && (
-                  <div className="mt-2">
-                    {displayOriginal ? (
-                      <Link
-                        href={`/dashboard/cases/${caseStudy.id}`}
-                        className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1"
-                      >
-                        View translated (English) version
-                      </Link>
-                    ) : (
-                      <Link
-                        href={`/dashboard/cases/${caseStudy.id}?showOriginal=true`}
-                        className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1"
-                      >
-                        View original version
-                      </Link>
-                    )}
-                  </div>
-                )}
               </div>
             )}
           </div>
@@ -348,6 +328,10 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
             <QualityScoreBadge
               caseStudy={{
                 ...caseStudy,
+                // Convert Decimal fields to numbers for client component serialization
+                solutionValueRevenue: caseStudy.solutionValueRevenue ? Number(caseStudy.solutionValueRevenue) : null,
+                annualPotentialRevenue: caseStudy.annualPotentialRevenue ? Number(caseStudy.annualPotentialRevenue) : null,
+                customerSavingsAmount: caseStudy.customerSavingsAmount ? Number(caseStudy.customerSavingsAmount) : null,
                 wps: existingWPS,
                 costCalculator: existingCostCalc,
               } as CaseStudyWithRelations}

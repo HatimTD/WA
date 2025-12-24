@@ -499,6 +499,7 @@ model WaCaseStudy {
 
   // NetSuite Integration
   netsuiteCustomerId String?
+  netsuiteFileId     String?   // File ID in NetSuite File Cabinet after PDF upload
   netsuiteSyncedAt   DateTime?
 
   // Insightly CRM Integration (BRD 5.9)

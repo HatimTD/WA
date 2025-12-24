@@ -97,7 +97,7 @@ export async function waUpdateSystemConfig(configs: Record<string, string>) {
  */
 export async function waGetBHAGTarget(): Promise<number> {
   const target = await waGetConfigValue('bhag_target');
-  return target ? parseInt(target, 10) : 1000; // Default to 1000
+  return target ? parseInt(target, 10) : 10000; // Default to 10000
 }
 
 /**

@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
         caseStudy: {
           select: {
             id: true,
+            title: true,
             customerName: true,
             industry: true,
             location: true,
@@ -33,6 +34,12 @@ export async function GET(request: NextRequest) {
             approvedAt: true,
             originalLanguage: true,
             translationAvailable: true,
+            contributor: {
+              select: { id: true, name: true },
+            },
+            approver: {
+              select: { id: true, name: true },
+            },
           },
         },
       },

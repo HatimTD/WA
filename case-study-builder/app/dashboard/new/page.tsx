@@ -18,11 +18,15 @@ import { waCreateCaseStudy } from '@/lib/actions/waCaseStudyActions';
 import { waSaveWeldingProcedure } from '@/lib/actions/waWpsActions';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
-import CRMCustomerSearch, { type CRMCustomer } from '@/components/crm-customer-search';
+import NetSuiteCustomerSearch from '@/components/netsuite-customer-search';
+import { NetSuiteCustomer } from '@/lib/integrations/netsuite';
 
 export type CaseStudyFormData = {
   // Step 1: Case Type
   type: 'APPLICATION' | 'TECH' | 'STAR';
+
+  // Case Study Title
+  title: string;
 
   // Step 2: Challenge Qualifier (BRD 3.1)
   qualifierType?: 'NEW_CUSTOMER' | 'CROSS_SELL' | 'MAINTENANCE';
@@ -121,6 +125,7 @@ export default function NewCaseStudyPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<CaseStudyFormData>({
     type: 'APPLICATION',
+    title: '',
     qualifierType: undefined,
     isTarget: false,
     qualifierCompleted: false,
@@ -156,7 +161,7 @@ export default function NewCaseStudyPage() {
   const STEPS = useMemo(() => {
     const baseSteps = [
       { number: 1, title: 'Case Type', description: 'Select case study type' },
-      { number: 2, title: 'Qualifier', description: 'Challenge qualification (BRD 3.1)' },
+      { number: 2, title: 'Qualifier', description: 'Challenge qualification' },
       { number: 3, title: 'Basic Info', description: 'Customer and component details' },
       { number: 4, title: 'Problem', description: 'Describe the challenge' },
       { number: 5, title: 'Solution', description: 'WA solution details' },
@@ -393,29 +398,28 @@ export default function NewCaseStudyPage() {
           )}
           {STEPS[currentStep - 1]?.title === 'Qualifier' && (
             <div className="space-y-6">
-              {/* Customer Name Search - BRD 3.1 + 3.4D Insightly Integration */}
-              <CRMCustomerSearch
+              {/* Customer Name Search - NetSuite Integration */}
+              <NetSuiteCustomerSearch
                 value={formData.customerName}
                 onChange={(value) => updateFormData({ customerName: value })}
-                onCustomerSelect={(customer: CRMCustomer) => {
-                  // Auto-fill fields from CRM data
+                onCustomerSelect={(customer: NetSuiteCustomer) => {
+                  // Auto-fill fields from NetSuite data
                   const updates: Partial<CaseStudyFormData> = {
-                    customerName: customer.name,
+                    customerName: customer.companyName,
                   };
                   if (customer.city) updates.location = customer.city;
                   if (customer.country) updates.country = customer.country;
                   if (customer.industry) updates.industry = customer.industry;
 
                   updateFormData(updates);
-                  console.log(`[Qualifier] Customer selected from ${customer.source}:`, customer.name);
+                  console.log(`[Qualifier] Customer selected from NetSuite:`, customer.companyName);
                 }}
                 label="Customer Name"
                 required
-                placeholder="Search Insightly/NetSuite or enter new customer..."
-                defaultCRM="insightly"
+                placeholder="Search NetSuite customers..."
               />
               <p className="text-sm text-muted-foreground -mt-4">
-                Search for existing customers in CRM or enter a new customer name
+                Search for existing customers in NetSuite by name or UID
               </p>
 
               {/* Challenge Qualifier - only show once customer name is entered */}

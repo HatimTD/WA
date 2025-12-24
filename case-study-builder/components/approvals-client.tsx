@@ -11,6 +11,7 @@ import { Clock, CheckCircle2, XCircle, Eye, Loader2, Search, X, Filter } from 'l
 
 interface CaseStudy {
   id: string;
+  title: string | null;
   customerName: string;
   waProduct: string;
   componentWorkpiece: string;
@@ -24,6 +25,10 @@ interface CaseStudy {
     name: string | null;
     email: string | null;
   };
+  approver?: {
+    id: string;
+    name: string | null;
+  } | null;
 }
 
 interface ApprovalsClientProps {
@@ -315,7 +320,7 @@ export default function ApprovalsClient({ userId }: ApprovalsClientProps) {
                       </Badge>
                     </div>
                     <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">
-                      {caseStudy.customerName} - {caseStudy.componentWorkpiece}
+                      {caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                       {caseStudy.location} • {caseStudy.waProduct}
@@ -369,7 +374,7 @@ export default function ApprovalsClient({ userId }: ApprovalsClientProps) {
                       </Badge>
                     </div>
                     <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">
-                      {caseStudy.customerName} - {caseStudy.componentWorkpiece}
+                      {caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                       {caseStudy.location} • {caseStudy.waProduct}

@@ -92,7 +92,7 @@ export default function StepFive({ formData, updateFormData, caseStudyId, existi
             Financial Information
           </CardTitle>
           <CardDescription className="dark:text-muted-foreground">
-            Document the business value and customer savings (all fields required per BRD 3.3)
+            Document the business value and customer savings (all fields required)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -277,7 +277,7 @@ export default function StepFive({ formData, updateFormData, caseStudyId, existi
             Images & Documents
           </CardTitle>
           <CardDescription className="dark:text-muted-foreground">
-            Upload photos, videos, or supporting documents. At least one image is required (BRD 3.3).
+            Upload photos, videos, or supporting documents. At least one image is required.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

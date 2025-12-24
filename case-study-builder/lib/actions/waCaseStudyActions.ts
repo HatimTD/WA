@@ -9,6 +9,7 @@ import { waAutoTranslateOnSubmit } from './waTranslationActions';
 
 type WaCreateCaseStudyInput = {
   type: 'APPLICATION' | 'TECH' | 'STAR';
+  title?: string;
   status?: 'DRAFT' | 'SUBMITTED';
   customerName: string;
   industry: string;
@@ -64,6 +65,7 @@ export async function waCreateCaseStudy(data: WaCreateCaseStudyInput) {
     const caseStudy = await prisma.waCaseStudy.create({
       data: {
         type: data.type,
+        title: data.title || null,
         status: data.status || 'DRAFT',
         contributorId: session.user.id,
         customerName: data.customerName,

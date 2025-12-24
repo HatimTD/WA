@@ -24,7 +24,7 @@ export default function NetSuiteCustomerSearch({
   onCustomerSelect,
   label = 'Customer Name',
   required = false,
-  placeholder = 'Start typing to search NetSuite customers...',
+  placeholder = 'Search by company name or UID (e.g., E9008)...',
   className,
 }: Props) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -65,15 +65,16 @@ export default function NetSuiteCustomerSearch({
         const result = await waSearchNetSuiteCustomers(searchQuery);
         if (result.success && result.customers) {
           setCustomers(result.customers);
-          setIsOpen(result.customers.length > 0);
+          // Keep dropdown open to show "customer not found" message when no results
+          setIsOpen(true);
         } else {
           setCustomers([]);
-          setIsOpen(false);
+          setIsOpen(true); // Show "customer not found" message
         }
       } catch (error) {
         console.error('Search error:', error);
         setCustomers([]);
-        setIsOpen(false);
+        setIsOpen(true); // Show "customer not found" message
       } finally {
         setIsLoading(false);
       }
@@ -183,7 +184,7 @@ export default function NetSuiteCustomerSearch({
                         {customer.companyName}
                       </div>
                       <div className="text-xs text-muted-foreground dark:text-muted-foreground mt-1">
-                        ID: {customer.internalId}
+                        <span className="font-medium text-primary">{customer.entityId}</span> • ID: {customer.internalId}
                       </div>
 
                       <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground dark:text-muted-foreground">
@@ -214,19 +215,20 @@ export default function NetSuiteCustomerSearch({
           </div>
         )}
 
-        {/* No results */}
+        {/* No results - Customer not found message */}
         {isOpen && !isLoading && customers.length === 0 && searchQuery.length >= 2 && (
-          <div className="absolute z-50 w-full mt-1 bg-white dark:bg-popover border border-border dark:border-border rounded-md shadow-lg">
-            <div className="px-4 py-3 text-sm text-muted-foreground dark:text-muted-foreground text-center">
-              No customers found for "{searchQuery}"
+          <div className="absolute z-50 w-full mt-1 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-md shadow-lg">
+            <div className="px-4 py-3 text-sm text-amber-800 dark:text-amber-200 text-center">
+              <p className="font-medium">Customer does not exist</p>
+              <p className="text-xs mt-1">Contact support to add this customer to the system</p>
             </div>
           </div>
         )}
       </div>
 
-      {searchQuery.length >= 2 && (
+      {searchQuery.length >= 2 && isLoading && (
         <p className="text-xs text-muted-foreground dark:text-muted-foreground">
-          {isLoading ? 'Searching NetSuite...' : `${customers.length} customer(s) found`}
+          Searching NetSuite...
         </p>
       )}
     </div>

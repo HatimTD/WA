@@ -45,6 +45,12 @@ export default async function MyCasesPage({
           email: true,
         },
       },
+      approver: {
+        select: {
+          name: true,
+          email: true,
+        },
+      },
       wps: true,
       costCalculator: true,
     },
@@ -155,15 +161,18 @@ export default async function MyCasesPage({
             />
           </div>
           <h3 className="font-semibold text-lg text-gray-900 dark:text-foreground">
-            {caseStudy.customerName} - {caseStudy.componentWorkpiece}
+            {caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}
           </h3>
           <p className="text-sm text-gray-600 dark:text-muted-foreground mt-1">
             {caseStudy.location} • {caseStudy.waProduct}
           </p>
-          <div className="flex items-center gap-4 mt-2">
+          <div className="flex items-center gap-4 mt-2 flex-wrap">
             <p className="text-xs text-gray-500 dark:text-muted-foreground">
               Created {new Date(caseStudy.createdAt).toLocaleDateString()} •
               Updated {new Date(caseStudy.updatedAt).toLocaleDateString()}
+              {caseStudy.status === 'APPROVED' && caseStudy.approver && (
+                <> • Approved by {caseStudy.approver.name || caseStudy.approver.email}</>
+              )}
             </p>
             <CompletionIndicator
               percentage={completionPercentage}

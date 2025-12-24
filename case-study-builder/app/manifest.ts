@@ -2,9 +2,9 @@ import { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Case Study Builder | Welding Alloys',
-    short_name: 'CS Builder',
-    description: 'Capture, manage, and share industrial welding case studies and solutions',
+    name: 'Industrial Challenges App | Welding Alloys',
+    short_name: 'ICA',
+    description: 'Capture, manage, and share industrial welding challenges and solutions',
     start_url: '/?source=pwa',
     display: 'standalone',
     display_override: ['standalone', 'fullscreen'],
@@ -44,23 +44,23 @@ export default function manifest(): MetadataRoute.Manifest {
     prefer_related_applications: false,
     shortcuts: [
       {
-        name: 'New Case Study',
-        short_name: 'New Case',
-        description: 'Create a new case study',
+        name: 'New Challenge',
+        short_name: 'New',
+        description: 'Create a new industrial challenge',
         url: '/dashboard/new',
         icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png' }],
       },
       {
         name: 'Library',
         short_name: 'Library',
-        description: 'Browse case study library',
+        description: 'Browse challenges library',
         url: '/dashboard/library',
         icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png' }],
       },
       {
         name: 'Search',
         short_name: 'Search',
-        description: 'Search case studies',
+        description: 'Search challenges',
         url: '/dashboard/search',
         icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png' }],
       },

@@ -154,7 +154,7 @@ export default async function BHAGPage() {
               Challenge Qualifier Breakdown
             </CardTitle>
             <CardDescription className="dark:text-muted-foreground">
-              New Customer vs. Cross-Sell (BRD 3.5)
+              New Customer vs. Cross-Sell distribution
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -228,7 +228,7 @@ export default async function BHAGPage() {
               By Contributor Region
             </CardTitle>
             <CardDescription className="dark:text-muted-foreground">
-              Unique cases grouped by contributor's assigned region (BRD 3.5)
+              Unique cases grouped by contributor's assigned region
             </CardDescription>
           </CardHeader>
           <CardContent>

@@ -30,11 +30,11 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: 'Case Study Builder | Welding Alloys',
-    template: '%s | Case Study Builder'
+    default: 'ICA | Welding Alloys',
+    template: '%s | ICA'
   },
-  description: 'Capture, manage, and share industrial welding case studies and solutions. Track maintenance costs, productivity improvements, and collaborate with your team.',
-  applicationName: 'Case Study Builder',
+  description: 'Industrial Challenges App - Capture, manage, and share industrial welding challenges and solutions. Track maintenance costs, productivity improvements, and collaborate with your team.',
+  applicationName: 'Industrial Challenges App',
   authors: [{ name: 'Welding Alloys' }],
   keywords: ['case studies', 'welding', 'industrial', 'solutions', 'productivity', 'maintenance', 'cost tracking', 'collaboration', 'welding alloys', 'industrial maintenance'],
   creator: 'Welding Alloys',
@@ -46,17 +46,17 @@ export const metadata: Metadata = {
   },
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://casestudy.weldingalloys.com'),
   openGraph: {
-    title: 'Case Study Builder | Welding Alloys',
-    description: 'Capture, manage, and share industrial welding case studies and solutions',
+    title: 'ICA | Welding Alloys',
+    description: 'Industrial Challenges App - Capture, manage, and share industrial welding challenges and solutions',
     url: process.env.NEXT_PUBLIC_APP_URL || 'https://casestudy.weldingalloys.com',
-    siteName: 'Case Study Builder',
+    siteName: 'Industrial Challenges App',
     locale: 'en_US',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Case Study Builder | Welding Alloys',
-    description: 'Capture, manage, and share industrial welding case studies and solutions',
+    title: 'ICA | Welding Alloys',
+    description: 'Industrial Challenges App - Capture, manage, and share industrial welding challenges and solutions',
   },
   robots: {
     index: true,

@@ -63,7 +63,7 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
     <div className="space-y-6">
       <div className="bg-wa-green-50 border border-wa-green-200 rounded-lg p-4 dark:bg-accent dark:border-primary">
         <p className="text-sm text-wa-green-800 dark:text-muted-foreground">
-          <span className="font-semibold dark:text-foreground">Star Case Requirement:</span> The Cost Calculator helps demonstrate the financial value of the WA solution. All fields are required per BRD 3.3.
+          <span className="font-semibold dark:text-foreground">Star Case Requirement:</span> The Cost Calculator helps demonstrate the financial value of the WA solution. All fields are required.
         </p>
       </div>
 

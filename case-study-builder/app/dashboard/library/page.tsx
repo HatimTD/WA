@@ -7,6 +7,7 @@ import { ExternalLink } from 'lucide-react';
 import { LibrarySearch } from '@/components/library-search';
 import { LibraryFilters } from '@/components/library-filters';
 import { SaveButton } from '@/components/save-button';
+import LanguageIndicator from '@/components/language-indicator';
 
 export const metadata = {
   title: 'Case Study Library - Welding Alloys',
@@ -124,6 +125,7 @@ export default async function LibraryPage({
       where,
       select: {
         id: true,
+        title: true,
         customerName: true,
         industry: true,
         location: true,
@@ -132,6 +134,15 @@ export default async function LibraryPage({
         waProduct: true,
         problemDescription: true,
         approvedAt: true,
+        createdAt: true,
+        originalLanguage: true,
+        translationAvailable: true,
+        contributor: {
+          select: { id: true, name: true },
+        },
+        approver: {
+          select: { id: true, name: true },
+        },
       },
       orderBy: { approvedAt: 'desc' },
       take: perPage,
@@ -283,7 +294,7 @@ export default async function LibraryPage({
                   <CardHeader>
                     <div className="flex items-start justify-between gap-2">
                       <CardTitle className="text-lg line-clamp-2 dark:text-foreground">
-                        {caseStudy.customerName}
+                        {caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}
                       </CardTitle>
                       <div className="flex items-center gap-2 shrink-0">
                         <SaveButton caseStudyId={caseStudy.id} variant="icon" size="sm" />
@@ -303,6 +314,18 @@ export default async function LibraryPage({
                     <CardDescription className="line-clamp-1 dark:text-muted-foreground">
                       {caseStudy.industry} • {caseStudy.location}
                     </CardDescription>
+                    {/* Language Indicator - BRD: Show original language and translation status */}
+                    {caseStudy.originalLanguage && caseStudy.originalLanguage !== 'en' && (
+                      <div className="mt-2">
+                        <LanguageIndicator
+                          originalLanguage={caseStudy.originalLanguage}
+                          translationAvailable={caseStudy.translationAvailable}
+                          caseStudyId={caseStudy.id}
+                          variant="badge"
+                          showLink={true}
+                        />
+                      </div>
+                    )}
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="space-y-1 text-sm">
@@ -316,6 +339,14 @@ export default async function LibraryPage({
                     </div>
                     <p className="text-sm text-gray-700 dark:text-muted-foreground line-clamp-3">
                       {caseStudy.problemDescription}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-muted-foreground mt-2">
+                      {caseStudy.contributor?.name && (
+                        <>Created by {caseStudy.contributor.name}</>
+                      )}
+                      {caseStudy.approver?.name && (
+                        <> • Approved by {caseStudy.approver.name}</>
+                      )}
                     </p>
                     <Link href={`/dashboard/library/${caseStudy.id}`}>
                       <Button className="w-full gap-2 mt-4">

@@ -5,7 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CaseStudyFormData } from '@/app/dashboard/new/page';
-import CRMCustomerSearch, { CRMCustomer } from '@/components/crm-customer-search';
+import NetSuiteCustomerSearch from '@/components/netsuite-customer-search';
+import { NetSuiteCustomer } from '@/lib/integrations/netsuite';
 import LocationAutocomplete from '@/components/location-autocomplete';
 import { useMasterList } from '@/lib/hooks/use-master-list';
 
@@ -51,10 +52,10 @@ export default function StepTwo({ formData, updateFormData }: Props) {
     updateFormData({ wearType: updated });
   };
 
-  const handleCRMCustomerSelect = (customer: CRMCustomer) => {
-    // Auto-fill fields from CRM data (Insightly or NetSuite)
+  const handleCustomerSelect = (customer: NetSuiteCustomer) => {
+    // Auto-fill fields from NetSuite customer data
     const updates: Partial<CaseStudyFormData> = {
-      customerName: customer.name,
+      customerName: customer.companyName,
     };
 
     if (customer.city) {
@@ -67,24 +68,40 @@ export default function StepTwo({ formData, updateFormData }: Props) {
       updates.industry = customer.industry;
     }
 
-    // Store CRM source for tracking (could be added to form data if needed)
-    console.log(`[CRM] Customer selected from ${customer.source}:`, customer.name);
+    console.log(`[NetSuite] Customer selected:`, customer.companyName);
 
     updateFormData(updates);
   };
 
   return (
     <div className="space-y-6">
+      {/* Case Study Title - Full width */}
+      <div className="space-y-2">
+        <Label htmlFor="title" className="dark:text-foreground">
+          Case Study Title <span className="text-red-500 dark:text-red-400">*</span>
+        </Label>
+        <Input
+          id="title"
+          value={formData.title}
+          onChange={(e) => updateFormData({ title: e.target.value })}
+          placeholder="e.g., Crusher Hammer Rebuild - ABC Mining"
+          className="dark:bg-input dark:border-border dark:text-foreground"
+          required
+        />
+        <p className="text-xs text-muted-foreground">
+          A descriptive title that summarizes this case study
+        </p>
+      </div>
+
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Customer Name - Dual CRM Integration (BRD 3.4D) */}
-        <CRMCustomerSearch
+        {/* Customer Name - NetSuite Integration */}
+        <NetSuiteCustomerSearch
           value={formData.customerName}
           onChange={(value) => updateFormData({ customerName: value })}
-          onCustomerSelect={handleCRMCustomerSelect}
+          onCustomerSelect={handleCustomerSelect}
           label="Customer Name"
           required
-          placeholder="Search CRM customers or enter new..."
-          defaultCRM="insightly"
+          placeholder="Search NetSuite customers..."
         />
 
         {/* Industry */}

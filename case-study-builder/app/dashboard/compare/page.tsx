@@ -37,6 +37,7 @@ import { downloadComparisonPDF, type ComparisonPDFData } from '@/lib/pdf-export'
 
 type CaseStudySummary = {
   id: string;
+  title: string | null;
   customerName: string;
   industry: string;
   location: string;
@@ -551,7 +552,7 @@ export default function ComparePage() {
                           className="w-full text-left p-2 hover:bg-wa-green-50 dark:hover:bg-wa-green-900/20 rounded-md border border-gray-100 dark:border-border transition-colors"
                         >
                           <p className="text-sm font-medium text-gray-900 dark:text-foreground line-clamp-1">
-                            {caseStudy.customerName} - {caseStudy.componentWorkpiece}
+                            {caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}
                           </p>
                           <p className="text-xs text-gray-600 dark:text-muted-foreground">
                             {caseStudy.industry} • {caseStudy.location}

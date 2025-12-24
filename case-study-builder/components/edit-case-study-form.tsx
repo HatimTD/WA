@@ -26,6 +26,9 @@ export type CaseStudyFormData = {
   isTarget: boolean; // Counts toward BHAG 10,000 goal
   qualifierCompleted: boolean; // Whether qualifier questions were answered
 
+  // Title (case study display name)
+  title: string;
+
   // Step 2: Basic Information
   customerName: string;
   industry: string;
@@ -118,6 +121,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
     type: caseStudy.type as 'APPLICATION' | 'TECH' | 'STAR',
     isTarget: true, // Existing cases default to being counted
     qualifierCompleted: true, // Existing cases don't need qualifier
+    title: caseStudy.title || '',
     customerName: caseStudy.customerName,
     industry: caseStudy.industry,
     location: caseStudy.location,

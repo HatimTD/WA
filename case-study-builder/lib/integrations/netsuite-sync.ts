@@ -252,15 +252,20 @@ export async function searchCachedCustomers(query: string): Promise<NetSuiteCust
     take: 10,
   });
 
-  return cached.map((c) => ({
-    id: c.netsuiteId,
-    internalId: c.entityId || c.netsuiteId,
-    companyName: c.companyName,
-    address: c.address || '',
-    city: c.city || '',
-    country: c.country || '',
-    industry: c.industry || '',
-  }));
+  return cached.map((c) => {
+    const entityId = c.entityId || c.netsuiteId;
+    return {
+      id: c.netsuiteId,
+      internalId: c.netsuiteId,
+      entityId: entityId,
+      companyName: c.companyName,
+      displayName: `${c.companyName} (${entityId})`,
+      address: c.address || '',
+      city: c.city || '',
+      country: c.country || '',
+      industry: c.industry || '',
+    };
+  });
 }
 
 /**
@@ -300,8 +305,10 @@ function getMockCustomersForSync(): NetSuiteCustomer[] {
   return [
     {
       id: '1001',
-      internalId: 'CUST-001',
+      internalId: '1001',
+      entityId: 'E9001',
       companyName: 'ABC Mining Corporation',
+      displayName: 'ABC Mining Corporation (E9001)',
       address: '123 Mining Road',
       city: 'Perth',
       country: 'Australia',
@@ -309,8 +316,10 @@ function getMockCustomersForSync(): NetSuiteCustomer[] {
     },
     {
       id: '1002',
-      internalId: 'CUST-002',
+      internalId: '1002',
+      entityId: 'E9002',
       companyName: 'Global Steel Industries',
+      displayName: 'Global Steel Industries (E9002)',
       address: '456 Steel Avenue',
       city: 'Pittsburgh',
       country: 'United States',
@@ -318,8 +327,10 @@ function getMockCustomersForSync(): NetSuiteCustomer[] {
     },
     {
       id: '1003',
-      internalId: 'CUST-003',
+      internalId: '1003',
+      entityId: 'E9003',
       companyName: 'Cement Works Ltd',
+      displayName: 'Cement Works Ltd (E9003)',
       address: '789 Industrial Park',
       city: 'Mumbai',
       country: 'India',
@@ -327,8 +338,10 @@ function getMockCustomersForSync(): NetSuiteCustomer[] {
     },
     {
       id: '1004',
-      internalId: 'CUST-004',
+      internalId: '1004',
+      entityId: 'E9004',
       companyName: 'PowerGen Energy Solutions',
+      displayName: 'PowerGen Energy Solutions (E9004)',
       address: '321 Energy Boulevard',
       city: 'Houston',
       country: 'United States',
@@ -336,8 +349,10 @@ function getMockCustomersForSync(): NetSuiteCustomer[] {
     },
     {
       id: '1005',
-      internalId: 'CUST-005',
+      internalId: '1005',
+      entityId: 'E9005',
       companyName: 'Marine Services International',
+      displayName: 'Marine Services International (E9005)',
       address: '555 Harbor Drive',
       city: 'Singapore',
       country: 'Singapore',
@@ -345,8 +360,10 @@ function getMockCustomersForSync(): NetSuiteCustomer[] {
     },
     {
       id: '1006',
-      internalId: 'CUST-006',
+      internalId: '1006',
+      entityId: 'E9006',
       companyName: 'Deutsche Bergbau AG',
+      displayName: 'Deutsche Bergbau AG (E9006)',
       address: 'Industriestraße 45',
       city: 'Essen',
       country: 'Germany',
@@ -354,8 +371,10 @@ function getMockCustomersForSync(): NetSuiteCustomer[] {
     },
     {
       id: '1007',
-      internalId: 'CUST-007',
+      internalId: '1007',
+      entityId: 'E9007',
       companyName: 'Pulp & Paper Industries',
+      displayName: 'Pulp & Paper Industries (E9007)',
       address: '100 Forest Way',
       city: 'Vancouver',
       country: 'Canada',
@@ -363,8 +382,10 @@ function getMockCustomersForSync(): NetSuiteCustomer[] {
     },
     {
       id: '1008',
-      internalId: 'CUST-008',
+      internalId: '1008',
+      entityId: 'E9008',
       companyName: 'Arabian Oil Company',
+      displayName: 'Arabian Oil Company (E9008)',
       address: 'Petroleum District',
       city: 'Riyadh',
       country: 'Saudi Arabia',
@@ -372,8 +393,10 @@ function getMockCustomersForSync(): NetSuiteCustomer[] {
     },
     {
       id: '1009',
-      internalId: 'CUST-009',
+      internalId: '1009',
+      entityId: 'E9009',
       companyName: 'Tokyo Heavy Industries',
+      displayName: 'Tokyo Heavy Industries (E9009)',
       address: '1-2-3 Industrial Zone',
       city: 'Tokyo',
       country: 'Japan',
@@ -381,8 +404,10 @@ function getMockCustomersForSync(): NetSuiteCustomer[] {
     },
     {
       id: '1010',
-      internalId: 'CUST-010',
+      internalId: '1010',
+      entityId: 'E9010',
       companyName: 'South African Mining Corp',
+      displayName: 'South African Mining Corp (E9010)',
       address: '50 Gold Reef Road',
       city: 'Johannesburg',
       country: 'South Africa',

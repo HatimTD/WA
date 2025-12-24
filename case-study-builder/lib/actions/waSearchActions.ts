@@ -177,6 +177,12 @@ export async function waSearchCaseStudies(filters: WaSearchFilters) {
             email: true,
           },
         },
+        approver: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
