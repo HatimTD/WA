@@ -32,6 +32,7 @@ export type CaseStudyFormData = {
   qualifierType?: 'NEW_CUSTOMER' | 'CROSS_SELL' | 'MAINTENANCE';
   isTarget: boolean; // Counts toward BHAG 10,000 goal
   qualifierCompleted: boolean; // Whether qualifier questions were answered
+  customerSelected: boolean; // Whether customer was selected from dropdown (not just typed)
 
   // Step 3: Basic Information
   customerName: string;
@@ -129,6 +130,7 @@ export default function NewCaseStudyPage() {
     qualifierType: undefined,
     isTarget: false,
     qualifierCompleted: false,
+    customerSelected: false,
     customerName: '',
     industry: '',
     location: '',
@@ -199,8 +201,8 @@ export default function NewCaseStudyPage() {
       case 'Case Type':
         return !!formData.type;
       case 'Qualifier':
-        // Customer name required and qualifier questions must be answered
-        return !!(formData.customerName && formData.qualifierCompleted);
+        // Customer must be selected from dropdown and qualifier questions must be answered
+        return !!(formData.customerName && formData.customerSelected && formData.qualifierCompleted);
       case 'Basic Info':
         // BRD 3.3 - Application Case Base: Customer, Industry, Location, Component, Work Type, Wear Type, Base Metal, Dimensions
         return !!(
@@ -398,14 +400,34 @@ export default function NewCaseStudyPage() {
           )}
           {STEPS[currentStep - 1]?.title === 'Qualifier' && (
             <div className="space-y-6">
-              {/* Customer Name Search - NetSuite Integration */}
+              {/* Customer Name Search - NetSuite Integration (Modal) */}
               <NetSuiteCustomerSearch
                 value={formData.customerName}
-                onChange={(value) => updateFormData({ customerName: value })}
+                onChange={(value) => {
+                  // This is called when customer is cleared (value = '')
+                  if (!value) {
+                    updateFormData({
+                      customerName: '',
+                      customerSelected: false,
+                      qualifierCompleted: false,
+                      qualifierType: undefined,
+                      isTarget: false,
+                      // Also reset location/country/industry that were auto-filled
+                      location: '',
+                      country: '',
+                      industry: '',
+                    });
+                  }
+                }}
                 onCustomerSelect={(customer: NetSuiteCustomer) => {
-                  // Auto-fill fields from NetSuite data
+                  // Auto-fill fields from NetSuite data and mark as selected
                   const updates: Partial<CaseStudyFormData> = {
                     customerName: customer.companyName,
+                    customerSelected: true, // Mark that customer was clicked/selected
+                    // Reset qualifier when new customer is selected
+                    qualifierCompleted: false,
+                    qualifierType: undefined,
+                    isTarget: false,
                   };
                   if (customer.city) updates.location = customer.city;
                   if (customer.country) updates.country = customer.country;
@@ -416,21 +438,27 @@ export default function NewCaseStudyPage() {
                 }}
                 label="Customer Name"
                 required
-                placeholder="Search NetSuite customers..."
+                placeholder="Click to search customers..."
               />
-              <p className="text-sm text-muted-foreground -mt-4">
-                Search for existing customers in NetSuite by name or UID
-              </p>
 
-              {/* Challenge Qualifier - only show once customer name is entered */}
-              {formData.customerName && (
+              {/* Challenge Qualifier - only show once customer is SELECTED from dropdown */}
+              {formData.customerSelected && formData.customerName && (
                 <ChallengeQualifier
+                  key={formData.customerName} // Force re-mount when customer changes
                   customerName={formData.customerName}
                   onComplete={(result: QualifierResult) => {
                     updateFormData({
                       qualifierType: result.qualifierType,
                       isTarget: result.isTarget,
                       qualifierCompleted: true,
+                    });
+                  }}
+                  onReset={() => {
+                    // Reset qualifier state when user clicks "Re-evaluate"
+                    updateFormData({
+                      qualifierType: undefined,
+                      isTarget: false,
+                      qualifierCompleted: false,
                     });
                   }}
                 />
@@ -495,15 +523,18 @@ export default function NewCaseStudyPage() {
         </div>
 
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={handleSaveDraft}
-            disabled={isSubmitting}
-            className="dark:border-border"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            Save Draft
-          </Button>
+          {/* Hide Save Draft for first two steps (Case Type and Qualifier) */}
+          {currentStep > 2 && (
+            <Button
+              variant="outline"
+              onClick={handleSaveDraft}
+              disabled={isSubmitting}
+              className="dark:border-border"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Save Draft
+            </Button>
+          )}
 
           {currentStep < STEPS.length ? (
             <Button onClick={handleNext} disabled={isSubmitting}>

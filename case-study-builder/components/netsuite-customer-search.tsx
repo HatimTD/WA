@@ -3,9 +3,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { waSearchNetSuiteCustomers } from '@/lib/actions/waNetsuiteActions';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { waSearchNetSuiteCustomers, NetSuiteCustomerWithCases } from '@/lib/actions/waNetsuiteActions';
 import { NetSuiteCustomer } from '@/lib/integrations/netsuite';
-import { Loader2, Building2, MapPin, Globe, Factory } from 'lucide-react';
+import { Loader2, Building2, MapPin, Globe, Factory, Search, X, ChevronRight, FileText, Star, Cpu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -24,28 +32,30 @@ export default function NetSuiteCustomerSearch({
   onCustomerSelect,
   label = 'Customer Name',
   required = false,
-  placeholder = 'Search by company name or UID (e.g., E9008)...',
+  placeholder = 'Click to search customers...',
   className,
 }: Props) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [customers, setCustomers] = useState<NetSuiteCustomer[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(-1);
-  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [customers, setCustomers] = useState<NetSuiteCustomerWithCases[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<NetSuiteCustomerWithCases | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
-  // Close dropdown when clicking outside
+  // Sync internal state with value prop (for when parent resets value)
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
+    if (!value && selectedCustomer) {
+      setSelectedCustomer(null);
+    }
+  }, [value, selectedCustomer]);
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  // Focus search input when modal opens
+  useEffect(() => {
+    if (isOpen && searchInputRef.current) {
+      setTimeout(() => searchInputRef.current?.focus(), 100);
+    }
+  }, [isOpen]);
 
   // Debounced search
   useEffect(() => {
@@ -65,20 +75,16 @@ export default function NetSuiteCustomerSearch({
         const result = await waSearchNetSuiteCustomers(searchQuery);
         if (result.success && result.customers) {
           setCustomers(result.customers);
-          // Keep dropdown open to show "customer not found" message when no results
-          setIsOpen(true);
         } else {
           setCustomers([]);
-          setIsOpen(true); // Show "customer not found" message
         }
       } catch (error) {
         console.error('Search error:', error);
         setCustomers([]);
-        setIsOpen(true); // Show "customer not found" message
       } finally {
         setIsLoading(false);
       }
-    }, 300); // 300ms debounce
+    }, 300);
 
     return () => {
       if (debounceTimerRef.current) {
@@ -87,150 +93,286 @@ export default function NetSuiteCustomerSearch({
     };
   }, [searchQuery]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    setSearchQuery(newValue);
-    onChange(newValue);
-    setSelectedIndex(-1);
-  };
-
-  const handleCustomerSelect = (customer: NetSuiteCustomer) => {
+  const handleCustomerSelect = (customer: NetSuiteCustomerWithCases) => {
+    setSelectedCustomer(customer);
     onChange(customer.companyName);
-    setSearchQuery(customer.companyName);
     setIsOpen(false);
-    setSelectedIndex(-1);
+    setSearchQuery('');
+    setCustomers([]);
 
     if (onCustomerSelect) {
+      // Pass base customer data to parent (without case study info)
       onCustomerSelect(customer);
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!isOpen || customers.length === 0) return;
+  const handleClear = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedCustomer(null);
+    onChange('');
+  };
 
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setSelectedIndex((prev) => (prev < customers.length - 1 ? prev + 1 : prev));
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0));
-        break;
-      case 'Enter':
-        e.preventDefault();
-        if (selectedIndex >= 0 && selectedIndex < customers.length) {
-          handleCustomerSelect(customers[selectedIndex]);
-        }
-        break;
-      case 'Escape':
-        setIsOpen(false);
-        setSelectedIndex(-1);
-        break;
-    }
+  const handleOpenModal = () => {
+    setSearchQuery('');
+    setCustomers([]);
+    setIsOpen(true);
   };
 
   return (
-    <div ref={wrapperRef} className={cn('space-y-2', className)}>
-      <Label htmlFor="netsuite-customer-search" className="dark:text-foreground">
+    <div className={cn('space-y-2', className)}>
+      <Label className="dark:text-foreground">
         {label} {required && <span className="text-red-500 dark:text-red-400">*</span>}
       </Label>
 
-      <div className="relative">
-        <Input
-          id="netsuite-customer-search"
-          type="text"
-          value={value}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          onFocus={() => {
-            if (customers.length > 0) setIsOpen(true);
-          }}
-          placeholder={placeholder}
-          className="dark:bg-input dark:border-border dark:text-foreground pr-10"
-          required={required}
-          autoComplete="off"
-        />
-
-        {isLoading && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      {/* Selector - use div to avoid nested button issue */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={handleOpenModal}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleOpenModal();
+          }
+        }}
+        className={cn(
+          'w-full flex items-center justify-between px-4 py-3 rounded-lg border transition-all cursor-pointer',
+          'bg-white dark:bg-input hover:bg-gray-50 dark:hover:bg-accent',
+          'border-border dark:border-border',
+          'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-background',
+          selectedCustomer ? 'border-primary dark:border-primary' : ''
+        )}
+      >
+        {selectedCustomer ? (
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="p-2 bg-primary/10 dark:bg-primary/20 rounded-lg shrink-0">
+              <Building2 className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0 text-left">
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-foreground truncate">
+                  {selectedCustomer.companyName}
+                </span>
+                {selectedCustomer.caseStudyCount > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 shrink-0">
+                    <FileText className="h-3 w-3" />
+                    {selectedCustomer.caseStudyCount} case{selectedCustomer.caseStudyCount !== 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
+              <div className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
+                <span className="font-medium text-primary">{selectedCustomer.entityId}</span>
+                {selectedCustomer.city && (
+                  <>
+                    <span>•</span>
+                    <span>{selectedCustomer.city}</span>
+                  </>
+                )}
+                {selectedCustomer.country && (
+                  <>
+                    <span>•</span>
+                    <span>{selectedCustomer.country}</span>
+                  </>
+                )}
+              </div>
+              {/* Show recent case study titles */}
+              {selectedCustomer.recentCaseStudies && selectedCustomer.recentCaseStudies.length > 0 && (
+                <div className="text-xs text-muted-foreground mt-1 truncate">
+                  Latest: {selectedCustomer.recentCaseStudies[0].title || 'Untitled case study'}
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={handleClear}
+              className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors shrink-0"
+              aria-label="Clear selection"
+            >
+              <X className="h-4 w-4 text-muted-foreground" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 text-muted-foreground">
+            <Search className="h-5 w-5" />
+            <span>{placeholder}</span>
           </div>
         )}
-
-        {/* Dropdown */}
-        {isOpen && customers.length > 0 && (
-          <div className="absolute z-50 w-full mt-1 bg-white dark:bg-popover border border-border dark:border-border rounded-md shadow-lg max-h-[300px] overflow-y-auto">
-            <div className="py-1">
-              {customers.map((customer, index) => (
-                <button
-                  key={customer.id}
-                  type="button"
-                  onClick={() => handleCustomerSelect(customer)}
-                  className={cn(
-                    'w-full px-4 py-3 text-left hover:bg-accent dark:hover:bg-accent transition-colors',
-                    'focus:bg-accent dark:focus:bg-accent focus:outline-none',
-                    selectedIndex === index && 'bg-accent dark:bg-accent'
-                  )}
-                  onMouseEnter={() => setSelectedIndex(index)}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 p-2 bg-primary/10 dark:bg-primary/20 rounded">
-                      <Building2 className="h-4 w-4 text-primary dark:text-primary" />
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm text-foreground dark:text-foreground truncate">
-                        {customer.companyName}
-                      </div>
-                      <div className="text-xs text-muted-foreground dark:text-muted-foreground mt-1">
-                        <span className="font-medium text-primary">{customer.entityId}</span> • ID: {customer.internalId}
-                      </div>
-
-                      <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground dark:text-muted-foreground">
-                        {customer.city && (
-                          <div className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            <span>{customer.city}</span>
-                          </div>
-                        )}
-                        {customer.country && (
-                          <div className="flex items-center gap-1">
-                            <Globe className="h-3 w-3" />
-                            <span>{customer.country}</span>
-                          </div>
-                        )}
-                        {customer.industry && (
-                          <div className="flex items-center gap-1">
-                            <Factory className="h-3 w-3" />
-                            <span>{customer.industry}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* No results - Customer not found message */}
-        {isOpen && !isLoading && customers.length === 0 && searchQuery.length >= 2 && (
-          <div className="absolute z-50 w-full mt-1 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-md shadow-lg">
-            <div className="px-4 py-3 text-sm text-amber-800 dark:text-amber-200 text-center">
-              <p className="font-medium">Customer does not exist</p>
-              <p className="text-xs mt-1">Contact support to add this customer to the system</p>
-            </div>
-          </div>
+        {!selectedCustomer && (
+          <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
         )}
       </div>
 
-      {searchQuery.length >= 2 && isLoading && (
-        <p className="text-xs text-muted-foreground dark:text-muted-foreground">
-          Searching NetSuite...
-        </p>
-      )}
+      {/* Search Modal */}
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b dark:border-border">
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-primary" />
+              Search Customer
+            </DialogTitle>
+            <DialogDescription>
+              Search by company name or customer ID (e.g., E9008)
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Search Input */}
+          <div className="px-6 py-4 border-b dark:border-border bg-muted/30">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Type at least 2 characters to search..."
+                className="pl-10 pr-10 h-12 text-base dark:bg-input"
+                autoComplete="off"
+              />
+              {isLoading && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Results */}
+          <div className="flex-1 overflow-y-auto min-h-[200px] max-h-[400px]">
+            {/* Loading State */}
+            {isLoading && searchQuery.length >= 2 && (
+              <div className="flex items-center justify-center py-12 text-muted-foreground">
+                <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                <span>Searching customers...</span>
+              </div>
+            )}
+
+            {/* Results List */}
+            {!isLoading && customers.length > 0 && (
+              <div className="divide-y dark:divide-border">
+                {customers.map((customer) => (
+                  <button
+                    key={customer.id}
+                    type="button"
+                    onClick={() => handleCustomerSelect(customer)}
+                    className={cn(
+                      'w-full px-6 py-4 text-left transition-colors',
+                      'hover:bg-accent dark:hover:bg-accent',
+                      'focus:bg-accent dark:focus:bg-accent focus:outline-none'
+                    )}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="p-2.5 bg-primary/10 dark:bg-primary/20 rounded-lg shrink-0">
+                        <Building2 className="h-5 w-5 text-primary" />
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        {/* Company Name with Case Study Badge */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-foreground text-base">
+                            {customer.companyName}
+                          </span>
+                          {customer.caseStudyCount > 0 && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                              <FileText className="h-3 w-3" />
+                              {customer.caseStudyCount} case{customer.caseStudyCount !== 1 ? 's' : ''}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Entity ID */}
+                        <div className="text-sm text-muted-foreground mt-1">
+                          <span className="font-medium text-primary">{customer.entityId}</span>
+                          <span className="mx-2">•</span>
+                          <span>ID: {customer.internalId}</span>
+                        </div>
+
+                        {/* Location Info */}
+                        <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
+                          {customer.city && (
+                            <div className="flex items-center gap-1.5">
+                              <MapPin className="h-3.5 w-3.5" />
+                              <span>{customer.city}</span>
+                            </div>
+                          )}
+                          {customer.country && (
+                            <div className="flex items-center gap-1.5">
+                              <Globe className="h-3.5 w-3.5" />
+                              <span>{customer.country}</span>
+                            </div>
+                          )}
+                          {customer.industry && (
+                            <div className="flex items-center gap-1.5">
+                              <Factory className="h-3.5 w-3.5" />
+                              <span>{customer.industry}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Recent Case Studies */}
+                        {customer.recentCaseStudies && customer.recentCaseStudies.length > 0 && (
+                          <div className="mt-3 pt-2 border-t dark:border-border">
+                            <div className="text-xs font-medium text-muted-foreground mb-1.5">Recent Case Studies:</div>
+                            <div className="space-y-1">
+                              {customer.recentCaseStudies.slice(0, 2).map((cs) => (
+                                <div key={cs.id} className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  {cs.type === 'STAR' && <Star className="h-3 w-3 text-yellow-500" />}
+                                  {cs.type === 'TECH' && <Cpu className="h-3 w-3 text-purple-500" />}
+                                  {cs.type === 'APPLICATION' && <FileText className="h-3 w-3 text-green-500" />}
+                                  <span className="truncate">{cs.title || 'Untitled'}</span>
+                                  <span className={cn(
+                                    'px-1.5 py-0.5 rounded text-[10px] font-medium',
+                                    cs.status === 'PUBLISHED' && 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+                                    cs.status === 'APPROVED' && 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+                                    cs.status === 'SUBMITTED' && 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
+                                    cs.status === 'DRAFT' && 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                                  )}>
+                                    {cs.status}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0 mt-1" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* No Results */}
+            {!isLoading && customers.length === 0 && searchQuery.length >= 2 && (
+              <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+                <div className="p-4 bg-amber-100 dark:bg-amber-900/30 rounded-full mb-4">
+                  <Building2 className="h-8 w-8 text-amber-600 dark:text-amber-400" />
+                </div>
+                <p className="font-semibold text-foreground mb-1">Customer not found</p>
+                <p className="text-sm text-muted-foreground">
+                  No customers match "{searchQuery}"
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Contact support to add this customer to NetSuite
+                </p>
+              </div>
+            )}
+
+            {/* Empty State - Before Search */}
+            {!isLoading && customers.length === 0 && searchQuery.length < 2 && (
+              <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+                <div className="p-4 bg-muted rounded-full mb-4">
+                  <Search className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <p className="font-medium text-foreground mb-1">Search for a customer</p>
+                <p className="text-sm text-muted-foreground">
+                  Enter a company name or customer ID to get started
+                </p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

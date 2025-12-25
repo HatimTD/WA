@@ -32,10 +32,11 @@ export type QualifierResult = {
 type Props = {
   customerName: string;
   onComplete: (result: QualifierResult) => void;
+  onReset?: () => void; // Called when user clicks "Re-evaluate"
   onBack?: () => void;
 };
 
-export default function ChallengeQualifier({ customerName, onComplete, onBack }: Props) {
+export default function ChallengeQualifier({ customerName, onComplete, onReset, onBack }: Props) {
   const [step, setStep] = useState<1 | 2 | 'complete'>(1);
   const [result, setResult] = useState<QualifierResult | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
@@ -96,6 +97,10 @@ export default function ChallengeQualifier({ customerName, onComplete, onBack }:
   const resetQualifier = () => {
     setStep(1);
     setResult(null);
+    // Notify parent that qualifier is being re-evaluated
+    if (onReset) {
+      onReset();
+    }
   };
 
   // Completed state

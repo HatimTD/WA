@@ -31,12 +31,13 @@ const FALLBACK_INDUSTRIES = [
   { id: 'other', value: 'Other', sortOrder: 11 },
 ];
 
+// Values must match Prisma WearType enum exactly (ABRASION, IMPACT, CORROSION, TEMPERATURE, COMBINATION)
 const FALLBACK_WEAR_TYPES = [
-  { id: 'abrasion', value: 'Abrasion', sortOrder: 0 },
-  { id: 'impact', value: 'Impact', sortOrder: 1 },
-  { id: 'corrosion', value: 'Corrosion', sortOrder: 2 },
-  { id: 'temperature', value: 'High Temperature', sortOrder: 3 },
-  { id: 'combination', value: 'Combination', sortOrder: 4 },
+  { id: 'abrasion', value: 'ABRASION', label: 'Abrasion', sortOrder: 0 },
+  { id: 'impact', value: 'IMPACT', label: 'Impact', sortOrder: 1 },
+  { id: 'corrosion', value: 'CORROSION', label: 'Corrosion', sortOrder: 2 },
+  { id: 'temperature', value: 'TEMPERATURE', label: 'High Temperature', sortOrder: 3 },
+  { id: 'combination', value: 'COMBINATION', label: 'Combination', sortOrder: 4 },
 ];
 
 export default function StepTwo({ formData, updateFormData }: Props) {
@@ -94,14 +95,14 @@ export default function StepTwo({ formData, updateFormData }: Props) {
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Customer Name - NetSuite Integration */}
+        {/* Customer Name - NetSuite Integration (Modal) */}
         <NetSuiteCustomerSearch
           value={formData.customerName}
           onChange={(value) => updateFormData({ customerName: value })}
           onCustomerSelect={handleCustomerSelect}
           label="Customer Name"
           required
-          placeholder="Search NetSuite customers..."
+          placeholder="Click to search customers..."
         />
 
         {/* Industry */}
@@ -243,7 +244,8 @@ export default function StepTwo({ formData, updateFormData }: Props) {
                 disabled={wearTypesLoading}
               />
               <Label htmlFor={wear.id} className="font-normal cursor-pointer dark:text-foreground">
-                {wear.value}
+                {/* Use label for display, fall back to value if no label */}
+                {(wear as any).label || wear.value}
               </Label>
             </div>
           ))}
