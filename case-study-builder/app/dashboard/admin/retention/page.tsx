@@ -19,9 +19,9 @@ import {
   Calendar,
   AlertCircle,
   CheckCircle,
-  Play,
 } from 'lucide-react';
 import Link from 'next/link';
+import RetentionCleanupButton from '@/components/retention-cleanup-button';
 
 export default async function RetentionManagementPage() {
   const session = await auth();
@@ -107,13 +107,7 @@ export default async function RetentionManagementPage() {
             </p>
           </div>
         </div>
-        <form action="/api/admin/retention" method="POST">
-          <input type="hidden" name="action" value="cleanup" />
-          <Button type="submit" className="gap-2">
-            <Play className="h-4 w-4" />
-            Run Cleanup
-          </Button>
-        </form>
+        <RetentionCleanupButton />
       </div>
 
       {/* Data Overview */}

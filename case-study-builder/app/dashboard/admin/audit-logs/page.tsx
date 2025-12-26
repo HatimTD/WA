@@ -20,8 +20,10 @@ import {
   Search,
   ArrowLeft,
   Hash,
+  ExternalLink,
 } from 'lucide-react';
 import Link from 'next/link';
+import AuditLogDetail from '@/components/audit-log-detail';
 
 export default async function AuditLogsPage({
   searchParams,
@@ -262,62 +264,70 @@ export default async function AuditLogsPage({
               </p>
             ) : (
               auditLogs.map((log) => (
-                <div
+                <AuditLogDetail
                   key={log.id}
-                  className="border dark:border-border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-background/50 transition-colors"
+                  log={{
+                    ...log,
+                    previousState: log.previousState as Record<string, unknown> | null,
+                    newState: log.newState as Record<string, unknown> | null,
+                    metadata: null, // WaAuditLog model doesn't have metadata field
+                  }}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span
-                          className={`px-2 py-1 text-xs font-medium rounded ${getActionTypeColor(log.actionType)}`}
-                        >
-                          {log.actionType}
-                        </span>
-                        {log.resourceType && (
-                          <span className="text-xs text-gray-500 dark:text-muted-foreground">
-                            {log.resourceType}
-                            {log.resourceId && `: ${log.resourceId.slice(0, 8)}...`}
+                  <div className="border dark:border-border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-background/50 transition-colors group">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span
+                            className={`px-2 py-1 text-xs font-medium rounded ${getActionTypeColor(log.actionType)}`}
+                          >
+                            {log.actionType}
                           </span>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          {log.userEmail}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {new Date(log.createdAt).toLocaleString()}
-                        </span>
-                        {log.ipAddress && (
-                          <span className="text-xs">IP: {log.ipAddress}</span>
-                        )}
-                      </div>
-
-                      {/* Hash verification */}
-                      <div className="mt-2 flex items-center gap-2 text-xs text-gray-400">
-                        <Hash className="h-3 w-3" />
-                        <span className="font-mono">
-                          {log.contentHash.slice(0, 16)}...
-                        </span>
-                        {log.previousHash && (
-                          <>
-                            <span>→</span>
-                            <span className="font-mono">
-                              {log.previousHash.slice(0, 8)}...
+                          {log.resourceType && (
+                            <span className="text-xs text-gray-500 dark:text-muted-foreground">
+                              {log.resourceType}
+                              {log.resourceId && `: ${log.resourceId.slice(0, 8)}...`}
                             </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
+                          )}
+                        </div>
 
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500" />
+                        <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <User className="h-3 w-3" />
+                            {log.userEmail}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {new Date(log.createdAt).toLocaleString()}
+                          </span>
+                          {log.ipAddress && (
+                            <span className="text-xs">IP: {log.ipAddress}</span>
+                          )}
+                        </div>
+
+                        {/* Hash verification */}
+                        <div className="mt-2 flex items-center gap-2 text-xs text-gray-400">
+                          <Hash className="h-3 w-3" />
+                          <span className="font-mono">
+                            {log.contentHash.slice(0, 16)}...
+                          </span>
+                          {log.previousHash && (
+                            <>
+                              <span>→</span>
+                              <span className="font-mono">
+                                {log.previousHash.slice(0, 8)}...
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <ExternalLink className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
                     </div>
                   </div>
-                </div>
+                </AuditLogDetail>
               ))
             )}
           </div>

@@ -193,76 +193,84 @@ export default function NewCaseStudyPage() {
     setFormData((prev) => ({ ...prev, ...data }));
   };
 
-  const validateStep = (step: number): boolean => {
+  // Get missing fields for a step (returns array of field names that are missing)
+  const getMissingFields = (step: number): string[] => {
     const currentStepData = STEPS.find(s => s.number === step);
-    if (!currentStepData) return false;
+    if (!currentStepData) return [];
+
+    const missing: string[] = [];
 
     switch (currentStepData.title) {
       case 'Case Type':
-        return !!formData.type;
+        if (!formData.type) missing.push('Case Type');
+        break;
       case 'Qualifier':
-        // Customer must be selected from dropdown and qualifier questions must be answered
-        return !!(formData.customerName && formData.customerSelected && formData.qualifierCompleted);
+        if (!formData.customerName) missing.push('Customer Name');
+        if (!formData.customerSelected) missing.push('Customer Selection (click a customer from the list)');
+        if (!formData.qualifierCompleted) missing.push('Qualifier Questions');
+        break;
       case 'Basic Info':
-        // BRD 3.3 - Application Case Base: Customer, Industry, Location, Component, Work Type, Wear Type, Base Metal, Dimensions
-        return !!(
-          formData.customerName &&
-          formData.industry &&
-          formData.location &&
-          formData.componentWorkpiece &&
-          formData.workType &&
-          formData.wearType.length > 0 &&
-          formData.baseMetal &&
-          formData.generalDimensions
-        );
+        if (!formData.customerName) missing.push('Customer Name');
+        if (!formData.industry) missing.push('Industry');
+        if (!formData.location) missing.push('Location');
+        if (!formData.componentWorkpiece) missing.push('Component/Workpiece');
+        if (!formData.workType) missing.push('Work Type');
+        if (!formData.wearType || formData.wearType.length === 0) missing.push('Type of Wear');
+        if (!formData.baseMetal) missing.push('Base Metal');
+        if (!formData.generalDimensions) missing.push('General Dimensions');
+        break;
       case 'Problem':
-        // BRD 3.3 - Application Case Base: Problem Description, Previous Solution
-        return !!(formData.problemDescription && formData.previousSolution);
+        if (!formData.problemDescription) missing.push('Problem Description');
+        if (!formData.previousSolution) missing.push('Previous Solution');
+        break;
       case 'Solution':
-        // BRD 3.3 - Application Case Base: WA Solution, WA Product, Technical Advantages
-        return !!(formData.waSolution && formData.waProduct && formData.technicalAdvantages);
+        if (!formData.waSolution) missing.push('WA Solution');
+        if (!formData.waProduct) missing.push('WA Product');
+        if (!formData.technicalAdvantages) missing.push('Technical Advantages');
+        break;
       case 'WPS':
-        // BRD 3.3 - Tech Case Additive: All 8 WPS fields required
-        // Base Metal (Detailed), Surface Preparation, Welding Process/Params, Welding Position,
-        // Temperature Management, Shielding Gas, Oscillation Details, Additional Notes
-        return !!(
-          formData.wps?.baseMetalType &&
-          formData.wps?.surfacePreparation &&
-          formData.wps?.weldingProcess &&
-          formData.wps?.weldingPosition &&
-          (formData.wps?.preheatTemperature || formData.wps?.interpassTemperature) && // Temperature Management
-          formData.wps?.shieldingGas &&
-          (formData.wps?.oscillationWidth || formData.wps?.oscillationSpeed) && // Oscillation Details
-          formData.wps?.additionalNotes
-        );
+        if (!formData.wps?.baseMetalType) missing.push('Base Metal Type');
+        if (!formData.wps?.surfacePreparation) missing.push('Surface Preparation');
+        if (!formData.wps?.waProductName) missing.push('WA Product Name');
+        if (!formData.wps?.shieldingGas) missing.push('Shielding Gas');
+        if (!formData.wps?.weldingProcess) missing.push('Welding Process');
+        if (!formData.wps?.weldingPosition) missing.push('Welding Position');
+        if (!formData.wps?.oscillationWidth && !formData.wps?.oscillationSpeed) missing.push('Oscillation (Width or Speed)');
+        if (!formData.wps?.preheatTemperature && !formData.wps?.interpassTemperature) missing.push('Temperature (Preheat or Interpass)');
+        if (!formData.wps?.additionalNotes) missing.push('Additional WPS Notes');
+        break;
       case 'Cost Calculator':
-        // BRD 3.3 - Star Case Additive: All cost calculator fields required
-        return !!(
-          formData.costCalculator?.costOfPart &&
-          formData.costCalculator?.oldSolutionLifetime &&
-          formData.costCalculator?.waSolutionLifetime &&
-          formData.costCalculator?.partsUsedPerYear &&
-          formData.costCalculator?.maintenanceDowntimeCost &&
-          formData.costCalculator?.disassemblyAssemblyCost
-        );
+        if (!formData.costCalculator?.costOfPart) missing.push('Cost of Part');
+        if (!formData.costCalculator?.partsUsedPerYear) missing.push('Parts Used Per Year');
+        if (!formData.costCalculator?.oldSolutionLifetime) missing.push('Old Solution Lifetime');
+        if (!formData.costCalculator?.waSolutionLifetime) missing.push('WA Solution Lifetime');
+        if (!formData.costCalculator?.maintenanceDowntimeCost) missing.push('Maintenance/Downtime Cost');
+        if (!formData.costCalculator?.disassemblyAssemblyCost) missing.push('Disassembly/Assembly Cost');
+        break;
       case 'Review':
-        // BRD 3.3 - Application Case Base: Financial fields and at least one image required
-        return !!(
-          formData.solutionValueRevenue &&
-          formData.annualPotentialRevenue &&
-          formData.customerSavingsAmount &&
-          formData.images.length >= 1
-        );
-      default:
-        return false;
+        if (!formData.solutionValueRevenue) missing.push('Solution Value/Revenue');
+        if (!formData.annualPotentialRevenue) missing.push('Annual Potential Revenue');
+        if (!formData.customerSavingsAmount) missing.push('Customer Savings');
+        if (!formData.images || formData.images.length < 1) missing.push('At least 1 image');
+        break;
     }
+
+    return missing;
+  };
+
+  const validateStep = (step: number): boolean => {
+    return getMissingFields(step).length === 0;
   };
 
   const handleNext = () => {
-    if (validateStep(currentStep)) {
+    const missingFields = getMissingFields(currentStep);
+    if (missingFields.length === 0) {
       setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
     } else {
-      toast.error('Please fill in all required fields');
+      // Show specific missing fields in toast
+      const fieldList = missingFields.slice(0, 3).join(', ');
+      const moreCount = missingFields.length > 3 ? ` and ${missingFields.length - 3} more` : '';
+      toast.error(`Missing required fields: ${fieldList}${moreCount}`);
     }
   };
 
@@ -486,7 +494,11 @@ export default function NewCaseStudyPage() {
             </div>
           )}
           {STEPS[currentStep - 1]?.title === 'Basic Info' && (
-            <StepTwo formData={formData} updateFormData={updateFormData} />
+            <StepTwo
+              formData={formData}
+              updateFormData={updateFormData}
+              customerReadOnly={formData.customerSelected}
+            />
           )}
           {STEPS[currentStep - 1]?.title === 'Problem' && (
             <StepThree formData={formData} updateFormData={updateFormData} />

@@ -20,7 +20,7 @@ export default async function UserManagementPage() {
     redirect('/dashboard');
   }
 
-  // Fetch all users with their statistics
+  // Fetch all users with their statistics and multiple roles
   const users = await prisma.user.findMany({
     select: {
       id: true,
@@ -30,6 +30,11 @@ export default async function UserManagementPage() {
       region: true,
       totalPoints: true,
       createdAt: true,
+      userRoles: {
+        select: {
+          role: true,
+        },
+      },
       _count: {
         select: {
           caseStudies: true,
@@ -47,6 +52,7 @@ export default async function UserManagementPage() {
     name: u.name,
     email: u.email,
     role: u.role,
+    roles: u.userRoles.length > 0 ? u.userRoles.map(ur => ur.role) : [u.role], // Use userRoles if available
     region: u.region,
     totalPoints: u.totalPoints,
     caseCount: u._count.caseStudies,

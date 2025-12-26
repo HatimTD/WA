@@ -93,8 +93,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json().catch(() => ({}));
-    const { action, dataType, updates } = body;
+    // Handle both form data and JSON
+    const contentType = request.headers.get('content-type') || '';
+    let action = '';
+    let dataType = '';
+    let updates: Record<string, unknown> = {};
+
+    if (contentType.includes('application/x-www-form-urlencoded')) {
+      const formData = await request.formData();
+      action = formData.get('action')?.toString() || '';
+      dataType = formData.get('dataType')?.toString() || '';
+    } else {
+      const body = await request.json().catch(() => ({}));
+      action = body.action || '';
+      dataType = body.dataType || '';
+      updates = body.updates || {};
+    }
 
     if (action === 'initialize') {
       const count = await initializeRetentionPolicies();

@@ -13,6 +13,7 @@ import { useMasterList } from '@/lib/hooks/use-master-list';
 type Props = {
   formData: CaseStudyFormData;
   updateFormData: (data: Partial<CaseStudyFormData>) => void;
+  customerReadOnly?: boolean; // When customer was selected in Qualifier step
 };
 
 // Fallback values if Master List API fails
@@ -40,16 +41,26 @@ const FALLBACK_WEAR_TYPES = [
   { id: 'combination', value: 'COMBINATION', label: 'Combination', sortOrder: 4 },
 ];
 
-export default function StepTwo({ formData, updateFormData }: Props) {
+export default function StepTwo({ formData, updateFormData, customerReadOnly = false }: Props) {
   // Fetch master list data from API
   const { items: industries, isLoading: industriesLoading } = useMasterList('Industry', FALLBACK_INDUSTRIES);
   const { items: wearTypes, isLoading: wearTypesLoading } = useMasterList('WearType', FALLBACK_WEAR_TYPES);
 
+  // Helper to check if a wearType value is selected (case-insensitive)
+  const waIsWearTypeSelected = (value: string): boolean => {
+    const current = formData.wearType || [];
+    return current.some((w) => w.toUpperCase() === value.toUpperCase());
+  };
+
   const toggleWearType = (value: string) => {
     const current = formData.wearType || [];
-    const updated = current.includes(value)
-      ? current.filter((w) => w !== value)
-      : [...current, value];
+    // Normalize to uppercase for Prisma enum compatibility
+    const normalizedValue = value.toUpperCase();
+    const isSelected = current.some((w) => w.toUpperCase() === normalizedValue);
+
+    const updated = isSelected
+      ? current.filter((w) => w.toUpperCase() !== normalizedValue)
+      : [...current, normalizedValue]; // Store as uppercase
     updateFormData({ wearType: updated });
   };
 
@@ -95,15 +106,34 @@ export default function StepTwo({ formData, updateFormData }: Props) {
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Customer Name - NetSuite Integration (Modal) */}
-        <NetSuiteCustomerSearch
-          value={formData.customerName}
-          onChange={(value) => updateFormData({ customerName: value })}
-          onCustomerSelect={handleCustomerSelect}
-          label="Customer Name"
-          required
-          placeholder="Click to search customers..."
-        />
+        {/* Customer Name - Read-only if selected in Qualifier step, otherwise searchable */}
+        {customerReadOnly && formData.customerName ? (
+          <div className="space-y-2">
+            <Label className="dark:text-foreground">
+              Customer Name <span className="text-red-500 dark:text-red-400">*</span>
+            </Label>
+            <div className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-gray-50 dark:bg-muted border-border">
+              <div className="p-2 bg-primary/10 dark:bg-primary/20 rounded-lg shrink-0">
+                <span className="text-primary text-lg">🏢</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className="font-medium text-foreground">{formData.customerName}</span>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Selected in previous step • Go back to change
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <NetSuiteCustomerSearch
+            value={formData.customerName}
+            onChange={(value) => updateFormData({ customerName: value })}
+            onCustomerSelect={handleCustomerSelect}
+            label="Customer Name"
+            required
+            placeholder="Click to search customers..."
+          />
+        )}
 
         {/* Industry */}
         <div className="space-y-2">
@@ -226,29 +256,42 @@ export default function StepTwo({ formData, updateFormData }: Props) {
         </div>
       </div>
 
-      {/* Wear Type */}
-      <div className="space-y-3">
+      {/* Wear Type - Compact chip/badge style */}
+      <div className="space-y-2">
         <Label className="dark:text-foreground">
           Type of Wear <span className="text-red-500 dark:text-red-400">*</span>
         </Label>
-        <p className="text-sm text-muted-foreground dark:text-muted-foreground">
-          {wearTypesLoading ? 'Loading wear types...' : 'Select all that apply'}
-        </p>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {wearTypes.map((wear) => (
-            <div key={wear.id} className="flex items-center space-x-2">
-              <Checkbox
-                id={wear.id}
-                checked={formData.wearType?.includes(wear.value)}
-                onCheckedChange={() => toggleWearType(wear.value)}
-                disabled={wearTypesLoading}
-              />
-              <Label htmlFor={wear.id} className="font-normal cursor-pointer dark:text-foreground">
-                {/* Use label for display, fall back to value if no label */}
-                {(wear as any).label || wear.value}
-              </Label>
-            </div>
-          ))}
+        <div className="flex flex-wrap gap-2">
+          {wearTypesLoading ? (
+            <span className="text-sm text-muted-foreground">Loading...</span>
+          ) : (
+            wearTypes.map((wear) => {
+              const isSelected = waIsWearTypeSelected(wear.value);
+              const displayLabel = (wear as any).label || wear.value;
+              return (
+                <button
+                  key={wear.id}
+                  type="button"
+                  onClick={() => toggleWearType(wear.value)}
+                  className={`
+                    inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium
+                    transition-all duration-150 border
+                    ${isSelected
+                      ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                      : 'bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-foreground'
+                    }
+                  `}
+                >
+                  {isSelected && (
+                    <svg className="w-3.5 h-3.5 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                  {displayLabel}
+                </button>
+              );
+            })
+          )}
         </div>
       </div>
     </div>

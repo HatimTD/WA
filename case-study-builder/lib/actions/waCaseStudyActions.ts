@@ -188,8 +188,13 @@ export async function waUpdateCaseStudy(id: string, data: any) {
     // Prepare update data with proper type conversions
     const updateData: any = { ...data };
 
-    // Remove WPS data from case study update (it's handled separately)
+    // Remove WPS and cost calculator data (handled separately)
     delete updateData.wps;
+    delete updateData.costCalculator;
+
+    // Remove form-only fields that don't exist in the database schema
+    delete updateData.customerSelected;
+    delete updateData.qualifierCompleted;
 
     // Handle wearType array conversion if present - normalize and filter to valid enum values
     if (data.wearType) {
@@ -197,6 +202,16 @@ export async function waUpdateCaseStudy(id: string, data: any) {
       updateData.wearType = data.wearType
         .map((wt: string) => wt.toUpperCase())
         .filter((wt: string) => VALID_WEAR_TYPES.includes(wt)) as any;
+    }
+
+    // Handle qualifierType - ensure it's saved correctly
+    if (data.qualifierType !== undefined) {
+      updateData.qualifierType = data.qualifierType || null;
+    }
+
+    // Handle isTarget - ensure boolean is saved correctly
+    if (data.isTarget !== undefined) {
+      updateData.isTarget = !!data.isTarget;
     }
 
     // Handle decimal conversions if present

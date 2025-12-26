@@ -34,11 +34,53 @@ type Props = {
   onComplete: (result: QualifierResult) => void;
   onReset?: () => void; // Called when user clicks "Re-evaluate"
   onBack?: () => void;
+  // Initial values for restoring saved qualifier state
+  initialQualifierType?: 'NEW_CUSTOMER' | 'CROSS_SELL' | 'MAINTENANCE';
+  initialIsTarget?: boolean;
 };
 
-export default function ChallengeQualifier({ customerName, onComplete, onReset, onBack }: Props) {
-  const [step, setStep] = useState<1 | 2 | 'complete'>(1);
-  const [result, setResult] = useState<QualifierResult | null>(null);
+// Helper to create result object from qualifier type
+function waCreateResultFromType(qualifierType: 'NEW_CUSTOMER' | 'CROSS_SELL' | 'MAINTENANCE', isTarget: boolean): QualifierResult {
+  switch (qualifierType) {
+    case 'NEW_CUSTOMER':
+      return {
+        qualifierType: 'NEW_CUSTOMER',
+        isTarget: true,
+        message: 'New Industrial Challenge',
+        description: 'This customer has not purchased from Welding Alloys in the last 3 years. This case study will count toward the 10,000 Challenge target!'
+      };
+    case 'CROSS_SELL':
+      return {
+        qualifierType: 'CROSS_SELL',
+        isTarget: true,
+        message: 'Cross-Sell Challenge',
+        description: 'This is a new product for an existing customer. This case study will count toward the 10,000 Challenge target!'
+      };
+    case 'MAINTENANCE':
+      return {
+        qualifierType: 'MAINTENANCE',
+        isTarget: false,
+        message: 'Knowledge Base Update',
+        description: 'This is a maintenance update for an existing solution. While valuable for our knowledge base, it will not increment the strategic counter.'
+      };
+  }
+}
+
+export default function ChallengeQualifier({
+  customerName,
+  onComplete,
+  onReset,
+  onBack,
+  initialQualifierType,
+  initialIsTarget
+}: Props) {
+  // Initialize with saved state if available
+  const [step, setStep] = useState<1 | 2 | 'complete'>(
+    initialQualifierType ? 'complete' : 1
+  );
+  const [result, setResult] = useState<QualifierResult | null>(
+    initialQualifierType ? waCreateResultFromType(initialQualifierType, initialIsTarget ?? false) : null
+  );
   const [showCelebration, setShowCelebration] = useState(false);
 
   // Trigger celebration when a target result is achieved

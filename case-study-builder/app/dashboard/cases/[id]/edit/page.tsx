@@ -51,14 +51,16 @@ export default async function EditCasePage({ params }: Props) {
     redirect('/dashboard/my-cases');
   }
 
-  // Only allow editing of DRAFT or REJECTED case studies
+  // Only allow editing of DRAFT, SUBMITTED, or REJECTED case studies
   // Approvers can edit any status
+  // Contributors can edit their own DRAFT/SUBMITTED/REJECTED cases
   if (
     user?.role !== 'APPROVER' &&
     caseStudy.status !== 'DRAFT' &&
+    caseStudy.status !== 'SUBMITTED' &&
     caseStudy.status !== 'REJECTED'
   ) {
-    redirect(`/dashboard/cases/${id}?message=cannot_edit_submitted`);
+    redirect(`/dashboard/cases/${id}?message=cannot_edit`);
   }
 
   // Pass the original caseStudy - the component will handle conversion internally

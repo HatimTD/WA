@@ -205,9 +205,24 @@ export default async function MyCasesPage({
               View
             </Button>
           </Link>
+          {/* DRAFT: Show "Continue" button - resume where user left off */}
           {caseStudy.status === 'DRAFT' && (
             <Link href={`/dashboard/cases/${caseStudy.id}/edit`}>
-              <Button size="sm">Edit</Button>
+              <Button size="sm">Continue</Button>
+            </Link>
+          )}
+          {/* SUBMITTED: Show "Edit" button - user can edit before approval */}
+          {caseStudy.status === 'SUBMITTED' && (
+            <Link href={`/dashboard/cases/${caseStudy.id}/edit`}>
+              <Button variant="outline" size="sm" className="dark:border-border">
+                Edit
+              </Button>
+            </Link>
+          )}
+          {/* REJECTED: Show "Edit & Resubmit" button */}
+          {caseStudy.status === 'REJECTED' && (
+            <Link href={`/dashboard/cases/${caseStudy.id}/edit`}>
+              <Button size="sm">Edit & Resubmit</Button>
             </Link>
           )}
         </div>

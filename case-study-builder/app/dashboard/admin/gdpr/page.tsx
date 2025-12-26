@@ -19,11 +19,11 @@ import {
   AlertTriangle,
   ArrowLeft,
   FileText,
-  Trash2,
   Download,
-  Mail,
+  Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
+import GdprRequestActions from '@/components/gdpr-request-actions';
 
 export default async function GdprRequestsPage({
   searchParams,
@@ -305,22 +305,11 @@ export default async function GdprRequestsPage({
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {request.status === 'VERIFIED' && (
-                        <form action={`/api/gdpr/deletion-request`} method="POST">
-                          <input type="hidden" name="requestId" value={request.id} />
-                          <input type="hidden" name="action" value="process" />
-                          <Button type="submit" size="sm" variant="destructive" className="gap-1">
-                            <Trash2 className="h-3 w-3" />
-                            Process
-                          </Button>
-                        </form>
-                      )}
-                      {request.status === 'PENDING' && (
-                        <Button size="sm" variant="outline" className="gap-1">
-                          <Mail className="h-3 w-3" />
-                          Send Verification
-                        </Button>
-                      )}
+                      <GdprRequestActions
+                        requestId={request.id}
+                        status={request.status}
+                        userEmail={request.userEmail}
+                      />
                       {getStatusIcon(request.status)}
                     </div>
                   </div>

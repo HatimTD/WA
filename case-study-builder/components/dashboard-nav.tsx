@@ -35,7 +35,13 @@ import {
   Monitor,
   Megaphone,
   User,
-  Upload
+  Upload,
+  ChevronDown,
+  ChevronRight,
+  ListChecks,
+  Clock,
+  FileKey,
+  ScrollText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import BadgeDisplay from '@/components/badge-display';
@@ -65,7 +71,8 @@ interface DashboardNavProps {
   onNavigate?: () => void; // Callback for mobile menu close
 }
 
-const navItems = [
+// Main navigation items (non-admin)
+const mainNavItems = [
   { href: '/dashboard', label: 'Home', icon: Home },
   { href: '/dashboard/new', label: 'New Case Study', icon: Plus, roles: ['CONTRIBUTOR', 'APPROVER', 'ADMIN'] },
   { href: '/dashboard/bulk-import', label: 'Bulk Import', icon: Upload, roles: ['APPROVER', 'ADMIN'] },
@@ -79,19 +86,64 @@ const navItems = [
   { href: '/dashboard/leaderboard', label: 'Leaderboard', icon: Trophy },
   { href: '/dashboard/bhag', label: 'BHAG Tracker', icon: BarChart },
   { href: '/dashboard/diagnostics', label: 'Diagnostics', icon: Stethoscope, roles: ['CONTRIBUTOR', 'APPROVER', 'ADMIN', 'IT_DEPARTMENT'] },
-  { href: '/dashboard/admin', label: 'Admin Dashboard', icon: Shield, roles: ['ADMIN'] },
-  { href: '/dashboard/admin/users', label: 'User Management', icon: Users, roles: ['ADMIN'] },
+];
+
+// Admin section items (collapsible)
+const adminNavItems = [
+  { href: '/dashboard/admin', label: 'Dashboard', icon: Shield, roles: ['ADMIN'] },
+  { href: '/dashboard/admin/users', label: 'Users', icon: Users, roles: ['ADMIN'] },
+  { href: '/dashboard/admin/master-list', label: 'Master Lists', icon: ListChecks, roles: ['ADMIN'] },
   { href: '/dashboard/admin/config', label: 'System Config', icon: Sliders, roles: ['ADMIN', 'IT_DEPARTMENT'] },
+  { href: '/dashboard/admin/retention', label: 'Data Retention', icon: Clock, roles: ['ADMIN'] },
+  { href: '/dashboard/admin/gdpr', label: 'GDPR Requests', icon: FileKey, roles: ['ADMIN'] },
+  { href: '/dashboard/admin/audit-logs', label: 'Audit Logs', icon: ScrollText, roles: ['ADMIN'] },
   { href: '/dashboard/system-settings', label: 'System Settings', icon: Settings, roles: ['ADMIN', 'IT_DEPARTMENT'] },
 ];
 
 export function DashboardNav({ user, isCollapsed, onNavigate }: DashboardNavProps) {
   const pathname = usePathname();
+  const [isAdminExpanded, setIsAdminExpanded] = useState(() => {
+    // Auto-expand if user is on an admin page
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('admin-section-expanded');
+      return saved === 'true';
+    }
+    return false;
+  });
 
-  const filteredNavItems = navItems.filter(item => {
+  // Check if current path is in admin section
+  const isOnAdminPage = pathname.startsWith('/dashboard/admin') || pathname === '/dashboard/system-settings';
+
+  // Auto-expand admin section when navigating to admin pages
+  useEffect(() => {
+    if (isOnAdminPage && !isAdminExpanded) {
+      setIsAdminExpanded(true);
+    }
+  }, [isOnAdminPage]);
+
+  // Save admin expanded state
+  const toggleAdminSection = () => {
+    setIsAdminExpanded(prev => {
+      const newValue = !prev;
+      localStorage.setItem('admin-section-expanded', String(newValue));
+      return newValue;
+    });
+  };
+
+  // Filter main nav items based on user role
+  const filteredMainItems = mainNavItems.filter(item => {
     if (!item.roles) return true;
     return item.roles.includes(user.role || '');
   });
+
+  // Filter admin nav items based on user role
+  const filteredAdminItems = adminNavItems.filter(item => {
+    if (!item.roles) return true;
+    return item.roles.includes(user.role || '');
+  });
+
+  // Check if user has access to any admin items
+  const hasAdminAccess = filteredAdminItems.length > 0;
 
   return (
     <aside role="navigation" aria-label="Main navigation" className={cn(
@@ -129,7 +181,8 @@ export function DashboardNav({ user, isCollapsed, onNavigate }: DashboardNavProp
       <nav aria-label="Primary navigation" className="flex-1 overflow-y-auto py-4 px-2">
         <TooltipProvider>
           <div className="space-y-1">
-            {filteredNavItems.map((item) => {
+            {/* Main Navigation Items */}
+            {filteredMainItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
 
@@ -166,6 +219,83 @@ export function DashboardNav({ user, isCollapsed, onNavigate }: DashboardNavProp
 
               return linkContent;
             })}
+
+            {/* Admin Section - Collapsible */}
+            {hasAdminAccess && (
+              <div className="pt-2 mt-2 border-t border-gray-200 dark:border-border">
+                {!isCollapsed ? (
+                  <>
+                    {/* Admin Section Header */}
+                    <button
+                      onClick={toggleAdminSection}
+                      className={cn(
+                        'w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                        isOnAdminPage
+                          ? 'text-wa-green-900 dark:text-primary'
+                          : 'text-gray-600 hover:text-gray-900 dark:text-muted-foreground dark:hover:text-foreground'
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Shield className="h-5 w-5 flex-shrink-0" />
+                        <span>Admin</span>
+                      </div>
+                      {isAdminExpanded ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </button>
+
+                    {/* Admin Sub-items */}
+                    {isAdminExpanded && (
+                      <div className="ml-4 mt-1 space-y-1 border-l-2 border-gray-200 dark:border-border pl-2">
+                        {filteredAdminItems.map((item) => {
+                          const Icon = item.icon;
+                          const isActive = pathname === item.href;
+
+                          return (
+                            <Link
+                              key={item.href}
+                              href={item.href}
+                              onClick={() => onNavigate?.()}
+                              className={cn(
+                                'flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors',
+                                isActive
+                                  ? 'bg-wa-green-50 text-wa-green-900 font-medium dark:bg-accent dark:text-primary'
+                                  : 'text-gray-600 hover:bg-wa-green-50 hover:text-wa-green-800 dark:text-muted-foreground dark:hover:bg-background dark:hover:text-foreground'
+                              )}
+                            >
+                              <Icon className="h-4 w-4 flex-shrink-0" />
+                              <span>{item.label}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  /* Collapsed Admin - Show as single icon with tooltip */
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link
+                        href="/dashboard/admin"
+                        className={cn(
+                          'flex items-center justify-center px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                          isOnAdminPage
+                            ? 'bg-wa-green-50 text-wa-green-900 dark:bg-accent dark:text-primary'
+                            : 'text-gray-700 hover:bg-wa-green-50 hover:text-wa-green-800 dark:text-muted-foreground dark:hover:bg-background dark:hover:text-foreground'
+                        )}
+                      >
+                        <Shield className="h-5 w-5 flex-shrink-0" />
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      <p>Admin</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
+            )}
           </div>
         </TooltipProvider>
       </nav>

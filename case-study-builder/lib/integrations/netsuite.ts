@@ -36,9 +36,13 @@ class NetSuiteClient {
   }
 
   private generateOAuthHeader(method: string, url: string): string {
-    // OAuth 1.0 signature generation
+    // OAuth 1.0 signature generation per NetSuite TBA specification
     const timestamp = Math.floor(Date.now() / 1000).toString();
     const nonce = crypto.randomBytes(16).toString('hex');
+
+    // Parse URL to extract base URL and query parameters
+    const urlObj = new URL(url);
+    const baseUrl = `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}`;
 
     // OAuth parameters
     const oauthParams: Record<string, string> = {
@@ -50,28 +54,39 @@ class NetSuiteClient {
       oauth_version: '1.0',
     };
 
-    // Build the signature base string
-    const paramString = Object.keys(oauthParams)
+    // Combine OAuth params with URL query params for signature base string
+    // Per OAuth 1.0 spec, all parameters must be included and sorted
+    const allParams: Record<string, string> = { ...oauthParams };
+    urlObj.searchParams.forEach((value, key) => {
+      allParams[key] = value;
+    });
+
+    // Build the parameter string (sorted alphabetically)
+    const paramString = Object.keys(allParams)
       .sort()
-      .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(oauthParams[key])}`)
+      .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(allParams[key])}`)
       .join('&');
 
-    const signatureBaseString = `${method.toUpperCase()}&${encodeURIComponent(url)}&${encodeURIComponent(paramString)}`;
+    // Signature base string: METHOD&BASE_URL&PARAMS (all URL-encoded)
+    const signatureBaseString = `${method.toUpperCase()}&${encodeURIComponent(baseUrl)}&${encodeURIComponent(paramString)}`;
 
-    // Generate signing key
+    // Generate signing key: consumerSecret&tokenSecret (URL-encoded)
     const signingKey = `${encodeURIComponent(this.config.consumerSecret)}&${encodeURIComponent(this.config.tokenSecret)}`;
 
-    // Generate signature
+    // Generate HMAC-SHA256 signature
     const signature = crypto.createHmac('sha256', signingKey).update(signatureBaseString).digest('base64');
 
     // Add signature to OAuth parameters
     oauthParams.oauth_signature = signature;
 
-    // Build Authorization header
-    const authHeader = 'OAuth ' + Object.keys(oauthParams)
+    // Build Authorization header with realm (account ID) as first parameter
+    // Format: OAuth realm="ACCOUNT_ID",oauth_consumer_key="...",oauth_nonce="...",...
+    const headerParams = Object.keys(oauthParams)
       .sort()
       .map((key) => `${encodeURIComponent(key)}="${encodeURIComponent(oauthParams[key])}"`)
-      .join(', ');
+      .join(',');
+
+    const authHeader = `OAuth realm="${this.config.accountId}",${headerParams}`;
 
     return authHeader;
   }

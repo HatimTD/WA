@@ -36,8 +36,14 @@ export default function StepFive({ formData, updateFormData, caseStudyId, existi
   const [newTag, setNewTag] = useState('');
 
   const handleGenerateTags = async () => {
-    if (!formData.problemDescription || !formData.industry || !formData.componentWorkpiece) {
-      toast.error('Please fill in problem description, industry, and component to generate tags');
+    // Check which required fields are missing
+    const missingFields: string[] = [];
+    if (!formData.problemDescription?.trim()) missingFields.push('Problem Description');
+    if (!formData.industry?.trim()) missingFields.push('Industry');
+    if (!formData.componentWorkpiece?.trim()) missingFields.push('Component/Workpiece');
+
+    if (missingFields.length > 0) {
+      toast.error(`Cannot generate tags. Missing: ${missingFields.join(', ')}. Please complete previous steps first.`);
       return;
     }
 
@@ -49,14 +55,17 @@ export default function StepFive({ formData, updateFormData, caseStudyId, existi
         formData.componentWorkpiece
       );
 
-      if (result.success && result.tags) {
+      if (result.success && result.tags && result.tags.length > 0) {
         setSuggestedTags(result.tags);
-        toast.success('Tags generated successfully!');
+        toast.success(`Generated ${result.tags.length} tag suggestions!`);
+      } else if (result.success && (!result.tags || result.tags.length === 0)) {
+        toast.error('No tags could be generated. Try adding more detail to your problem description.');
       } else {
-        toast.error(result.error || 'Failed to generate tags');
+        toast.error(result.error || 'Failed to generate tags. Please try again.');
       }
     } catch (error) {
-      toast.error('Failed to generate tags');
+      console.error('Tag generation error:', error);
+      toast.error('Failed to generate tags. Please check your connection and try again.');
     } finally {
       setIsGeneratingTags(false);
     }
