@@ -1,7 +1,6 @@
 /**
  * Admin Audit Logs Page
  *
- * WA Policy Section 5.2 - Immutable Audit Trail Management
  * Provides administrators with visibility into system audit logs.
  */
 
@@ -101,7 +100,7 @@ export default async function AuditLogsPage({
               Audit Logs
             </h1>
             <p className="text-gray-600 dark:text-muted-foreground mt-1">
-              WA Policy Section 5.2 - Immutable Audit Trail
+              View system activity and immutable audit trail
             </p>
           </div>
         </div>

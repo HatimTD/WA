@@ -1,7 +1,6 @@
 /**
  * Admin Data Retention Management Page
  *
- * WA Policy Section 7.5.4 - Data Retention Policy Management
  * Provides administrators with tools to view and manage data retention policies.
  */
 
@@ -103,7 +102,7 @@ export default async function RetentionManagementPage() {
               Data Retention
             </h1>
             <p className="text-gray-600 dark:text-muted-foreground mt-1">
-              WA Policy Section 7.5.4 - Manage data lifecycle
+              Manage data lifecycle and retention policies
             </p>
           </div>
         </div>

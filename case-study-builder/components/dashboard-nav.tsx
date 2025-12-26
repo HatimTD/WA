@@ -63,6 +63,7 @@ interface DashboardNavProps {
     email?: string | null;
     image?: string | null;
     role?: string;
+    roles?: string[]; // All assigned roles for multi-role support
     region?: string | null;
     totalPoints?: number;
     badges?: BadgeType[];
@@ -102,21 +103,16 @@ const adminNavItems = [
 
 export function DashboardNav({ user, isCollapsed, onNavigate }: DashboardNavProps) {
   const pathname = usePathname();
-  const [isAdminExpanded, setIsAdminExpanded] = useState(() => {
-    // Auto-expand if user is on an admin page
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('admin-section-expanded');
-      return saved === 'true';
-    }
-    return false;
-  });
+  // Initialize with false to avoid hydration mismatch, then sync from localStorage in useEffect
+  const [isAdminExpanded, setIsAdminExpanded] = useState(false);
 
   // Check if current path is in admin section
   const isOnAdminPage = pathname.startsWith('/dashboard/admin') || pathname === '/dashboard/system-settings';
 
-  // Auto-expand admin section when navigating to admin pages
+  // Sync admin expanded state from localStorage after mount (avoids hydration mismatch)
   useEffect(() => {
-    if (isOnAdminPage && !isAdminExpanded) {
+    const saved = localStorage.getItem('admin-section-expanded');
+    if (saved === 'true' || isOnAdminPage) {
       setIsAdminExpanded(true);
     }
   }, [isOnAdminPage]);
@@ -130,16 +126,21 @@ export function DashboardNav({ user, isCollapsed, onNavigate }: DashboardNavProp
     });
   };
 
-  // Filter main nav items based on user role
+  // Get all user roles (use roles array if available, otherwise fall back to single role)
+  const userRoles = user.roles && user.roles.length > 0
+    ? user.roles
+    : (user.role ? [user.role] : []);
+
+  // Filter main nav items based on combined permissions from all user roles
   const filteredMainItems = mainNavItems.filter(item => {
     if (!item.roles) return true;
-    return item.roles.includes(user.role || '');
+    return userRoles.some(role => item.roles!.includes(role));
   });
 
-  // Filter admin nav items based on user role
+  // Filter admin nav items based on combined permissions from all user roles
   const filteredAdminItems = adminNavItems.filter(item => {
     if (!item.roles) return true;
-    return item.roles.includes(user.role || '');
+    return userRoles.some(role => item.roles!.includes(role));
   });
 
   // Check if user has access to any admin items
@@ -317,19 +318,22 @@ export function DashboardNav({ user, isCollapsed, onNavigate }: DashboardNavProp
                 {user.region && (
                   <p className="text-xs text-gray-500 dark:text-muted-foreground truncate">{user.region}</p>
                 )}
-                <div className="flex items-center gap-1 mt-1">
-                  <Badge
-                    variant="secondary"
-                    className={cn(
-                      "text-xs flex items-center gap-1",
-                      ROLE_CONFIG[user.role || '']?.bgColor || 'bg-wa-green-100',
-                      ROLE_CONFIG[user.role || '']?.color || 'text-wa-green-900'
-                    )}
-                  >
-                    {ROLE_CONFIG[user.role || '']?.icon}
-                    {ROLE_CONFIG[user.role || '']?.label || user.role}
-                  </Badge>
-                  {user.role !== 'VIEWER' && user.role !== 'IT_DEPARTMENT' && user.role !== 'MARKETING' && (
+                <div className="flex flex-wrap items-center gap-1 mt-1">
+                  {userRoles.map((role) => (
+                    <Badge
+                      key={role}
+                      variant="secondary"
+                      className={cn(
+                        "text-xs flex items-center gap-1",
+                        ROLE_CONFIG[role]?.bgColor || 'bg-wa-green-100',
+                        ROLE_CONFIG[role]?.color || 'text-wa-green-900'
+                      )}
+                    >
+                      {ROLE_CONFIG[role]?.icon}
+                      {ROLE_CONFIG[role]?.label || role}
+                    </Badge>
+                  ))}
+                  {!userRoles.includes('VIEWER') && !userRoles.includes('IT_DEPARTMENT') && !userRoles.includes('MARKETING') && userRoles.length > 0 && (
                     <Badge className="text-xs bg-wa-green-900 text-white">
                       {user.totalPoints || 0} pts
                     </Badge>
@@ -358,10 +362,17 @@ export function DashboardNav({ user, isCollapsed, onNavigate }: DashboardNavProp
                 <TooltipContent side="right">
                   <div>
                     <p className="font-medium dark:text-foreground">{user.name}</p>
-                    <p className={cn("text-xs flex items-center gap-1", ROLE_CONFIG[user.role || '']?.color || 'text-gray-500')}>
-                      {ROLE_CONFIG[user.role || '']?.icon}
-                      {ROLE_CONFIG[user.role || '']?.label || user.role}
-                    </p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {userRoles.map((role) => (
+                        <span
+                          key={role}
+                          className={cn("text-xs flex items-center gap-1", ROLE_CONFIG[role]?.color || 'text-gray-500')}
+                        >
+                          {ROLE_CONFIG[role]?.icon}
+                          {ROLE_CONFIG[role]?.label || role}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </TooltipContent>
               </Tooltip>

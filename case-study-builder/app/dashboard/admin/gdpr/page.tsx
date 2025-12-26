@@ -1,7 +1,6 @@
 /**
  * Admin GDPR Requests Management Page
  *
- * WA Policy Section 7.5 - GDPR Compliance
  * Handles Right to be Forgotten requests and data subject access requests.
  */
 
@@ -98,7 +97,7 @@ export default async function GdprRequestsPage({
               GDPR Requests
             </h1>
             <p className="text-gray-600 dark:text-muted-foreground mt-1">
-              WA Policy Section 7.5 - Right to be Forgotten
+              Manage data subject access and deletion requests
             </p>
           </div>
         </div>

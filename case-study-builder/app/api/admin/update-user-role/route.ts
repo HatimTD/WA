@@ -40,16 +40,15 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Prevent admin from changing their own role
-    if (userId === session.user.id) {
-      return NextResponse.json(
-        { success: false, error: 'You cannot change your own role' },
-        { status: 400 }
-      );
-    }
-
     // Handle multiple roles (new format)
     if (roles && Array.isArray(roles)) {
+      // If admin is modifying their own roles, ensure ADMIN is still included
+      if (userId === session.user.id && !roles.includes('ADMIN')) {
+        return NextResponse.json(
+          { success: false, error: 'You cannot remove ADMIN role from yourself' },
+          { status: 400 }
+        );
+      }
       // Validate all roles
       const invalidRoles = roles.filter((r: string) => !VALID_ROLES.includes(r as Role));
       if (invalidRoles.length > 0) {
@@ -102,6 +101,14 @@ export async function PUT(request: NextRequest) {
     if (!role || !VALID_ROLES.includes(role as Role)) {
       return NextResponse.json(
         { success: false, error: `Invalid role. Must be one of: ${VALID_ROLES.join(', ')}` },
+        { status: 400 }
+      );
+    }
+
+    // Prevent admin from removing ADMIN role from themselves
+    if (userId === session.user.id && role !== 'ADMIN') {
+      return NextResponse.json(
+        { success: false, error: 'You cannot remove ADMIN role from yourself. Use the multi-role selector to add additional roles.' },
         { status: 400 }
       );
     }

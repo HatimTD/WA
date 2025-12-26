@@ -12,6 +12,7 @@ interface DashboardShellProps {
     email?: string | null;
     image?: string | null;
     role?: string;
+    roles?: string[]; // All assigned roles for multi-role support
     region?: string | null;
     totalPoints?: number;
     badges?: BadgeType[];

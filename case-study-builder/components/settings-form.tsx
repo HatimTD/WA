@@ -38,9 +38,10 @@ type UserData = {
 
 type Props = {
   user: UserData;
+  assignedRoles?: string[];
 };
 
-export default function SettingsForm({ user }: Props) {
+export default function SettingsForm({ user, assignedRoles = [] }: Props) {
   const router = useRouter();
   const { theme: currentTheme, setTheme: setNextTheme } = useTheme();
   const [name, setName] = useState(user.name || '');
@@ -235,6 +236,49 @@ export default function SettingsForm({ user }: Props) {
       }
     } catch (error) {
       console.error('[Settings] Role switch error:', error);
+      toast.error('An error occurred');
+    } finally {
+      setIsSwitchingRole(false);
+    }
+  };
+
+  // Handle multi-role toggle (add/remove roles)
+  const waHandleMultiRoleToggle = async (role: string) => {
+    const currentRoles = [...assignedRoles];
+    const isSelected = currentRoles.includes(role);
+
+    let newRoles: string[];
+    if (isSelected) {
+      // Remove role (but ensure at least one role remains)
+      newRoles = currentRoles.filter(r => r !== role);
+      if (newRoles.length === 0) {
+        toast.error('You must have at least one role');
+        return;
+      }
+    } else {
+      // Add role
+      newRoles = [...currentRoles, role];
+    }
+
+    setIsSwitchingRole(true);
+    try {
+      const response = await fetch('/api/dev/switch-role', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roles: newRoles }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success(`Roles updated: ${newRoles.map(r => ROLE_CONFIG[r]?.label || r).join(', ')}`);
+        // Refresh page to update permissions
+        router.refresh();
+      } else {
+        toast.error(result.error || 'Failed to update roles');
+      }
+    } catch (error) {
+      console.error('[Settings] Multi-role toggle error:', error);
       toast.error('An error occurred');
     } finally {
       setIsSwitchingRole(false);
@@ -721,7 +765,7 @@ export default function SettingsForm({ user }: Props) {
         </CardContent>
       </Card>
 
-      {/* Dev Role Switcher (Development Only) */}
+      {/* Dev Role Switcher (Development Only) - Multi-Select */}
       <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/30 dark:border-orange-800">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-orange-900 dark:text-orange-400">
@@ -729,33 +773,62 @@ export default function SettingsForm({ user }: Props) {
             Dev Role Switcher
           </CardTitle>
           <CardDescription className="text-orange-700 dark:text-orange-300">
-            Switch roles for testing purposes (Development Only)
+            Select multiple roles to have combined permissions (Development Only)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="devRole" className="dark:text-orange-300">
-              Current Role: <span className={`font-bold ${ROLE_CONFIG[user.role]?.color || ''}`}>
-                {ROLE_CONFIG[user.role]?.label || user.role}
-              </span>
+          <div className="space-y-3">
+            <Label className="dark:text-orange-300">
+              Current Roles: {assignedRoles.length > 0 ? (
+                <span className="flex flex-wrap gap-1 mt-1">
+                  {assignedRoles.map((role) => (
+                    <span key={role} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
+                      role === 'ADMIN' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' :
+                      role === 'APPROVER' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' :
+                      role === 'CONTRIBUTOR' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' :
+                      'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                    }`}>
+                      {ROLE_CONFIG[role]?.icon}
+                      {ROLE_CONFIG[role]?.label || role}
+                    </span>
+                  ))}
+                </span>
+              ) : (
+                <span className={`font-bold ${ROLE_CONFIG[user.role]?.color || ''}`}>
+                  {ROLE_CONFIG[user.role]?.label || user.role}
+                </span>
+              )}
             </Label>
-            <Select onValueChange={handleRoleSwitch} disabled={isSwitchingRole}>
-              <SelectTrigger id="devRole" className="dark:bg-orange-950/50 dark:border-orange-800 dark:text-orange-200">
-                <SelectValue placeholder="Switch to..." />
-              </SelectTrigger>
-              <SelectContent className="dark:bg-popover dark:border-border">
-                {ALL_ROLES.map((role) => (
-                  <SelectItem key={role} value={role}>
-                    <div className={`flex items-center gap-2 ${ROLE_CONFIG[role]?.color || ''}`}>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              {ALL_ROLES.map((role) => {
+                const isSelected = assignedRoles.includes(role);
+                return (
+                  <button
+                    key={role}
+                    type="button"
+                    onClick={() => waHandleMultiRoleToggle(role)}
+                    disabled={isSwitchingRole}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-all ${
+                      isSelected
+                        ? 'border-orange-400 bg-orange-100 dark:bg-orange-900/40 dark:border-orange-600'
+                        : 'border-orange-200 bg-white dark:bg-orange-950/20 dark:border-orange-800 hover:bg-orange-50 dark:hover:bg-orange-900/30'
+                    }`}
+                  >
+                    <div className={`w-4 h-4 rounded border flex items-center justify-center ${
+                      isSelected ? 'bg-orange-500 border-orange-500' : 'border-orange-300 dark:border-orange-600'
+                    }`}>
+                      {isSelected && <span className="text-white text-xs">✓</span>}
+                    </div>
+                    <div className={`flex items-center gap-1 ${ROLE_CONFIG[role]?.color || ''}`}>
                       {ROLE_CONFIG[role]?.icon}
                       <span>{ROLE_CONFIG[role]?.label || role}</span>
                     </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                  </button>
+                );
+              })}
+            </div>
             <p className="text-xs text-orange-600 dark:text-orange-400">
-              This will immediately update your role and redirect you to the dashboard with updated permissions.
+              Select multiple roles to have combined permissions. Changes are saved immediately.
             </p>
           </div>
         </CardContent>
