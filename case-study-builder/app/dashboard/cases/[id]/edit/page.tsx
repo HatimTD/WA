@@ -2,10 +2,30 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { notFound, redirect } from 'next/navigation';
 import EditCaseStudyForm from '@/components/edit-case-study-form';
+import { Decimal } from '@prisma/client/runtime/library';
 
 type Props = {
   params: Promise<{ id: string }>;
 };
+
+/**
+ * Convert Decimal fields to numbers for client component serialization
+ */
+function waSerializeForClient<T extends Record<string, unknown>>(obj: T | null): T | null {
+  if (!obj) return null;
+
+  const serialized: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value instanceof Decimal) {
+      serialized[key] = value.toNumber();
+    } else if (value instanceof Date) {
+      serialized[key] = value.toISOString();
+    } else {
+      serialized[key] = value;
+    }
+  }
+  return serialized as T;
+}
 
 export default async function EditCasePage({ params }: Props) {
   const session = await auth();
@@ -63,6 +83,16 @@ export default async function EditCasePage({ params }: Props) {
     redirect(`/dashboard/cases/${id}?message=cannot_edit`);
   }
 
-  // Pass the original caseStudy - the component will handle conversion internally
-  return <EditCaseStudyForm caseStudy={caseStudy} wpsData={wpsData} costCalcData={costCalcData} />;
+  // Serialize Decimal and Date fields for client component
+  const serializedCaseStudy = waSerializeForClient(caseStudy);
+  const serializedWpsData = waSerializeForClient(wpsData);
+  const serializedCostCalcData = waSerializeForClient(costCalcData);
+
+  return (
+    <EditCaseStudyForm
+      caseStudy={serializedCaseStudy as typeof caseStudy}
+      wpsData={serializedWpsData as typeof wpsData}
+      costCalcData={serializedCostCalcData as typeof costCalcData}
+    />
+  );
 }

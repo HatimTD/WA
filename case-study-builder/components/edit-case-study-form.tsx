@@ -115,6 +115,44 @@ type Props = {
   costCalcData?: WaCostCalculator | null;
 };
 
+// Helper: Check if a string field has meaningful content
+function waHasValue(value: string | null | undefined): boolean {
+  return value !== null && value !== undefined && value.trim() !== '';
+}
+
+// Helper: Check if WPS is complete (all required fields filled)
+function waIsWpsComplete(wpsData: WaWeldingProcedure | null | undefined): boolean {
+  if (!wpsData) return false;
+
+  // Check all required string fields have meaningful content
+  const requiredFields = [
+    wpsData.baseMetalType,
+    wpsData.surfacePreparation,
+    wpsData.waProductName,
+    wpsData.shieldingGas,
+    wpsData.weldingProcess,
+    wpsData.weldingPosition,
+    wpsData.additionalNotes,
+  ];
+
+  // All required fields must have values
+  if (requiredFields.some(field => !waHasValue(field))) {
+    return false;
+  }
+
+  // At least one oscillation field must be filled
+  if (!waHasValue(wpsData.oscillationWidth) && !waHasValue(wpsData.oscillationSpeed)) {
+    return false;
+  }
+
+  // At least one temperature field must be filled
+  if (!waHasValue(wpsData.preheatTemperature) && !waHasValue(wpsData.interpassTemperature)) {
+    return false;
+  }
+
+  return true;
+}
+
 // Calculate the first incomplete step for resuming drafts
 function waCalculateResumeStep(
   caseStudy: WaCaseStudy,
@@ -124,45 +162,46 @@ function waCalculateResumeStep(
   // Step 1: Case Type - always complete if we have a case
 
   // Step 2: Qualifier - check if customer selected and qualifier completed
-  if (!caseStudy.customerName || !caseStudy.qualifierType) {
+  if (!waHasValue(caseStudy.customerName) || !caseStudy.qualifierType) {
     return 2; // Qualifier
   }
 
   // Step 3: Basic Info
-  if (!caseStudy.customerName || !caseStudy.industry || !caseStudy.location ||
-      !caseStudy.componentWorkpiece || !caseStudy.workType ||
-      !caseStudy.wearType || (caseStudy.wearType as string[]).length === 0 ||
-      !caseStudy.baseMetal || !caseStudy.generalDimensions) {
+  if (!waHasValue(caseStudy.customerName) || !waHasValue(caseStudy.industry) ||
+      !waHasValue(caseStudy.location) || !waHasValue(caseStudy.componentWorkpiece) ||
+      !caseStudy.workType || !caseStudy.wearType ||
+      (caseStudy.wearType as string[]).length === 0 ||
+      !waHasValue(caseStudy.baseMetal) || !waHasValue(caseStudy.generalDimensions)) {
     return 3; // Basic Info
   }
 
   // Step 4: Problem
-  if (!caseStudy.problemDescription || !caseStudy.previousSolution) {
+  if (!waHasValue(caseStudy.problemDescription) || !waHasValue(caseStudy.previousSolution)) {
     return 4; // Problem
   }
 
   // Step 5: Solution
-  if (!caseStudy.waSolution || !caseStudy.waProduct || !caseStudy.technicalAdvantages) {
+  if (!waHasValue(caseStudy.waSolution) || !waHasValue(caseStudy.waProduct) ||
+      !waHasValue(caseStudy.technicalAdvantages)) {
     return 5; // Solution
   }
 
   // Step 6: WPS (for TECH and STAR)
   if (caseType === 'TECH' || caseType === 'STAR') {
-    if (!wpsData?.baseMetalType || !wpsData?.surfacePreparation ||
-        !wpsData?.waProductName || !wpsData?.shieldingGas ||
-        !wpsData?.weldingProcess || !wpsData?.weldingPosition ||
-        (!wpsData?.oscillationWidth && !wpsData?.oscillationSpeed) ||
-        (!wpsData?.preheatTemperature && !wpsData?.interpassTemperature) ||
-        !wpsData?.additionalNotes) {
+    if (!waIsWpsComplete(wpsData)) {
       return 6; // WPS
     }
   }
 
   // Step 7 (or 6 for APPLICATION): Review - check financial fields and images
+  // Note: Financial fields are numbers/Decimals, check if they exist and are > 0
   const reviewStep = (caseType === 'TECH' || caseType === 'STAR') ? 7 : 6;
-  if (!caseStudy.solutionValueRevenue || !caseStudy.annualPotentialRevenue ||
-      !caseStudy.customerSavingsAmount || !caseStudy.images ||
-      (caseStudy.images as string[]).length < 1) {
+  const hasValidRevenue = caseStudy.solutionValueRevenue !== null && caseStudy.solutionValueRevenue !== undefined;
+  const hasValidAnnualRevenue = caseStudy.annualPotentialRevenue !== null && caseStudy.annualPotentialRevenue !== undefined;
+  const hasValidSavings = caseStudy.customerSavingsAmount !== null && caseStudy.customerSavingsAmount !== undefined;
+  const hasImages = caseStudy.images && (caseStudy.images as string[]).length >= 1;
+
+  if (!hasValidRevenue || !hasValidAnnualRevenue || !hasValidSavings || !hasImages) {
     return reviewStep; // Review
   }
 
@@ -374,14 +413,18 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
 
       await waUpdateCaseStudy(caseStudy.id, updateData);
 
-      // If TECH or STAR and WPS data exists, save WPS
-      if (hasWPS && formData.wps && formData.wps.waProductName && formData.wps.weldingProcess) {
-        await waSaveWeldingProcedure({
-          caseStudyId: caseStudy.id,
-          waProductName: formData.wps.waProductName,
-          weldingProcess: formData.wps.weldingProcess,
-          ...formData.wps,
-        });
+      // If TECH or STAR and WPS data exists, save WPS (save any filled data for drafts)
+      if (hasWPS && formData.wps) {
+        // Check if any WPS field has data
+        const hasAnyWpsData = Object.values(formData.wps).some(v => v !== undefined && v !== '' && v !== null);
+        if (hasAnyWpsData) {
+          await waSaveWeldingProcedure({
+            caseStudyId: caseStudy.id,
+            waProductName: formData.wps.waProductName || '',
+            weldingProcess: formData.wps.weldingProcess || '',
+            ...formData.wps,
+          });
+        }
       }
 
       toast.success('Changes saved as draft');

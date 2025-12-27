@@ -7,33 +7,50 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { waDevLogin } from '@/lib/actions/waDevLoginAction';
 import { toast } from 'sonner';
 import { AlertCircle } from 'lucide-react';
+
+const AVAILABLE_ROLES = [
+  { value: 'VIEWER', label: 'Viewer', description: 'Browse approved cases (read-only)' },
+  { value: 'CONTRIBUTOR', label: 'Contributor', description: 'Create and submit case studies' },
+  { value: 'APPROVER', label: 'Approver', description: 'Review and approve submissions' },
+  { value: 'MARKETING', label: 'Marketing', description: 'Marketing team access' },
+  { value: 'IT_DEPARTMENT', label: 'IT Department', description: 'IT administration access' },
+  { value: 'ADMIN', label: 'Admin', description: 'Full system access' },
+];
 
 export default function DevLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('admin@weldingalloys.com');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('CONTRIBUTOR');
+  const [selectedRoles, setSelectedRoles] = useState<string[]>(['CONTRIBUTOR']);
   const [isLoading, setIsLoading] = useState(false);
+
+  const waToggleRole = (role: string) => {
+    setSelectedRoles(prev =>
+      prev.includes(role)
+        ? prev.filter(r => r !== role)
+        : [...prev, role]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (selectedRoles.length === 0) {
+      toast.error('Please select at least one role');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const result = await waDevLogin(email, password, role);
+      const result = await waDevLogin(email, password, selectedRoles);
 
       if (result?.success) {
-        toast.success(`Login successful as ${role}!`);
+        toast.success(`Login successful as ${selectedRoles.join(', ')}!`);
         router.push('/dashboard');
         router.refresh();
       } else if (result?.error) {
@@ -44,7 +61,7 @@ export default function DevLoginPage() {
     } catch (error: any) {
       // NextAuth v5 may throw NEXT_REDIRECT which is expected behavior
       if (error?.digest?.includes('NEXT_REDIRECT')) {
-        toast.success(`Login successful as ${role}!`);
+        toast.success(`Login successful as ${selectedRoles.join(', ')}!`);
         // Redirect is handled automatically
         return;
       }
@@ -97,47 +114,41 @@ export default function DevLoginPage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
-              <Select value={role} onValueChange={setRole}>
-                <SelectTrigger id="role">
-                  <SelectValue placeholder="Select a role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="VIEWER">
-                    <div className="flex flex-col">
-                      <span className="font-medium">VIEWER</span>
-                      <span className="text-xs text-muted-foreground">
-                        Browse approved cases (read-only)
+            <div className="space-y-3">
+              <Label>Roles (select one or more)</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {AVAILABLE_ROLES.map((roleOption) => (
+                  <label
+                    key={roleOption.value}
+                    htmlFor={`role-${roleOption.value}`}
+                    className={`flex items-start gap-2 p-2 border rounded-lg cursor-pointer transition-colors ${
+                      selectedRoles.includes(roleOption.value)
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <Checkbox
+                      id={`role-${roleOption.value}`}
+                      checked={selectedRoles.includes(roleOption.value)}
+                      onCheckedChange={() => waToggleRole(roleOption.value)}
+                      className="mt-0.5"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium">
+                        {roleOption.label}
                       </span>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {roleOption.description}
+                      </p>
                     </div>
-                  </SelectItem>
-                  <SelectItem value="CONTRIBUTOR">
-                    <div className="flex flex-col">
-                      <span className="font-medium">CONTRIBUTOR</span>
-                      <span className="text-xs text-muted-foreground">
-                        Create and submit case studies
-                      </span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="APPROVER">
-                    <div className="flex flex-col">
-                      <span className="font-medium">APPROVER</span>
-                      <span className="text-xs text-muted-foreground">
-                        Review and approve submissions
-                      </span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="ADMIN">
-                    <div className="flex flex-col">
-                      <span className="font-medium">ADMIN</span>
-                      <span className="text-xs text-muted-foreground">
-                        Full system access
-                      </span>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                  </label>
+                ))}
+              </div>
+              {selectedRoles.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Selected: {selectedRoles.join(', ')}
+                </p>
+              )}
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>

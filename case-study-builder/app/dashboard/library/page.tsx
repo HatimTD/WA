@@ -205,12 +205,21 @@ export default async function LibraryPage({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">Case Study Library</h1>
-        <p className="text-gray-600 dark:text-muted-foreground mt-2">
-          Browse {totalCount.toLocaleString()} approved industrial solutions
-        </p>
+      {/* Header - Responsive Title */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-foreground truncate">
+            Case Study Library
+          </h1>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-muted-foreground mt-1 sm:mt-2">
+            Browse {totalCount.toLocaleString()} approved industrial solutions
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-muted-foreground">
+          <span className="hidden sm:inline">
+            {totalPages > 1 && `Page ${page} of ${totalPages}`}
+          </span>
+        </div>
       </div>
 
       {/* Dynamic Search Section */}

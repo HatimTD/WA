@@ -286,14 +286,18 @@ export default function NewCaseStudyPage() {
       // Create the case study draft
       const result = await waCreateCaseStudy({ ...formData, status: 'DRAFT' });
 
-      // If TECH or STAR and WPS data exists, save WPS
-      if (hasWPS && formData.wps && result.id && formData.wps.waProductName && formData.wps.weldingProcess) {
-        await waSaveWeldingProcedure({
-          caseStudyId: result.id,
-          waProductName: formData.wps.waProductName,
-          weldingProcess: formData.wps.weldingProcess,
-          ...formData.wps,
-        });
+      // If TECH or STAR and WPS data exists, save WPS (save any filled data for drafts)
+      if (hasWPS && formData.wps && result.id) {
+        // Check if any WPS field has data
+        const hasAnyWpsData = Object.values(formData.wps).some(v => v !== undefined && v !== '' && v !== null);
+        if (hasAnyWpsData) {
+          await waSaveWeldingProcedure({
+            caseStudyId: result.id,
+            waProductName: formData.wps.waProductName || '',
+            weldingProcess: formData.wps.weldingProcess || '',
+            ...formData.wps,
+          });
+        }
       }
 
       toast.success('Draft saved successfully');
