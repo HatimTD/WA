@@ -140,7 +140,7 @@ export default function NetSuiteCustomerSearch({
           'bg-white dark:bg-input hover:bg-gray-50 dark:hover:bg-accent',
           'border-border dark:border-border',
           'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-background',
-          selectedCustomer ? 'border-primary dark:border-primary' : ''
+          (selectedCustomer || value) ? 'border-primary dark:border-primary' : ''
         )}
       >
         {selectedCustomer ? (
@@ -191,13 +191,36 @@ export default function NetSuiteCustomerSearch({
               <X className="h-4 w-4 text-muted-foreground" />
             </button>
           </div>
+        ) : value ? (
+          /* Show existing value from props (e.g., when editing a case) */
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="p-2 bg-primary/10 dark:bg-primary/20 rounded-lg shrink-0">
+              <Building2 className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0 text-left">
+              <span className="font-medium text-foreground truncate">
+                {value}
+              </span>
+              <div className="text-xs text-muted-foreground mt-0.5">
+                Click to search and update customer
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleClear}
+              className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors shrink-0"
+              aria-label="Clear selection"
+            >
+              <X className="h-4 w-4 text-muted-foreground" />
+            </button>
+          </div>
         ) : (
           <div className="flex items-center gap-3 text-muted-foreground">
             <Search className="h-5 w-5" />
             <span>{placeholder}</span>
           </div>
         )}
-        {!selectedCustomer && (
+        {!selectedCustomer && !value && (
           <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
         )}
       </div>
