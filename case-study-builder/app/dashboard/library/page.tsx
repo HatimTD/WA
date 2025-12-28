@@ -3,11 +3,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ExternalLink } from 'lucide-react';
-import { LibrarySearch } from '@/components/library-search';
+import { ExternalLink, User, CheckCircle2 } from 'lucide-react';
 import { LibraryFilters } from '@/components/library-filters';
 import { SaveButton } from '@/components/save-button';
 import LanguageIndicator from '@/components/language-indicator';
+
+// Fallback wear types if master data not available
+const FALLBACK_WEAR_TYPES = ['ABRASION', 'IMPACT', 'CORROSION', 'TEMPERATURE', 'COMBINATION'];
 
 export const metadata = {
   title: 'Case Study Library - Welding Alloys',
@@ -46,7 +48,9 @@ export default async function LibraryPage({
   const oemFilter = params.oem || '';
   // BRD Required Filters
   const componentFilter = params.component || '';
+  // Support multiple wear types (comma-separated in URL)
   const wearTypeFilter = params.wearType || '';
+  const wearTypeFilters = wearTypeFilter ? wearTypeFilter.split(',').map(w => w.trim().toUpperCase()) : [];
   const waProductFilter = params.waProduct || '';
   const countryFilter = params.country || '';
   const contributorFilter = params.contributor || '';
@@ -88,9 +92,9 @@ export default async function LibraryPage({
     where.componentWorkpiece = { contains: componentFilter, mode: 'insensitive' };
   }
 
-  // BRD: Wear Type filter
-  if (wearTypeFilter) {
-    where.wearType = { has: wearTypeFilter };
+  // BRD: Wear Type filter (supports multiple selection, case-insensitive)
+  if (wearTypeFilters.length > 0) {
+    where.wearType = { hasSome: wearTypeFilters };
   }
 
   // BRD: WA Product filter
@@ -120,7 +124,8 @@ export default async function LibraryPage({
   }
 
   // Fetch cases with pagination and all filter options (BRD Section 5)
-  const [cases, totalCount, industries, oems, typeCounts, components, waProducts, countries, wearTypes, contributors] = await Promise.all([
+  // Sort by approvedAt descending, with null values last (use createdAt as fallback)
+  const [cases, totalCount, industries, oems, typeCounts, components, waProducts, countries, contributors, masterWearTypes] = await Promise.all([
     prisma.waCaseStudy.findMany({
       where,
       select: {
@@ -129,14 +134,17 @@ export default async function LibraryPage({
         customerName: true,
         industry: true,
         location: true,
+        country: true,
         componentWorkpiece: true,
         type: true,
         waProduct: true,
+        wearType: true,
         problemDescription: true,
         approvedAt: true,
         createdAt: true,
         originalLanguage: true,
         translationAvailable: true,
+        solutionValueRevenue: true,
         contributor: {
           select: { id: true, name: true },
         },
@@ -144,7 +152,10 @@ export default async function LibraryPage({
           select: { id: true, name: true },
         },
       },
-      orderBy: { approvedAt: 'desc' },
+      orderBy: [
+        { approvedAt: 'desc' },
+        { createdAt: 'desc' },
+      ],
       take: perPage,
       skip: (page - 1) * perPage,
     }),
@@ -182,11 +193,6 @@ export default async function LibraryPage({
       select: { country: true },
       distinct: ['country'],
     }),
-    // BRD: Wear Type options (get all unique from arrays)
-    prisma.waCaseStudy.findMany({
-      where: { status: 'APPROVED' },
-      select: { wearType: true },
-    }),
     // BRD: Contributor options
     prisma.waCaseStudy.findMany({
       where: { status: 'APPROVED' },
@@ -196,12 +202,26 @@ export default async function LibraryPage({
       },
       distinct: ['contributorId'],
     }),
+    // Fetch wear types from master data (admin-managed)
+    prisma.waMasterList.findMany({
+      where: {
+        isActive: true,
+        listKey: { keyName: 'WearType' },
+      },
+      orderBy: [{ sortOrder: 'asc' }, { value: 'asc' }],
+      select: {
+        id: true,
+        value: true,
+      },
+    }),
   ]);
 
-  // Extract unique wear types from arrays
-  const uniqueWearTypes = [...new Set(wearTypes.flatMap(wt => wt.wearType))].sort();
-
   const totalPages = Math.ceil(totalCount / perPage);
+
+  // Use master data wear types, fallback to hardcoded if none found
+  const wearTypeOptions = masterWearTypes.length > 0
+    ? masterWearTypes.map(wt => wt.value)
+    : FALLBACK_WEAR_TYPES;
 
   return (
     <div className="space-y-6">
@@ -221,19 +241,6 @@ export default async function LibraryPage({
           </span>
         </div>
       </div>
-
-      {/* Dynamic Search Section */}
-      <Card role="article" className="border-2 border-wa-green-100 bg-white dark:bg-card dark:border-primary">
-        <CardHeader>
-          <CardTitle className="text-lg dark:text-foreground">Quick Search</CardTitle>
-          <CardDescription className="dark:text-muted-foreground">
-            Start typing to search and filter cases in real-time
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <LibrarySearch />
-        </CardContent>
-      </Card>
 
       <div className="grid lg:grid-cols-4 gap-6">
         {/* Sidebar Filters */}
@@ -255,7 +262,7 @@ export default async function LibraryPage({
                 components={components}
                 waProducts={waProducts}
                 countries={countries}
-                wearTypes={uniqueWearTypes}
+                wearTypes={wearTypeOptions}
                 contributors={contributors}
                 // BRD Current Filter Values
                 componentFilter={componentFilter}
@@ -298,32 +305,61 @@ export default async function LibraryPage({
               {cases.map((caseStudy) => (
                 <Card role="article"
                   key={caseStudy.id}
-                  className="hover:shadow-lg transition-shadow cursor-pointer dark:bg-card dark:border-border dark:hover:border-primary"
+                  className="group hover:shadow-xl transition-all duration-300 cursor-pointer dark:bg-card dark:border-border dark:hover:border-primary overflow-hidden"
                 >
-                  <CardHeader>
+                  {/* Type Badge Banner */}
+                  <div className={`h-1.5 ${
+                    caseStudy.type === 'STAR'
+                      ? 'bg-gradient-to-r from-yellow-400 to-amber-500'
+                      : caseStudy.type === 'TECH'
+                      ? 'bg-gradient-to-r from-purple-500 to-violet-600'
+                      : 'bg-gradient-to-r from-blue-500 to-cyan-500'
+                  }`} />
+
+                  <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-2">
-                      <CardTitle className="text-lg line-clamp-2 dark:text-foreground">
-                        {caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}
-                      </CardTitle>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <SaveButton caseStudyId={caseStudy.id} variant="icon" size="sm" />
-                        <Badge
-                          variant={
-                            caseStudy.type === 'STAR'
-                              ? 'default'
-                              : caseStudy.type === 'TECH'
-                              ? 'secondary'
-                              : 'outline'
-                          }
-                        >
-                          {caseStudy.type}
-                        </Badge>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge
+                            variant={
+                              caseStudy.type === 'STAR'
+                                ? 'default'
+                                : caseStudy.type === 'TECH'
+                                ? 'secondary'
+                                : 'outline'
+                            }
+                            className={`text-xs ${
+                              caseStudy.type === 'STAR'
+                                ? 'bg-yellow-500 hover:bg-yellow-600'
+                                : ''
+                            }`}
+                          >
+                            {caseStudy.type}
+                          </Badge>
+                          {/* Approved Date Badge */}
+                          {caseStudy.approvedAt && (
+                            <Badge variant="outline" className="text-xs gap-1 text-green-600 border-green-200 dark:text-green-400 dark:border-green-800">
+                              <CheckCircle2 className="h-3 w-3" />
+                              {new Date(caseStudy.approvedAt).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric'
+                              })}
+                            </Badge>
+                          )}
+                        </div>
+                        <CardTitle className="text-base font-semibold line-clamp-2 dark:text-foreground group-hover:text-wa-green-600 dark:group-hover:text-primary transition-colors">
+                          {caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}
+                        </CardTitle>
                       </div>
+                      <SaveButton caseStudyId={caseStudy.id} variant="icon" size="sm" />
                     </div>
-                    <CardDescription className="line-clamp-1 dark:text-muted-foreground">
-                      {caseStudy.industry} • {caseStudy.location}
+                    <CardDescription className="flex items-center gap-1 text-sm dark:text-muted-foreground mt-1">
+                      <span className="truncate">{caseStudy.industry}</span>
+                      <span>•</span>
+                      <span className="truncate">{caseStudy.location}{caseStudy.country ? `, ${caseStudy.country}` : ''}</span>
                     </CardDescription>
-                    {/* Language Indicator - BRD: Show original language and translation status */}
+                    {/* Language Indicator */}
                     {caseStudy.originalLanguage && caseStudy.originalLanguage !== 'en' && (
                       <div className="mt-2">
                         <LanguageIndicator
@@ -336,30 +372,57 @@ export default async function LibraryPage({
                       </div>
                     )}
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="space-y-1 text-sm">
-                      <p className="text-gray-600 dark:text-muted-foreground">
-                        <span className="font-medium dark:text-foreground">Component:</span>{' '}
-                        {caseStudy.componentWorkpiece}
-                      </p>
-                      <p className="text-gray-600 dark:text-muted-foreground">
-                        <span className="font-medium dark:text-foreground">Product:</span> {caseStudy.waProduct}
-                      </p>
+
+                  <CardContent className="space-y-3 pt-0">
+                    {/* Key Details Grid */}
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-md p-2">
+                        <p className="text-gray-500 dark:text-gray-400 mb-0.5">Component</p>
+                        <p className="font-medium text-gray-900 dark:text-foreground truncate">{caseStudy.componentWorkpiece}</p>
+                      </div>
+                      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-md p-2">
+                        <p className="text-gray-500 dark:text-gray-400 mb-0.5">WA Product</p>
+                        <p className="font-medium text-gray-900 dark:text-foreground truncate">{caseStudy.waProduct}</p>
+                      </div>
                     </div>
-                    <p className="text-sm text-gray-700 dark:text-muted-foreground line-clamp-3">
+
+                    {/* Wear Types */}
+                    {caseStudy.wearType && caseStudy.wearType.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {caseStudy.wearType.slice(0, 3).map((wear) => (
+                          <Badge key={wear} variant="outline" className="text-xs py-0 px-1.5 bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800">
+                            {wear}
+                          </Badge>
+                        ))}
+                        {caseStudy.wearType.length > 3 && (
+                          <Badge variant="outline" className="text-xs py-0 px-1.5">
+                            +{caseStudy.wearType.length - 3}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Problem Description Preview */}
+                    <p className="text-sm text-gray-600 dark:text-muted-foreground line-clamp-2">
                       {caseStudy.problemDescription}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-muted-foreground mt-2">
-                      {caseStudy.contributor?.name && (
-                        <>Created by {caseStudy.contributor.name}</>
+
+                    {/* Footer with Contributor & Revenue */}
+                    <div className="flex items-center justify-between pt-2 border-t dark:border-gray-700">
+                      <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-muted-foreground">
+                        <User className="h-3 w-3" />
+                        <span className="truncate max-w-[120px]">{caseStudy.contributor?.name || 'Unknown'}</span>
+                      </div>
+                      {caseStudy.solutionValueRevenue && (
+                        <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                          ${Number(caseStudy.solutionValueRevenue).toLocaleString('en-US')}
+                        </Badge>
                       )}
-                      {caseStudy.approver?.name && (
-                        <> • Approved by {caseStudy.approver.name}</>
-                      )}
-                    </p>
-                    <Link href={`/dashboard/library/${caseStudy.id}`}>
-                      <Button className="w-full gap-2 mt-4">
-                        View Full Case Study
+                    </div>
+
+                    <Link href={`/dashboard/library/${caseStudy.id}`} className="block">
+                      <Button className="w-full gap-2 bg-wa-green-600 hover:bg-wa-green-700 dark:bg-primary dark:hover:bg-primary/90 transition-all group-hover:shadow-md">
+                        View Details
                         <ExternalLink className="h-4 w-4" />
                       </Button>
                     </Link>

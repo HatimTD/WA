@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Filter, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Filter, X, ChevronDown, ChevronUp, CheckCircle2, User, Calendar } from 'lucide-react';
 import { waSearchCaseStudies, waGetSearchFilterOptions } from '@/lib/actions/waSearchActions';
 import { waGetSearchSuggestions } from '@/lib/actions/waAutocompleteActions';
 import Link from 'next/link';
@@ -616,62 +616,115 @@ export default function SearchPage() {
                 <p className="text-sm mt-1">Try adjusting your search filters</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {results.map((caseStudy) => (
                   <Link
                     key={caseStudy.id}
                     href={`/dashboard/cases/${caseStudy.id}`}
                     className="block"
                   >
-                    <Card role="article" className="hover:shadow-md dark:bg-card dark:border-border dark:hover:border-primary transition-all cursor-pointer">
-                      <CardContent className="p-6">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2 flex-wrap">
-                              <Badge className={getTypeColor(caseStudy.type)}>
-                                {caseStudy.type}
-                              </Badge>
-                              <Badge variant="outline" className={getStatusColor(caseStudy.status)}>
-                                {caseStudy.status}
-                              </Badge>
-                              {/* Language Indicator - BRD: Show original language */}
-                              {caseStudy.originalLanguage && caseStudy.originalLanguage !== 'en' && (
-                                <LanguageIndicator
-                                  originalLanguage={caseStudy.originalLanguage}
-                                  translationAvailable={caseStudy.translationAvailable}
-                                  caseStudyId={caseStudy.id}
-                                  variant="badge"
-                                  showLink={true}
-                                />
-                              )}
-                              {caseStudy.status === 'APPROVED' && (
-                                <div onClick={(e) => e.preventDefault()}>
-                                  <SaveButton caseStudyId={caseStudy.id} variant="icon" size="sm" />
-                                </div>
-                              )}
+                    <Card role="article" className="group hover:shadow-xl dark:bg-card dark:border-border dark:hover:border-primary transition-all duration-300 cursor-pointer overflow-hidden h-full">
+                      {/* Type Badge Banner */}
+                      <div className={`h-1.5 ${
+                        caseStudy.type === 'STAR'
+                          ? 'bg-gradient-to-r from-yellow-400 to-amber-500'
+                          : caseStudy.type === 'TECH'
+                          ? 'bg-gradient-to-r from-purple-500 to-violet-600'
+                          : 'bg-gradient-to-r from-blue-500 to-cyan-500'
+                      }`} />
+
+                      <CardContent className="p-4">
+                        {/* Header with badges */}
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <Badge className={getTypeColor(caseStudy.type)}>
+                            {caseStudy.type}
+                          </Badge>
+                          <Badge variant="outline" className={getStatusColor(caseStudy.status)}>
+                            {caseStudy.status}
+                          </Badge>
+                          {/* Approved Date Badge */}
+                          {caseStudy.status === 'APPROVED' && caseStudy.approvedAt && (
+                            <Badge variant="outline" className="text-xs gap-1 text-green-600 border-green-200 dark:text-green-400 dark:border-green-800">
+                              <CheckCircle2 className="h-3 w-3" />
+                              {new Date(caseStudy.approvedAt).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric'
+                              })}
+                            </Badge>
+                          )}
+                          {/* Language Indicator */}
+                          {caseStudy.originalLanguage && caseStudy.originalLanguage !== 'en' && (
+                            <LanguageIndicator
+                              originalLanguage={caseStudy.originalLanguage}
+                              translationAvailable={caseStudy.translationAvailable}
+                              caseStudyId={caseStudy.id}
+                              variant="badge"
+                              showLink={true}
+                            />
+                          )}
+                          {caseStudy.status === 'APPROVED' && (
+                            <div onClick={(e) => e.preventDefault()} className="ml-auto">
+                              <SaveButton caseStudyId={caseStudy.id} variant="icon" size="sm" />
                             </div>
-                            <h3 className="text-lg font-semibold mb-1 dark:text-foreground">{caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}</h3>
-                            <p className="text-sm text-gray-600 dark:text-muted-foreground mb-2 line-clamp-2">
-                              {caseStudy.problemDescription}
-                            </p>
-                            <div className="flex flex-wrap gap-3 text-sm text-gray-500 dark:text-muted-foreground">
-                              <span>📍 {caseStudy.location}</span>
-                              <span>🏭 {caseStudy.industry}</span>
-                              <span>⚙️ {caseStudy.componentWorkpiece}</span>
-                              {caseStudy.productName && <span>🔧 {caseStudy.productName}</span>}
-                            </div>
+                          )}
+                        </div>
+
+                        {/* Title */}
+                        <h3 className="text-base font-semibold mb-2 dark:text-foreground group-hover:text-wa-green-600 dark:group-hover:text-primary transition-colors line-clamp-2">
+                          {caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}
+                        </h3>
+
+                        {/* Key Details Grid */}
+                        <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-md p-2">
+                            <p className="text-gray-500 dark:text-gray-400 mb-0.5">Component</p>
+                            <p className="font-medium text-gray-900 dark:text-foreground truncate">{caseStudy.componentWorkpiece}</p>
                           </div>
-                          <div className="text-right text-sm text-gray-500 dark:text-muted-foreground">
-                            {caseStudy.contributor?.name && (
-                              <p className="font-medium">Created by {caseStudy.contributor.name}</p>
-                            )}
-                            {caseStudy.approver?.name && (
-                              <p className="text-xs">Approved by {caseStudy.approver.name}</p>
-                            )}
-                            <p className="text-xs">
-                              {new Date(caseStudy.createdAt).toLocaleDateString()}
-                            </p>
+                          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-md p-2">
+                            <p className="text-gray-500 dark:text-gray-400 mb-0.5">WA Product</p>
+                            <p className="font-medium text-gray-900 dark:text-foreground truncate">{caseStudy.waProduct}</p>
                           </div>
+                        </div>
+
+                        {/* Wear Types */}
+                        {caseStudy.wearType && caseStudy.wearType.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-3">
+                            {caseStudy.wearType.slice(0, 3).map((wear: string) => (
+                              <Badge key={wear} variant="outline" className="text-xs py-0 px-1.5 bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800">
+                                {wear}
+                              </Badge>
+                            ))}
+                            {caseStudy.wearType.length > 3 && (
+                              <Badge variant="outline" className="text-xs py-0 px-1.5">
+                                +{caseStudy.wearType.length - 3}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Problem Description */}
+                        <p className="text-sm text-gray-600 dark:text-muted-foreground mb-3 line-clamp-2">
+                          {caseStudy.problemDescription}
+                        </p>
+
+                        {/* Location & Industry */}
+                        <div className="flex flex-wrap gap-2 text-xs text-gray-500 dark:text-muted-foreground mb-3">
+                          <span className="flex items-center gap-1">📍 {caseStudy.location}{caseStudy.country ? `, ${caseStudy.country}` : ''}</span>
+                          <span className="flex items-center gap-1">🏭 {caseStudy.industry}</span>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="flex items-center justify-between pt-2 border-t dark:border-gray-700">
+                          <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-muted-foreground">
+                            <User className="h-3 w-3" />
+                            <span className="truncate max-w-[100px]">{caseStudy.contributor?.name || 'Unknown'}</span>
+                          </div>
+                          {caseStudy.solutionValueRevenue && (
+                            <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                              ${Number(caseStudy.solutionValueRevenue).toLocaleString('en-US')}
+                            </Badge>
+                          )}
                         </div>
                       </CardContent>
                     </Card>

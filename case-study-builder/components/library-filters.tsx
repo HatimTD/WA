@@ -31,7 +31,7 @@ interface LibraryFiltersProps {
   componentFilter: string;
   waProductFilter: string;
   countryFilter: string;
-  wearTypeFilter: string;
+  wearTypeFilter: string; // Comma-separated values for multi-select
   contributorFilter: string;
   minRevenue: number | null;
   maxRevenue: number | null;
@@ -324,25 +324,48 @@ export function LibraryFilters({
             </div>
           </div>
 
-          {/* Wear Type Filter */}
+          {/* Wear Type Filter - Multi-select */}
           {wearTypes.length > 0 && (
             <div>
-              <label className="text-sm font-medium mb-2 block dark:text-foreground">Wear Type</label>
-              <div className="flex flex-wrap gap-2">
-                {wearTypes.map((wt) => (
-                  <Link key={wt} href={waGetFilterUrl({ wearType: wearTypeFilter === wt ? undefined : wt })}>
-                    <Badge
-                      variant={wearTypeFilter === wt ? 'default' : 'outline'}
-                      className={`cursor-pointer transition-colors ${
-                        wearTypeFilter === wt
-                          ? 'bg-wa-green-600 hover:bg-wa-green-700 text-white'
-                          : 'hover:bg-wa-green-50 dark:hover:bg-primary/10'
-                      }`}
-                    >
-                      {wt}
-                    </Badge>
+              <label className="text-sm font-medium mb-2 block dark:text-foreground">
+                Wear Type
+                {wearTypeFilter && (
+                  <Link
+                    href={waGetFilterUrl({ wearType: undefined })}
+                    className="ml-2 text-xs text-gray-500 hover:text-red-500"
+                  >
+                    (Clear all)
                   </Link>
-                ))}
+                )}
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {wearTypes.map((wt) => {
+                  // Check if this wear type is selected (case-insensitive)
+                  const selectedTypes = wearTypeFilter ? wearTypeFilter.split(',').map(t => t.trim().toUpperCase()) : [];
+                  const isSelected = selectedTypes.includes(wt.toUpperCase());
+
+                  // Toggle this wear type in the selection
+                  const newSelection = isSelected
+                    ? selectedTypes.filter(t => t !== wt.toUpperCase())
+                    : [...selectedTypes, wt.toUpperCase()];
+
+                  const newWearType = newSelection.length > 0 ? newSelection.join(',') : undefined;
+
+                  return (
+                    <Link key={wt} href={waGetFilterUrl({ wearType: newWearType })}>
+                      <Badge
+                        variant={isSelected ? 'default' : 'outline'}
+                        className={`cursor-pointer transition-colors ${
+                          isSelected
+                            ? 'bg-wa-green-600 hover:bg-wa-green-700 text-white'
+                            : 'hover:bg-wa-green-50 dark:hover:bg-primary/10'
+                        }`}
+                      >
+                        {wt}
+                      </Badge>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           )}

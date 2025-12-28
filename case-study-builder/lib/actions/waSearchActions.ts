@@ -1,7 +1,7 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { Prisma, WearType } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 /**
  * BRD Section 5 - Search & Filtering
@@ -73,9 +73,10 @@ export async function waSearchCaseStudies(filters: WaSearchFilters) {
     }
 
     // BRD: Wear Type filter (array field - hasSome for multi-select)
+    // Uppercase values to match database storage format
     if (filters.wearType && filters.wearType.length > 0) {
       where.wearType = {
-        hasSome: filters.wearType as WearType[],
+        hasSome: filters.wearType.map(wt => wt.toUpperCase()),
       };
     }
 
@@ -214,32 +215,48 @@ export async function waSearchCaseStudies(filters: WaSearchFilters) {
   }
 }
 
+// Fallback wear types if master data not available
+const FALLBACK_WEAR_TYPES = ['ABRASION', 'IMPACT', 'CORROSION', 'TEMPERATURE', 'COMBINATION'];
+
 /**
  * Get unique values for filter dropdowns
  * BRD Section 5 - Provides all searchable field options
  */
 export async function waGetSearchFilterOptions() {
   try {
-    // Get distinct values from approved cases for all BRD-required filters
-    const caseStudies = await prisma.waCaseStudy.findMany({
-      where: { status: 'APPROVED' },
-      select: {
-        industry: true,
-        location: true,
-        componentWorkpiece: true,
-        wearType: true,
-        competitorName: true,
-        waProduct: true,
-        country: true,
-        contributorId: true,
-        contributor: {
-          select: {
-            id: true,
-            name: true,
+    // Get distinct values from approved cases and master data wear types
+    const [caseStudies, masterWearTypes] = await Promise.all([
+      prisma.waCaseStudy.findMany({
+        where: { status: 'APPROVED' },
+        select: {
+          industry: true,
+          location: true,
+          componentWorkpiece: true,
+          wearType: true,
+          competitorName: true,
+          waProduct: true,
+          country: true,
+          contributorId: true,
+          contributor: {
+            select: {
+              id: true,
+              name: true,
+            },
           },
         },
-      },
-    });
+      }),
+      // Fetch wear types from master data (admin-managed)
+      prisma.waMasterList.findMany({
+        where: {
+          isActive: true,
+          listKey: { keyName: 'WearType' },
+        },
+        orderBy: [{ sortOrder: 'asc' }, { value: 'asc' }],
+        select: {
+          value: true,
+        },
+      }),
+    ]);
 
     // Extract unique values for each filter
     const industries = [...new Set(caseStudies.map((cs) => cs.industry))].filter(Boolean).sort();
@@ -249,9 +266,10 @@ export async function waGetSearchFilterOptions() {
     const countries = [...new Set(caseStudies.map((cs) => cs.country))].filter((c): c is string => c !== null).sort();
     const oems = [...new Set(caseStudies.map((cs) => cs.competitorName))].filter((c): c is string => c !== null).sort();
 
-    // Flatten wear types array and get unique values
-    const allWearTypes = caseStudies.flatMap((cs) => cs.wearType);
-    const wearTypes = [...new Set(allWearTypes)].sort();
+    // Use master data wear types, fallback to hardcoded if none found
+    const wearTypes = masterWearTypes.length > 0
+      ? masterWearTypes.map(wt => wt.value)
+      : FALLBACK_WEAR_TYPES;
 
     // Get unique contributors with their names
     const contributorMap = new Map<string, string>();

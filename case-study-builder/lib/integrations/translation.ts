@@ -307,8 +307,8 @@ class TranslationService {
   }
 
   private detectHeuristic(text: string): LanguageDetectionResult {
-    // Simple heuristic based on character ranges
-    const sample = text.substring(0, 200);
+    // Simple heuristic based on character ranges and common words
+    const sample = text.substring(0, 500).toLowerCase();
 
     // Chinese characters
     if (/[\u4e00-\u9fff]/.test(sample)) {
@@ -333,6 +333,57 @@ class TranslationService {
     // Cyrillic (Russian)
     if (/[\u0400-\u04ff]/.test(sample)) {
       return { success: true, detectedLanguage: 'ru', confidence: 0.8 };
+    }
+
+    // Detect Latin-script languages by common words
+    // Count matches for each language and pick the one with most matches
+
+    // Helper to count word matches
+    const countMatches = (pattern: RegExp): number => {
+      const matches = sample.match(new RegExp(pattern.source, 'gi'));
+      return matches ? matches.length : 0;
+    };
+
+    // French - common words and patterns (including "bonjour")
+    const frenchPattern = /\b(le|la|les|un|une|des|du|de|et|est|sont|pour|dans|avec|sur|par|qui|que|ce|cette|ces|nous|vous|ils|elles|leur|notre|votre|bonjour|bonsoir|merci|aussi|très|plus|moins|bien|être|avoir|faire|aller|voir|tout|tous|comme|mais|donc|car|où|si|quand|comment|pourquoi|parce|jusqu|depuis|pendant|après|avant|entre|sous|chez|sans|problème|solution|client|produit)\b/i;
+    const frenchCount = countMatches(frenchPattern);
+
+    // Spanish - common words
+    const spanishPattern = /\b(el|los|las|unos|unas|es|son|para|con|por|se|sus|del|al|como|pero|más|está|están|muy|todo|todos|cuando|donde|porque|sin|sobre|entre|hasta|desde|hacia|según|durante|mediante|hola|gracias|problema|solución|cliente|producto)\b/i;
+    const spanishCount = countMatches(spanishPattern);
+
+    // German - common words and patterns
+    const germanPattern = /\b(der|die|das|den|dem|des|ein|eine|einer|eines|und|ist|sind|für|mit|auf|bei|von|zu|nach|über|unter|zwischen|vor|hinter|neben|durch|gegen|ohne|aus|bis|seit|während|wegen|trotz|ich|du|er|wir|ihr|haben|sein|werden|können|müssen|sollen|wollen|auch|sehr|schon|noch|dann|wenn|weil|dass|damit|obwohl|guten|danke|bitte|problem|lösung|kunde|produkt)\b/i;
+    const germanCount = countMatches(germanPattern);
+
+    // Portuguese - common words
+    const portuguesePattern = /\b(os|as|uns|umas|são|para|em|seu|sua|seus|suas|do|da|dos|das|ao|aos|como|mas|mais|está|estão|muito|todo|todos|quando|onde|porque|sem|sobre|entre|até|desde|olá|obrigado|obrigada|também|já|ainda|então|problema|solução|cliente|produto)\b/i;
+    const portugueseCount = countMatches(portuguesePattern);
+
+    // Italian - common words
+    const italianPattern = /\b(il|lo|gli|uno|sono|per|con|su|da|che|si|suo|sua|suoi|sue|del|dello|della|dei|degli|delle|allo|alla|agli|alle|come|ma|più|sta|stanno|molto|tutto|tutti|quando|dove|perché|senza|tra|fra|fino|dopo|prima|ciao|grazie|anche|già|ancora|problema|soluzione|cliente|prodotto)\b/i;
+    const italianCount = countMatches(italianPattern);
+
+    // Dutch - common words
+    const dutchPattern = /\b(het|een|en|zijn|voor|met|op|van|te|aan|bij|door|naar|over|uit|tot|om|als|maar|meer|nog|dan|wel|ook|zo|hallo|dank|bedankt|alstublieft|probleem|oplossing|klant|product)\b/i;
+    const dutchCount = countMatches(dutchPattern);
+
+    // Find the language with most matches (minimum 1 match required)
+    const languageCounts = [
+      { lang: 'fr', count: frenchCount },
+      { lang: 'es', count: spanishCount },
+      { lang: 'de', count: germanCount },
+      { lang: 'pt', count: portugueseCount },
+      { lang: 'it', count: italianCount },
+      { lang: 'nl', count: dutchCount },
+    ];
+
+    const bestMatch = languageCounts.reduce((a, b) => a.count > b.count ? a : b);
+
+    if (bestMatch.count >= 1) {
+      // Calculate confidence based on match count
+      const confidence = Math.min(0.9, 0.5 + (bestMatch.count * 0.1));
+      return { success: true, detectedLanguage: bestMatch.lang, confidence };
     }
 
     // Default to English

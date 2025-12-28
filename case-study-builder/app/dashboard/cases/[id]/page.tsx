@@ -42,6 +42,25 @@ import type { CaseStudyWithRelations } from '@/lib/utils/waQualityScore';
 import LanguageIndicator from '@/components/language-indicator';
 import TranslationPanel from '@/components/translation-panel';
 
+// Language names for display
+const LANGUAGE_NAMES: Record<string, string> = {
+  en: 'English',
+  es: 'Spanish',
+  fr: 'French',
+  de: 'German',
+  pt: 'Portuguese',
+  it: 'Italian',
+  zh: 'Chinese',
+  ja: 'Japanese',
+  ko: 'Korean',
+  ru: 'Russian',
+  ar: 'Arabic',
+  hi: 'Hindi',
+  nl: 'Dutch',
+  pl: 'Polish',
+  tr: 'Turkish',
+};
+
 // Dynamic import for PDF export (saves ~200KB from jspdf)
 const PDFExportButton = dynamic(() => import('@/components/pdf-export-button'), {
   loading: () => (
@@ -301,7 +320,7 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
             <p className="text-lg text-gray-600 dark:text-muted-foreground mt-2">
               {caseStudy.location}, {caseStudy.country || 'N/A'}
             </p>
-            {/* Language Indicator with View Original link */}
+            {/* Language Indicator with View Original/Translated toggle link */}
             {(caseStudy.originalLanguage !== 'en' || caseStudy.translationAvailable) && (
               <div className="mt-3">
                 <LanguageIndicator
@@ -311,7 +330,16 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
                   caseStudyId={caseStudy.id}
                   variant="inline"
                   showLink={true}
+                  isViewingOriginal={displayOriginal}
                 />
+                {/* Show current view mode indicator */}
+                {caseStudy.translationAvailable && (
+                  <p className="text-xs text-gray-500 dark:text-muted-foreground mt-1">
+                    {displayOriginal
+                      ? `📄 Showing original ${LANGUAGE_NAMES[caseStudy.originalLanguage || 'en'] || caseStudy.originalLanguage} content`
+                      : '🌐 Showing translated English content'}
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -488,6 +516,19 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
               ))}
             </div>
           </div>
+
+          {(caseStudy.tags as string[])?.length > 0 && (
+            <div>
+              <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-2">Tags</p>
+              <div className="flex flex-wrap gap-2">
+                {(caseStudy.tags as string[]).map((tag) => (
+                  <Badge key={tag} variant="outline" className="bg-wa-green-50 text-wa-green-700 border-wa-green-200 dark:bg-wa-green-900/20 dark:text-wa-green-400 dark:border-wa-green-800">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
 
           {caseStudy.baseMetal && (
             <div>
@@ -693,14 +734,24 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
         <CostCalculator
           caseStudyId={caseStudy.id}
           existingData={existingCostCalc ? {
-            materialCostBefore: Number(existingCostCalc.materialCostBefore),
-            materialCostAfter: Number(existingCostCalc.materialCostAfter),
-            laborCostBefore: Number(existingCostCalc.laborCostBefore),
-            laborCostAfter: Number(existingCostCalc.laborCostAfter),
-            downtimeCostBefore: Number(existingCostCalc.downtimeCostBefore),
-            downtimeCostAfter: Number(existingCostCalc.downtimeCostAfter),
-            maintenanceFrequencyBefore: existingCostCalc.maintenanceFrequencyBefore,
-            maintenanceFrequencyAfter: existingCostCalc.maintenanceFrequencyAfter,
+            materialCostBefore: Number(existingCostCalc.materialCostBefore) || 0,
+            materialCostAfter: Number(existingCostCalc.materialCostAfter) || 0,
+            laborCostBefore: Number(existingCostCalc.laborCostBefore) || 0,
+            laborCostAfter: Number(existingCostCalc.laborCostAfter) || 0,
+            downtimeCostBefore: Number(existingCostCalc.downtimeCostBefore) || 0,
+            downtimeCostAfter: Number(existingCostCalc.downtimeCostAfter) || 0,
+            maintenanceFrequencyBefore: existingCostCalc.maintenanceFrequencyBefore || 12,
+            maintenanceFrequencyAfter: existingCostCalc.maintenanceFrequencyAfter || 4,
+            // New fields for Part Lifecycle, Maintenance & Repair, Disassembly/Assembly, Extra Benefits
+            costOfPart: Number(existingCostCalc.costOfPart) || 0,
+            oldSolutionLifetimeDays: existingCostCalc.oldSolutionLifetimeDays || 0,
+            waSolutionLifetimeDays: existingCostCalc.waSolutionLifetimeDays || 0,
+            partsUsedPerYear: existingCostCalc.partsUsedPerYear || 0,
+            maintenanceRepairCostBefore: Number(existingCostCalc.maintenanceRepairCostBefore) || 0,
+            maintenanceRepairCostAfter: Number(existingCostCalc.maintenanceRepairCostAfter) || 0,
+            disassemblyCostBefore: Number(existingCostCalc.disassemblyCostBefore) || 0,
+            disassemblyCostAfter: Number(existingCostCalc.disassemblyCostAfter) || 0,
+            extraBenefits: existingCostCalc.extraBenefits || '',
           } : undefined}
         />
       )}

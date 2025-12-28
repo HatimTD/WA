@@ -76,7 +76,6 @@ interface DashboardNavProps {
 const mainNavItems = [
   { href: '/dashboard', label: 'Home', icon: Home },
   { href: '/dashboard/new', label: 'New Case Study', icon: Plus, roles: ['CONTRIBUTOR', 'APPROVER', 'ADMIN'] },
-  { href: '/dashboard/bulk-import', label: 'Bulk Import', icon: Upload, roles: ['APPROVER', 'ADMIN'] },
   { href: '/dashboard/my-cases', label: 'My Cases', icon: FileText, roles: ['CONTRIBUTOR', 'APPROVER', 'ADMIN'] },
   { href: '/dashboard/saved', label: 'Saved Cases', icon: Bookmark },
   { href: '/dashboard/library', label: 'Library', icon: BookOpen },
@@ -86,7 +85,6 @@ const mainNavItems = [
   { href: '/dashboard/analytics', label: 'My Analytics', icon: TrendingUp, roles: ['CONTRIBUTOR', 'APPROVER', 'ADMIN', 'MARKETING'] },
   { href: '/dashboard/leaderboard', label: 'Leaderboard', icon: Trophy },
   { href: '/dashboard/bhag', label: 'BHAG Tracker', icon: BarChart },
-  { href: '/dashboard/diagnostics', label: 'Diagnostics', icon: Stethoscope, roles: ['CONTRIBUTOR', 'APPROVER', 'ADMIN', 'IT_DEPARTMENT'] },
 ];
 
 // Admin section items (collapsible)
@@ -98,6 +96,7 @@ const adminNavItems = [
   { href: '/dashboard/admin/retention', label: 'Data Retention', icon: Clock, roles: ['ADMIN'] },
   { href: '/dashboard/admin/gdpr', label: 'GDPR Requests', icon: FileKey, roles: ['ADMIN'] },
   { href: '/dashboard/admin/audit-logs', label: 'Audit Logs', icon: ScrollText, roles: ['ADMIN'] },
+  { href: '/dashboard/diagnostics', label: 'Diagnostics', icon: Stethoscope, roles: ['ADMIN', 'IT_DEPARTMENT'] },
   { href: '/dashboard/system-settings', label: 'System Settings', icon: Settings, roles: ['ADMIN', 'IT_DEPARTMENT'] },
 ];
 
@@ -107,7 +106,7 @@ export function DashboardNav({ user, isCollapsed, onNavigate }: DashboardNavProp
   const [isAdminExpanded, setIsAdminExpanded] = useState(false);
 
   // Check if current path is in admin section
-  const isOnAdminPage = pathname.startsWith('/dashboard/admin') || pathname === '/dashboard/system-settings';
+  const isOnAdminPage = pathname.startsWith('/dashboard/admin') || pathname === '/dashboard/system-settings' || pathname === '/dashboard/diagnostics';
 
   // Sync admin expanded state from localStorage after mount (avoids hydration mismatch)
   useEffect(() => {

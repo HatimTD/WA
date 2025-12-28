@@ -138,13 +138,13 @@ export default function OpenAIDiagnostics() {
   };
 
   return (
-    <Card>
+    <Card className="dark:bg-card dark:border-border">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-purple-600" />
+        <CardTitle className="flex items-center gap-2 dark:text-foreground">
+          <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400" />
           OpenAI API Diagnostics
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="dark:text-muted-foreground">
           Test if your OpenAI API key is configured correctly and working
         </CardDescription>
       </CardHeader>
@@ -164,15 +164,15 @@ export default function OpenAIDiagnostics() {
         </Button>
 
         {testResults && (
-          <div className="space-y-4 mt-4 p-4 bg-gray-50 rounded-lg">
+          <div className="space-y-4 mt-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
             {/* Overall Status */}
-            <div className="flex items-center gap-2 p-3 bg-white rounded border">
+            <div className="flex items-center gap-2 p-3 bg-white dark:bg-gray-900 rounded border dark:border-border">
               {testResults.overallStatus === 'success' && (
                 <>
                   <CheckCircle2 className="h-6 w-6 text-green-500" />
                   <div>
-                    <div className="font-semibold text-green-700">All Tests Passed!</div>
-                    <div className="text-sm text-gray-600">OpenAI API is working correctly</div>
+                    <div className="font-semibold text-green-700 dark:text-green-400">All Tests Passed!</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">OpenAI API is working correctly</div>
                   </div>
                 </>
               )}
@@ -180,8 +180,8 @@ export default function OpenAIDiagnostics() {
                 <>
                   <AlertCircle className="h-6 w-6 text-orange-500" />
                   <div>
-                    <div className="font-semibold text-orange-700">Some Tests Failed</div>
-                    <div className="text-sm text-gray-600">OpenAI API partially working</div>
+                    <div className="font-semibold text-orange-700 dark:text-orange-400">Some Tests Failed</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">OpenAI API partially working</div>
                   </div>
                 </>
               )}
@@ -189,8 +189,8 @@ export default function OpenAIDiagnostics() {
                 <>
                   <XCircle className="h-6 w-6 text-red-500" />
                   <div>
-                    <div className="font-semibold text-red-700">All Tests Failed</div>
-                    <div className="text-sm text-gray-600">OpenAI API not working</div>
+                    <div className="font-semibold text-red-700 dark:text-red-400">All Tests Failed</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">OpenAI API not working</div>
                   </div>
                 </>
               )}
@@ -198,25 +198,25 @@ export default function OpenAIDiagnostics() {
 
             {/* Individual Test Results */}
             <div className="space-y-3">
-              <h3 className="font-semibold">Test Results:</h3>
+              <h3 className="font-semibold dark:text-foreground">Test Results:</h3>
 
               {/* Summarize Test */}
-              <div className="bg-white p-3 rounded border">
+              <div className="bg-white dark:bg-gray-900 p-3 rounded border dark:border-border">
                 <div className="flex items-center gap-2 mb-2">
                   {getStatusIcon(testResults.tests.summarize.status)}
-                  <span className="font-medium">Text Summarization</span>
+                  <span className="font-medium dark:text-foreground">Text Summarization</span>
                 </div>
                 {testResults.tests.summarize.status === 'success' ? (
-                  <div className="text-sm text-gray-600 ml-7">
-                    <div className="font-medium text-green-700 mb-1">Result:</div>
-                    <div className="bg-green-50 p-2 rounded text-xs italic">
+                  <div className="text-sm text-gray-600 dark:text-gray-400 ml-7">
+                    <div className="font-medium text-green-700 dark:text-green-400 mb-1">Result:</div>
+                    <div className="bg-green-50 dark:bg-green-900/30 p-2 rounded text-xs italic dark:text-green-200">
                       "{testResults.tests.summarize.result}"
                     </div>
                   </div>
                 ) : (
-                  <div className="text-sm text-red-600 ml-7">
+                  <div className="text-sm text-red-600 dark:text-red-400 ml-7">
                     <div className="font-medium mb-1">Error:</div>
-                    <div className="bg-red-50 p-2 rounded text-xs">
+                    <div className="bg-red-50 dark:bg-red-900/30 p-2 rounded text-xs dark:text-red-200">
                       {testResults.tests.summarize.error}
                     </div>
                   </div>
@@ -224,22 +224,22 @@ export default function OpenAIDiagnostics() {
               </div>
 
               {/* Improve Text Test */}
-              <div className="bg-white p-3 rounded border">
+              <div className="bg-white dark:bg-gray-900 p-3 rounded border dark:border-border">
                 <div className="flex items-center gap-2 mb-2">
                   {getStatusIcon(testResults.tests.improve.status)}
-                  <span className="font-medium">Text Improvement</span>
+                  <span className="font-medium dark:text-foreground">Text Improvement</span>
                 </div>
                 {testResults.tests.improve.status === 'success' ? (
-                  <div className="text-sm text-gray-600 ml-7">
-                    <div className="font-medium text-green-700 mb-1">Result:</div>
-                    <div className="bg-green-50 p-2 rounded text-xs italic">
+                  <div className="text-sm text-gray-600 dark:text-gray-400 ml-7">
+                    <div className="font-medium text-green-700 dark:text-green-400 mb-1">Result:</div>
+                    <div className="bg-green-50 dark:bg-green-900/30 p-2 rounded text-xs italic dark:text-green-200">
                       "{testResults.tests.improve.result}"
                     </div>
                   </div>
                 ) : (
-                  <div className="text-sm text-red-600 ml-7">
+                  <div className="text-sm text-red-600 dark:text-red-400 ml-7">
                     <div className="font-medium mb-1">Error:</div>
-                    <div className="bg-red-50 p-2 rounded text-xs">
+                    <div className="bg-red-50 dark:bg-red-900/30 p-2 rounded text-xs dark:text-red-200">
                       {testResults.tests.improve.error}
                     </div>
                   </div>
@@ -247,22 +247,22 @@ export default function OpenAIDiagnostics() {
               </div>
 
               {/* Translate Test */}
-              <div className="bg-white p-3 rounded border">
+              <div className="bg-white dark:bg-gray-900 p-3 rounded border dark:border-border">
                 <div className="flex items-center gap-2 mb-2">
                   {getStatusIcon(testResults.tests.translate.status)}
-                  <span className="font-medium">Translation (to Spanish)</span>
+                  <span className="font-medium dark:text-foreground">Translation (to Spanish)</span>
                 </div>
                 {testResults.tests.translate.status === 'success' ? (
-                  <div className="text-sm text-gray-600 ml-7">
-                    <div className="font-medium text-green-700 mb-1">Result:</div>
-                    <div className="bg-green-50 p-2 rounded text-xs italic">
+                  <div className="text-sm text-gray-600 dark:text-gray-400 ml-7">
+                    <div className="font-medium text-green-700 dark:text-green-400 mb-1">Result:</div>
+                    <div className="bg-green-50 dark:bg-green-900/30 p-2 rounded text-xs italic dark:text-green-200">
                       "{testResults.tests.translate.result}"
                     </div>
                   </div>
                 ) : (
-                  <div className="text-sm text-red-600 ml-7">
+                  <div className="text-sm text-red-600 dark:text-red-400 ml-7">
                     <div className="font-medium mb-1">Error:</div>
-                    <div className="bg-red-50 p-2 rounded text-xs">
+                    <div className="bg-red-50 dark:bg-red-900/30 p-2 rounded text-xs dark:text-red-200">
                       {testResults.tests.translate.error}
                     </div>
                   </div>
@@ -272,9 +272,9 @@ export default function OpenAIDiagnostics() {
 
             {/* Troubleshooting */}
             {testResults.overallStatus !== 'success' && (
-              <div className="border-t pt-4">
-                <h3 className="font-semibold mb-2 text-orange-600">Troubleshooting:</h3>
-                <ul className="list-disc list-inside space-y-1 text-sm">
+              <div className="border-t dark:border-border pt-4">
+                <h3 className="font-semibold mb-2 text-orange-600 dark:text-orange-400">Troubleshooting:</h3>
+                <ul className="list-disc list-inside space-y-1 text-sm dark:text-gray-300">
                   <li>Check that OPENAI_API_KEY is set in .env.local</li>
                   <li>Verify the API key is valid (not expired or revoked)</li>
                   <li>Ensure your OpenAI account has credits/billing enabled</li>
@@ -286,10 +286,10 @@ export default function OpenAIDiagnostics() {
             )}
 
             <details className="text-xs">
-              <summary className="cursor-pointer text-gray-600 hover:text-gray-900">
+              <summary className="cursor-pointer text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200">
                 View full diagnostic data
               </summary>
-              <pre className="mt-2 p-2 bg-gray-100 rounded overflow-auto">
+              <pre className="mt-2 p-2 bg-gray-100 dark:bg-gray-900 rounded overflow-auto text-gray-800 dark:text-gray-200">
                 {JSON.stringify(testResults, null, 2)}
               </pre>
             </details>
