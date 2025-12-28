@@ -653,14 +653,14 @@ export default function SearchPage() {
                               })}
                             </Badge>
                           )}
-                          {/* Language Indicator */}
+                          {/* Language Indicator - badge only, no link (link is on detail page) */}
                           {caseStudy.originalLanguage && caseStudy.originalLanguage !== 'en' && (
                             <LanguageIndicator
                               originalLanguage={caseStudy.originalLanguage}
                               translationAvailable={caseStudy.translationAvailable}
                               caseStudyId={caseStudy.id}
                               variant="badge"
-                              showLink={true}
+                              showLink={false}
                             />
                           )}
                           {caseStudy.status === 'APPROVED' && (

@@ -6,7 +6,7 @@ import { Prisma } from '@prisma/client';
 /**
  * BRD Section 5 - Search & Filtering
  * Database must be searchable by: Tags, Industry, Component, OEM, Wear Type,
- * WA Product, Country, Customer, Revenue, and Contributor
+ * WA Product, Country, Customer, Revenue, Contributor, and Title
  */
 type WaSearchFilters = {
   query?: string;
@@ -120,11 +120,30 @@ export async function waSearchCaseStudies(filters: WaSearchFilters) {
       }
     }
 
-    // Text search across multiple fields
+    // Text search across multiple fields (including title)
+    // BRD Section 5 - searchable by all key fields
     if (filters.query) {
       where.OR = [
         {
+          title: {
+            contains: filters.query,
+            mode: 'insensitive',
+          },
+        },
+        {
           customerName: {
+            contains: filters.query,
+            mode: 'insensitive',
+          },
+        },
+        {
+          industry: {
+            contains: filters.query,
+            mode: 'insensitive',
+          },
+        },
+        {
+          location: {
             contains: filters.query,
             mode: 'insensitive',
           },
@@ -155,6 +174,12 @@ export async function waSearchCaseStudies(filters: WaSearchFilters) {
         },
         {
           componentWorkpiece: {
+            contains: filters.query,
+            mode: 'insensitive',
+          },
+        },
+        {
+          competitorName: {
             contains: filters.query,
             mode: 'insensitive',
           },

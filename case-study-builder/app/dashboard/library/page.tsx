@@ -66,6 +66,7 @@ export default async function LibraryPage({
 
   if (query) {
     where.OR = [
+      { title: { contains: query, mode: 'insensitive' } },
       { customerName: { contains: query, mode: 'insensitive' } },
       { industry: { contains: query, mode: 'insensitive' } },
       { componentWorkpiece: { contains: query, mode: 'insensitive' } },
@@ -359,7 +360,7 @@ export default async function LibraryPage({
                       <span>•</span>
                       <span className="truncate">{caseStudy.location}{caseStudy.country ? `, ${caseStudy.country}` : ''}</span>
                     </CardDescription>
-                    {/* Language Indicator */}
+                    {/* Language Indicator - badge only, no link (link is on detail page) */}
                     {caseStudy.originalLanguage && caseStudy.originalLanguage !== 'en' && (
                       <div className="mt-2">
                         <LanguageIndicator
@@ -367,7 +368,7 @@ export default async function LibraryPage({
                           translationAvailable={caseStudy.translationAvailable}
                           caseStudyId={caseStudy.id}
                           variant="badge"
-                          showLink={true}
+                          showLink={false}
                         />
                       </div>
                     )}

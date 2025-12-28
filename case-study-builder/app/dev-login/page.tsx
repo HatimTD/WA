@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { waDevLogin } from '@/lib/actions/waDevLoginAction';
 import { toast } from 'sonner';
 import { AlertCircle } from 'lucide-react';
@@ -114,41 +113,25 @@ export default function DevLoginPage() {
               />
             </div>
 
-            <div className="space-y-3">
-              <Label>Roles (select one or more)</Label>
-              <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-2">
+              <Label>Select Role(s)</Label>
+              <div className="flex flex-wrap gap-2">
                 {AVAILABLE_ROLES.map((roleOption) => (
-                  <label
+                  <button
                     key={roleOption.value}
-                    htmlFor={`role-${roleOption.value}`}
-                    className={`flex items-start gap-2 p-2 border rounded-lg cursor-pointer transition-colors ${
+                    type="button"
+                    onClick={() => waToggleRole(roleOption.value)}
+                    title={roleOption.description}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-full border transition-all ${
                       selectedRoles.includes(roleOption.value)
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border hover:border-primary/50'
+                        ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                        : 'bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-foreground'
                     }`}
                   >
-                    <Checkbox
-                      id={`role-${roleOption.value}`}
-                      checked={selectedRoles.includes(roleOption.value)}
-                      onCheckedChange={() => waToggleRole(roleOption.value)}
-                      className="mt-0.5"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm font-medium">
-                        {roleOption.label}
-                      </span>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {roleOption.description}
-                      </p>
-                    </div>
-                  </label>
+                    {roleOption.label}
+                  </button>
                 ))}
               </div>
-              {selectedRoles.length > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  Selected: {selectedRoles.join(', ')}
-                </p>
-              )}
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>

@@ -62,8 +62,21 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   };
 }
 
-export default async function PublicCaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
+interface PageSearchParams {
+  showOriginal?: string;
+}
+
+export default async function PublicCaseDetailPage({
+  params,
+  searchParams: searchParamsPromise,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<PageSearchParams>;
+}) {
   const { id } = await params;
+  const searchParams = await searchParamsPromise;
+  const showOriginal = searchParams.showOriginal === 'true';
+
   const caseStudy = await prisma.waCaseStudy.findUnique({
     where: { id },
     include: {
@@ -82,6 +95,35 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
   if (!caseStudy || caseStudy.status !== 'APPROVED') {
     notFound();
   }
+
+  // Parse translation data if available
+  let translatedContent: Record<string, string> = {};
+  if (caseStudy.translationAvailable && caseStudy.translatedText) {
+    try {
+      const parsed = JSON.parse(caseStudy.translatedText);
+      translatedContent = parsed.fields || {};
+    } catch {
+      // Ignore parse errors
+    }
+  }
+
+  // Helper to get the appropriate content based on view mode
+  // When showOriginal=false (default): show translated content if available
+  // When showOriginal=true: show original content
+  const getContent = (field: string, originalValue: string | null | undefined): string => {
+    if (!originalValue) return '';
+    if (showOriginal) return originalValue;
+    return translatedContent[field] || originalValue;
+  };
+
+  // Content fields with possible translations
+  const displayProblemDescription = getContent('problemDescription', caseStudy.problemDescription);
+  const displayPreviousSolution = getContent('previousSolution', caseStudy.previousSolution);
+  const displayWaSolution = getContent('waSolution', caseStudy.waSolution);
+  const displayTechnicalAdvantages = getContent('technicalAdvantages', caseStudy.technicalAdvantages);
+  const displayTitle = getContent('title', caseStudy.title);
+  const displayIndustry = getContent('industry', caseStudy.industry);
+  const displayLocation = getContent('location', caseStudy.location);
 
   return (
     <div className="space-y-6">
@@ -106,9 +148,9 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
         <div>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">{caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}</h1>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">{displayTitle || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}</h1>
               <p className="text-gray-600 dark:text-muted-foreground mt-2">
-                {caseStudy.industry} • {caseStudy.location}
+                {displayIndustry} • {displayLocation}
               </p>
             </div>
             <Badge
@@ -127,24 +169,41 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
         </div>
       </div>
 
-      {/* BRD 5.4.4 - Translation Status Notice */}
+      {/* BRD 5.4.4 - Translation Status Notice with Toggle */}
       {caseStudy.originalLanguage && caseStudy.originalLanguage !== 'en' && (
         <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
           <div className="flex items-center gap-3">
             <Languages className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            <div>
-              <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
-                Auto-translated from {getLanguageName(caseStudy.originalLanguage)}
-              </p>
-              <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
-                This content has been automatically translated. Some technical terms may vary.
-              </p>
+            <div className="flex-1">
+              {showOriginal ? (
+                <>
+                  <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                    Viewing original ({getLanguageName(caseStudy.originalLanguage)})
+                  </p>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
+                    You are viewing the original content in {getLanguageName(caseStudy.originalLanguage)}.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                    Auto-translated from {getLanguageName(caseStudy.originalLanguage)}
+                  </p>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
+                    This content has been automatically translated. Some technical terms may vary.
+                  </p>
+                </>
+              )}
             </div>
             {caseStudy.translationAvailable && (
-              <Badge variant="outline" className="ml-auto text-blue-600 border-blue-300">
-                <Globe className="h-3 w-3 mr-1" />
-                Original Available
-              </Badge>
+              <Link
+                href={showOriginal
+                  ? `/dashboard/library/${id}`
+                  : `/dashboard/library/${id}?showOriginal=true`}
+                className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1 flex-shrink-0 font-medium"
+              >
+                {showOriginal ? 'View translated' : 'View original'}
+              </Link>
             )}
           </div>
         </div>
@@ -226,7 +285,7 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
             <CardTitle className="dark:text-foreground">Problem Description</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{caseStudy.problemDescription}</p>
+            <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{displayProblemDescription}</p>
           </CardContent>
         </Card>
 
@@ -236,7 +295,7 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
               <CardTitle className="dark:text-foreground">Previous Solution</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{caseStudy.previousSolution}</p>
+              <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{displayPreviousSolution}</p>
               {caseStudy.previousServiceLife && (
                 <p className="text-sm text-gray-600 dark:text-muted-foreground mt-2">
                   <span className="font-medium">Previous Service Life:</span>{' '}
@@ -263,13 +322,13 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
             </div>
             <div>
               <p className="font-medium text-sm text-green-700 dark:text-green-300 mb-2">Solution Description</p>
-              <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{caseStudy.waSolution}</p>
+              <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{displayWaSolution}</p>
             </div>
             {caseStudy.technicalAdvantages && (
               <div>
                 <p className="font-medium text-sm text-green-700 dark:text-green-300 mb-2">Technical Advantages</p>
                 <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">
-                  {caseStudy.technicalAdvantages}
+                  {displayTechnicalAdvantages}
                 </p>
               </div>
             )}

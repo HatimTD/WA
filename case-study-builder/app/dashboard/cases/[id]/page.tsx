@@ -303,7 +303,7 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
             <Link href={`/dashboard/cases/${caseStudy.id}/edit`}>
               <Button variant="outline" size="sm" className="dark:border-border">
                 <Edit className="h-4 w-4 mr-2" />
-                Edit
+                Continue
               </Button>
             </Link>
           )}

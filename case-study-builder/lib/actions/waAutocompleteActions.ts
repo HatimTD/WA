@@ -11,11 +11,17 @@ export async function waGetSearchSuggestions(query: string) {
   }
 
   try {
-    // Search approved case studies for autocomplete
+    // Search approved case studies for autocomplete (including title)
     const results = await prisma.waCaseStudy.findMany({
       where: {
         status: 'APPROVED',
         OR: [
+          {
+            title: {
+              contains: query,
+              mode: 'insensitive',
+            },
+          },
           {
             customerName: {
               contains: query,
@@ -50,6 +56,7 @@ export async function waGetSearchSuggestions(query: string) {
       },
       select: {
         id: true,
+        title: true,
         customerName: true,
         industry: true,
         location: true,
@@ -63,10 +70,10 @@ export async function waGetSearchSuggestions(query: string) {
       },
     });
 
-    // Create unique suggestions
+    // Create unique suggestions (use title if available, otherwise fallback to customer - component)
     const suggestions = results.map((r) => ({
       id: r.id,
-      title: `${r.customerName} - ${r.componentWorkpiece}`,
+      title: r.title || `${r.customerName} - ${r.componentWorkpiece}`,
       industry: r.industry,
       location: r.location,
       product: r.waProduct,

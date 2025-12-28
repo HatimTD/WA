@@ -31,6 +31,7 @@ interface LanguageIndicatorProps {
   variant?: 'inline' | 'banner' | 'badge';
   showLink?: boolean;
   isViewingOriginal?: boolean; // Whether currently viewing original content
+  basePath?: string; // Base path for links (default: '/dashboard/cases')
 }
 
 export default function LanguageIndicator({
@@ -41,6 +42,7 @@ export default function LanguageIndicator({
   variant = 'inline',
   showLink = false,
   isViewingOriginal = false,
+  basePath = '/dashboard/cases',
 }: LanguageIndicatorProps) {
   // Don't show anything for English-only content without translation
   if (originalLanguage === 'en' && !translationAvailable) {
@@ -83,8 +85,8 @@ export default function LanguageIndicator({
         {showLink && caseStudyId && translationAvailable && (
           <Link
             href={isViewingOriginal
-              ? `/dashboard/cases/${caseStudyId}`
-              : `/dashboard/cases/${caseStudyId}?showOriginal=true`}
+              ? `${basePath}/${caseStudyId}`
+              : `${basePath}/${caseStudyId}?showOriginal=true`}
             className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 inline-flex items-center gap-1"
           >
             {isViewingOriginal ? 'View translated' : 'View original'} <ExternalLink className="h-3 w-3" />
@@ -114,8 +116,8 @@ export default function LanguageIndicator({
         {showLink && caseStudyId && translationAvailable && (
           <Link
             href={isViewingOriginal
-              ? `/dashboard/cases/${caseStudyId}`
-              : `/dashboard/cases/${caseStudyId}?showOriginal=true`}
+              ? `${basePath}/${caseStudyId}`
+              : `${basePath}/${caseStudyId}?showOriginal=true`}
             className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 inline-flex items-center gap-1"
           >
             {isViewingOriginal ? 'View translated' : 'View original'} <ExternalLink className="h-3 w-3" />
@@ -145,8 +147,8 @@ export default function LanguageIndicator({
       {showLink && caseStudyId && translationAvailable && (
         <Link
           href={isViewingOriginal
-            ? `/dashboard/cases/${caseStudyId}`
-            : `/dashboard/cases/${caseStudyId}?showOriginal=true`}
+            ? `${basePath}/${caseStudyId}`
+            : `${basePath}/${caseStudyId}?showOriginal=true`}
           className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1 flex-shrink-0"
         >
           {isViewingOriginal ? 'View translated' : 'View original'} <ExternalLink className="h-4 w-4" />
