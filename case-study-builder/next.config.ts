@@ -1,9 +1,6 @@
 import type { NextConfig } from 'next';
 import withSerwistInit from '@serwist/next';
 
-// Only import Sentry when configured to avoid rollup dependency issues
-const isSentryConfigured = !!(process.env.SENTRY_ORG && process.env.SENTRY_PROJECT);
-
 const withSerwist = withSerwistInit({
   swSrc: 'app/sw.ts',
   swDest: 'public/sw.js',
@@ -15,8 +12,8 @@ const withSerwist = withSerwistInit({
 });
 
 const nextConfig: NextConfig = {
-  // Enable Turbopack (Next.js 16 default)
-  turbopack: {},
+  // Use webpack for builds to support Serwist (Turbopack for dev only)
+  // turbopack: {}, // Disabled - Serwist requires webpack for SW generation
   images: {
     remotePatterns: [
       {
@@ -76,26 +73,6 @@ const nextConfig: NextConfig = {
   },
 };
 
-// Conditionally wrap with Sentry only when configured (avoids rollup dependency issues)
-// Then wrap with Serwist
-async function getConfig() {
-  let config = nextConfig;
-
-  if (isSentryConfigured) {
-    const { withSentryConfig } = await import('@sentry/nextjs');
-    config = withSentryConfig(nextConfig, {
-      org: process.env.SENTRY_ORG,
-      project: process.env.SENTRY_PROJECT,
-      silent: !process.env.CI,
-      widenClientFileUpload: true,
-      tunnelRoute: "/monitoring",
-      sourcemaps: { disable: true },
-      disableLogger: true,
-      automaticVercelMonitors: true,
-    });
-  }
-
-  return withSerwist(config);
-}
-
-export default getConfig();
+// Apply Serwist wrapper (handles service worker generation)
+// Note: Sentry is disabled to avoid build complexity - enable if needed
+export default withSerwist(nextConfig);
