@@ -66,7 +66,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(self), microphone=(self), geolocation=(), interest-cohort=()',
+            value: 'camera=(self), microphone=(self), geolocation=()',
           },
           // CSP is now handled by proxy.ts with dynamic nonces (WA Policy 4.1 compliant)
           // This removes the need for unsafe-inline/unsafe-eval
