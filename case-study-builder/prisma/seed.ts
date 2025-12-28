@@ -1,4 +1,4 @@
-import { PrismaClient, CaseType, Status, WorkType, WearType } from '@prisma/client';
+import { PrismaClient, CaseType, Status, WorkType } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -163,8 +163,8 @@ async function main() {
     const submittedAt = new Date(Date.now() - Math.floor(Math.random() * 90) * 24 * 60 * 60 * 1000);
     const approvedAt = hasApprover ? new Date(Date.now() - Math.floor(Math.random() * 60) * 24 * 60 * 60 * 1000) : null;
 
-    // Random wearType array (1-3 types) - Use correct uppercase enum values
-    const allWearTypes = [WearType.ABRASION, WearType.IMPACT, WearType.CORROSION, WearType.TEMPERATURE, WearType.COMBINATION];
+    // Random wearType array (1-3 types) - Use string values now
+    const allWearTypes = ['ABRASION', 'IMPACT', 'CORROSION', 'TEMPERATURE', 'COMBINATION'];
     const wearTypeCount = 1 + Math.floor(Math.random() * 3);
     const selectedWearTypes = allWearTypes.slice(0, wearTypeCount);
 

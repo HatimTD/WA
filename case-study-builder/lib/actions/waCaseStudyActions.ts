@@ -59,13 +59,9 @@ export async function waCreateCaseStudy(data: WaCreateCaseStudyInput) {
       ? parseFloat(data.customerSavingsAmount)
       : null;
 
-    // Valid Prisma WearType enum values
-    const VALID_WEAR_TYPES = ['ABRASION', 'IMPACT', 'CORROSION', 'TEMPERATURE', 'COMBINATION'];
-
-    // Convert wearType values to uppercase and filter to only valid enum values
+    // Normalize wearType values to uppercase (now accepts any string from master data)
     const normalizedWearType = (data.wearType || [])
-      .map((wt: string) => wt.toUpperCase())
-      .filter((wt: string) => VALID_WEAR_TYPES.includes(wt));
+      .map((wt: string) => wt.toUpperCase());
 
     const caseStudy = await prisma.waCaseStudy.create({
       data: {
@@ -196,12 +192,10 @@ export async function waUpdateCaseStudy(id: string, data: any) {
     delete updateData.customerSelected;
     delete updateData.qualifierCompleted;
 
-    // Handle wearType array conversion if present - normalize and filter to valid enum values
+    // Handle wearType array conversion if present - normalize to uppercase (accepts any string from master data)
     if (data.wearType) {
-      const VALID_WEAR_TYPES = ['ABRASION', 'IMPACT', 'CORROSION', 'TEMPERATURE', 'COMBINATION'];
       updateData.wearType = data.wearType
-        .map((wt: string) => wt.toUpperCase())
-        .filter((wt: string) => VALID_WEAR_TYPES.includes(wt)) as any;
+        .map((wt: string) => wt.toUpperCase());
     }
 
     // Handle qualifierType - ensure it's saved correctly

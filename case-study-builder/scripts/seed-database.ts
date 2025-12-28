@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import type { CaseType, Status, WorkType, WearType } from '@prisma/client';
+import type { CaseType, Status, WorkType } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -194,7 +194,7 @@ async function seedDatabase() {
 
     const caseTypes: CaseType[] = ['APPLICATION', 'TECH', 'STAR'];
     const workTypes: WorkType[] = ['WORKSHOP', 'ON_SITE', 'BOTH'];
-    const wearTypes: WearType[] = ['ABRASION', 'IMPACT', 'CORROSION', 'TEMPERATURE', 'COMBINATION'];
+    const wearTypes: string[] = ['ABRASION', 'IMPACT', 'CORROSION', 'TEMPERATURE', 'COMBINATION'];
 
     // Define status distribution for 20 cases:
     // 8 APPROVED, 5 SUBMITTED (under review), 4 REJECTED, 3 DRAFT

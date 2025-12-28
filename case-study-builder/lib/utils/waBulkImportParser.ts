@@ -61,7 +61,7 @@ const REQUIRED_FIELDS = [
 // Valid enum values
 const VALID_TYPES = ['APPLICATION', 'TECH', 'STAR'];
 const VALID_WORK_TYPES = ['WORKSHOP', 'ON_SITE', 'BOTH'];
-const VALID_WEAR_TYPES = ['ABRASION', 'IMPACT', 'CORROSION', 'TEMPERATURE', 'COMBINATION'];
+// Note: wearType now accepts any string from master data (no hardcoded validation)
 
 // Column name mappings (support various formats)
 const COLUMN_MAPPINGS: Record<string, string> = {
@@ -364,19 +364,7 @@ function validateRow(row: BulkImportRow, rowNumber: number): ValidationError[] {
     });
   }
 
-  // Validate wearType array values
-  if (row.wearType) {
-    const wearTypes = row.wearType.split(',').map(t => t.trim().toUpperCase());
-    const invalidTypes = wearTypes.filter(t => t && !VALID_WEAR_TYPES.includes(t));
-    if (invalidTypes.length > 0) {
-      errors.push({
-        rowNumber,
-        field: 'wearType',
-        message: `Invalid wearType values: ${invalidTypes.join(', ')}. Valid values: ${VALID_WEAR_TYPES.join(', ')}`,
-        value: row.wearType,
-      });
-    }
-  }
+  // wearType now accepts any string values from master data (no validation needed)
 
   // Validate numerical fields
   const numericFields = ['solutionValueRevenue', 'annualPotentialRevenue', 'customerSavingsAmount'];

@@ -449,7 +449,7 @@ model WaCaseStudy {
   industry            String
   componentWorkpiece  String
   workType            WorkType
-  wearType            WearType[]
+  wearType            String[]   // Changed from WearType[] to support custom values from master data
   problemDescription  String     @db.Text
   previousSolution    String?
   previousServiceLife String?
