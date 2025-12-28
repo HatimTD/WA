@@ -73,14 +73,14 @@ function buildCSP(nonce: string): string {
     ].join('; ');
   }
 
-  // Production CSP - strict with nonce but allowing Vercel preview and inline scripts for Next.js
+  // Production CSP - allowing Vercel, Pusher, and inline scripts for Next.js
   return [
     `default-src 'self'`,
-    `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://vercel.live https://*.vercel.live`,
+    `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://vercel.live https://*.vercel.live https://*.vercel.app`,
     `style-src 'self' 'unsafe-inline'`,
     `img-src 'self' data: https: blob:`,
     `font-src 'self' data:`,
-    `connect-src 'self' https://api.openai.com https://res.cloudinary.com https://*.ngrok-free.dev wss://*.ngrok-free.dev https://*.google.com https://*.googleapis.com https://vercel.live https://*.vercel.live wss://vercel.live wss://*.vercel.live`,
+    `connect-src 'self' https://api.openai.com https://res.cloudinary.com https://*.ngrok-free.dev wss://*.ngrok-free.dev https://*.google.com https://*.googleapis.com https://vercel.live https://*.vercel.live wss://vercel.live wss://*.vercel.live https://*.vercel.app wss://*.pusher.com https://*.pusher.com`,
     `media-src 'self'`,
     `object-src 'none'`,
     `frame-src 'self' https://vercel.live`,
