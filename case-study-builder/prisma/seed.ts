@@ -94,7 +94,8 @@ async function main() {
   users.push(admin);
   console.log('Created admin user with credentials');
 
-  // Create APPROVER user
+  // Create APPROVER user with credentials
+  const approverPasswordHash = await bcrypt.hash('TestPassword123', 10);
   const approver = await prisma.user.upsert({
     where: { email: 'approver@weldingalloys.com' },
     update: {},
@@ -107,9 +108,67 @@ async function main() {
       badges: [],
     },
   });
-  users.push(approver);
 
-  // Create CONTRIBUTOR users
+  // Create credentials account for approver
+  await prisma.account.upsert({
+    where: {
+      provider_providerAccountId: {
+        provider: 'credentials',
+        providerAccountId: approver.id,
+      },
+    },
+    update: {
+      access_token: approverPasswordHash,
+    },
+    create: {
+      userId: approver.id,
+      type: 'credentials',
+      provider: 'credentials',
+      providerAccountId: approver.id,
+      access_token: approverPasswordHash,
+    },
+  });
+  users.push(approver);
+  console.log('Created approver user with credentials');
+
+  // Create CONTRIBUTOR user with credentials (first one)
+  const contributorPasswordHash = await bcrypt.hash('TestPassword123', 10);
+  const contributor = await prisma.user.upsert({
+    where: { email: 'contributor@weldingalloys.com' },
+    update: {},
+    create: {
+      email: 'contributor@weldingalloys.com',
+      name: 'Test Contributor',
+      role: 'CONTRIBUTOR',
+      emailVerified: new Date(),
+      totalPoints: 25,
+      badges: [],
+    },
+  });
+
+  // Create credentials account for contributor
+  await prisma.account.upsert({
+    where: {
+      provider_providerAccountId: {
+        provider: 'credentials',
+        providerAccountId: contributor.id,
+      },
+    },
+    update: {
+      access_token: contributorPasswordHash,
+    },
+    create: {
+      userId: contributor.id,
+      type: 'credentials',
+      provider: 'credentials',
+      providerAccountId: contributor.id,
+      access_token: contributorPasswordHash,
+    },
+  });
+  users.push(contributor);
+  console.log('Created contributor user with credentials');
+
+  // Create additional CONTRIBUTOR users (without credentials - Google login only)
   const contributorNames = [
     'Sarah Chen', 'Michael Rodriguez', 'Emily Thompson', 'David Kim',
     'Maria Garcia', 'James Wilson', 'Linda Martinez', 'Robert Taylor',
