@@ -109,15 +109,19 @@ export async function waCreateCaseStudy(data: WaCreateCaseStudyInput) {
     });
 
     // BRD: Auto-translate to Corporate English on submission
+    // Translation runs synchronously so it's ready when user views the case
     if (data.status === 'SUBMITTED') {
-      // Run auto-translation in background (don't block the response)
-      waAutoTranslateOnSubmit(caseStudy.id).then((result) => {
-        if (result.wasTranslated) {
-          console.log(`[Case Study] Auto-translated case ${caseStudy.id} from ${result.originalLanguage} to English`);
+      try {
+        const translationResult = await waAutoTranslateOnSubmit(caseStudy.id);
+        if (translationResult.wasTranslated) {
+          console.log(`[Case Study] Auto-translated case ${caseStudy.id} from ${translationResult.originalLanguage} to English`);
+        } else if (translationResult.originalLanguage !== 'en') {
+          console.log(`[Case Study] Detected ${translationResult.originalLanguage} but translation not performed`);
         }
-      }).catch((err) => {
+      } catch (err) {
         console.error(`[Case Study] Auto-translation failed for ${caseStudy.id}:`, err);
-      });
+        // Don't fail the submission if translation fails
+      }
     }
 
     return { success: true, id: caseStudy.id };
@@ -255,14 +259,19 @@ export async function waUpdateCaseStudy(id: string, data: any) {
     });
 
     // BRD: Auto-translate to Corporate English when status changes to SUBMITTED
+    // Translation runs synchronously so it's ready when user views the case
     if (data.status === 'SUBMITTED' && caseStudy.status !== 'SUBMITTED') {
-      waAutoTranslateOnSubmit(id).then((result) => {
-        if (result.wasTranslated) {
-          console.log(`[Case Study] Auto-translated case ${id} from ${result.originalLanguage} to English`);
+      try {
+        const translationResult = await waAutoTranslateOnSubmit(id);
+        if (translationResult.wasTranslated) {
+          console.log(`[Case Study] Auto-translated case ${id} from ${translationResult.originalLanguage} to English`);
+        } else if (translationResult.originalLanguage !== 'en') {
+          console.log(`[Case Study] Detected ${translationResult.originalLanguage} but translation not performed`);
         }
-      }).catch((err) => {
+      } catch (err) {
         console.error(`[Case Study] Auto-translation failed for ${id}:`, err);
-      });
+        // Don't fail the update if translation fails
+      }
     }
 
     return { success: true, id: updated.id };
