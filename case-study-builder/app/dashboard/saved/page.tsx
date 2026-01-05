@@ -9,12 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Bookmark, BookmarkX, ExternalLink, Loader2, Search, X } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import LanguageIndicator from '@/components/language-indicator';
 
 interface SavedCase {
   id: string;
   createdAt: string;
   caseStudy: {
     id: string;
+    title?: string | null;
     customerName: string;
     industry: string;
     location: string;
@@ -24,6 +26,10 @@ interface SavedCase {
     problemDescription: string;
     status: string;
     approvedAt: string;
+    originalLanguage?: string;
+    translationAvailable?: boolean;
+    contributor?: { id: string; name: string | null } | null;
+    approver?: { id: string; name: string | null } | null;
   };
 }
 
@@ -266,7 +272,7 @@ export default function SavedCasesPage() {
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="text-lg line-clamp-2 dark:text-foreground">
-                    {saved.caseStudy.customerName}
+                    {saved.caseStudy.title || `${saved.caseStudy.customerName} - ${saved.caseStudy.componentWorkpiece}`}
                   </CardTitle>
                   <Badge
                     variant={
@@ -284,6 +290,16 @@ export default function SavedCasesPage() {
                 <CardDescription className="line-clamp-1 dark:text-muted-foreground">
                   {saved.caseStudy.industry} • {saved.caseStudy.location}
                 </CardDescription>
+                {/* Language Indicator - BRD: Show original language */}
+                {(saved.caseStudy.originalLanguage && saved.caseStudy.originalLanguage !== 'en') && (
+                  <LanguageIndicator
+                    originalLanguage={saved.caseStudy.originalLanguage}
+                    translationAvailable={saved.caseStudy.translationAvailable}
+                    caseStudyId={saved.caseStudy.id}
+                    variant="badge"
+                    showLink={true}
+                  />
+                )}
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="space-y-1 text-sm">
@@ -297,6 +313,14 @@ export default function SavedCasesPage() {
                 </div>
                 <p className="text-sm text-gray-700 dark:text-foreground line-clamp-3">
                   {saved.caseStudy.problemDescription}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-muted-foreground">
+                  {saved.caseStudy.contributor?.name && (
+                    <>Created by {saved.caseStudy.contributor.name}</>
+                  )}
+                  {saved.caseStudy.approver?.name && (
+                    <> • Approved by {saved.caseStudy.approver.name}</>
+                  )}
                 </p>
                 <div className="flex gap-2 pt-2">
                   <Link href={`/dashboard/cases/${saved.caseStudy.id}`} className="flex-1">

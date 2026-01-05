@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Upload, X, File, FileText, FileSpreadsheet, Presentation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { uploadDocument, deleteDocument } from '@/lib/actions/document-upload-actions';
+import { waUploadDocument, waDeleteDocument } from '@/lib/actions/waDocumentUploadActions';
 import { toast } from 'sonner';
 
 type Props = {
@@ -71,7 +71,7 @@ export default function DocumentUpload({ onDocumentsChange, existingDocuments = 
         const formData = new FormData();
         formData.append('file', file);
 
-        const result = await uploadDocument(formData);
+        const result = await waUploadDocument(formData);
 
         if (result.success && result.url) {
           uploadedDocs.push(result.url);
@@ -105,7 +105,7 @@ export default function DocumentUpload({ onDocumentsChange, existingDocuments = 
       const publicIdMatch = url.match(/\/case-studies\/documents\/([^/]+)$/);
       if (publicIdMatch) {
         const publicId = `case-studies/documents/${publicIdMatch[1].split('.')[0]}`;
-        await deleteDocument(publicId);
+        await waDeleteDocument(publicId);
       }
 
       const newDocuments = documents.filter((_, i) => i !== index);

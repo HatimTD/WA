@@ -54,3 +54,7 @@ public/workbox-*.js.map
 public/swe-worker-*.js
 public/swe-worker-*.js.map
 nul
+
+# SBOM generated files (keep README.md)
+sbom/*.json
+sbom/*.xml

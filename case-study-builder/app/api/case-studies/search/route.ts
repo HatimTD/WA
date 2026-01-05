@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Search case studies - only approved ones
-    const cases = await prisma.caseStudy.findMany({
+    const cases = await prisma.waCaseStudy.findMany({
       where: {
         status: 'APPROVED',
         OR: [
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
 
     // Get unique suggestions from matching fields
     const [customerNames, industries, products] = await Promise.all([
-      prisma.caseStudy.findMany({
+      prisma.waCaseStudy.findMany({
         where: {
           status: 'APPROVED',
           customerName: { contains: query, mode: 'insensitive' },
@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
         distinct: ['customerName'],
         take: 3,
       }),
-      prisma.caseStudy.findMany({
+      prisma.waCaseStudy.findMany({
         where: {
           status: 'APPROVED',
           industry: { contains: query, mode: 'insensitive' },
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
         distinct: ['industry'],
         take: 3,
       }),
-      prisma.caseStudy.findMany({
+      prisma.waCaseStudy.findMany({
         where: {
           status: 'APPROVED',
           waProduct: { contains: query, mode: 'insensitive' },

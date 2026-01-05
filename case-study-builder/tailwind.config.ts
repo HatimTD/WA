@@ -50,8 +50,8 @@ const config: Config = {
           300: '#81C784',
           400: '#66BB6A',
           500: '#4CAF50',
-          600: '#43A047',
-          700: '#388E3C',
+          600: '#2e7d32', /* Darkened from #43A047 for WCAG AA contrast (3:1) on light backgrounds */
+          700: '#1b5e20', /* Darkened from #388E3C for WCAG AA contrast (4.5:1) on light backgrounds */
           800: '#2E7D32',
           900: '#006838',
           950: '#004d28',

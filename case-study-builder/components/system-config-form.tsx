@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { updateSystemConfig } from '@/lib/actions/system-config-actions';
+import { waUpdateSystemConfig } from '@/lib/actions/waSystemConfigActions';
 import { Loader2, Save, RotateCcw } from 'lucide-react';
 
 interface SystemConfigFormProps {
@@ -33,7 +33,7 @@ export function SystemConfigForm({ initialConfig }: SystemConfigFormProps) {
     setIsSaving(true);
 
     try {
-      const result = await updateSystemConfig(config);
+      const result = await waUpdateSystemConfig(config);
 
       if (result.success) {
         toast.success('System configuration updated successfully!');

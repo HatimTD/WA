@@ -19,7 +19,7 @@ export async function GET(
 
     const { id } = await params;
 
-    const caseStudy = await prisma.caseStudy.findUnique({
+    const caseStudy = await prisma.waCaseStudy.findUnique({
       where: { id },
       select: {
         id: true,

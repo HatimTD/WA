@@ -28,7 +28,7 @@ function LoginForm() {
     <Card className="w-full max-w-md">
       <CardHeader className="text-center">
         <CardTitle className="text-3xl font-bold bg-gradient-to-r from-wa-green-600 to-purple-600 bg-clip-text text-transparent">
-          Case Study Builder
+          Industrial Challenges App
         </CardTitle>
         <CardDescription className="text-lg">
           Welding Alloys Internal Platform
@@ -71,7 +71,7 @@ function LoginForm() {
         </Button>
 
         <p className="text-xs text-center text-muted-foreground">
-          Only @weldingalloys.com email addresses are allowed
+          Sign in with your company Google account
         </p>
 
         <div className="relative">

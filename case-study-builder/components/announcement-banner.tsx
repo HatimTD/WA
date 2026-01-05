@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { X, Info, AlertTriangle, AlertCircle, CheckCircle } from 'lucide-react';
-import { getAnnouncement } from '@/lib/actions/system-settings-actions';
+import { waGetAnnouncement } from '@/lib/actions/waSystemSettingsActions';
 
 interface Announcement {
   enabled: boolean;
@@ -17,7 +17,7 @@ export default function AnnouncementBanner() {
 
   useEffect(() => {
     async function fetchAnnouncement() {
-      const data = await getAnnouncement();
+      const data = await waGetAnnouncement();
       if (data.enabled) {
         setAnnouncement(data);
 

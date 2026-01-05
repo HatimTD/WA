@@ -2,7 +2,7 @@ import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { SystemConfigForm } from '@/components/system-config-form';
-import { getSystemConfig } from '@/lib/actions/system-config-actions';
+import { waGetSystemConfig } from '@/lib/actions/waSystemConfigActions';
 
 export const metadata = {
   title: 'System Configuration - Admin',
@@ -27,7 +27,7 @@ export default async function SystemConfigPage() {
   }
 
   // Fetch current configuration
-  const result = await getSystemConfig();
+  const result = await waGetSystemConfig();
 
   if (!result.success || !result.config) {
     return (

@@ -21,7 +21,7 @@ export default async function SettingsPage() {
     redirect('/login');
   }
 
-  // Fetch user data
+  // Fetch user data with assigned roles
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
@@ -39,6 +39,18 @@ export default async function SettingsPage() {
     redirect('/login');
   }
 
+  // Fetch user's assigned roles from WaUserRole table
+  const userRoles = await prisma.waUserRole.findMany({
+    where: { userId: session.user.id },
+    select: { role: true },
+  });
+
+  // Get list of assigned role strings (always include current role)
+  const assignedRoles = userRoles.map(ur => ur.role);
+  if (!assignedRoles.includes(user.role)) {
+    assignedRoles.push(user.role);
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
@@ -48,7 +60,7 @@ export default async function SettingsPage() {
         </p>
       </div>
 
-      <SettingsForm user={user} />
+      <SettingsForm user={user} assignedRoles={assignedRoles} />
     </div>
   );
 }

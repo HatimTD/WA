@@ -47,7 +47,7 @@ export default async function ApprovalReviewPage({ params }: Props) {
 
   const { id } = await params;
 
-  const caseStudy = await prisma.caseStudy.findUnique({
+  const caseStudy = await prisma.waCaseStudy.findUnique({
     where: { id },
     include: {
       contributor: {
@@ -73,7 +73,7 @@ export default async function ApprovalReviewPage({ params }: Props) {
   // Fetch WPS data if it's a TECH or STAR case
   let wpsData = null;
   if (caseStudy.type === 'TECH' || caseStudy.type === 'STAR') {
-    wpsData = await prisma.weldingProcedure.findUnique({
+    wpsData = await prisma.waWeldingProcedure.findUnique({
       where: { caseStudyId: id },
     });
   }
@@ -81,7 +81,7 @@ export default async function ApprovalReviewPage({ params }: Props) {
   // Fetch Cost Calculator data if it's a STAR case
   let costCalcData = null;
   if (caseStudy.type === 'STAR') {
-    costCalcData = await prisma.costCalculator.findUnique({
+    costCalcData = await prisma.waCostCalculator.findUnique({
       where: { caseStudyId: id },
     });
   }
@@ -93,7 +93,7 @@ export default async function ApprovalReviewPage({ params }: Props) {
       case 'TECH':
         return 'bg-purple-50 text-purple-600 border-purple-200';
       case 'STAR':
-        return 'bg-yellow-50 text-yellow-600 border-yellow-200';
+        return 'bg-yellow-50 text-yellow-700 border-yellow-200'; /* Changed from yellow-600 for WCAG AA contrast */
       default:
         return 'bg-gray-50 text-gray-600 border-gray-200';
     }
@@ -142,7 +142,7 @@ export default async function ApprovalReviewPage({ params }: Props) {
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">
-              {caseStudy.customerName} - {caseStudy.componentWorkpiece}
+              {caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}
             </h1>
             <p className="text-lg text-gray-600 dark:text-muted-foreground mt-2">
               {caseStudy.location}, {caseStudy.country || 'N/A'}

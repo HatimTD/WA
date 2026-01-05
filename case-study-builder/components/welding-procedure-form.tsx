@@ -7,18 +7,18 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { FileText, Save, ChevronDown, ChevronUp } from 'lucide-react';
-import { saveWeldingProcedure, type WPSFormData } from '@/lib/actions/wps-actions';
+import { waSaveWeldingProcedure, type WaWpsFormData } from '@/lib/actions/waWpsActions';
 import { toast } from 'sonner';
 
 type WeldingProcedureFormProps = {
   caseStudyId: string;
-  existingData?: Partial<WPSFormData>;
+  existingData?: Partial<WaWpsFormData>;
 };
 
 export default function WeldingProcedureForm({ caseStudyId, existingData }: WeldingProcedureFormProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [values, setValues] = useState<Omit<WPSFormData, 'caseStudyId'>>({
+  const [values, setValues] = useState<Omit<WaWpsFormData, 'caseStudyId'>>({
     // Base Metal
     baseMetalType: existingData?.baseMetalType || '',
     baseMetalGrade: existingData?.baseMetalGrade || '',
@@ -74,7 +74,7 @@ export default function WeldingProcedureForm({ caseStudyId, existingData }: Weld
     setIsSaving(true);
 
     try {
-      const result = await saveWeldingProcedure({
+      const result = await waSaveWeldingProcedure({
         caseStudyId,
         ...values,
       });

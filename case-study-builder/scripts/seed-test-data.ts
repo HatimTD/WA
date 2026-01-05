@@ -97,7 +97,7 @@ async function main() {
 
   // Clean up old test data for this user
   console.log('\nCleaning up old test data...');
-  await prisma.comment.deleteMany({
+  await prisma.waComment.deleteMany({
     where: {
       caseStudy: {
         contributorId: testUser.id,
@@ -106,7 +106,7 @@ async function main() {
     },
   });
 
-  await prisma.caseStudy.deleteMany({
+  await prisma.waCaseStudy.deleteMany({
     where: {
       contributorId: testUser.id,
       customerName: { startsWith: 'TEST -' },
@@ -119,7 +119,7 @@ async function main() {
   console.log('\n=== Creating Test Case Studies ===\n');
 
   // 1. DRAFT case study
-  const draftCase = await prisma.caseStudy.create({
+  const draftCase = await prisma.waCaseStudy.create({
     data: {
       contributorId: testUser.id,
       type: 'APPLICATION',
@@ -149,7 +149,7 @@ async function main() {
   console.log(`✓ Created DRAFT case: ${draftCase.customerName} (ID: ${draftCase.id})`);
 
   // 2. SUBMITTED case study (pending approval)
-  const submittedCase = await prisma.caseStudy.create({
+  const submittedCase = await prisma.waCaseStudy.create({
     data: {
       contributorId: testUser.id,
       type: 'TECH',
@@ -180,7 +180,7 @@ async function main() {
   console.log(`✓ Created SUBMITTED case: ${submittedCase.customerName} (ID: ${submittedCase.id})`);
 
   // 2b. Another SUBMITTED case for testing approval/rejection
-  const submittedCase2 = await prisma.caseStudy.create({
+  const submittedCase2 = await prisma.waCaseStudy.create({
     data: {
       contributorId: testUser.id,
       type: 'APPLICATION',
@@ -211,7 +211,7 @@ async function main() {
   console.log(`✓ Created SUBMITTED case for testing: ${submittedCase2.customerName} (ID: ${submittedCase2.id})`);
 
   // 3. APPROVED case study (with notification)
-  const approvedCase = await prisma.caseStudy.create({
+  const approvedCase = await prisma.waCaseStudy.create({
     data: {
       contributorId: testUser.id,
       type: 'STAR',
@@ -244,7 +244,7 @@ async function main() {
   console.log(`✓ Created APPROVED case: ${approvedCase.customerName} (ID: ${approvedCase.id})`);
 
   // Create CASE_APPROVED notification
-  await prisma.notification.create({
+  await prisma.waNotification.create({
     data: {
       userId: testUser.id,
       type: 'CASE_APPROVED',
@@ -257,7 +257,7 @@ async function main() {
   console.log('  ✓ Created CASE_APPROVED notification');
 
   // 4. REJECTED case study (with rejection reason and notification)
-  const rejectedCase = await prisma.caseStudy.create({
+  const rejectedCase = await prisma.waCaseStudy.create({
     data: {
       contributorId: testUser.id,
       type: 'APPLICATION',
@@ -291,7 +291,7 @@ async function main() {
   console.log(`✓ Created REJECTED case: ${rejectedCase.customerName} (ID: ${rejectedCase.id})`);
 
   // Create CASE_REJECTED notification
-  await prisma.notification.create({
+  await prisma.waNotification.create({
     data: {
       userId: testUser.id,
       type: 'CASE_REJECTED',
@@ -304,7 +304,7 @@ async function main() {
   console.log('  ✓ Created CASE_REJECTED notification');
 
   // 5. Another APPROVED case with comments (for NEW_COMMENT notification)
-  const approvedCaseWithComments = await prisma.caseStudy.create({
+  const approvedCaseWithComments = await prisma.waCaseStudy.create({
     data: {
       contributorId: testUser.id,
       type: 'TECH',
@@ -337,7 +337,7 @@ async function main() {
   console.log(`✓ Created APPROVED case with comments: ${approvedCaseWithComments.customerName} (ID: ${approvedCaseWithComments.id})`);
 
   // Add comments to this case
-  const comment1 = await prisma.comment.create({
+  const comment1 = await prisma.waComment.create({
     data: {
       caseStudyId: approvedCaseWithComments.id,
       userId: commenterUser.id,
@@ -348,7 +348,7 @@ async function main() {
   console.log('  ✓ Added comment from commenter');
 
   // Create NEW_COMMENT notification
-  await prisma.notification.create({
+  await prisma.waNotification.create({
     data: {
       userId: testUser.id,
       type: 'NEW_COMMENT',
@@ -360,7 +360,7 @@ async function main() {
   });
   console.log('  ✓ Created NEW_COMMENT notification');
 
-  const comment2 = await prisma.comment.create({
+  const comment2 = await prisma.waComment.create({
     data: {
       caseStudyId: approvedCaseWithComments.id,
       userId: approverUser.id,
@@ -371,7 +371,7 @@ async function main() {
   console.log('  ✓ Added comment from approver');
 
   // Create another NEW_COMMENT notification
-  await prisma.notification.create({
+  await prisma.waNotification.create({
     data: {
       userId: testUser.id,
       type: 'NEW_COMMENT',
@@ -384,7 +384,7 @@ async function main() {
   console.log('  ✓ Created NEW_COMMENT notification');
 
   // Create BADGE_EARNED notification
-  await prisma.notification.create({
+  await prisma.waNotification.create({
     data: {
       userId: testUser.id,
       type: 'BADGE_EARNED',
@@ -397,7 +397,7 @@ async function main() {
   console.log('✓ Created BADGE_EARNED notification');
 
   // Create BHAG_MILESTONE notification
-  await prisma.notification.create({
+  await prisma.waNotification.create({
     data: {
       userId: testUser.id,
       type: 'BHAG_MILESTONE',

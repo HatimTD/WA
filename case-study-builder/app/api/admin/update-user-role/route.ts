@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { Role } from '@prisma/client';
+
+const VALID_ROLES: Role[] = ['VIEWER', 'CONTRIBUTOR', 'APPROVER', 'ADMIN', 'IT_DEPARTMENT', 'MARKETING'];
 
 export async function PUT(request: NextRequest) {
   try {
@@ -27,7 +30,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { userId, role } = body;
+    const { userId, role, roles } = body;
 
     // Validate inputs
     if (!userId || typeof userId !== 'string') {
@@ -37,25 +40,98 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    if (!role || !['CONTRIBUTOR', 'APPROVER', 'ADMIN'].includes(role)) {
+    // Handle multiple roles (new format)
+    if (roles && Array.isArray(roles)) {
+      // If admin is modifying their own roles, ensure ADMIN is still included
+      if (userId === session.user.id && !roles.includes('ADMIN')) {
+        return NextResponse.json(
+          { success: false, error: 'You cannot remove ADMIN role from yourself' },
+          { status: 400 }
+        );
+      }
+      // Validate all roles
+      const invalidRoles = roles.filter((r: string) => !VALID_ROLES.includes(r as Role));
+      if (invalidRoles.length > 0) {
+        return NextResponse.json(
+          { success: false, error: `Invalid roles: ${invalidRoles.join(', ')}` },
+          { status: 400 }
+        );
+      }
+
+      // Must have at least one role
+      if (roles.length === 0) {
+        return NextResponse.json(
+          { success: false, error: 'User must have at least one role' },
+          { status: 400 }
+        );
+      }
+
+      // Update in a transaction
+      await prisma.$transaction(async (tx) => {
+        // Delete all existing roles for this user
+        await tx.waUserRole.deleteMany({
+          where: { userId },
+        });
+
+        // Add new roles
+        await tx.waUserRole.createMany({
+          data: roles.map((r: string) => ({
+            userId,
+            role: r as Role,
+            assignedBy: session.user!.id,
+          })),
+        });
+
+        // Update primary role (first in list, or highest privilege)
+        const primaryRole = waGetPrimaryRole(roles as Role[]);
+        await tx.user.update({
+          where: { id: userId },
+          data: { role: primaryRole },
+        });
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: `User roles updated to: ${roles.join(', ')}`,
+        roles,
+      });
+    }
+
+    // Handle single role (legacy format for backwards compatibility)
+    if (!role || !VALID_ROLES.includes(role as Role)) {
       return NextResponse.json(
-        { success: false, error: 'Invalid role. Must be CONTRIBUTOR, APPROVER, or ADMIN' },
+        { success: false, error: `Invalid role. Must be one of: ${VALID_ROLES.join(', ')}` },
         { status: 400 }
       );
     }
 
-    // Prevent admin from changing their own role
-    if (userId === session.user.id) {
+    // Prevent admin from removing ADMIN role from themselves
+    if (userId === session.user.id && role !== 'ADMIN') {
       return NextResponse.json(
-        { success: false, error: 'You cannot change your own role' },
+        { success: false, error: 'You cannot remove ADMIN role from yourself. Use the multi-role selector to add additional roles.' },
         { status: 400 }
       );
     }
 
-    // Update user role
-    await prisma.user.update({
-      where: { id: userId },
-      data: { role },
+    // Update user role and also sync to WaUserRole table
+    await prisma.$transaction(async (tx) => {
+      // Update primary role
+      await tx.user.update({
+        where: { id: userId },
+        data: { role: role as Role },
+      });
+
+      // Sync to WaUserRole table
+      await tx.waUserRole.deleteMany({
+        where: { userId },
+      });
+      await tx.waUserRole.create({
+        data: {
+          userId,
+          role: role as Role,
+          assignedBy: session.user!.id,
+        },
+      });
     });
 
     return NextResponse.json({
@@ -78,4 +154,22 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * Get the primary role from a list of roles (highest privilege)
+ */
+function waGetPrimaryRole(roles: Role[]): Role {
+  const rolePriority: Record<Role, number> = {
+    ADMIN: 100,
+    IT_DEPARTMENT: 80,
+    APPROVER: 60,
+    MARKETING: 50,
+    CONTRIBUTOR: 40,
+    VIEWER: 20,
+  };
+
+  return roles.reduce((highest, role) => {
+    return (rolePriority[role] || 0) > (rolePriority[highest] || 0) ? role : highest;
+  }, roles[0]);
 }

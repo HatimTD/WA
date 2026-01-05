@@ -17,7 +17,7 @@ const providers: Provider[] = [
         prompt: 'consent',
         access_type: 'offline',
         response_type: 'code',
-        hd: 'weldingalloys.com', // Restrict to company domain only
+        // Domain restriction is configured in Google Cloud Console
       },
     },
   }),
@@ -33,36 +33,43 @@ providers.push(
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
+          console.log('[Auth Debug] Missing credentials');
           return null;
         }
 
         const email = credentials.email as string;
         const password = credentials.password as string;
 
-        // First check hardcoded dev credentials for backward compatibility
-        if (email === 'tidihatim@gmail.com' && password === 'Godofwar@3') {
-          let user = await prisma.user.findUnique({
-            where: { email: 'tidihatim@gmail.com' },
-          });
+        // Check environment-based dev credentials (development only)
+        const DEV_EMAIL = process.env.DEV_ADMIN_EMAIL;
+        const DEV_PASSWORD_HASH = process.env.DEV_ADMIN_PASSWORD_HASH;
 
-          if (!user) {
-            user = await prisma.user.create({
-              data: {
-                email: 'tidihatim@gmail.com',
-                name: 'Dev Hatim Tidi',
-                role: 'ADMIN',
-                emailVerified: new Date(),
-              },
+        if (process.env.NODE_ENV === 'development' && DEV_EMAIL && DEV_PASSWORD_HASH) {
+          const passwordMatch = await bcrypt.compare(password, DEV_PASSWORD_HASH);
+          if (email === DEV_EMAIL && passwordMatch) {
+            let user = await prisma.user.findUnique({
+              where: { email: DEV_EMAIL },
             });
-          }
 
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            image: user.image,
-            role: user.role,
-          };
+            if (!user) {
+              user = await prisma.user.create({
+                data: {
+                  email: DEV_EMAIL,
+                  name: 'Dev Admin',
+                  role: 'ADMIN',
+                  emailVerified: new Date(),
+                },
+              });
+            }
+
+            return {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+              image: user.image,
+              role: user.role,
+            };
+          }
         }
 
         // Check database for users with credentials accounts
@@ -110,19 +117,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers,
   callbacks: {
     async signIn({ user, account, profile }) {
-      // Allow test accounts for testing purposes
-      if (user.email === 'tidihatim@gmail.com' || user.email === 'test@admin.com') {
+      // Allow dev admin account in development
+      const DEV_EMAIL = process.env.DEV_ADMIN_EMAIL;
+      if (process.env.NODE_ENV === 'development' && DEV_EMAIL && user.email === DEV_EMAIL) {
         return true;
       }
+
       // Allow credentials provider for testing
       if (account?.provider === 'credentials') {
         return true;
       }
 
-      // Check if email is from weldingalloys.com domain
-      if (!user.email?.endsWith('@weldingalloys.com')) {
-        return false; // Reject sign-in if not from company domain
-      }
+      // Domain restriction is configured in Google Cloud Console
+      // All authenticated Google users are allowed
       return true;
     },
     async session({ session, token }) {

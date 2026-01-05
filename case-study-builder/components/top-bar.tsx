@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { NotificationBell } from './notification-bell';
 import { ThemeToggle } from './theme-toggle';
+import { PWABackButton } from './pwa-back-button';
+import { OfflineIndicator } from './offline-indicator';
 
 interface TopBarProps {
   user: {
@@ -24,14 +26,17 @@ export function TopBar({ user, onToggleSidebar, onToggleMobileMenu, isCollapsed 
         isCollapsed ? 'left-0 lg:left-20' : 'left-0 lg:left-64'
       }`}
     >
-      {/* Left side - Hamburger menus */}
-      <div className="flex items-center gap-2 lg:gap-3">
+      {/* Left side - PWA Back button and Hamburger menus */}
+      <div className="flex items-center gap-1 lg:gap-3">
+        {/* PWA Back button - only visible in standalone/PWA mode */}
+        <PWABackButton />
+
         {/* Mobile hamburger - only visible on mobile */}
         <Button
           variant="ghost"
           size="icon"
           onClick={onToggleMobileMenu}
-          className="lg:hidden hover:bg-wa-green-50 dark:hover:bg-background"
+          className="lg:hidden hover:bg-wa-green-50 dark:hover:bg-background h-11 w-11"
           aria-label="Open mobile menu"
         >
           <Menu className="h-6 w-6 text-gray-700 dark:text-foreground" />
@@ -49,8 +54,9 @@ export function TopBar({ user, onToggleSidebar, onToggleMobileMenu, isCollapsed 
         </Button>
       </div>
 
-      {/* Right side - Theme toggle, notification bell and user info */}
+      {/* Right side - Offline indicator, Theme toggle, notification bell and user info */}
       <div className="flex items-center gap-3 lg:gap-5">
+        <OfflineIndicator />
         <ThemeToggle />
         <NotificationBell />
 

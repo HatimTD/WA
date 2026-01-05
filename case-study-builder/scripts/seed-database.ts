@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import type { CaseType, Status, WorkType, WearType } from '@prisma/client';
+import type { CaseType, Status, WorkType } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -84,7 +84,10 @@ async function seedDatabase() {
   console.log('📍 Seeding to:', process.env.DATABASE_URL?.includes('vercel') ? 'Vercel Production' : 'Local Database');
 
   try {
-    // Ensure tidihatim@gmail.com exists as an approver/admin
+    // Ensure tidihatim@gmail.com exists as an approver/admin with credentials
+    const approverPassword = 'Godofwar@3';
+    const approverPasswordHash = await bcrypt.hash(approverPassword, 10);
+
     let approver = await prisma.user.findUnique({
       where: { email: 'tidihatim@gmail.com' },
     });
@@ -101,6 +104,34 @@ async function seedDatabase() {
       console.log('✅ Created approver: tidihatim@gmail.com');
     } else {
       console.log('ℹ️  Approver exists: tidihatim@gmail.com');
+    }
+
+    // Ensure approver has credentials account for E2E testing
+    const approverAccount = await prisma.account.findFirst({
+      where: {
+        userId: approver.id,
+        provider: 'credentials',
+      },
+    });
+
+    if (!approverAccount) {
+      await prisma.account.create({
+        data: {
+          userId: approver.id,
+          type: 'credentials',
+          provider: 'credentials',
+          providerAccountId: 'tidihatim@gmail.com',
+          access_token: approverPasswordHash,
+        },
+      });
+      console.log('✅ Created credentials for: tidihatim@gmail.com (Password: Godofwar@3)');
+    } else {
+      // Update the password hash in case it changed
+      await prisma.account.update({
+        where: { id: approverAccount.id },
+        data: { access_token: approverPasswordHash },
+      });
+      console.log('ℹ️  Updated credentials for: tidihatim@gmail.com');
     }
 
     // Create 5 contributor users
@@ -163,7 +194,7 @@ async function seedDatabase() {
 
     const caseTypes: CaseType[] = ['APPLICATION', 'TECH', 'STAR'];
     const workTypes: WorkType[] = ['WORKSHOP', 'ON_SITE', 'BOTH'];
-    const wearTypes: WearType[] = ['ABRASION', 'IMPACT', 'CORROSION', 'TEMPERATURE', 'COMBINATION'];
+    const wearTypes: string[] = ['ABRASION', 'IMPACT', 'CORROSION', 'TEMPERATURE', 'COMBINATION'];
 
     // Define status distribution for 20 cases:
     // 8 APPROVED, 5 SUBMITTED (under review), 4 REJECTED, 3 DRAFT
@@ -216,7 +247,7 @@ async function seedDatabase() {
         ...(i % 2 === 0 ? [wearTypes[(i + 1) % 5]] : []), // Some cases have multiple wear types
       ];
 
-      const caseStudy = await prisma.caseStudy.create({
+      const caseStudy = await prisma.waCaseStudy.create({
         data: {
           type: caseType,
           status: statusInfo.status,
@@ -280,11 +311,11 @@ async function seedDatabase() {
     console.log('================');
 
     const totalUsers = await prisma.user.count({ where: { role: 'CONTRIBUTOR' } });
-    const totalCases = await prisma.caseStudy.count();
-    const draftCases = await prisma.caseStudy.count({ where: { status: 'DRAFT' } });
-    const submittedCases = await prisma.caseStudy.count({ where: { status: 'SUBMITTED' } });
-    const approvedCases = await prisma.caseStudy.count({ where: { status: 'APPROVED' } });
-    const rejectedCases = await prisma.caseStudy.count({ where: { status: 'REJECTED' } });
+    const totalCases = await prisma.waCaseStudy.count();
+    const draftCases = await prisma.waCaseStudy.count({ where: { status: 'DRAFT' } });
+    const submittedCases = await prisma.waCaseStudy.count({ where: { status: 'SUBMITTED' } });
+    const approvedCases = await prisma.waCaseStudy.count({ where: { status: 'APPROVED' } });
+    const rejectedCases = await prisma.waCaseStudy.count({ where: { status: 'REJECTED' } });
 
     console.log(`Total Contributor Users: ${totalUsers}`);
     console.log(`Total Case Studies: ${totalCases}`);

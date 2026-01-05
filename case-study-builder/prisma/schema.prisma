@@ -7,6 +7,11 @@ datasource db {
   url      = env("POSTGRES_URL")
 }
 
+// =====================================================
+// NEXTAUTH.JS STANDARD MODELS (DO NOT RENAME)
+// These follow NextAuth.js conventions
+// =====================================================
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -18,22 +23,35 @@ model User {
   totalPoints   Int       @default(0)
   badges        Badge[]
 
+  // Data Model V1.6 Fields
+  ssoUid        String?       @unique // Immutable SSO ID from IdP
+  subsidiaryId  String?
+  subsidiary    WaSubsidiary? @relation(fields: [subsidiaryId], references: [id])
+  lastLoginDate DateTime?
+  status        UserStatus    @default(ACTIVE)
+  userRoles     WaUserRole[]
+
   // User Preferences
-  notificationPreferences Json?     @default("{\"inAppNotifications\":true,\"emailNotifications\":true,\"caseApprovalNotif\":true,\"caseRejectionNotif\":true,\"newCommentNotif\":true,\"bhagMilestones\":true,\"inAppCaseApproval\":true,\"inAppCaseRejection\":true,\"inAppNewComment\":true,\"inAppBhagMilestones\":true}")
-  displayPreferences      Json?     @default("{\"theme\":\"system\",\"resultsPerPage\":10,\"defaultView\":\"grid\"}")
+  notificationPreferences Json? @default("{\"inAppNotifications\":true,\"emailNotifications\":true,\"caseApprovalNotif\":true,\"caseRejectionNotif\":true,\"newCommentNotif\":true,\"bhagMilestones\":true,\"inAppCaseApproval\":true,\"inAppCaseRejection\":true,\"inAppNewComment\":true,\"inAppBhagMilestones\":true}")
+  displayPreferences      Json? @default("{\"theme\":\"system\",\"resultsPerPage\":10,\"defaultView\":\"grid\"}")
 
   // Relations
-  caseStudies   CaseStudy[] @relation("Contributor")
-  approvals     CaseStudy[] @relation("Approver")
-  rejectedCases CaseStudy[] @relation("Rejector")
-  comments      Comment[]
-  savedCases    SavedCase[]
-  notifications Notification[]
+  caseStudies   WaCaseStudy[]    @relation("Contributor")
+  approvals     WaCaseStudy[]    @relation("Approver")
+  rejectedCases WaCaseStudy[]    @relation("Rejector")
+  comments      WaComment[]
+  savedCases    WaSavedCase[]
+  notifications WaNotification[]
   accounts      Account[]
   sessions      Session[]
+  taggedInCases WaCaseStudy[]    @relation("TaggedInCases")
 
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  // Soft delete support (WA Policy Section 5.1)
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Account {
@@ -71,93 +89,37 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+// =====================================================
+// ENUMS (Keep standard names for compatibility)
+// =====================================================
+
+// BRD Section 2.2 - Key Stakeholders/Roles
 enum Role {
-  CONTRIBUTOR
-  APPROVER
-  ADMIN
-  VIEWER
+  CONTRIBUTOR // Field engineers who submit case studies
+  APPROVER // Technical leads who approve/reject submissions
+  ADMIN // System administrators with full access
+  VIEWER // Read-only access users
+  IT_DEPARTMENT // IT team for system configuration and integration
+  MARKETING // Marketing team for content management and campaigns
 }
 
 enum Badge {
-  EXPLORER    // 10 Application Case Studies
-  EXPERT      // 10 Tech Case Studies
-  CHAMPION    // 10 Star Case Studies
-}
-
-model CaseStudy {
-  id                      String    @id @default(cuid())
-  type                    CaseType  @default(APPLICATION)
-  status                  Status    @default(DRAFT)
-
-  // Contributors & Approval
-  contributorId           String
-  contributor             User      @relation("Contributor", fields: [contributorId], references: [id])
-  approverId              String?
-  approver                User?     @relation("Approver", fields: [approverId], references: [id])
-  submittedAt             DateTime?
-  approvedAt              DateTime?
-
-  // Rejection Tracking
-  rejectionReason         String?   @db.Text
-  rejectedAt              DateTime?
-  rejectedBy              String?
-  rejector                User?     @relation("Rejector", fields: [rejectedBy], references: [id])
-
-  // Core Fields
-  customerName            String
-  industry                String
-  componentWorkpiece      String
-  workType                WorkType
-  wearType                WearType[]
-  problemDescription      String    @db.Text
-  previousSolution        String?
-  previousServiceLife     String?
-  competitorName          String?
-  baseMetal               String?
-  generalDimensions       String?
-
-  // WA Solution
-  waSolution              String
-  waProduct               String
-  technicalAdvantages     String?   @db.Text
-  expectedServiceLife     String?
-  solutionValueRevenue    Decimal?  @db.Decimal(12,2)
-  annualPotentialRevenue  Decimal?  @db.Decimal(12,2)
-  customerSavingsAmount   Decimal?  @db.Decimal(12,2)
-
-  // Location
-  location                String
-  country                 String?
-
-  // Media
-  images                  String[]
-  supportingDocs          String[]
-
-  // Translation
-  originalLanguage        String    @default("en")
-  translationAvailable    Boolean   @default(false)
-  translatedText          String?   @db.Text
-
-  // Relations
-  wps                     WeldingProcedure?
-  costCalculator          CostCalculator?
-  comments                Comment[]
-  savedBy                 SavedCase[]
-
-  // Metadata
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
-
-  @@unique([customerName, location, componentWorkpiece, waProduct], name: "unique_challenge")
-  @@index([status, type])
-  @@index([industry, componentWorkpiece])
-  @@index([contributorId])
+  EXPLORER // 10 Application Case Studies
+  EXPERT // 10 Tech Case Studies
+  CHAMPION // 10 Star Case Studies
 }
 
 enum CaseType {
-  APPLICATION  // 1 point
-  TECH         // 2 points
-  STAR         // 3 points
+  APPLICATION // 1 point
+  TECH // 2 points
+  STAR // 3 points
+}
+
+// Challenge Qualifier Type (BRD 3.1)
+enum QualifierType {
+  NEW_CUSTOMER // No purchase in 3 years - COUNTS toward target
+  CROSS_SELL // Existing customer, new product - COUNTS toward target
+  MAINTENANCE // Existing customer, existing product - NOT counted
 }
 
 enum Status {
@@ -166,6 +128,7 @@ enum Status {
   APPROVED
   REJECTED
   PUBLISHED
+  ARCHIVED
 }
 
 enum WorkType {
@@ -182,127 +145,12 @@ enum WearType {
   COMBINATION
 }
 
-model WeldingProcedure {
-  id                    String    @id @default(cuid())
-  caseStudyId           String    @unique
-  caseStudy             CaseStudy @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
-
-  // Base Metal
-  baseMetalType         String?
-  baseMetalGrade        String?
-  baseMetalThickness    String?
-  surfacePreparation    String?
-
-  // WA Product
-  waProductName         String
-  waProductDiameter     String?
-  shieldingGas          String?
-  shieldingFlowRate     String?
-  flux                  String?
-  standardDesignation   String?
-
-  // Welding Parameters
-  weldingProcess        String
-  currentType           String?
-  currentModeSynergy    String?
-  wireFeedSpeed         String?
-  intensity             String?
-  voltage               String?
-  heatInput             String?
-  weldingPosition       String?
-  torchAngle            String?
-  stickOut              String?
-  travelSpeed           String?
-
-  // Oscillation
-  oscillationWidth      String?
-  oscillationSpeed      String?
-  oscillationStepOver   String?
-  oscillationTempo      String?
-
-  // Temperature
-  preheatTemperature    String?
-  interpassTemperature  String?
-  postheatTemperature   String?
-  pwhtDetails           String?
-
-  // Results
-  layerNumbers          Int?
-  hardness              String?
-  defectsObserved       String?
-  additionalNotes       String?   @db.Text
-
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-}
-
-model CostCalculator {
-  id                          String    @id @default(cuid())
-  caseStudyId                 String    @unique
-  caseStudy                   CaseStudy @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
-
-  // Material Costs
-  materialCostBefore          Float
-  materialCostAfter           Float
-
-  // Labor Costs
-  laborCostBefore             Float
-  laborCostAfter              Float
-
-  // Downtime Costs
-  downtimeCostBefore          Float
-  downtimeCostAfter           Float
-
-  // Maintenance Frequency
-  maintenanceFrequencyBefore  Int
-  maintenanceFrequencyAfter   Int
-
-  // Calculated Totals
-  totalCostBefore             Float
-  totalCostAfter              Float
-  annualSavings               Float
-  savingsPercentage           Int
-
-  createdAt                   DateTime  @default(now())
-  updatedAt                   DateTime  @updatedAt
-}
-
-model Comment {
-  id            String    @id @default(cuid())
-  content       String    @db.Text
-  caseStudyId   String
-  caseStudy     CaseStudy @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
-  userId        String
-  user          User      @relation(fields: [userId], references: [id])
-  likes         Int       @default(0)
-
-  // Enhanced reactions
-  reactions     CommentReaction[]
-
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  @@index([caseStudyId])
-}
-
-model CommentReaction {
-  id          String        @id @default(cuid())
-  commentId   String
-  comment     Comment       @relation(fields: [commentId], references: [id], onDelete: Cascade)
-  userId      String
-  type        ReactionType
-  createdAt   DateTime      @default(now())
-
-  @@unique([commentId, userId, type])
-  @@index([commentId])
-}
-
 enum ReactionType {
-  LIKE      // 👍
-  LOVE      // ❤️
+  LIKE // 👍
+  LOVE // ❤️
   CELEBRATE // 🎉
   INSIGHTFUL // 💡
-  HELPFUL   // 🙌
+  HELPFUL // 🙌
   THUMBS_DOWN // 👎
 }
 
@@ -315,63 +163,6 @@ enum NotificationType {
   SYSTEM_ANNOUNCEMENT
 }
 
-model SavedCase {
-  id          String    @id @default(cuid())
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  caseStudyId String
-  caseStudy   CaseStudy @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
-
-  createdAt   DateTime  @default(now())
-
-  @@unique([userId, caseStudyId])
-  @@index([userId])
-  @@index([caseStudyId])
-}
-
-model SystemConfig {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  value     String
-  updatedAt DateTime @updatedAt
-  updatedBy String?
-
-  createdAt DateTime @default(now())
-}
-
-model Notification {
-  id        String           @id @default(cuid())
-  userId    String
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      NotificationType
-  title     String
-  message   String           @db.Text
-  read      Boolean          @default(false)
-  link      String?
-
-  createdAt DateTime         @default(now())
-
-  @@index([userId, read])
-  @@index([createdAt])
-}
-
-model EmailTemplate {
-  id          String              @id @default(cuid())
-  name        String
-  type        EmailTemplateType
-  subject     String
-  htmlContent String              @db.Text
-  textContent String?             @db.Text
-  logoUrl     String?
-  isActive    Boolean             @default(true)
-  variables   String[]            // List of available variables like {{userName}}, {{caseTitle}}
-
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-
-  @@unique([type])
-}
-
 enum EmailTemplateType {
   CASE_APPROVED
   CASE_REJECTED
@@ -380,4 +171,773 @@ enum EmailTemplateType {
   BHAG_MILESTONE
   WELCOME
   SYSTEM_ANNOUNCEMENT
+}
+
+enum AuditActionType {
+  // Authentication
+  LOGIN
+  LOGOUT
+  LOGIN_FAILED
+
+  // Break-Glass (WA Policy Section 3.1)
+  BREAK_GLASS_ACCESS
+  BREAK_GLASS_ACCESS_FAILED
+  BREAK_GLASS_ACTION
+  BREAK_GLASS_SESSION_TERMINATED
+
+  // Case Study Actions
+  CASE_CREATED
+  CASE_UPDATED
+  CASE_DELETED
+  CASE_SUBMITTED
+  CASE_APPROVED
+  CASE_REJECTED
+  CASE_PUBLISHED
+
+  // User Actions
+  USER_CREATED
+  USER_UPDATED
+  USER_DELETED
+  USER_ROLE_CHANGED
+
+  // GDPR Actions (WA Policy Section 7.5)
+  DATA_EXPORT
+  DATA_DELETION_REQUEST
+  DATA_ANONYMIZED
+  CONSENT_GIVEN
+  CONSENT_WITHDRAWN
+
+  // System Actions
+  SYSTEM_CONFIG_CHANGED
+  BULK_OPERATION
+  RETENTION_CLEANUP
+}
+
+enum GdprDeletionStatus {
+  PENDING // Request received, awaiting verification
+  VERIFIED // User identity verified
+  IN_PROGRESS // Deletion/anonymization in progress
+  COMPLETED // Successfully processed
+  REJECTED // Request rejected (with reason)
+  CANCELLED // Cancelled by user
+}
+
+enum SyncStatus {
+  SYNCED
+  PENDING
+  ERROR
+}
+
+enum JobStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum FileType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum LifeStatus {
+  EXPECTED
+  VERIFIED
+}
+
+// =====================================================
+// MASTER LIST SYSTEM (Data Model V1.6)
+// Generic dropdown management for admin configurability
+// =====================================================
+
+model WaListKey {
+  id          String  @id @default(cuid())
+  keyName     String  @unique // e.g., "Industry", "WearType", "DurationUnit"
+  description String?
+
+  // Relations
+  masterListItems WaMasterList[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("ListKey")
+}
+
+model WaMasterList {
+  id                 String    @id @default(cuid())
+  listKeyId          String
+  listKey            WaListKey @relation(fields: [listKeyId], references: [id], onDelete: Cascade)
+  value              String // Display value (e.g., "Cement", "Abrasion")
+  netsuiteInternalId Int?      @unique // Optional ERP sync
+  isActive           Boolean   @default(true)
+  sortOrder          Int       @default(0)
+
+  // Relations for FK usage
+  icaWearTypes      WaIcaWearType[]
+  customersIndustry WaCustomer[]    @relation("CustomerIndustry")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([listKeyId, value])
+  @@index([listKeyId])
+  @@index([isActive])
+  @@map("MasterList")
+}
+
+// =====================================================
+// MULTI-SUBSIDIARY SUPPORT (Data Model V1.6)
+// ERP-synced subsidiary/region management
+// =====================================================
+
+model WaSubsidiary {
+  id            String  @id @default(cuid())
+  integrationId String  @unique // External ERP code
+  name          String // Legal name
+  region        String // EMEA, APAC, Americas, etc.
+  currencyCode  String  @db.Char(3) // ISO currency code
+  isActive      Boolean @default(true)
+
+  // Relations
+  users       User[]
+  caseStudies WaCaseStudy[]
+  customers   WaCustomer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([region])
+  @@index([isActive])
+  @@map("Subsidiary")
+}
+
+// =====================================================
+// CUSTOMER MASTER DATA (Data Model V1.6)
+// Synced from Netsuite/Insightly CRM
+// =====================================================
+
+model WaCustomer {
+  id                 String        @id @default(cuid())
+  crmId              String?       @unique // Insightly CRM ID
+  netsuiteInternalId Int?          @unique // Netsuite ID
+  companyName        String
+  subsidiaryId       String
+  subsidiary         WaSubsidiary  @relation(fields: [subsidiaryId], references: [id])
+  industryId         String?
+  industry           WaMasterList? @relation("CustomerIndustry", fields: [industryId], references: [id])
+  lastPurchaseDate   DateTime? // For "New Customer" validation
+  syncedAt           DateTime?
+
+  // Relations
+  caseStudies WaCaseStudy[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyName])
+  @@index([subsidiaryId])
+  @@map("Customer")
+}
+
+// =====================================================
+// PRODUCT MASTER DATA (Data Model V1.6)
+// Synced from Netsuite
+// =====================================================
+
+model WaProduct {
+  id                 String  @id @default(cuid())
+  netsuiteInternalId Int     @unique
+  itemName           String
+  family             String?
+  isActive           Boolean @default(true)
+
+  // Relations
+  caseStudies WaCaseStudy[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([itemName])
+  @@index([family])
+  @@map("Product")
+}
+
+// =====================================================
+// ICA WEAR TYPE JUNCTION (Data Model V1.6)
+// Many-to-Many relationship for wear types
+// =====================================================
+
+model WaIcaWearType {
+  id           String       @id @default(cuid())
+  caseStudyId  String
+  caseStudy    WaCaseStudy  @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+  masterListId String
+  masterList   WaMasterList @relation(fields: [masterListId], references: [id])
+
+  @@unique([caseStudyId, masterListId])
+  @@index([caseStudyId])
+  @@map("IcaWearType")
+}
+
+model WaMediaAsset {
+  id          String      @id @default(cuid())
+  caseStudyId String
+  caseStudy   WaCaseStudy @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+  fileUrl     String      @db.VarChar(500)
+  fileType    FileType
+  isPrimary   Boolean     @default(false)
+  caption     String?     @db.VarChar(255)
+  aiTags      Json? // Tags from Vision API
+  uploadedAt  DateTime    @default(now())
+
+  @@index([caseStudyId])
+  @@index([fileType])
+  @@map("MediaAsset")
+}
+
+// =====================================================
+// USER ROLE JUNCTION (Data Model V1.6)
+// Many-to-Many for users with multiple roles
+// =====================================================
+
+model WaUserRole {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       Role
+  assignedAt DateTime @default(now())
+  assignedBy String? // Admin who assigned the role
+
+  @@unique([userId, role])
+  @@index([userId])
+  @@map("UserRole")
+}
+
+// =====================================================
+// WA-SPECIFIC MODELS (with Wa prefix)
+// Using @@map to keep database table names unchanged
+// =====================================================
+
+model WaCaseStudy {
+  id     String   @id @default(cuid())
+  type   CaseType @default(APPLICATION)
+  status Status   @default(DRAFT)
+
+  // Contributors & Approval
+  contributorId String
+  contributor   User      @relation("Contributor", fields: [contributorId], references: [id])
+  approverId    String?
+  approver      User?     @relation("Approver", fields: [approverId], references: [id])
+  submittedAt   DateTime?
+  approvedAt    DateTime?
+
+  // Rejection Tracking
+  rejectionReason String?   @db.Text
+  rejectedAt      DateTime?
+  rejectedBy      String?
+  rejector        User?     @relation("Rejector", fields: [rejectedBy], references: [id])
+
+  // Core Fields
+  customerName        String
+  industry            String
+  componentWorkpiece  String
+  workType            WorkType
+  wearType            String[]   // Changed from WearType[] to support custom values from master data
+  problemDescription  String     @db.Text
+  previousSolution    String?
+  previousServiceLife String?
+  competitorName      String?
+  baseMetal           String?
+  generalDimensions   String?
+
+  // WA Solution
+  waSolution             String
+  waProduct              String
+  technicalAdvantages    String?  @db.Text
+  expectedServiceLife    String?
+  solutionValueRevenue   Decimal? @db.Decimal(12, 2)
+  annualPotentialRevenue Decimal? @db.Decimal(12, 2)
+  customerSavingsAmount  Decimal? @db.Decimal(12, 2)
+
+  // OEM Information (BRD Section 5 - Search Filter)
+  oem String? // Original Equipment Manufacturer
+
+  // Location
+  location String
+  country  String?
+
+  // Media
+  images         String[]
+  supportingDocs String[]
+
+  // Tags for AI-powered search
+  tags String[] @default([])
+
+  // Translation
+  originalLanguage     String  @default("en")
+  translationAvailable Boolean @default(false)
+  translatedText       String? @db.Text
+
+  // Relations
+  wps            WaWeldingProcedure?
+  costCalculator WaCostCalculator?
+  comments       WaComment[]
+  savedBy        WaSavedCase[]
+  taggedUsers    User[]              @relation("TaggedInCases")
+
+  // Soft delete support (WA Policy Section 5.1)
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+  deletedBy String?
+
+  // NetSuite Integration
+  netsuiteCustomerId String?
+  netsuiteFileId     String?   // File ID in NetSuite File Cabinet after PDF upload
+  netsuiteSyncedAt   DateTime?
+
+  // Insightly CRM Integration (BRD 5.9)
+  insightlyOpportunityId Int?
+  insightlySyncedAt      DateTime?
+
+  // Challenge Qualifier (BRD 3.1) - Determines if case counts toward 10K target
+  qualifierType        QualifierType?
+  isTarget             Boolean        @default(false) // Counts toward BHAG 10,000 goal
+  customerLastPurchase DateTime? // For 3-year purchase check
+
+  // Flag System (BRD 3.2) - Case Study Tiers
+  hasApplicationFlag Boolean @default(false) // General + Problem/Solution filled
+  hasWpsFlag         Boolean @default(false) // WPS Details filled
+  hasCostFlag        Boolean @default(false) // Cost Calculator filled
+
+  // Versioning (Data Model V1.6)
+  icaNumber     String?       @unique // Format: ICAYYMMnnn
+  parentIcaId   String? // Links to previous version
+  parentIca     WaCaseStudy?  @relation("IcaVersions", fields: [parentIcaId], references: [id])
+  childVersions WaCaseStudy[] @relation("IcaVersions")
+  versionNumber Int           @default(1)
+  isLatest      Boolean       @default(true)
+
+  // Data Model V1.6 Fields
+  title             String?       @db.VarChar(255)
+  customerId        String?
+  customer          WaCustomer?   @relation(fields: [customerId], references: [id])
+  productId         String?
+  product           WaProduct?    @relation(fields: [productId], references: [id])
+  productNameManual String?       @db.VarChar(255) // Fallback if product not found
+  subsidiaryId      String?
+  subsidiary        WaSubsidiary? @relation(fields: [subsidiaryId], references: [id])
+
+  // Qualifier booleans (replacing enum)
+  isNewCustomer Boolean @default(false)
+  isCrossSell   Boolean @default(false)
+
+  // Quality Indicators
+  dataQualityScore Int? // 0-100 computed
+  securityLevel    String @default("Internal") // Internal or Confidential
+
+  // Solution description (was missing)
+  solutionDescription String? @db.Text
+
+  // Job Duration
+  jobDuration       Decimal? @db.Decimal(10, 2)
+  jobDurationUnitId String?
+
+  // Previous Service Unit
+  prevServiceUnitId String?
+
+  // Financial Fields (from Cost Calculator inline)
+  currency        String?     @db.Char(3)
+  exchangeRate    Decimal?    @db.Decimal(10, 4)
+  lifeStatus      LifeStatus?
+  costOldSolution Decimal?    @db.Decimal(15, 2)
+  costWaSolution  Decimal?    @db.Decimal(15, 2)
+  waServiceLife   Decimal?    @db.Decimal(10, 2)
+  savingsAmount   Decimal?    @db.Decimal(15, 2)
+  savingsPercent  Decimal?    @db.Decimal(5, 2)
+
+  // WPS Fields (inline per V1.6)
+  processType  String? @db.VarChar(50)
+  layersCount  Int?
+  amperageMin  Int?
+  amperageMax  Int?
+  voltageMin   Int?
+  voltageMax   Int?
+  travelSpeed  String? @db.VarChar(50)
+  wireSpeed    String? @db.VarChar(50)
+  oscillation  String? @db.VarChar(100)
+  preheating   String? @db.VarChar(100)
+  shieldingGas String? @db.VarChar(50)
+  wpsNotes     String? @db.Text
+
+  // V1.6 Relations
+  mediaAssets  WaMediaAsset[]
+  icaWearTypes WaIcaWearType[]
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([customerName, location, componentWorkpiece, waProduct], name: "unique_challenge")
+  @@index([status, type])
+  @@index([industry, componentWorkpiece])
+  @@index([contributorId])
+  @@index([icaNumber])
+  @@map("CaseStudy")
+}
+
+model WaWeldingProcedure {
+  id          String      @id @default(cuid())
+  caseStudyId String      @unique
+  caseStudy   WaCaseStudy @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+
+  // Base Metal
+  baseMetalType      String?
+  baseMetalGrade     String?
+  baseMetalThickness String?
+  surfacePreparation String?
+
+  // WA Product
+  waProductName       String
+  waProductDiameter   String?
+  shieldingGas        String?
+  shieldingFlowRate   String?
+  flux                String?
+  standardDesignation String?
+
+  // Welding Parameters
+  weldingProcess     String
+  currentType        String?
+  currentModeSynergy String?
+  wireFeedSpeed      String?
+  intensity          String?
+  voltage            String?
+  heatInput          String?
+  weldingPosition    String?
+  torchAngle         String?
+  stickOut           String?
+  travelSpeed        String?
+
+  // Oscillation
+  oscillationWidth    String?
+  oscillationSpeed    String?
+  oscillationStepOver String?
+  oscillationTempo    String?
+
+  // Temperature
+  preheatTemperature   String?
+  interpassTemperature String?
+  postheatTemperature  String?
+  pwhtDetails          String?
+
+  // Results
+  layerNumbers    Int?
+  hardness        String?
+  defectsObserved String?
+  additionalNotes String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("WeldingProcedure")
+}
+
+model WaCostCalculator {
+  id          String      @id @default(cuid())
+  caseStudyId String      @unique
+  caseStudy   WaCaseStudy @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+
+  // Material Costs
+  materialCostBefore Float
+  materialCostAfter  Float
+
+  // Labor Costs
+  laborCostBefore Float
+  laborCostAfter  Float
+
+  // Downtime Costs
+  downtimeCostBefore Float
+  downtimeCostAfter  Float
+
+  // Maintenance Frequency
+  maintenanceFrequencyBefore Int
+  maintenanceFrequencyAfter  Int
+
+  // NEW FIELDS (BRD Rows 28-33, 38)
+  costOfPart                  Float?  @default(0)
+  oldSolutionLifetimeDays     Int?    @default(0)
+  waSolutionLifetimeDays      Int?    @default(0)
+  partsUsedPerYear            Int?    @default(0)
+  maintenanceRepairCostBefore Float?  @default(0)
+  maintenanceRepairCostAfter  Float?  @default(0)
+  disassemblyCostBefore       Float?  @default(0)
+  disassemblyCostAfter        Float?  @default(0)
+  extraBenefits               String? @db.Text
+
+  // Calculated Totals
+  totalCostBefore   Float
+  totalCostAfter    Float
+  annualSavings     Float
+  savingsPercentage Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("CostCalculator")
+}
+
+model WaComment {
+  id          String      @id @default(cuid())
+  content     String      @db.Text
+  caseStudyId String
+  caseStudy   WaCaseStudy @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  likes       Int         @default(0)
+
+  // Enhanced reactions
+  reactions WaCommentReaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([caseStudyId])
+  @@map("Comment")
+}
+
+model WaCommentReaction {
+  id        String       @id @default(cuid())
+  commentId String
+  comment   WaComment    @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  userId    String
+  type      ReactionType
+  createdAt DateTime     @default(now())
+
+  @@unique([commentId, userId, type])
+  @@index([commentId])
+  @@map("CommentReaction")
+}
+
+model WaSavedCase {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  caseStudyId String
+  caseStudy   WaCaseStudy @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, caseStudyId])
+  @@index([userId])
+  @@index([caseStudyId])
+  @@map("SavedCase")
+}
+
+model WaSystemConfig {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+
+  createdAt DateTime @default(now())
+
+  @@map("SystemConfig")
+}
+
+model WaNotification {
+  id      String           @id @default(cuid())
+  userId  String
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type    NotificationType
+  title   String
+  message String           @db.Text
+  read    Boolean          @default(false)
+  link    String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+  @@index([createdAt])
+  @@map("Notification")
+}
+
+model WaEmailTemplate {
+  id          String            @id @default(cuid())
+  name        String
+  type        EmailTemplateType
+  subject     String
+  htmlContent String            @db.Text
+  textContent String?           @db.Text
+  logoUrl     String?
+  isActive    Boolean           @default(true)
+  variables   String[] // List of available variables like {{userName}}, {{caseTitle}}
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([type])
+  @@map("EmailTemplate")
+}
+
+// =====================================================
+// IMMUTABLE AUDIT LOG (WA Policy Section 5.2)
+// Write-once audit trail with hash verification
+// =====================================================
+model WaAuditLog {
+  id String @id @default(cuid())
+
+  // Action details
+  actionType AuditActionType
+  userId     String
+  userEmail  String
+
+  // Resource information
+  resourceId   String?
+  resourceType String?
+
+  // State tracking
+  previousState Json?
+  newState      Json?
+
+  // Request context
+  ipAddress String?
+  userAgent String?
+  sessionId String?
+
+  // Integrity verification (immutability)
+  contentHash  String // SHA-256 hash of the log content
+  previousHash String? // Hash of the previous log entry (blockchain-like)
+
+  // Timestamp (immutable)
+  createdAt DateTime @default(now())
+
+  // Indexes for efficient querying
+  @@index([userId])
+  @@index([resourceId])
+  @@index([actionType])
+  @@index([createdAt])
+  @@index([contentHash])
+  @@map("AuditLog")
+}
+
+// =====================================================
+// DATA RETENTION TRACKING (WA Policy Section 7.5.4)
+// Tracks data lifecycle for compliance
+// =====================================================
+model WaDataRetentionPolicy {
+  id               String  @id @default(cuid())
+  dataType         String  @unique // e.g., 'User', 'CaseStudy', 'AuditLog'
+  retentionDays    Int // Number of days to retain data
+  archiveAfterDays Int? // Days before archiving (optional)
+  description      String?
+  legalBasis       String? // GDPR legal basis for retention
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("DataRetentionPolicy")
+}
+
+// =====================================================
+// GDPR DATA DELETION REQUESTS (WA Policy Section 7.5.1)
+// Tracks right-to-be-forgotten requests
+// =====================================================
+model WaGdprDeletionRequest {
+  id        String             @id @default(cuid())
+  userId    String
+  userEmail String
+  status    GdprDeletionStatus @default(PENDING)
+
+  // Request details
+  requestedAt DateTime  @default(now())
+  processedAt DateTime?
+  processedBy String?
+
+  // Verification
+  verificationToken String?   @unique
+  verifiedAt        DateTime?
+
+  // Completion tracking
+  deletedData    Json? // Summary of what was deleted
+  anonymizedData Json? // Summary of what was anonymized
+
+  // Notes
+  notes String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@map("GdprDeletionRequest")
+}
+
+// =====================================================
+// NETSUITE CUSTOMER CACHE (BRD 5.9.3)
+// Local cache of NetSuite customers for faster search
+// =====================================================
+model WaNetSuiteCustomerCache {
+  id String @id @default(cuid())
+
+  // NetSuite identifiers
+  netsuiteId String  @unique // NetSuite internal ID
+  entityId   String? // NetSuite entity ID (customer code)
+
+  // Customer information
+  companyName String
+  address     String?
+  city        String?
+  state       String?
+  country     String?
+  postalCode  String?
+  industry    String?
+
+  // Contact information
+  email String?
+  phone String?
+
+  // Sync metadata
+  lastSyncedAt DateTime   @default(now())
+  syncStatus   SyncStatus @default(SYNCED)
+  syncError    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyName])
+  @@index([city])
+  @@index([industry])
+  @@index([lastSyncedAt])
+  @@map("NetSuiteCustomerCache")
+}
+
+// Sync job tracking
+model WaNetSuiteSyncJob {
+  id String @id @default(cuid())
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  status JobStatus @default(RUNNING)
+
+  // Statistics
+  totalRecords   Int @default(0)
+  newRecords     Int @default(0)
+  updatedRecords Int @default(0)
+  failedRecords  Int @default(0)
+
+  errorMessage String?
+
+  createdAt DateTime @default(now())
+
+  @@index([status])
+  @@index([startedAt])
+  @@map("NetSuiteSyncJob")
 }

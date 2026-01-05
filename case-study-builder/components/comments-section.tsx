@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, ThumbsUp, Trash2, Send, User } from 'lucide-react';
-import { createComment, likeComment, deleteComment } from '@/lib/actions/comment-actions';
+import { waCreateComment, waLikeComment, waDeleteComment } from '@/lib/actions/waCommentActions';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
@@ -56,7 +56,7 @@ export default function CommentsSection({
     setIsSubmitting(true);
 
     try {
-      const result = await createComment(caseStudyId, newComment);
+      const result = await waCreateComment(caseStudyId, newComment);
 
       if (result.success && result.comment) {
         toast.success('Comment added successfully!');
@@ -77,7 +77,7 @@ export default function CommentsSection({
     setLikingCommentId(commentId);
 
     try {
-      const result = await likeComment(commentId);
+      const result = await waLikeComment(commentId);
 
       if (result.success) {
         toast.success('Liked!');
@@ -101,7 +101,7 @@ export default function CommentsSection({
     setDeletingCommentId(commentId);
 
     try {
-      const result = await deleteComment(commentId);
+      const result = await waDeleteComment(commentId);
 
       if (result.success) {
         toast.success('Comment deleted');

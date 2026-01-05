@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already reacted with this type
-    const existingReaction = await prisma.commentReaction.findUnique({
+    const existingReaction = await prisma.waCommentReaction.findUnique({
       where: {
         commentId_userId_type: {
           commentId,
@@ -29,14 +29,14 @@ export async function POST(request: NextRequest) {
 
     if (existingReaction) {
       // Remove the reaction (toggle off)
-      await prisma.commentReaction.delete({
+      await prisma.waCommentReaction.delete({
         where: { id: existingReaction.id },
       });
 
       return NextResponse.json({ success: true, added: false });
     } else {
       // Add the reaction
-      await prisma.commentReaction.create({
+      await prisma.waCommentReaction.create({
         data: {
           commentId,
           userId: session.user.id,

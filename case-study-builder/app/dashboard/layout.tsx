@@ -35,6 +35,24 @@ export default async function DashboardLayout({
     redirect('/login');
   }
 
+  // Fetch user's assigned roles from WaUserRole table for multi-role support
+  const userRoleRecords = await prisma.waUserRole.findMany({
+    where: { userId: session.user.id },
+    select: { role: true },
+  });
+
+  // Get list of assigned role strings (always include current primary role)
+  const userRoles = userRoleRecords.map(ur => ur.role);
+  if (!userRoles.includes(user.role)) {
+    userRoles.push(user.role);
+  }
+
+  // Merge roles into user object for DashboardShell
+  const userWithRoles = {
+    ...user,
+    roles: userRoles,
+  };
+
   return (
     <SessionProvider>
       {/* Maintenance Mode Auto-Redirect - Temporarily disabled */}
@@ -45,7 +63,7 @@ export default async function DashboardLayout({
         <AnnouncementBanner />
 
         {/* Dashboard Shell with Sidebar, Top Bar, and Content */}
-        <DashboardShell user={user}>
+        <DashboardShell user={userWithRoles}>
           {children}
         </DashboardShell>
       </div>

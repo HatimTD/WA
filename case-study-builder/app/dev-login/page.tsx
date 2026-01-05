@@ -2,46 +2,68 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { devLogin } from '@/lib/actions/dev-login-action';
+import { waDevLogin } from '@/lib/actions/waDevLoginAction';
 import { toast } from 'sonner';
 import { AlertCircle } from 'lucide-react';
 
+const AVAILABLE_ROLES = [
+  { value: 'VIEWER', label: 'Viewer', description: 'Browse approved cases (read-only)' },
+  { value: 'CONTRIBUTOR', label: 'Contributor', description: 'Create and submit case studies' },
+  { value: 'APPROVER', label: 'Approver', description: 'Review and approve submissions' },
+  { value: 'MARKETING', label: 'Marketing', description: 'Marketing team access' },
+  { value: 'IT_DEPARTMENT', label: 'IT Department', description: 'IT administration access' },
+  { value: 'ADMIN', label: 'Admin', description: 'Full system access' },
+];
+
 export default function DevLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('tidihatim@gmail.com');
+  const [email, setEmail] = useState('admin@weldingalloys.com');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('CONTRIBUTOR');
+  const [selectedRoles, setSelectedRoles] = useState<string[]>(['CONTRIBUTOR']);
   const [isLoading, setIsLoading] = useState(false);
+
+  const waToggleRole = (role: string) => {
+    setSelectedRoles(prev =>
+      prev.includes(role)
+        ? prev.filter(r => r !== role)
+        : [...prev, role]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (selectedRoles.length === 0) {
+      toast.error('Please select at least one role');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const result = await devLogin(email, password, role);
+      const result = await waDevLogin(email, password, selectedRoles);
 
-      if (result.success) {
-        toast.success(`Login successful as ${role}!`);
+      if (result?.success) {
+        toast.success(`Login successful as ${selectedRoles.join(', ')}!`);
         router.push('/dashboard');
         router.refresh();
-      } else {
-        toast.error(result.error || 'Invalid credentials');
+      } else if (result?.error) {
+        toast.error(result.error);
+        setIsLoading(false);
       }
-    } catch (error) {
+      // If result is undefined, the redirect was handled by NextAuth
+    } catch (error: any) {
+      // NextAuth v5 may throw NEXT_REDIRECT which is expected behavior
+      if (error?.digest?.includes('NEXT_REDIRECT')) {
+        toast.success(`Login successful as ${selectedRoles.join(', ')}!`);
+        // Redirect is handled automatically
+        return;
+      }
       toast.error('Login failed');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -73,7 +95,7 @@ export default function DevLoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="tidihatim@gmail.com"
+                placeholder="admin@weldingalloys.com"
                 required
               />
             </div>
@@ -91,62 +113,35 @@ export default function DevLoginPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
-              <Select value={role} onValueChange={setRole}>
-                <SelectTrigger id="role">
-                  <SelectValue placeholder="Select a role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="VIEWER">
-                    <div className="flex flex-col">
-                      <span className="font-medium">VIEWER</span>
-                      <span className="text-xs text-muted-foreground">
-                        Browse approved cases (read-only)
-                      </span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="CONTRIBUTOR">
-                    <div className="flex flex-col">
-                      <span className="font-medium">CONTRIBUTOR</span>
-                      <span className="text-xs text-muted-foreground">
-                        Create and submit case studies
-                      </span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="APPROVER">
-                    <div className="flex flex-col">
-                      <span className="font-medium">APPROVER</span>
-                      <span className="text-xs text-muted-foreground">
-                        Review and approve submissions
-                      </span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="ADMIN">
-                    <div className="flex flex-col">
-                      <span className="font-medium">ADMIN</span>
-                      <span className="text-xs text-muted-foreground">
-                        Full system access
-                      </span>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>Select Role(s)</Label>
+              <div className="flex flex-wrap gap-2">
+                {AVAILABLE_ROLES.map((roleOption) => (
+                  <button
+                    key={roleOption.value}
+                    type="button"
+                    onClick={() => waToggleRole(roleOption.value)}
+                    title={roleOption.description}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-full border transition-all ${
+                      selectedRoles.includes(roleOption.value)
+                        ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                        : 'bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-foreground'
+                    }`}
+                  >
+                    {roleOption.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? 'Logging in...' : 'Login'}
             </Button>
 
-            <div className="text-xs text-center text-muted-foreground mt-4">
-              <p>Default credentials:</p>
-              <p className="font-mono mt-1">tidihatim@gmail.com / Godofwar@3</p>
-            </div>
-
-            <div className="text-center mt-4 pt-4 border-t">
-              <p className="text-sm text-muted-foreground mb-2">Need a test account?</p>
-              <Link href="/dev-register" className="text-blue-600 hover:underline text-sm">
-                Create Test Account →
-              </Link>
+            <div className="text-xs text-center text-muted-foreground mt-4 space-y-1">
+              <p className="font-medium">Test Accounts (password: TestPassword123)</p>
+              <p className="font-mono">admin@weldingalloys.com</p>
+              <p className="font-mono">approver@weldingalloys.com</p>
+              <p className="font-mono">contributor@weldingalloys.com</p>
             </div>
           </form>
         </CardContent>

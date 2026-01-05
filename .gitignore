@@ -1,0 +1,22 @@
+# Git Worktrees (parallel development)
+.worktrees/
+
+# IDE
+.vscode/
+.idea/
+
+# Generated files
+*.pptx
+~$*.pptx
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Local development files
+*.local.json
+
+# Documentation drafts (commit when finalized)
+# IMPLEMENTATION_PLAN_FINAL.md
+# MEETING_IT_REVIEW.md

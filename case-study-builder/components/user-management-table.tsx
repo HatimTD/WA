@@ -19,14 +19,35 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Search, UserCog, Trash2, Shield, Award } from 'lucide-react';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Search, UserCog, Trash2, Shield, Award, Monitor, Megaphone, Eye, ChevronDown, Check, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+
+// All roles defined in Prisma schema
+const ALL_ROLES = ['VIEWER', 'CONTRIBUTOR', 'APPROVER', 'ADMIN', 'IT_DEPARTMENT', 'MARKETING'] as const;
+type RoleType = typeof ALL_ROLES[number];
+
+// Role display configuration
+const ROLE_CONFIG: Record<string, { label: string; icon?: React.ReactNode; color: string; bgColor: string }> = {
+  VIEWER: { label: 'Viewer', icon: <Eye className="h-3 w-3" />, color: 'text-gray-500', bgColor: 'bg-gray-100 dark:bg-gray-800' },
+  CONTRIBUTOR: { label: 'Contributor', color: 'text-green-600', bgColor: 'bg-green-100 dark:bg-green-900/30' },
+  APPROVER: { label: 'Approver', color: 'text-blue-600', bgColor: 'bg-blue-100 dark:bg-blue-900/30' },
+  ADMIN: { label: 'Admin', icon: <Shield className="h-3 w-3" />, color: 'text-purple-600', bgColor: 'bg-purple-100 dark:bg-purple-900/30' },
+  IT_DEPARTMENT: { label: 'IT Dept', icon: <Monitor className="h-3 w-3" />, color: 'text-orange-600', bgColor: 'bg-orange-100 dark:bg-orange-900/30' },
+  MARKETING: { label: 'Marketing', icon: <Megaphone className="h-3 w-3" />, color: 'text-pink-600', bgColor: 'bg-pink-100 dark:bg-pink-900/30' },
+};
 
 type User = {
   id: string;
   name: string | null;
   email: string | null;
   role: string;
+  roles?: string[]; // Multiple roles
   region: string | null;
   totalPoints: number;
   caseCount: number;
@@ -54,25 +75,38 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
     return matchesSearch && matchesRole;
   });
 
-  const handleRoleChange = async (userId: string, newRole: string) => {
+  // Get user's current roles (from roles array or fall back to single role)
+  const waGetUserRoles = (user: User): string[] => {
+    if (user.roles && user.roles.length > 0) {
+      return user.roles;
+    }
+    return [user.role];
+  };
+
+  const handleRolesChange = async (userId: string, newRoles: string[]) => {
+    if (newRoles.length === 0) {
+      toast.error('User must have at least one role');
+      return;
+    }
+
     setIsUpdating(userId);
     try {
       const response = await fetch('/api/admin/update-user-role', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, role: newRole }),
+        body: JSON.stringify({ userId, roles: newRoles }),
       });
 
       const result = await response.json();
 
       if (result.success) {
-        // Update local state
+        // Update local state with multiple roles
         setUsers((prev) =>
-          prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
+          prev.map((u) => (u.id === userId ? { ...u, roles: newRoles, role: newRoles[0] } : u))
         );
-        toast.success(`User role updated to ${newRole}`);
+        toast.success(`User roles updated: ${newRoles.map(r => ROLE_CONFIG[r]?.label || r).join(', ')}`);
       } else {
-        toast.error(result.error || 'Failed to update role');
+        toast.error(result.error || 'Failed to update roles');
       }
     } catch (error) {
       console.error('[UserManagement] Error:', error);
@@ -80,6 +114,14 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
     } finally {
       setIsUpdating(null);
     }
+  };
+
+  const waToggleRole = (userId: string, role: string, currentRoles: string[]) => {
+    const isSelected = currentRoles.includes(role);
+    const newRoles = isSelected
+      ? currentRoles.filter(r => r !== role)
+      : [...currentRoles, role];
+    handleRolesChange(userId, newRoles);
   };
 
   const handleDeleteUser = async (userId: string, userEmail: string | null) => {
@@ -142,9 +184,14 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
               </SelectTrigger>
               <SelectContent className="dark:bg-popover dark:border-border">
                 <SelectItem value="ALL">All Roles</SelectItem>
-                <SelectItem value="CONTRIBUTOR">CONTRIBUTOR</SelectItem>
-                <SelectItem value="APPROVER">APPROVER</SelectItem>
-                <SelectItem value="ADMIN">ADMIN</SelectItem>
+                {ALL_ROLES.map((role) => (
+                  <SelectItem key={role} value={role}>
+                    <div className="flex items-center gap-2">
+                      {ROLE_CONFIG[role]?.icon}
+                      <span>{ROLE_CONFIG[role]?.label || role}</span>
+                    </div>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -184,25 +231,66 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
                       </div>
                     </TableCell>
 
-                    {/* Role Selector */}
+                    {/* Multi-Role Selector */}
                     <TableCell>
-                      <Select
-                        value={user.role}
-                        onValueChange={(newRole) => handleRoleChange(user.id, newRole)}
-                        disabled={isUpdating === user.id}
-                      >
-                        <SelectTrigger className="w-36 dark:bg-input dark:border-border dark:text-foreground">
-                          <div className="flex items-center gap-2">
-                            {user.role === 'ADMIN' && <Shield className="h-3 w-3" />}
-                            <SelectValue />
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-auto min-w-[140px] justify-between dark:bg-input dark:border-border dark:text-foreground"
+                            disabled={isUpdating === user.id}
+                          >
+                            <div className="flex flex-wrap gap-1">
+                              {waGetUserRoles(user).slice(0, 2).map((role) => (
+                                <span
+                                  key={role}
+                                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-xs rounded ${ROLE_CONFIG[role]?.bgColor} ${ROLE_CONFIG[role]?.color}`}
+                                >
+                                  {ROLE_CONFIG[role]?.icon}
+                                  {ROLE_CONFIG[role]?.label || role}
+                                </span>
+                              ))}
+                              {waGetUserRoles(user).length > 2 && (
+                                <span className="text-xs text-muted-foreground">+{waGetUserRoles(user).length - 2}</span>
+                              )}
+                            </div>
+                            {isUpdating === user.id ? (
+                              <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-56 p-2 dark:bg-popover dark:border-border" align="start">
+                          <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground mb-2 px-2">Select multiple roles:</p>
+                            {ALL_ROLES.map((role) => {
+                              const userRoles = waGetUserRoles(user);
+                              const isSelected = userRoles.includes(role);
+                              return (
+                                <button
+                                  key={role}
+                                  onClick={() => waToggleRole(user.id, role, userRoles)}
+                                  disabled={isUpdating === user.id}
+                                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent text-left ${
+                                    isSelected ? 'bg-accent' : ''
+                                  }`}
+                                >
+                                  <div className={`w-4 h-4 border rounded flex items-center justify-center ${
+                                    isSelected ? 'bg-primary border-primary' : 'border-input'
+                                  }`}>
+                                    {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
+                                  </div>
+                                  <div className={`flex items-center gap-1.5 ${ROLE_CONFIG[role]?.color || ''}`}>
+                                    {ROLE_CONFIG[role]?.icon}
+                                    <span className="text-sm">{ROLE_CONFIG[role]?.label || role}</span>
+                                  </div>
+                                </button>
+                              );
+                            })}
                           </div>
-                        </SelectTrigger>
-                        <SelectContent className="dark:bg-popover dark:border-border">
-                          <SelectItem value="CONTRIBUTOR">CONTRIBUTOR</SelectItem>
-                          <SelectItem value="APPROVER">APPROVER</SelectItem>
-                          <SelectItem value="ADMIN">ADMIN</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        </PopoverContent>
+                      </Popover>
                     </TableCell>
 
                     {/* Region */}
@@ -256,23 +344,24 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
         </div>
 
         {/* Summary Stats */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-wa-green-50 dark:bg-accent border border-wa-green-200 dark:border-primary rounded-lg p-4">
-            <p className="text-sm text-wa-green-600 dark:text-primary font-medium">Total Users</p>
-            <p className="text-2xl font-bold text-wa-green-900 dark:text-foreground">{users.length}</p>
+        <div className="mt-6 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+          <div className="bg-wa-green-50 dark:bg-accent border border-wa-green-200 dark:border-primary rounded-lg p-3">
+            <p className="text-xs text-wa-green-600 dark:text-primary font-medium">Total</p>
+            <p className="text-xl font-bold text-wa-green-900 dark:text-foreground">{users.length}</p>
           </div>
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4">
-            <p className="text-sm text-green-600 dark:text-green-400 font-medium">Contributors</p>
-            <p className="text-2xl font-bold text-green-900 dark:text-foreground">
-              {users.filter((u) => u.role === 'CONTRIBUTOR').length}
-            </p>
-          </div>
-          <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg p-4">
-            <p className="text-sm text-purple-600 dark:text-purple-400 font-medium">Approvers + Admins</p>
-            <p className="text-2xl font-bold text-purple-900 dark:text-foreground">
-              {users.filter((u) => u.role === 'APPROVER' || u.role === 'ADMIN').length}
-            </p>
-          </div>
+          {ALL_ROLES.map((role) => {
+            const config = ROLE_CONFIG[role];
+            const count = users.filter((u) => u.role === role).length;
+            return (
+              <div key={role} className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                <div className={`flex items-center gap-1 text-xs font-medium ${config?.color || 'text-gray-600'}`}>
+                  {config?.icon}
+                  <span>{config?.label || role}</span>
+                </div>
+                <p className="text-xl font-bold text-gray-900 dark:text-foreground">{count}</p>
+              </div>
+            );
+          })}
         </div>
       </CardContent>
     </Card>

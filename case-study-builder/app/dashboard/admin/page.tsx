@@ -12,7 +12,11 @@ import {
   CheckCircle,
   XCircle,
   Settings,
-  BarChart3
+  BarChart3,
+  Shield,
+  Database,
+  Trash2,
+  List,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -48,20 +52,20 @@ export default async function AdminDashboardPage() {
     prisma.user.count(),
 
     // Total case studies count
-    prisma.caseStudy.count(),
+    prisma.waCaseStudy.count(),
 
     // Pending cases count (status: SUBMITTED = awaiting approval)
-    prisma.caseStudy.count({
+    prisma.waCaseStudy.count({
       where: { status: 'SUBMITTED' },
     }),
 
     // Approved cases count
-    prisma.caseStudy.count({
+    prisma.waCaseStudy.count({
       where: { status: 'APPROVED' },
     }),
 
     // Rejected cases count
-    prisma.caseStudy.count({
+    prisma.waCaseStudy.count({
       where: { status: 'REJECTED' },
     }),
 
@@ -79,7 +83,7 @@ export default async function AdminDashboardPage() {
     }),
 
     // Recent case submissions (last 5)
-    prisma.caseStudy.findMany({
+    prisma.waCaseStudy.findMany({
       take: 5,
       orderBy: { createdAt: 'desc' },
       select: {
@@ -98,7 +102,7 @@ export default async function AdminDashboardPage() {
     }),
 
     // Recent approvals/rejections (last 5)
-    prisma.caseStudy.findMany({
+    prisma.waCaseStudy.findMany({
       take: 5,
       where: {
         status: { in: ['APPROVED', 'REJECTED'] },
@@ -411,6 +415,30 @@ export default async function AdminDashboardPage() {
                 <Button variant="outline" className="w-full gap-2 dark:border-border dark:text-foreground dark:hover:bg-background">
                   <Settings className="h-4 w-4" />
                   System Settings
+                </Button>
+              </Link>
+              <Link href="/dashboard/admin/audit-logs">
+                <Button variant="outline" className="w-full gap-2 dark:border-border dark:text-foreground dark:hover:bg-background">
+                  <Shield className="h-4 w-4" />
+                  Audit Logs
+                </Button>
+              </Link>
+              <Link href="/dashboard/admin/retention">
+                <Button variant="outline" className="w-full gap-2 dark:border-border dark:text-foreground dark:hover:bg-background">
+                  <Database className="h-4 w-4" />
+                  Data Retention
+                </Button>
+              </Link>
+              <Link href="/dashboard/admin/gdpr">
+                <Button variant="outline" className="w-full gap-2 dark:border-border dark:text-foreground dark:hover:bg-background">
+                  <Trash2 className="h-4 w-4" />
+                  GDPR Requests
+                </Button>
+              </Link>
+              <Link href="/dashboard/admin/master-list">
+                <Button variant="outline" className="w-full gap-2 dark:border-border dark:text-foreground dark:hover:bg-background">
+                  <List className="h-4 w-4" />
+                  Master Lists
                 </Button>
               </Link>
             </div>

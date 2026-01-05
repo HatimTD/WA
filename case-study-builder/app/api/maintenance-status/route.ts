@@ -7,7 +7,7 @@ export async function GET() {
     const session = await auth();
 
     // Check maintenance mode
-    const maintenanceConfig = await prisma.systemConfig.findUnique({
+    const maintenanceConfig = await prisma.waSystemConfig.findUnique({
       where: { key: 'maintenance_mode' },
     });
 

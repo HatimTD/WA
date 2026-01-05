@@ -12,15 +12,29 @@ import StepThree from '@/components/case-study-form/step-three';
 import StepFour from '@/components/case-study-form/step-four';
 import StepFive from '@/components/case-study-form/step-five';
 import StepWPS from '@/components/case-study-form/step-wps';
-import { createCaseStudy } from '@/lib/actions/case-study-actions';
-import { saveWeldingProcedure } from '@/lib/actions/wps-actions';
+import StepCostCalculator from '@/components/case-study-form/step-cost-calculator';
+import ChallengeQualifier, { type QualifierResult } from '@/components/case-study-form/challenge-qualifier';
+import { waCreateCaseStudy } from '@/lib/actions/waCaseStudyActions';
+import { waSaveWeldingProcedure } from '@/lib/actions/waWpsActions';
 import { toast } from 'sonner';
+import { Label } from '@/components/ui/label';
+import NetSuiteCustomerSearch from '@/components/netsuite-customer-search';
+import { NetSuiteCustomer } from '@/lib/integrations/netsuite';
 
 export type CaseStudyFormData = {
   // Step 1: Case Type
   type: 'APPLICATION' | 'TECH' | 'STAR';
 
-  // Step 2: Basic Information
+  // Case Study Title
+  title: string;
+
+  // Step 2: Challenge Qualifier (BRD 3.1)
+  qualifierType?: 'NEW_CUSTOMER' | 'CROSS_SELL' | 'MAINTENANCE';
+  isTarget: boolean; // Counts toward BHAG 10,000 goal
+  qualifierCompleted: boolean; // Whether qualifier questions were answered
+  customerSelected: boolean; // Whether customer was selected from dropdown (not just typed)
+
+  // Step 3: Basic Information
   customerName: string;
   industry: string;
   location: string;
@@ -30,6 +44,7 @@ export type CaseStudyFormData = {
   wearType: string[];
   baseMetal: string;
   generalDimensions: string;
+  oem: string; // Original Equipment Manufacturer (BRD Section 5)
 
   // Step 3: Problem Description
   problemDescription: string;
@@ -49,6 +64,7 @@ export type CaseStudyFormData = {
   customerSavingsAmount: string;
   images: string[];
   supportingDocs: string[];
+  tags: string[];
 
   // Step WPS: Welding Procedure Specification (TECH & STAR only)
   wps?: {
@@ -92,6 +108,16 @@ export type CaseStudyFormData = {
     defectsObserved?: string;
     additionalNotes?: string;
   };
+
+  // Step Cost Calculator: Cost Reduction Calculator (STAR only - BRD 3.3)
+  costCalculator?: {
+    costOfPart?: string;
+    oldSolutionLifetime?: string;
+    waSolutionLifetime?: string;
+    partsUsedPerYear?: string;
+    maintenanceDowntimeCost?: string;
+    disassemblyAssemblyCost?: string;
+  };
 };
 
 export default function NewCaseStudyPage() {
@@ -100,6 +126,11 @@ export default function NewCaseStudyPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<CaseStudyFormData>({
     type: 'APPLICATION',
+    title: '',
+    qualifierType: undefined,
+    isTarget: false,
+    qualifierCompleted: false,
+    customerSelected: false,
     customerName: '',
     industry: '',
     location: '',
@@ -109,6 +140,7 @@ export default function NewCaseStudyPage() {
     wearType: [],
     baseMetal: '',
     generalDimensions: '',
+    oem: '',
     problemDescription: '',
     previousSolution: '',
     previousServiceLife: '',
@@ -122,21 +154,29 @@ export default function NewCaseStudyPage() {
     customerSavingsAmount: '',
     images: [],
     supportingDocs: [],
+    tags: [],
     wps: undefined,
+    costCalculator: undefined,
   });
 
-  // Dynamic steps based on case type
+  // Dynamic steps based on case type (BRD 3.3)
   const STEPS = useMemo(() => {
     const baseSteps = [
       { number: 1, title: 'Case Type', description: 'Select case study type' },
-      { number: 2, title: 'Basic Info', description: 'Customer and component details' },
-      { number: 3, title: 'Problem', description: 'Describe the challenge' },
-      { number: 4, title: 'Solution', description: 'WA solution details' },
+      { number: 2, title: 'Qualifier', description: 'Challenge qualification' },
+      { number: 3, title: 'Basic Info', description: 'Customer and component details' },
+      { number: 4, title: 'Problem', description: 'Describe the challenge' },
+      { number: 5, title: 'Solution', description: 'WA solution details' },
     ];
 
-    // Add WPS step for TECH and STAR cases
+    // Add WPS step for TECH and STAR cases (BRD 3.3 - Tech Case additive requirements)
     if (formData.type === 'TECH' || formData.type === 'STAR') {
-      baseSteps.push({ number: 5, title: 'WPS', description: 'Welding procedure specification' });
+      baseSteps.push({ number: 6, title: 'WPS', description: 'Welding procedure specification' });
+    }
+
+    // Add Cost Calculator step for STAR cases only (BRD 3.3 - Star Case additive requirements)
+    if (formData.type === 'STAR') {
+      baseSteps.push({ number: baseSteps.length + 1, title: 'Cost Calculator', description: 'Cost reduction analysis' });
     }
 
     // Always add Review step last
@@ -153,41 +193,84 @@ export default function NewCaseStudyPage() {
     setFormData((prev) => ({ ...prev, ...data }));
   };
 
-  const validateStep = (step: number): boolean => {
+  // Get missing fields for a step (returns array of field names that are missing)
+  const getMissingFields = (step: number): string[] => {
     const currentStepData = STEPS.find(s => s.number === step);
-    if (!currentStepData) return false;
+    if (!currentStepData) return [];
+
+    const missing: string[] = [];
 
     switch (currentStepData.title) {
       case 'Case Type':
-        return !!formData.type;
+        if (!formData.type) missing.push('Case Type');
+        break;
+      case 'Qualifier':
+        if (!formData.customerName) missing.push('Customer Name');
+        if (!formData.customerSelected) missing.push('Customer Selection (click a customer from the list)');
+        if (!formData.qualifierCompleted) missing.push('Qualifier Questions');
+        break;
       case 'Basic Info':
-        return !!(
-          formData.customerName &&
-          formData.industry &&
-          formData.location &&
-          formData.componentWorkpiece &&
-          formData.workType &&
-          formData.wearType.length > 0
-        );
+        if (!formData.customerName) missing.push('Customer Name');
+        if (!formData.industry) missing.push('Industry');
+        if (!formData.location) missing.push('Location');
+        if (!formData.componentWorkpiece) missing.push('Component/Workpiece');
+        if (!formData.workType) missing.push('Work Type');
+        if (!formData.wearType || formData.wearType.length === 0) missing.push('Type of Wear');
+        if (!formData.baseMetal) missing.push('Base Metal');
+        if (!formData.generalDimensions) missing.push('General Dimensions');
+        break;
       case 'Problem':
-        return !!formData.problemDescription;
+        if (!formData.problemDescription) missing.push('Problem Description');
+        if (!formData.previousSolution) missing.push('Previous Solution');
+        break;
       case 'Solution':
-        return !!(formData.waSolution && formData.waProduct);
+        if (!formData.waSolution) missing.push('WA Solution');
+        if (!formData.waProduct) missing.push('WA Product');
+        if (!formData.technicalAdvantages) missing.push('Technical Advantages');
+        break;
       case 'WPS':
-        // WPS required fields: waProductName and weldingProcess
-        return !!(formData.wps?.waProductName && formData.wps?.weldingProcess);
+        if (!formData.wps?.baseMetalType) missing.push('Base Metal Type');
+        if (!formData.wps?.surfacePreparation) missing.push('Surface Preparation');
+        if (!formData.wps?.waProductName) missing.push('WA Product Name');
+        if (!formData.wps?.shieldingGas) missing.push('Shielding Gas');
+        if (!formData.wps?.weldingProcess) missing.push('Welding Process');
+        if (!formData.wps?.weldingPosition) missing.push('Welding Position');
+        if (!formData.wps?.oscillationWidth && !formData.wps?.oscillationSpeed) missing.push('Oscillation (Width or Speed)');
+        if (!formData.wps?.preheatTemperature && !formData.wps?.interpassTemperature) missing.push('Temperature (Preheat or Interpass)');
+        if (!formData.wps?.additionalNotes) missing.push('Additional WPS Notes');
+        break;
+      case 'Cost Calculator':
+        if (!formData.costCalculator?.costOfPart) missing.push('Cost of Part');
+        if (!formData.costCalculator?.partsUsedPerYear) missing.push('Parts Used Per Year');
+        if (!formData.costCalculator?.oldSolutionLifetime) missing.push('Old Solution Lifetime');
+        if (!formData.costCalculator?.waSolutionLifetime) missing.push('WA Solution Lifetime');
+        if (!formData.costCalculator?.maintenanceDowntimeCost) missing.push('Maintenance/Downtime Cost');
+        if (!formData.costCalculator?.disassemblyAssemblyCost) missing.push('Disassembly/Assembly Cost');
+        break;
       case 'Review':
-        return true; // Review step always valid
-      default:
-        return false;
+        if (!formData.solutionValueRevenue) missing.push('Solution Value/Revenue');
+        if (!formData.annualPotentialRevenue) missing.push('Annual Potential Revenue');
+        if (!formData.customerSavingsAmount) missing.push('Customer Savings');
+        if (!formData.images || formData.images.length < 1) missing.push('At least 1 image');
+        break;
     }
+
+    return missing;
+  };
+
+  const validateStep = (step: number): boolean => {
+    return getMissingFields(step).length === 0;
   };
 
   const handleNext = () => {
-    if (validateStep(currentStep)) {
+    const missingFields = getMissingFields(currentStep);
+    if (missingFields.length === 0) {
       setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
     } else {
-      toast.error('Please fill in all required fields');
+      // Show specific missing fields in toast
+      const fieldList = missingFields.slice(0, 3).join(', ');
+      const moreCount = missingFields.length > 3 ? ` and ${missingFields.length - 3} more` : '';
+      toast.error(`Missing required fields: ${fieldList}${moreCount}`);
     }
   };
 
@@ -201,16 +284,20 @@ export default function NewCaseStudyPage() {
       const hasWPS = formData.type === 'TECH' || formData.type === 'STAR';
 
       // Create the case study draft
-      const result = await createCaseStudy({ ...formData, status: 'DRAFT' });
+      const result = await waCreateCaseStudy({ ...formData, status: 'DRAFT' });
 
-      // If TECH or STAR and WPS data exists, save WPS
-      if (hasWPS && formData.wps && result.id && formData.wps.waProductName && formData.wps.weldingProcess) {
-        await saveWeldingProcedure({
-          caseStudyId: result.id,
-          waProductName: formData.wps.waProductName,
-          weldingProcess: formData.wps.weldingProcess,
-          ...formData.wps,
-        });
+      // If TECH or STAR and WPS data exists, save WPS (save any filled data for drafts)
+      if (hasWPS && formData.wps && result.id) {
+        // Check if any WPS field has data
+        const hasAnyWpsData = Object.values(formData.wps).some(v => v !== undefined && v !== '' && v !== null);
+        if (hasAnyWpsData) {
+          await waSaveWeldingProcedure({
+            caseStudyId: result.id,
+            waProductName: formData.wps.waProductName || '',
+            weldingProcess: formData.wps.weldingProcess || '',
+            ...formData.wps,
+          });
+        }
       }
 
       toast.success('Draft saved successfully');
@@ -236,11 +323,11 @@ export default function NewCaseStudyPage() {
     setIsSubmitting(true);
     try {
       // Create the case study
-      const result = await createCaseStudy({ ...formData, status: 'SUBMITTED' });
+      const result = await waCreateCaseStudy({ ...formData, status: 'SUBMITTED' });
 
       // If TECH or STAR and WPS data exists, save WPS
       if (hasWPS && formData.wps && result.id) {
-        await saveWeldingProcedure({
+        await waSaveWeldingProcedure({
           caseStudyId: result.id,
           waProductName: formData.wps.waProductName || '',
           weldingProcess: formData.wps.weldingProcess || '',
@@ -287,7 +374,7 @@ export default function NewCaseStudyPage() {
                       currentStep === step.number
                         ? 'bg-wa-green-600 text-white'
                         : currentStep > step.number
-                        ? 'bg-green-500 text-white'
+                        ? 'bg-green-700 text-white' /* Darkened for WCAG AA contrast */
                         : 'bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
                     }`}
                   >
@@ -300,7 +387,7 @@ export default function NewCaseStudyPage() {
                   {step.number < STEPS.length && (
                     <div
                       className={`absolute top-5 left-[60%] w-full h-0.5 ${
-                        currentStep > step.number ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
+                        currentStep > step.number ? 'bg-green-600' : 'bg-gray-200 dark:bg-gray-700'
                       }`}
                       style={{ zIndex: -1 }}
                     />
@@ -323,8 +410,99 @@ export default function NewCaseStudyPage() {
           {STEPS[currentStep - 1]?.title === 'Case Type' && (
             <StepOne formData={formData} updateFormData={updateFormData} />
           )}
+          {STEPS[currentStep - 1]?.title === 'Qualifier' && (
+            <div className="space-y-6">
+              {/* Customer Name Search - NetSuite Integration (Modal) */}
+              <NetSuiteCustomerSearch
+                value={formData.customerName}
+                onChange={(value) => {
+                  // This is called when customer is cleared (value = '')
+                  if (!value) {
+                    updateFormData({
+                      customerName: '',
+                      customerSelected: false,
+                      qualifierCompleted: false,
+                      qualifierType: undefined,
+                      isTarget: false,
+                      // Also reset location/country/industry that were auto-filled
+                      location: '',
+                      country: '',
+                      industry: '',
+                    });
+                  }
+                }}
+                onCustomerSelect={(customer: NetSuiteCustomer) => {
+                  // Auto-fill fields from NetSuite data and mark as selected
+                  const updates: Partial<CaseStudyFormData> = {
+                    customerName: customer.companyName,
+                    customerSelected: true, // Mark that customer was clicked/selected
+                    // Reset qualifier when new customer is selected
+                    qualifierCompleted: false,
+                    qualifierType: undefined,
+                    isTarget: false,
+                  };
+                  if (customer.city) updates.location = customer.city;
+                  if (customer.country) updates.country = customer.country;
+                  if (customer.industry) updates.industry = customer.industry;
+
+                  updateFormData(updates);
+                  console.log(`[Qualifier] Customer selected from NetSuite:`, customer.companyName);
+                }}
+                label="Customer Name"
+                required
+                placeholder="Click to search customers..."
+              />
+
+              {/* Challenge Qualifier - only show once customer is SELECTED from dropdown */}
+              {formData.customerSelected && formData.customerName && (
+                <ChallengeQualifier
+                  key={formData.customerName} // Force re-mount when customer changes
+                  customerName={formData.customerName}
+                  onComplete={(result: QualifierResult) => {
+                    updateFormData({
+                      qualifierType: result.qualifierType,
+                      isTarget: result.isTarget,
+                      qualifierCompleted: true,
+                    });
+                  }}
+                  onReset={() => {
+                    // Reset qualifier state when user clicks "Re-evaluate"
+                    updateFormData({
+                      qualifierType: undefined,
+                      isTarget: false,
+                      qualifierCompleted: false,
+                    });
+                  }}
+                />
+              )}
+
+              {/* Show qualification result summary */}
+              {formData.qualifierCompleted && (
+                <div className={`p-4 rounded-lg border ${
+                  formData.isTarget
+                    ? 'bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800'
+                    : 'bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-sm font-medium ${
+                      formData.isTarget ? 'text-green-700 dark:text-green-300' : 'text-blue-700 dark:text-blue-300'
+                    }`}>
+                      {formData.isTarget ? '✓ Counts toward BHAG 10,000 goal' : 'ℹ Maintenance case (does not count toward BHAG)'}
+                    </span>
+                  </div>
+                  <p className="text-sm mt-1 text-gray-600 dark:text-gray-400">
+                    Qualifier Type: {formData.qualifierType?.replace('_', ' ')}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
           {STEPS[currentStep - 1]?.title === 'Basic Info' && (
-            <StepTwo formData={formData} updateFormData={updateFormData} />
+            <StepTwo
+              formData={formData}
+              updateFormData={updateFormData}
+              customerReadOnly={formData.customerSelected}
+            />
           )}
           {STEPS[currentStep - 1]?.title === 'Problem' && (
             <StepThree formData={formData} updateFormData={updateFormData} />
@@ -334,6 +512,9 @@ export default function NewCaseStudyPage() {
           )}
           {STEPS[currentStep - 1]?.title === 'WPS' && (
             <StepWPS formData={formData} updateFormData={updateFormData} />
+          )}
+          {STEPS[currentStep - 1]?.title === 'Cost Calculator' && (
+            <StepCostCalculator formData={formData} updateFormData={updateFormData} />
           )}
           {STEPS[currentStep - 1]?.title === 'Review' && (
             <StepFive formData={formData} updateFormData={updateFormData} />
@@ -358,15 +539,18 @@ export default function NewCaseStudyPage() {
         </div>
 
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={handleSaveDraft}
-            disabled={isSubmitting}
-            className="dark:border-border"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            Save Draft
-          </Button>
+          {/* Hide Save Draft for first two steps (Case Type and Qualifier) */}
+          {currentStep > 2 && (
+            <Button
+              variant="outline"
+              onClick={handleSaveDraft}
+              disabled={isSubmitting}
+              className="dark:border-border"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Save Draft
+            </Button>
+          )}
 
           {currentStep < STEPS.length ? (
             <Button onClick={handleNext} disabled={isSubmitting}>

@@ -3,20 +3,36 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ExternalLink } from 'lucide-react';
-import { LibrarySearch } from '@/components/library-search';
+import { ExternalLink, User, CheckCircle2 } from 'lucide-react';
 import { LibraryFilters } from '@/components/library-filters';
 import { SaveButton } from '@/components/save-button';
+import LanguageIndicator from '@/components/language-indicator';
+
+// Fallback wear types if master data not available
+const FALLBACK_WEAR_TYPES = ['ABRASION', 'IMPACT', 'CORROSION', 'TEMPERATURE', 'COMBINATION'];
 
 export const metadata = {
   title: 'Case Study Library - Welding Alloys',
   description: 'Browse approved industrial case studies from Welding Alloys',
 };
 
+/**
+ * BRD Section 5 - Search & Filtering
+ * Database must be searchable by: Tags, Industry, Component, OEM, Wear Type,
+ * WA Product, Country, Customer, Revenue, and Contributor
+ */
 interface SearchParams {
   q?: string;
   type?: string;
   industry?: string;
+  oem?: string;
+  component?: string;
+  wearType?: string;
+  waProduct?: string;
+  country?: string;
+  contributor?: string;
+  minRevenue?: string;
+  maxRevenue?: string;
   page?: string;
 }
 
@@ -29,6 +45,17 @@ export default async function LibraryPage({
   const query = params.q || '';
   const typeFilter = params.type || '';
   const industryFilter = params.industry || '';
+  const oemFilter = params.oem || '';
+  // BRD Required Filters
+  const componentFilter = params.component || '';
+  // Support multiple wear types (comma-separated in URL)
+  const wearTypeFilter = params.wearType || '';
+  const wearTypeFilters = wearTypeFilter ? wearTypeFilter.split(',').map(w => w.trim().toUpperCase()) : [];
+  const waProductFilter = params.waProduct || '';
+  const countryFilter = params.country || '';
+  const contributorFilter = params.contributor || '';
+  const minRevenue = params.minRevenue ? parseFloat(params.minRevenue) : null;
+  const maxRevenue = params.maxRevenue ? parseFloat(params.maxRevenue) : null;
   const page = parseInt(params.page || '1');
   const perPage = 12;
 
@@ -39,11 +66,13 @@ export default async function LibraryPage({
 
   if (query) {
     where.OR = [
+      { title: { contains: query, mode: 'insensitive' } },
       { customerName: { contains: query, mode: 'insensitive' } },
       { industry: { contains: query, mode: 'insensitive' } },
       { componentWorkpiece: { contains: query, mode: 'insensitive' } },
       { waProduct: { contains: query, mode: 'insensitive' } },
       { location: { contains: query, mode: 'insensitive' } },
+      { competitorName: { contains: query, mode: 'insensitive' } },
     ];
   }
 
@@ -55,62 +84,164 @@ export default async function LibraryPage({
     where.industry = { contains: industryFilter, mode: 'insensitive' };
   }
 
-  // Fetch cases with pagination
-  const [cases, totalCount, industries, typeCounts] = await Promise.all([
-    prisma.caseStudy.findMany({
+  if (oemFilter) {
+    where.competitorName = { contains: oemFilter, mode: 'insensitive' };
+  }
+
+  // BRD: Component/Workpiece filter
+  if (componentFilter) {
+    where.componentWorkpiece = { contains: componentFilter, mode: 'insensitive' };
+  }
+
+  // BRD: Wear Type filter (supports multiple selection, case-insensitive)
+  if (wearTypeFilters.length > 0) {
+    where.wearType = { hasSome: wearTypeFilters };
+  }
+
+  // BRD: WA Product filter
+  if (waProductFilter) {
+    where.waProduct = { contains: waProductFilter, mode: 'insensitive' };
+  }
+
+  // BRD: Country filter
+  if (countryFilter) {
+    where.country = { contains: countryFilter, mode: 'insensitive' };
+  }
+
+  // BRD: Contributor filter
+  if (contributorFilter) {
+    where.contributorId = contributorFilter;
+  }
+
+  // BRD: Revenue filter
+  if (minRevenue !== null || maxRevenue !== null) {
+    where.annualPotentialRevenue = {};
+    if (minRevenue !== null) {
+      where.annualPotentialRevenue.gte = minRevenue;
+    }
+    if (maxRevenue !== null) {
+      where.annualPotentialRevenue.lte = maxRevenue;
+    }
+  }
+
+  // Fetch cases with pagination and all filter options (BRD Section 5)
+  // Sort by approvedAt descending, with null values last (use createdAt as fallback)
+  const [cases, totalCount, industries, oems, typeCounts, components, waProducts, countries, contributors, masterWearTypes] = await Promise.all([
+    prisma.waCaseStudy.findMany({
       where,
       select: {
         id: true,
+        title: true,
         customerName: true,
         industry: true,
         location: true,
+        country: true,
         componentWorkpiece: true,
         type: true,
         waProduct: true,
+        wearType: true,
         problemDescription: true,
         approvedAt: true,
+        createdAt: true,
+        originalLanguage: true,
+        translationAvailable: true,
+        solutionValueRevenue: true,
+        contributor: {
+          select: { id: true, name: true },
+        },
+        approver: {
+          select: { id: true, name: true },
+        },
       },
-      orderBy: { approvedAt: 'desc' },
+      orderBy: [
+        { approvedAt: 'desc' },
+        { createdAt: 'desc' },
+      ],
       take: perPage,
       skip: (page - 1) * perPage,
     }),
-    prisma.caseStudy.count({ where }),
-    prisma.caseStudy.findMany({
+    prisma.waCaseStudy.count({ where }),
+    prisma.waCaseStudy.findMany({
       where: { status: 'APPROVED' },
       select: { industry: true },
       distinct: ['industry'],
     }),
-    prisma.caseStudy.groupBy({
+    prisma.waCaseStudy.findMany({
+      where: { status: 'APPROVED', competitorName: { not: null } },
+      select: { competitorName: true },
+      distinct: ['competitorName'],
+    }),
+    prisma.waCaseStudy.groupBy({
       by: ['type'],
       where: { status: 'APPROVED' },
       _count: true,
+    }),
+    // BRD: Component options
+    prisma.waCaseStudy.findMany({
+      where: { status: 'APPROVED' },
+      select: { componentWorkpiece: true },
+      distinct: ['componentWorkpiece'],
+    }),
+    // BRD: WA Product options
+    prisma.waCaseStudy.findMany({
+      where: { status: 'APPROVED' },
+      select: { waProduct: true },
+      distinct: ['waProduct'],
+    }),
+    // BRD: Country options
+    prisma.waCaseStudy.findMany({
+      where: { status: 'APPROVED', country: { not: null } },
+      select: { country: true },
+      distinct: ['country'],
+    }),
+    // BRD: Contributor options
+    prisma.waCaseStudy.findMany({
+      where: { status: 'APPROVED' },
+      select: {
+        contributorId: true,
+        contributor: { select: { id: true, name: true } },
+      },
+      distinct: ['contributorId'],
+    }),
+    // Fetch wear types from master data (admin-managed)
+    prisma.waMasterList.findMany({
+      where: {
+        isActive: true,
+        listKey: { keyName: 'WearType' },
+      },
+      orderBy: [{ sortOrder: 'asc' }, { value: 'asc' }],
+      select: {
+        id: true,
+        value: true,
+      },
     }),
   ]);
 
   const totalPages = Math.ceil(totalCount / perPage);
 
+  // Use master data wear types, fallback to hardcoded if none found
+  const wearTypeOptions = masterWearTypes.length > 0
+    ? masterWearTypes.map(wt => wt.value)
+    : FALLBACK_WEAR_TYPES;
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">Case Study Library</h1>
-        <p className="text-gray-600 dark:text-muted-foreground mt-2">
-          Browse {totalCount.toLocaleString()} approved industrial solutions
-        </p>
+      {/* Header - Responsive Title */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-foreground truncate">
+            Case Study Library
+          </h1>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-muted-foreground mt-1 sm:mt-2">
+            Browse {totalCount.toLocaleString()} approved industrial solutions
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-muted-foreground">
+          <span className="hidden sm:inline">
+            {totalPages > 1 && `Page ${page} of ${totalPages}`}
+          </span>
+        </div>
       </div>
-
-      {/* Dynamic Search Section */}
-      <Card role="article" className="border-2 border-wa-green-100 bg-white dark:bg-card dark:border-primary">
-        <CardHeader>
-          <CardTitle className="text-lg dark:text-foreground">Quick Search</CardTitle>
-          <CardDescription className="dark:text-muted-foreground">
-            Start typing to search and filter cases in real-time
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <LibrarySearch />
-        </CardContent>
-      </Card>
 
       <div className="grid lg:grid-cols-4 gap-6">
         {/* Sidebar Filters */}
@@ -122,10 +253,26 @@ export default async function LibraryPage({
             <CardContent className="space-y-6">
               <LibraryFilters
                 industries={industries}
+                oems={oems}
                 typeCounts={typeCounts}
                 initialQuery={query}
                 typeFilter={typeFilter}
                 industryFilter={industryFilter}
+                oemFilter={oemFilter}
+                // BRD Required Filter Options
+                components={components}
+                waProducts={waProducts}
+                countries={countries}
+                wearTypes={wearTypeOptions}
+                contributors={contributors}
+                // BRD Current Filter Values
+                componentFilter={componentFilter}
+                waProductFilter={waProductFilter}
+                countryFilter={countryFilter}
+                wearTypeFilter={wearTypeFilter}
+                contributorFilter={contributorFilter}
+                minRevenue={minRevenue}
+                maxRevenue={maxRevenue}
               />
             </CardContent>
           </Card>
@@ -139,7 +286,7 @@ export default async function LibraryPage({
               Showing {(page - 1) * perPage + 1}-{Math.min(page * perPage, totalCount)} of{' '}
               {totalCount} cases
             </p>
-            {(query || typeFilter || industryFilter) && (
+            {(query || typeFilter || industryFilter || oemFilter) && (
               <Link href="/dashboard/library">
                 <Button variant="outline" size="sm" className="dark:border-border dark:text-foreground dark:hover:bg-accent">
                   Clear Filters
@@ -159,48 +306,124 @@ export default async function LibraryPage({
               {cases.map((caseStudy) => (
                 <Card role="article"
                   key={caseStudy.id}
-                  className="hover:shadow-lg transition-shadow cursor-pointer dark:bg-card dark:border-border dark:hover:border-primary"
+                  className="group hover:shadow-xl transition-all duration-300 cursor-pointer dark:bg-card dark:border-border dark:hover:border-primary overflow-hidden"
                 >
-                  <CardHeader>
+                  {/* Type Badge Banner */}
+                  <div className={`h-1.5 ${
+                    caseStudy.type === 'STAR'
+                      ? 'bg-gradient-to-r from-yellow-400 to-amber-500'
+                      : caseStudy.type === 'TECH'
+                      ? 'bg-gradient-to-r from-purple-500 to-violet-600'
+                      : 'bg-gradient-to-r from-blue-500 to-cyan-500'
+                  }`} />
+
+                  <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-2">
-                      <CardTitle className="text-lg line-clamp-2 dark:text-foreground">
-                        {caseStudy.customerName}
-                      </CardTitle>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <SaveButton caseStudyId={caseStudy.id} variant="icon" size="sm" />
-                        <Badge
-                          variant={
-                            caseStudy.type === 'STAR'
-                              ? 'default'
-                              : caseStudy.type === 'TECH'
-                              ? 'secondary'
-                              : 'outline'
-                          }
-                        >
-                          {caseStudy.type}
-                        </Badge>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge
+                            variant={
+                              caseStudy.type === 'STAR'
+                                ? 'default'
+                                : caseStudy.type === 'TECH'
+                                ? 'secondary'
+                                : 'outline'
+                            }
+                            className={`text-xs ${
+                              caseStudy.type === 'STAR'
+                                ? 'bg-yellow-500 hover:bg-yellow-600'
+                                : ''
+                            }`}
+                          >
+                            {caseStudy.type}
+                          </Badge>
+                          {/* Approved Date Badge */}
+                          {caseStudy.approvedAt && (
+                            <Badge variant="outline" className="text-xs gap-1 text-green-600 border-green-200 dark:text-green-400 dark:border-green-800">
+                              <CheckCircle2 className="h-3 w-3" />
+                              {new Date(caseStudy.approvedAt).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric'
+                              })}
+                            </Badge>
+                          )}
+                        </div>
+                        <CardTitle className="text-base font-semibold line-clamp-2 dark:text-foreground group-hover:text-wa-green-600 dark:group-hover:text-primary transition-colors">
+                          {caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}
+                        </CardTitle>
+                      </div>
+                      <SaveButton caseStudyId={caseStudy.id} variant="icon" size="sm" />
+                    </div>
+                    <CardDescription className="flex items-center gap-1 text-sm dark:text-muted-foreground mt-1">
+                      <span className="truncate">{caseStudy.industry}</span>
+                      <span>•</span>
+                      <span className="truncate">{caseStudy.location}{caseStudy.country ? `, ${caseStudy.country}` : ''}</span>
+                    </CardDescription>
+                    {/* Language Indicator - badge only, no link (link is on detail page) */}
+                    {caseStudy.originalLanguage && caseStudy.originalLanguage !== 'en' && (
+                      <div className="mt-2">
+                        <LanguageIndicator
+                          originalLanguage={caseStudy.originalLanguage}
+                          translationAvailable={caseStudy.translationAvailable}
+                          caseStudyId={caseStudy.id}
+                          variant="badge"
+                          showLink={false}
+                        />
+                      </div>
+                    )}
+                  </CardHeader>
+
+                  <CardContent className="space-y-3 pt-0">
+                    {/* Key Details Grid */}
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-md p-2">
+                        <p className="text-gray-500 dark:text-gray-400 mb-0.5">Component</p>
+                        <p className="font-medium text-gray-900 dark:text-foreground truncate">{caseStudy.componentWorkpiece}</p>
+                      </div>
+                      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-md p-2">
+                        <p className="text-gray-500 dark:text-gray-400 mb-0.5">WA Product</p>
+                        <p className="font-medium text-gray-900 dark:text-foreground truncate">{caseStudy.waProduct}</p>
                       </div>
                     </div>
-                    <CardDescription className="line-clamp-1 dark:text-muted-foreground">
-                      {caseStudy.industry} • {caseStudy.location}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="space-y-1 text-sm">
-                      <p className="text-gray-600 dark:text-muted-foreground">
-                        <span className="font-medium dark:text-foreground">Component:</span>{' '}
-                        {caseStudy.componentWorkpiece}
-                      </p>
-                      <p className="text-gray-600 dark:text-muted-foreground">
-                        <span className="font-medium dark:text-foreground">Product:</span> {caseStudy.waProduct}
-                      </p>
-                    </div>
-                    <p className="text-sm text-gray-700 dark:text-muted-foreground line-clamp-3">
+
+                    {/* Wear Types */}
+                    {caseStudy.wearType && caseStudy.wearType.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {caseStudy.wearType.slice(0, 3).map((wear) => (
+                          <Badge key={wear} variant="outline" className="text-xs py-0 px-1.5 bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800">
+                            {wear}
+                          </Badge>
+                        ))}
+                        {caseStudy.wearType.length > 3 && (
+                          <Badge variant="outline" className="text-xs py-0 px-1.5">
+                            +{caseStudy.wearType.length - 3}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Problem Description Preview */}
+                    <p className="text-sm text-gray-600 dark:text-muted-foreground line-clamp-2">
                       {caseStudy.problemDescription}
                     </p>
-                    <Link href={`/dashboard/library/${caseStudy.id}`}>
-                      <Button className="w-full gap-2 mt-4">
-                        View Full Case Study
+
+                    {/* Footer with Contributor & Revenue */}
+                    <div className="flex items-center justify-between pt-2 border-t dark:border-gray-700">
+                      <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-muted-foreground">
+                        <User className="h-3 w-3" />
+                        <span className="truncate max-w-[120px]">{caseStudy.contributor?.name || 'Unknown'}</span>
+                      </div>
+                      {caseStudy.solutionValueRevenue && (
+                        <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                          ${Number(caseStudy.solutionValueRevenue).toLocaleString('en-US')}
+                        </Badge>
+                      )}
+                    </div>
+
+                    <Link href={`/dashboard/library/${caseStudy.id}`} className="block">
+                      <Button className="w-full gap-2 bg-wa-green-600 hover:bg-wa-green-700 dark:bg-primary dark:hover:bg-primary/90 transition-all group-hover:shadow-md">
+                        View Details
                         <ExternalLink className="h-4 w-4" />
                       </Button>
                     </Link>
@@ -219,6 +442,7 @@ export default async function LibraryPage({
                   ...(query && { q: query }),
                   ...(typeFilter && { type: typeFilter }),
                   ...(industryFilter && { industry: industryFilter }),
+                  ...(oemFilter && { oem: oemFilter }),
                 }).toString()}`}
               >
                 <Button variant="outline" disabled={page === 1}>
@@ -247,6 +471,7 @@ export default async function LibraryPage({
                         ...(query && { q: query }),
                         ...(typeFilter && { type: typeFilter }),
                         ...(industryFilter && { industry: industryFilter }),
+                        ...(oemFilter && { oem: oemFilter }),
                       }).toString()}`}
                     >
                       <Button
@@ -267,6 +492,7 @@ export default async function LibraryPage({
                   ...(query && { q: query }),
                   ...(typeFilter && { type: typeFilter }),
                   ...(industryFilter && { industry: industryFilter }),
+                  ...(oemFilter && { oem: oemFilter }),
                 }).toString()}`}
               >
                 <Button variant="outline" disabled={page === totalPages}>

@@ -149,13 +149,13 @@ export default function VoiceInputDiagnostics() {
   };
 
   return (
-    <Card className="mt-4">
+    <Card className="mt-4 dark:bg-card dark:border-border">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <AlertCircle className="h-5 w-5 text-wa-green-600" />
+        <CardTitle className="flex items-center gap-2 dark:text-foreground">
+          <AlertCircle className="h-5 w-5 text-wa-green-600 dark:text-primary" />
           Voice Input Diagnostics
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="dark:text-muted-foreground">
           Run diagnostics to identify voice input issues
         </CardDescription>
       </CardHeader>
@@ -172,12 +172,12 @@ export default function VoiceInputDiagnostics() {
         </Button>
 
         {diagnostics && (
-          <div className="space-y-4 mt-4 p-4 bg-gray-50 rounded-lg">
+          <div className="space-y-4 mt-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
             <div>
-              <h3 className="font-semibold mb-2 flex items-center gap-2">
+              <h3 className="font-semibold mb-2 flex items-center gap-2 dark:text-foreground">
                 Environment
               </h3>
-              <div className="space-y-1 text-sm">
+              <div className="space-y-1 text-sm dark:text-gray-300">
                 <div className="flex items-center gap-2">
                   {getStatusIcon(diagnostics.environment.isSecureContext)}
                   <span>Secure Context: {diagnostics.environment.isSecureContext ? 'Yes' : 'No'}</span>
@@ -194,8 +194,8 @@ export default function VoiceInputDiagnostics() {
             </div>
 
             <div>
-              <h3 className="font-semibold mb-2">Speech API</h3>
-              <div className="space-y-1 text-sm">
+              <h3 className="font-semibold mb-2 dark:text-foreground">Speech API</h3>
+              <div className="space-y-1 text-sm dark:text-gray-300">
                 <div className="flex items-center gap-2">
                   {getStatusIcon(diagnostics.speechAPI.supported)}
                   <span>Supported: {diagnostics.speechAPI.supported ? `Yes (${diagnostics.speechAPI.type})` : 'No'}</span>
@@ -204,8 +204,8 @@ export default function VoiceInputDiagnostics() {
             </div>
 
             <div>
-              <h3 className="font-semibold mb-2">Permissions</h3>
-              <div className="space-y-1 text-sm">
+              <h3 className="font-semibold mb-2 dark:text-foreground">Permissions</h3>
+              <div className="space-y-1 text-sm dark:text-gray-300">
                 <div className="flex items-center gap-2">
                   {getStatusIcon(diagnostics.permissions.microphone)}
                   <span>Microphone: {diagnostics.permissions.microphone}</span>
@@ -214,8 +214,8 @@ export default function VoiceInputDiagnostics() {
             </div>
 
             <div>
-              <h3 className="font-semibold mb-2">Network Connectivity</h3>
-              <div className="space-y-1 text-sm">
+              <h3 className="font-semibold mb-2 dark:text-foreground">Network Connectivity</h3>
+              <div className="space-y-1 text-sm dark:text-gray-300">
                 <div className="flex items-center gap-2">
                   {getStatusIcon(diagnostics.connectivity.online)}
                   <span>Browser Online: {diagnostics.connectivity.online ? 'Yes' : 'No'}</span>
@@ -225,7 +225,7 @@ export default function VoiceInputDiagnostics() {
                   <span>
                     Google Reachable: {diagnostics.connectivity.googleReachable ? 'Yes' : 'No'}
                     {!diagnostics.connectivity.googleReachable && diagnostics.connectivity.googleError && (
-                      <span className="text-red-600"> ({diagnostics.connectivity.googleError})</span>
+                      <span className="text-red-600 dark:text-red-400"> ({diagnostics.connectivity.googleError})</span>
                     )}
                   </span>
                 </div>
@@ -234,28 +234,28 @@ export default function VoiceInputDiagnostics() {
                   <span>
                     Speech API Reachable: {diagnostics.connectivity.speechAPIReachable ? 'Yes' : 'No'}
                     {!diagnostics.connectivity.speechAPIReachable && diagnostics.connectivity.speechAPIError && (
-                      <span className="text-red-600"> ({diagnostics.connectivity.speechAPIError})</span>
+                      <span className="text-red-600 dark:text-red-400"> ({diagnostics.connectivity.speechAPIError})</span>
                     )}
                   </span>
                 </div>
                 {diagnostics.connectivity.speechAPIRealTest && (
-                  <div className="flex items-center gap-2 mt-2 p-2 bg-wa-green-50 rounded border border-wa-green-200">
+                  <div className="flex items-center gap-2 mt-2 p-2 bg-wa-green-50 dark:bg-wa-green-900/30 rounded border border-wa-green-200 dark:border-wa-green-700">
                     {getStatusIcon(diagnostics.connectivity.speechAPIRealTest === 'success')}
                     <div className="flex-1">
-                      <span className="font-semibold text-sm">
+                      <span className="font-semibold text-sm dark:text-foreground">
                         Real Speech API Test: {diagnostics.connectivity.speechAPIRealTest === 'success' ? 'PASSED ✓' : 'FAILED ✗'}
                       </span>
                       {diagnostics.connectivity.speechAPIRealTest === 'success' && (
-                        <p className="text-xs text-gray-600 mt-1">
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                           {diagnostics.connectivity.speechAPIRealTestMessage}
                         </p>
                       )}
                       {diagnostics.connectivity.speechAPIRealTest === 'failed' && (
                         <div className="text-xs mt-1">
-                          <p className="text-red-600 font-semibold">
+                          <p className="text-red-600 dark:text-red-400 font-semibold">
                             Error: {diagnostics.connectivity.speechAPIRealTestError}
                           </p>
-                          <p className="text-gray-600">
+                          <p className="text-gray-600 dark:text-gray-400">
                             {diagnostics.connectivity.speechAPIRealTestMessage}
                           </p>
                         </div>
@@ -267,9 +267,9 @@ export default function VoiceInputDiagnostics() {
             </div>
 
             {/* Recommendations */}
-            <div className="border-t pt-4">
-              <h3 className="font-semibold mb-2 text-orange-600">Recommendations</h3>
-              <ul className="list-disc list-inside space-y-1 text-sm">
+            <div className="border-t dark:border-border pt-4">
+              <h3 className="font-semibold mb-2 text-orange-600 dark:text-orange-400">Recommendations</h3>
+              <ul className="list-disc list-inside space-y-1 text-sm dark:text-gray-300">
                 {!diagnostics.environment.isSecureContext && (
                   <li>Use localhost or HTTPS (currently: {diagnostics.environment.protocol}//{diagnostics.environment.hostname})</li>
                 )}
@@ -289,7 +289,7 @@ export default function VoiceInputDiagnostics() {
                   <li>Speech API endpoints blocked. Check firewall or corporate network settings.</li>
                 )}
                 {diagnostics.connectivity.speechAPIRealTest === 'failed' && diagnostics.connectivity.speechAPIRealTestError === 'network' && (
-                  <li className="text-red-600 font-semibold">
+                  <li className="text-red-600 dark:text-red-400 font-semibold">
                     ⚠️ REAL TEST FAILED: Speech API is blocked by firewall/VPN/antivirus.
                     <div className="ml-6 mt-2 space-y-1 text-sm">
                       <div>Try these fixes:</div>
@@ -306,7 +306,7 @@ export default function VoiceInputDiagnostics() {
                  diagnostics.connectivity.online &&
                  diagnostics.connectivity.googleReachable &&
                  diagnostics.connectivity.speechAPIRealTest === 'success' && (
-                  <li className="text-green-600 font-semibold">✓ All checks passed including REAL test! Voice input works.</li>
+                  <li className="text-green-600 dark:text-green-400 font-semibold">✓ All checks passed including REAL test! Voice input works.</li>
                 )}
                 {diagnostics.environment.isSecureContext &&
                  diagnostics.speechAPI.supported &&
@@ -314,7 +314,7 @@ export default function VoiceInputDiagnostics() {
                  diagnostics.connectivity.googleReachable &&
                  diagnostics.connectivity.speechAPIRealTest === 'failed' &&
                  diagnostics.connectivity.speechAPIRealTestError !== 'network' && (
-                  <li className="text-orange-600">
+                  <li className="text-orange-600 dark:text-orange-400">
                     Basic checks passed but real test failed: {diagnostics.connectivity.speechAPIRealTestError}
                   </li>
                 )}
@@ -322,10 +322,10 @@ export default function VoiceInputDiagnostics() {
             </div>
 
             <details className="text-xs">
-              <summary className="cursor-pointer text-gray-600 hover:text-gray-900">
+              <summary className="cursor-pointer text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200">
                 View full diagnostic data
               </summary>
-              <pre className="mt-2 p-2 bg-gray-100 rounded overflow-auto">
+              <pre className="mt-2 p-2 bg-gray-100 dark:bg-gray-900 rounded overflow-auto text-gray-800 dark:text-gray-200">
                 {JSON.stringify(diagnostics, null, 2)}
               </pre>
             </details>

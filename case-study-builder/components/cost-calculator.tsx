@@ -5,8 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Calculator, TrendingDown, DollarSign, Clock, Package, Users } from 'lucide-react';
-import { saveCostCalculation } from '@/lib/actions/cost-calculator-actions';
+import { Textarea } from '@/components/ui/textarea';
+import { Calculator, TrendingDown, DollarSign, Clock, Package, Users, Wrench, Settings, Sparkles } from 'lucide-react';
+import { waSaveCostCalculation } from '@/lib/actions/waCostCalculatorActions';
 
 type CostCalculatorProps = {
   caseStudyId: string;
@@ -19,6 +20,15 @@ type CostCalculatorProps = {
     downtimeCostAfter: number;
     maintenanceFrequencyBefore: number;
     maintenanceFrequencyAfter: number;
+    costOfPart?: number;
+    oldSolutionLifetimeDays?: number;
+    waSolutionLifetimeDays?: number;
+    partsUsedPerYear?: number;
+    maintenanceRepairCostBefore?: number;
+    maintenanceRepairCostAfter?: number;
+    disassemblyCostBefore?: number;
+    disassemblyCostAfter?: number;
+    extraBenefits?: string;
   };
 };
 
@@ -32,21 +42,45 @@ export default function CostCalculator({ caseStudyId, existingData }: CostCalcul
     downtimeCostAfter: existingData?.downtimeCostAfter || 0,
     maintenanceFrequencyBefore: existingData?.maintenanceFrequencyBefore || 12,
     maintenanceFrequencyAfter: existingData?.maintenanceFrequencyAfter || 4,
+    costOfPart: existingData?.costOfPart || 0,
+    oldSolutionLifetimeDays: existingData?.oldSolutionLifetimeDays || 0,
+    waSolutionLifetimeDays: existingData?.waSolutionLifetimeDays || 0,
+    partsUsedPerYear: existingData?.partsUsedPerYear || 0,
+    maintenanceRepairCostBefore: existingData?.maintenanceRepairCostBefore || 0,
+    maintenanceRepairCostAfter: existingData?.maintenanceRepairCostAfter || 0,
+    disassemblyCostBefore: existingData?.disassemblyCostBefore || 0,
+    disassemblyCostAfter: existingData?.disassemblyCostAfter || 0,
+    extraBenefits: existingData?.extraBenefits || '',
   });
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
 
   // Auto-calculate totals and savings
+  // Calculate part replacement cost based on lifecycle
+  const partReplacementCostBefore = values.costOfPart && values.oldSolutionLifetimeDays && values.partsUsedPerYear
+    ? (values.costOfPart * values.partsUsedPerYear * 365) / values.oldSolutionLifetimeDays
+    : 0;
+
+  const partReplacementCostAfter = values.costOfPart && values.waSolutionLifetimeDays && values.partsUsedPerYear
+    ? (values.costOfPart * values.partsUsedPerYear * 365) / values.waSolutionLifetimeDays
+    : 0;
+
   const totalCostBefore =
     values.materialCostBefore +
     values.laborCostBefore +
-    values.downtimeCostBefore;
+    values.downtimeCostBefore +
+    values.maintenanceRepairCostBefore +
+    (values.disassemblyCostBefore * values.maintenanceFrequencyBefore) +
+    partReplacementCostBefore;
 
   const totalCostAfter =
     values.materialCostAfter +
     values.laborCostAfter +
-    values.downtimeCostAfter;
+    values.downtimeCostAfter +
+    values.maintenanceRepairCostAfter +
+    (values.disassemblyCostAfter * values.maintenanceFrequencyAfter) +
+    partReplacementCostAfter;
 
   const annualSavings = totalCostBefore - totalCostAfter;
   const savingsPercentage = totalCostBefore > 0
@@ -78,8 +112,8 @@ export default function CostCalculator({ caseStudyId, existingData }: CostCalcul
     setSaveMessage('');
 
     try {
-      console.log('[CostCalculator] Calling saveCostCalculation...');
-      const result = await saveCostCalculation({
+      console.log('[CostCalculator] Calling waSaveCostCalculation...');
+      const result = await waSaveCostCalculation({
         caseStudyId,
         ...values,
         totalCostBefore,
@@ -289,7 +323,182 @@ export default function CostCalculator({ caseStudyId, existingData }: CostCalcul
             </div>
           </CardContent>
         </Card>
+
+        {/* Part Lifecycle Costs */}
+        <Card className="dark:bg-card dark:border-border">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg dark:text-foreground">
+              <Settings className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              Part Lifecycle Costs
+            </CardTitle>
+            <CardDescription className="dark:text-muted-foreground">
+              Calculate cost savings based on part lifetime improvement
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="costOfPart" className="dark:text-foreground">Cost of Part (€)</Label>
+              <Input
+                id="costOfPart"
+                type="number"
+                step="0.01"
+                value={values.costOfPart || ''}
+                onChange={(e) => handleChange('costOfPart', e.target.value)}
+                placeholder="0.00"
+                className="dark:bg-input dark:border-border dark:text-foreground"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="oldSolutionLifetimeDays" className="dark:text-foreground">Old Solution Lifetime (days)</Label>
+                <Input
+                  id="oldSolutionLifetimeDays"
+                  type="number"
+                  value={values.oldSolutionLifetimeDays || ''}
+                  onChange={(e) => handleChange('oldSolutionLifetimeDays', e.target.value)}
+                  placeholder="0"
+                  className="dark:bg-input dark:border-border dark:text-foreground"
+                />
+              </div>
+              <div>
+                <Label htmlFor="waSolutionLifetimeDays" className="dark:text-foreground">WA Solution Lifetime (days)</Label>
+                <Input
+                  id="waSolutionLifetimeDays"
+                  type="number"
+                  value={values.waSolutionLifetimeDays || ''}
+                  onChange={(e) => handleChange('waSolutionLifetimeDays', e.target.value)}
+                  placeholder="0"
+                  className="dark:bg-input dark:border-border dark:text-foreground"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="partsUsedPerYear" className="dark:text-foreground">Parts Used per Year</Label>
+              <Input
+                id="partsUsedPerYear"
+                type="number"
+                value={values.partsUsedPerYear || ''}
+                onChange={(e) => handleChange('partsUsedPerYear', e.target.value)}
+                placeholder="0"
+                className="dark:bg-input dark:border-border dark:text-foreground"
+              />
+            </div>
+            <div className="pt-2 border-t dark:border-border">
+              <p className="text-sm font-medium text-gray-700 dark:text-muted-foreground">Annual Part Replacement Savings:</p>
+              <p className="text-2xl font-bold text-green-600 dark:text-primary">
+                €{(partReplacementCostBefore - partReplacementCostAfter).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Maintenance & Repair Costs */}
+        <Card className="dark:bg-card dark:border-border">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg dark:text-foreground">
+              <Wrench className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              Maintenance & Repair Costs
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="maintenanceRepairCostBefore" className="dark:text-foreground">Before (€/year)</Label>
+              <Input
+                id="maintenanceRepairCostBefore"
+                type="number"
+                step="0.01"
+                value={values.maintenanceRepairCostBefore || ''}
+                onChange={(e) => handleChange('maintenanceRepairCostBefore', e.target.value)}
+                placeholder="0.00"
+                className="dark:bg-input dark:border-border dark:text-foreground"
+              />
+            </div>
+            <div>
+              <Label htmlFor="maintenanceRepairCostAfter" className="dark:text-foreground">After (€/year)</Label>
+              <Input
+                id="maintenanceRepairCostAfter"
+                type="number"
+                step="0.01"
+                value={values.maintenanceRepairCostAfter || ''}
+                onChange={(e) => handleChange('maintenanceRepairCostAfter', e.target.value)}
+                placeholder="0.00"
+                className="dark:bg-input dark:border-border dark:text-foreground"
+              />
+            </div>
+            <div className="pt-2 border-t dark:border-border">
+              <p className="text-sm font-medium text-gray-700 dark:text-muted-foreground">Savings:</p>
+              <p className="text-2xl font-bold text-green-600 dark:text-primary">
+                €{(values.maintenanceRepairCostBefore - values.maintenanceRepairCostAfter).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Disassembly/Assembly Costs */}
+        <Card className="dark:bg-card dark:border-border">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg dark:text-foreground">
+              <Settings className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+              Disassembly/Assembly Costs
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="disassemblyCostBefore" className="dark:text-foreground">Before (€/event)</Label>
+              <Input
+                id="disassemblyCostBefore"
+                type="number"
+                step="0.01"
+                value={values.disassemblyCostBefore || ''}
+                onChange={(e) => handleChange('disassemblyCostBefore', e.target.value)}
+                placeholder="0.00"
+                className="dark:bg-input dark:border-border dark:text-foreground"
+              />
+            </div>
+            <div>
+              <Label htmlFor="disassemblyCostAfter" className="dark:text-foreground">After (€/event)</Label>
+              <Input
+                id="disassemblyCostAfter"
+                type="number"
+                step="0.01"
+                value={values.disassemblyCostAfter || ''}
+                onChange={(e) => handleChange('disassemblyCostAfter', e.target.value)}
+                placeholder="0.00"
+                className="dark:bg-input dark:border-border dark:text-foreground"
+              />
+            </div>
+            <div className="pt-2 border-t dark:border-border">
+              <p className="text-sm font-medium text-gray-700 dark:text-muted-foreground">Annual Savings:</p>
+              <p className="text-2xl font-bold text-green-600 dark:text-primary">
+                €{((values.disassemblyCostBefore * values.maintenanceFrequencyBefore) - (values.disassemblyCostAfter * values.maintenanceFrequencyAfter)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Extra Benefits Card */}
+      <Card className="dark:bg-card dark:border-border">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg dark:text-foreground">
+            <Sparkles className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+            Extra Benefits (Qualitative)
+          </CardTitle>
+          <CardDescription className="dark:text-muted-foreground">
+            Additional non-monetary benefits such as improved safety, environmental impact, etc.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            id="extraBenefits"
+            value={values.extraBenefits}
+            onChange={(e) => setValues({ ...values, extraBenefits: e.target.value })}
+            placeholder="e.g., Reduced environmental impact, improved worker safety, increased production quality..."
+            rows={4}
+            className="dark:bg-input dark:border-border dark:text-foreground"
+          />
+        </CardContent>
+      </Card>
 
       {/* Summary Card */}
       <Card className="border-2 border-green-200 dark:border-primary bg-gradient-to-br from-green-50 to-white dark:from-accent dark:to-card">

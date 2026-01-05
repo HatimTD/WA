@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Comment cannot be empty' }, { status: 400 });
     }
 
-    const comment = await prisma.comment.create({
+    const comment = await prisma.waComment.create({
       data: {
         content: content.trim(),
         caseStudyId,

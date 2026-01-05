@@ -33,9 +33,11 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { downloadComparisonPDF, type ComparisonPDFData } from '@/lib/pdf-export';
 
 type CaseStudySummary = {
   id: string;
+  title: string | null;
   customerName: string;
   industry: string;
   location: string;
@@ -182,6 +184,36 @@ export default function ComparePage() {
   };
 
   const handleExport = () => {
+    // BRD 3.4F - Side-by-side comparison PDF with highlighted metrics
+    const pdfCases = selectedCases.map(cs => {
+      if (!cs) return null;
+      return {
+        id: cs.id,
+        type: cs.type,
+        customerName: cs.customerName,
+        industry: cs.industry,
+        location: cs.location,
+        country: cs.country,
+        componentWorkpiece: cs.componentWorkpiece,
+        workType: cs.workType,
+        wearType: cs.wearType,
+        problemDescription: cs.problemDescription,
+        waSolution: cs.waSolution,
+        waProduct: cs.waProduct,
+        technicalAdvantages: cs.technicalAdvantages,
+        expectedServiceLife: cs.expectedServiceLife,
+        previousServiceLife: cs.previousServiceLife,
+        solutionValueRevenue: cs.solutionValueRevenue,
+        annualPotentialRevenue: cs.annualPotentialRevenue,
+        customerSavingsAmount: cs.customerSavingsAmount,
+      } as ComparisonPDFData;
+    });
+
+    downloadComparisonPDF(pdfCases);
+    toast.success('Comparison PDF downloaded');
+  };
+
+  const handlePrint = () => {
     setIsPrintMode(true);
     setTimeout(() => {
       window.print();
@@ -270,7 +302,7 @@ export default function ComparePage() {
           {Icon && <Icon className="h-4 w-4 text-wa-green-600 dark:text-primary" />}
           <h4 className="text-sm font-semibold text-gray-700 dark:text-foreground">{label}</h4>
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {values.map((value, index) => {
             const numericValues = showIndicator && typeof value === 'string' && value.includes('$')
               ? values.map(v => v ? parseFloat(v.toString().replace(/[$,]/g, '')) : null)
@@ -372,11 +404,11 @@ export default function ComparePage() {
         <div className={`${scheme.header} px-4 py-2 rounded-t-lg border-b-2 ${scheme.border}`}>
           <h4 className="font-bold text-sm uppercase tracking-wide">{title}</h4>
         </div>
-        <div className="grid grid-cols-3 gap-4 mt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
           {values.map((value, index) => (
             <div
               key={index}
-              className={`p-4 bg-gradient-to-br ${scheme.bg} rounded-lg border-2 ${scheme.border} shadow-sm hover:shadow-lg transition-all min-h-[120px]`}
+              className={`p-3 sm:p-4 bg-gradient-to-br ${scheme.bg} rounded-lg border-2 ${scheme.border} shadow-sm hover:shadow-lg transition-all min-h-[80px] sm:min-h-[120px]`}
             >
               <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap leading-relaxed">
                 {value || <span className="text-gray-400 dark:text-muted-foreground italic">Not provided</span>}
@@ -520,7 +552,7 @@ export default function ComparePage() {
                           className="w-full text-left p-2 hover:bg-wa-green-50 dark:hover:bg-wa-green-900/20 rounded-md border border-gray-100 dark:border-border transition-colors"
                         >
                           <p className="text-sm font-medium text-gray-900 dark:text-foreground line-clamp-1">
-                            {caseStudy.customerName} - {caseStudy.componentWorkpiece}
+                            {caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}
                           </p>
                           <p className="text-xs text-gray-600 dark:text-muted-foreground">
                             {caseStudy.industry} • {caseStudy.location}
@@ -587,7 +619,16 @@ export default function ComparePage() {
               className="gap-2 bg-wa-green-600 hover:bg-wa-green-700"
             >
               <Download className="h-4 w-4" />
-              Export / Print
+              Download PDF
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrint}
+              className="gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              Print
             </Button>
           </div>
         </div>

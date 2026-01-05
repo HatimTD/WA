@@ -31,19 +31,19 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
-  toggleMaintenanceMode,
-  updateMaintenanceMessage,
-  getMaintenanceMode,
-  getEmailTemplates,
-  upsertEmailTemplate,
-  initializeDefaultTemplates,
-  getNotificationStats,
-  enableGlobalNotifications,
-  disableGlobalNotifications,
-  toggleSpecificNotification,
-  updateAnnouncement,
-  getAnnouncement,
-} from '@/lib/actions/system-settings-actions';
+  waToggleMaintenanceMode,
+  waUpdateMaintenanceMessage,
+  waGetMaintenanceMode,
+  waGetEmailTemplates,
+  waUpsertEmailTemplate,
+  waInitializeDefaultTemplates,
+  waGetNotificationStats,
+  waEnableGlobalNotifications,
+  waDisableGlobalNotifications,
+  waToggleSpecificNotification,
+  waUpdateAnnouncement,
+  waGetAnnouncement,
+} from '@/lib/actions/waSystemSettingsActions';
 import { EmailTemplateType } from '@prisma/client';
 import { EmailTemplateEditor } from '@/components/email-template-editor';
 
@@ -102,27 +102,27 @@ export default function SystemSettingsForm() {
   }, []);
 
   const loadMaintenanceMode = async () => {
-    const data = await getMaintenanceMode();
+    const data = await waGetMaintenanceMode();
     setMaintenanceEnabled(data.enabled);
     setMaintenanceMessage(data.message);
   };
 
   const loadEmailTemplates = async () => {
-    const result = await getEmailTemplates();
+    const result = await waGetEmailTemplates();
     if (result.success) {
       setEmailTemplates(result.templates);
     }
   };
 
   const loadNotificationStats = async () => {
-    const result = await getNotificationStats();
+    const result = await waGetNotificationStats();
     if (result.success) {
       setNotificationStats(result.stats);
     }
   };
 
   const loadAnnouncement = async () => {
-    const data = await getAnnouncement();
+    const data = await waGetAnnouncement();
     setAnnouncementEnabled(data.enabled);
     setAnnouncementTitle(data.title);
     setAnnouncementMessage(data.message);
@@ -132,7 +132,7 @@ export default function SystemSettingsForm() {
   // Maintenance Mode Handlers
   const handleToggleMaintenance = async () => {
     setLoading(true);
-    const result = await toggleMaintenanceMode(!maintenanceEnabled);
+    const result = await waToggleMaintenanceMode(!maintenanceEnabled);
     if (result.success) {
       setMaintenanceEnabled(!maintenanceEnabled);
       toast.success(`Maintenance mode ${!maintenanceEnabled ? 'enabled' : 'disabled'}`);
@@ -144,7 +144,7 @@ export default function SystemSettingsForm() {
 
   const handleUpdateMaintenanceMessage = async () => {
     setLoading(true);
-    const result = await updateMaintenanceMessage(maintenanceMessage);
+    const result = await waUpdateMaintenanceMessage(maintenanceMessage);
     if (result.success) {
       toast.success('Maintenance message updated');
     } else {
@@ -173,7 +173,7 @@ export default function SystemSettingsForm() {
     if (!selectedTemplate) return;
 
     setLoading(true);
-    const result = await upsertEmailTemplate({
+    const result = await waUpsertEmailTemplate({
       type: selectedTemplate,
       ...templateData,
       variables: getAvailableVariables(selectedTemplate),
@@ -190,7 +190,7 @@ export default function SystemSettingsForm() {
 
   const handleInitializeTemplates = async () => {
     setLoading(true);
-    const result = await initializeDefaultTemplates();
+    const result = await waInitializeDefaultTemplates();
     if (result.success) {
       toast.success('Default templates initialized');
       await loadEmailTemplates();
@@ -218,8 +218,8 @@ export default function SystemSettingsForm() {
   const handleToggleGlobalNotifications = async (type: 'email' | 'inApp' | 'all', enable: boolean) => {
     setLoading(true);
     const result = enable
-      ? await enableGlobalNotifications(type)
-      : await disableGlobalNotifications(type);
+      ? await waEnableGlobalNotifications(type)
+      : await waDisableGlobalNotifications(type);
 
     if (result.success) {
       toast.success(`${type} notifications ${enable ? 'enabled' : 'disabled'} for all users`);
@@ -233,7 +233,7 @@ export default function SystemSettingsForm() {
   // Specific Notification Type Handler
   const handleToggleSpecificNotification = async (notificationType: string, enable: boolean) => {
     setLoading(true);
-    const result = await toggleSpecificNotification(notificationType, enable);
+    const result = await waToggleSpecificNotification(notificationType, enable);
 
     if (result.success) {
       const typeLabel = notificationType.replace(/([A-Z])/g, ' $1').trim();
@@ -248,7 +248,7 @@ export default function SystemSettingsForm() {
   // Announcement Handlers
   const handleSaveAnnouncement = async () => {
     setLoading(true);
-    const result = await updateAnnouncement({
+    const result = await waUpdateAnnouncement({
       enabled: announcementEnabled,
       title: announcementTitle,
       message: announcementMessage,

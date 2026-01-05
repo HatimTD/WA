@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Sparkles, Languages, RefreshCw, Loader2 } from 'lucide-react';
+import { Sparkles, Languages, RefreshCw, Loader2, ListTree } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,7 +11,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-import { summarizeText, translateText, improveText } from '@/lib/actions/openai-actions';
+import { waSummarizeText, waTranslateText, waImproveText } from '@/lib/actions/waOpenaiActions';
+import { waConvertBulletsToProse } from '@/lib/actions/waAutoPromptActions';
 
 type Props = {
   text: string;
@@ -37,7 +38,7 @@ export default function AITextAssistant({ text, onTextChange, fieldType = 'gener
 
     setIsProcessing(true);
     try {
-      const result = await summarizeText(text, 100);
+      const result = await waSummarizeText(text, 100);
       if (result.success && result.summary) {
         onTextChange(result.summary);
         toast.success('Text summarized successfully');
@@ -60,12 +61,46 @@ export default function AITextAssistant({ text, onTextChange, fieldType = 'gener
 
     setIsProcessing(true);
     try {
-      const result = await improveText(text, contextMap[fieldType]);
+      const result = await waImproveText(text, contextMap[fieldType]);
       if (result.success && result.improvedText) {
         onTextChange(result.improvedText);
         toast.success('Text improved successfully');
       } else {
         toast.error(result.error || 'Failed to improve text');
+      }
+    } catch (error) {
+      console.error('[AITextAssistant] Error:', error);
+      toast.error('An error occurred');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Map component fieldType to server action fieldType
+  const bulletFieldTypeMap: Record<string, 'problem' | 'solution' | 'advantages' | 'general'> = {
+    problem: 'problem',
+    solution: 'solution',
+    technical: 'advantages',
+    general: 'general',
+  };
+
+  const handleBulletsToProse = async () => {
+    if (!text || text.trim().length === 0) {
+      toast.error('No text to convert');
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const result = await waConvertBulletsToProse(
+        text,
+        bulletFieldTypeMap[fieldType] || 'general'
+      );
+      if (result.success && result.prose) {
+        onTextChange(result.prose);
+        toast.success('Converted bullets to professional prose');
+      } else {
+        toast.error(result.error || 'Failed to convert bullets');
       }
     } catch (error) {
       console.error('[AITextAssistant] Error:', error);
@@ -83,7 +118,7 @@ export default function AITextAssistant({ text, onTextChange, fieldType = 'gener
 
     setIsProcessing(true);
     try {
-      const result = await translateText(text, language);
+      const result = await waTranslateText(text, language);
       if (result.success && result.translatedText) {
         onTextChange(result.translatedText);
         toast.success(`Translated to ${language} successfully`);
@@ -122,6 +157,14 @@ export default function AITextAssistant({ text, onTextChange, fieldType = 'gener
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuItem onClick={handleBulletsToProse}>
+          <ListTree className="h-4 w-4 mr-2 text-blue-600" />
+          <div>
+            <div className="font-medium">Bullets to Prose</div>
+            <div className="text-xs text-muted-foreground">Convert notes to professional text</div>
+          </div>
+        </DropdownMenuItem>
+
         <DropdownMenuItem onClick={handleImprove}>
           <RefreshCw className="h-4 w-4 mr-2 text-wa-green-600" />
           <div>

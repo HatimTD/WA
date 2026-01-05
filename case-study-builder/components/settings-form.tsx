@@ -10,8 +10,21 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { User, Settings, Download, Bell, Shield, Camera } from 'lucide-react';
+import { User, Settings, Download, Bell, Shield, Camera, Eye, Monitor, Megaphone } from 'lucide-react';
 import { toast } from 'sonner';
+
+// All roles from Prisma schema
+const ALL_ROLES = ['VIEWER', 'CONTRIBUTOR', 'APPROVER', 'ADMIN', 'IT_DEPARTMENT', 'MARKETING'] as const;
+
+// Role display configuration
+const ROLE_CONFIG: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
+  VIEWER: { label: 'Viewer', icon: <Eye className="h-3 w-3" />, color: 'text-gray-600' },
+  CONTRIBUTOR: { label: 'Contributor', icon: <User className="h-3 w-3" />, color: 'text-green-600' },
+  APPROVER: { label: 'Approver', icon: <Shield className="h-3 w-3" />, color: 'text-blue-600' },
+  ADMIN: { label: 'Admin', icon: <Shield className="h-3 w-3" />, color: 'text-purple-600' },
+  IT_DEPARTMENT: { label: 'IT Department', icon: <Monitor className="h-3 w-3" />, color: 'text-orange-600' },
+  MARKETING: { label: 'Marketing', icon: <Megaphone className="h-3 w-3" />, color: 'text-pink-600' },
+};
 
 type UserData = {
   id: string;
@@ -25,9 +38,10 @@ type UserData = {
 
 type Props = {
   user: UserData;
+  assignedRoles?: string[];
 };
 
-export default function SettingsForm({ user }: Props) {
+export default function SettingsForm({ user, assignedRoles = [] }: Props) {
   const router = useRouter();
   const { theme: currentTheme, setTheme: setNextTheme } = useTheme();
   const [name, setName] = useState(user.name || '');
@@ -35,6 +49,7 @@ export default function SettingsForm({ user }: Props) {
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isSwitchingRole, setIsSwitchingRole] = useState(false);
+  const [isRequestingDeletion, setIsRequestingDeletion] = useState(false);
 
   // Avatar upload state
   const [avatarUrl, setAvatarUrl] = useState(user.image || '');
@@ -227,6 +242,49 @@ export default function SettingsForm({ user }: Props) {
     }
   };
 
+  // Handle multi-role toggle (add/remove roles)
+  const waHandleMultiRoleToggle = async (role: string) => {
+    const currentRoles = [...assignedRoles];
+    const isSelected = currentRoles.includes(role);
+
+    let newRoles: string[];
+    if (isSelected) {
+      // Remove role (but ensure at least one role remains)
+      newRoles = currentRoles.filter(r => r !== role);
+      if (newRoles.length === 0) {
+        toast.error('You must have at least one role');
+        return;
+      }
+    } else {
+      // Add role
+      newRoles = [...currentRoles, role];
+    }
+
+    setIsSwitchingRole(true);
+    try {
+      const response = await fetch('/api/dev/switch-role', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roles: newRoles }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success(`Roles updated: ${newRoles.map(r => ROLE_CONFIG[r]?.label || r).join(', ')}`);
+        // Refresh page to update permissions
+        router.refresh();
+      } else {
+        toast.error(result.error || 'Failed to update roles');
+      }
+    } catch (error) {
+      console.error('[Settings] Multi-role toggle error:', error);
+      toast.error('An error occurred');
+    } finally {
+      setIsSwitchingRole(false);
+    }
+  };
+
   const handleExportData = async () => {
     setIsExporting(true);
     try {
@@ -250,6 +308,41 @@ export default function SettingsForm({ user }: Props) {
       toast.error('Failed to export data');
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  // GDPR Article 17 - Right to Erasure
+  const handleGdprDeletionRequest = async () => {
+    if (!confirm('Are you sure you want to request account deletion? This will initiate the GDPR data deletion process. You will receive a verification email to confirm your request.')) {
+      return;
+    }
+
+    setIsRequestingDeletion(true);
+    try {
+      const response = await fetch('/api/gdpr/deletion-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        toast.success(
+          'Deletion request submitted! Please check your email for verification instructions.',
+          { duration: 6000 }
+        );
+        // In development, show the verification token
+        if (process.env.NODE_ENV === 'development' && data.verificationToken) {
+          console.log('[GDPR] Verification token (dev only):', data.verificationToken);
+        }
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to submit deletion request');
+      }
+    } catch (error) {
+      console.error('[Settings] GDPR deletion request error:', error);
+      toast.error('Failed to submit deletion request. Please try again.');
+    } finally {
+      setIsRequestingDeletion(false);
     }
   };
 
@@ -400,8 +493,19 @@ export default function SettingsForm({ user }: Props) {
           <div className="space-y-2">
             <Label className="dark:text-foreground">Role</Label>
             <div className="flex items-center gap-2">
-              <div className="px-3 py-2 bg-wa-green-50 text-wa-green-700 rounded-md text-sm font-medium border border-wa-green-200 dark:bg-accent dark:text-primary dark:border-primary">
-                {user.role}
+              <div className={`px-3 py-2 rounded-md text-sm font-medium border flex items-center gap-2 ${
+                ROLE_CONFIG[user.role]?.color || 'text-wa-green-700'
+              } ${
+                user.role === 'VIEWER' ? 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700' :
+                user.role === 'CONTRIBUTOR' ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-700' :
+                user.role === 'APPROVER' ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-700' :
+                user.role === 'ADMIN' ? 'bg-purple-50 border-purple-200 dark:bg-purple-900/20 dark:border-purple-700' :
+                user.role === 'IT_DEPARTMENT' ? 'bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-700' :
+                user.role === 'MARKETING' ? 'bg-pink-50 border-pink-200 dark:bg-pink-900/20 dark:border-pink-700' :
+                'bg-wa-green-50 border-wa-green-200 dark:bg-accent dark:border-primary'
+              }`}>
+                {ROLE_CONFIG[user.role]?.icon}
+                {ROLE_CONFIG[user.role]?.label || user.role}
               </div>
               <p className="text-xs text-gray-500 dark:text-muted-foreground">
                 Contact an administrator to change your role
@@ -661,7 +765,7 @@ export default function SettingsForm({ user }: Props) {
         </CardContent>
       </Card>
 
-      {/* Dev Role Switcher (Development Only) */}
+      {/* Dev Role Switcher (Development Only) - Multi-Select */}
       <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/30 dark:border-orange-800">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-orange-900 dark:text-orange-400">
@@ -669,25 +773,62 @@ export default function SettingsForm({ user }: Props) {
             Dev Role Switcher
           </CardTitle>
           <CardDescription className="text-orange-700 dark:text-orange-300">
-            Switch roles for testing purposes (Development Only)
+            Select multiple roles to have combined permissions (Development Only)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="devRole" className="dark:text-orange-300">Current Role: <span className="font-bold">{user.role}</span></Label>
-            <Select onValueChange={handleRoleSwitch} disabled={isSwitchingRole}>
-              <SelectTrigger id="devRole" className="dark:bg-orange-950/50 dark:border-orange-800 dark:text-orange-200">
-                <SelectValue placeholder="Switch to..." />
-              </SelectTrigger>
-              <SelectContent className="dark:bg-popover dark:border-border">
-                <SelectItem value="VIEWER">VIEWER</SelectItem>
-                <SelectItem value="CONTRIBUTOR">CONTRIBUTOR</SelectItem>
-                <SelectItem value="APPROVER">APPROVER</SelectItem>
-                <SelectItem value="ADMIN">ADMIN</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="space-y-3">
+            <Label className="dark:text-orange-300">
+              Current Roles: {assignedRoles.length > 0 ? (
+                <span className="flex flex-wrap gap-1 mt-1">
+                  {assignedRoles.map((role) => (
+                    <span key={role} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
+                      role === 'ADMIN' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' :
+                      role === 'APPROVER' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' :
+                      role === 'CONTRIBUTOR' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' :
+                      'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                    }`}>
+                      {ROLE_CONFIG[role]?.icon}
+                      {ROLE_CONFIG[role]?.label || role}
+                    </span>
+                  ))}
+                </span>
+              ) : (
+                <span className={`font-bold ${ROLE_CONFIG[user.role]?.color || ''}`}>
+                  {ROLE_CONFIG[user.role]?.label || user.role}
+                </span>
+              )}
+            </Label>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              {ALL_ROLES.map((role) => {
+                const isSelected = assignedRoles.includes(role);
+                return (
+                  <button
+                    key={role}
+                    type="button"
+                    onClick={() => waHandleMultiRoleToggle(role)}
+                    disabled={isSwitchingRole}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-all ${
+                      isSelected
+                        ? 'border-orange-400 bg-orange-100 dark:bg-orange-900/40 dark:border-orange-600'
+                        : 'border-orange-200 bg-white dark:bg-orange-950/20 dark:border-orange-800 hover:bg-orange-50 dark:hover:bg-orange-900/30'
+                    }`}
+                  >
+                    <div className={`w-4 h-4 rounded border flex items-center justify-center ${
+                      isSelected ? 'bg-orange-500 border-orange-500' : 'border-orange-300 dark:border-orange-600'
+                    }`}>
+                      {isSelected && <span className="text-white text-xs">✓</span>}
+                    </div>
+                    <div className={`flex items-center gap-1 ${ROLE_CONFIG[role]?.color || ''}`}>
+                      {ROLE_CONFIG[role]?.icon}
+                      <span>{ROLE_CONFIG[role]?.label || role}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
             <p className="text-xs text-orange-600 dark:text-orange-400">
-              This will immediately update your role and redirect you to the dashboard with updated permissions.
+              Select multiple roles to have combined permissions. Changes are saved immediately.
             </p>
           </div>
         </CardContent>
@@ -728,13 +869,10 @@ export default function SettingsForm({ user }: Props) {
             </p>
             <Button
               variant="destructive"
-              onClick={() => {
-                if (confirm('Are you sure you want to request account deletion? This action cannot be undone.')) {
-                  toast.info('Account deletion request sent to administrators');
-                }
-              }}
+              onClick={handleGdprDeletionRequest}
+              disabled={isRequestingDeletion}
             >
-              Request Account Deletion
+              {isRequestingDeletion ? 'Submitting Request...' : 'Request Account Deletion'}
             </Button>
           </div>
         </CardContent>

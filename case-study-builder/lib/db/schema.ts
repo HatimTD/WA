@@ -80,7 +80,7 @@ export interface OfflineUser {
   name?: string;
   email: string;
   image?: string;
-  role: 'CONTRIBUTOR' | 'APPROVER' | 'ADMIN' | 'VIEWER';
+  role: 'CONTRIBUTOR' | 'APPROVER' | 'ADMIN' | 'VIEWER' | 'IT_DEPARTMENT' | 'MARKETING';
   region?: string;
   totalPoints: number;
   badges: string[];
@@ -185,6 +185,22 @@ export interface SyncMetadata {
   errorMessage?: string;
 }
 
+// Offline Image Storage (base64)
+export interface OfflineImage {
+  id: string;
+  caseStudyTempId: string; // Links to offline case study before server ID exists
+  fieldName: 'images' | 'supportingDocs'; // Which field this image belongs to
+  base64Data: string; // Base64 encoded image data
+  mimeType: string; // e.g., 'image/jpeg', 'image/png'
+  fileName: string; // Original filename
+  size: number; // File size in bytes
+  thumbnail?: string; // Optional base64 thumbnail for preview
+  createdAt: string;
+  _syncStatus: 'pending' | 'uploading' | 'synced' | 'error';
+  _cloudinaryUrl?: string; // Populated after upload
+  _uploadError?: string; // Error message if upload failed
+}
+
 // Dexie Database Class
 class OfflineDatabase extends Dexie {
   // Tables
@@ -196,10 +212,12 @@ class OfflineDatabase extends Dexie {
   analytics!: EntityTable<OfflineAnalytics, 'id'>;
   pendingChanges!: EntityTable<PendingChange, 'id'>;
   syncMetadata!: EntityTable<SyncMetadata, 'id'>;
+  offlineImages!: EntityTable<OfflineImage, 'id'>;
 
   constructor() {
     super('CaseStudyBuilderDB');
 
+    // Version 1 - Original schema
     this.version(1).stores({
       // Case Studies - Index by key search fields
       caseStudies: 'id, contributorId, status, type, industry, location, customerName, waProduct, componentWorkpiece, createdAt, updatedAt, _syncStatus',
@@ -224,6 +242,22 @@ class OfflineDatabase extends Dexie {
 
       // Sync Metadata
       syncMetadata: 'id, entity, lastSyncedAt, syncStatus',
+    });
+
+    // Version 2 - Added offline images table for PWA photo storage
+    this.version(2).stores({
+      // Keep all existing tables unchanged
+      caseStudies: 'id, contributorId, status, type, industry, location, customerName, waProduct, componentWorkpiece, createdAt, updatedAt, _syncStatus',
+      savedCases: 'id, userId, caseStudyId, [userId+caseStudyId], _syncStatus',
+      users: 'id, email, role',
+      comments: 'id, caseStudyId, userId, createdAt, _syncStatus',
+      weldingProcedures: 'id, caseStudyId, waProductName, weldingProcess, baseMetalType',
+      analytics: 'id, type, cachedAt, expiresAt',
+      pendingChanges: 'id, entity, operation, createdAt',
+      syncMetadata: 'id, entity, lastSyncedAt, syncStatus',
+
+      // NEW: Offline images for PWA - stores base64 photos until sync
+      offlineImages: 'id, caseStudyTempId, fieldName, _syncStatus, createdAt',
     });
   }
 }

@@ -12,14 +12,26 @@ import StepThree from '@/components/case-study-form/step-three';
 import StepFour from '@/components/case-study-form/step-four';
 import StepFive from '@/components/case-study-form/step-five';
 import StepWPS from '@/components/case-study-form/step-wps';
-import { updateCaseStudy } from '@/lib/actions/case-study-actions';
-import { saveWeldingProcedure } from '@/lib/actions/wps-actions';
+import ChallengeQualifier, { QualifierResult } from '@/components/case-study-form/challenge-qualifier';
+import NetSuiteCustomerSearch from '@/components/netsuite-customer-search';
+import { NetSuiteCustomer } from '@/lib/integrations/netsuite';
+import { waUpdateCaseStudy } from '@/lib/actions/waCaseStudyActions';
+import { waSaveWeldingProcedure } from '@/lib/actions/waWpsActions';
 import { toast } from 'sonner';
-import { CaseStudy, WeldingProcedure, CostCalculator } from '@prisma/client';
+import { WaCaseStudy, WaWeldingProcedure, WaCostCalculator } from '@prisma/client';
 
 export type CaseStudyFormData = {
   // Step 1: Case Type
   type: 'APPLICATION' | 'TECH' | 'STAR';
+
+  // Qualifier (BRD 3.1)
+  customerSelected: boolean; // Whether customer was selected from search
+  qualifierType?: 'NEW_CUSTOMER' | 'CROSS_SELL' | 'MAINTENANCE';
+  isTarget: boolean; // Counts toward BHAG 10,000 goal
+  qualifierCompleted: boolean; // Whether qualifier questions were answered
+
+  // Title (case study display name)
+  title: string;
 
   // Step 2: Basic Information
   customerName: string;
@@ -31,6 +43,7 @@ export type CaseStudyFormData = {
   wearType: string[];
   baseMetal: string;
   generalDimensions: string;
+  oem: string; // Original Equipment Manufacturer (BRD Section 5)
 
   // Step 3: Problem Description
   problemDescription: string;
@@ -50,6 +63,7 @@ export type CaseStudyFormData = {
   customerSavingsAmount: string;
   images: string[];
   supportingDocs: string[];
+  tags: string[];
 
   // Step WPS: Welding Procedure Specification (TECH & STAR only)
   wps?: {
@@ -96,19 +110,126 @@ export type CaseStudyFormData = {
 };
 
 type Props = {
-  caseStudy: CaseStudy;
-  wpsData?: WeldingProcedure | null;
-  costCalcData?: CostCalculator | null;
+  caseStudy: WaCaseStudy;
+  wpsData?: WaWeldingProcedure | null;
+  costCalcData?: WaCostCalculator | null;
 };
+
+// Helper: Check if a string field has meaningful content
+function waHasValue(value: string | null | undefined): boolean {
+  return value !== null && value !== undefined && value.trim() !== '';
+}
+
+// Helper: Check if WPS is complete (all required fields filled)
+function waIsWpsComplete(wpsData: WaWeldingProcedure | null | undefined): boolean {
+  if (!wpsData) return false;
+
+  // Check all required string fields have meaningful content
+  const requiredFields = [
+    wpsData.baseMetalType,
+    wpsData.surfacePreparation,
+    wpsData.waProductName,
+    wpsData.shieldingGas,
+    wpsData.weldingProcess,
+    wpsData.weldingPosition,
+    wpsData.additionalNotes,
+  ];
+
+  // All required fields must have values
+  if (requiredFields.some(field => !waHasValue(field))) {
+    return false;
+  }
+
+  // At least one oscillation field must be filled
+  if (!waHasValue(wpsData.oscillationWidth) && !waHasValue(wpsData.oscillationSpeed)) {
+    return false;
+  }
+
+  // At least one temperature field must be filled
+  if (!waHasValue(wpsData.preheatTemperature) && !waHasValue(wpsData.interpassTemperature)) {
+    return false;
+  }
+
+  return true;
+}
+
+// Calculate the first incomplete step for resuming drafts
+function waCalculateResumeStep(
+  caseStudy: WaCaseStudy,
+  wpsData: WaWeldingProcedure | null | undefined,
+  caseType: 'APPLICATION' | 'TECH' | 'STAR'
+): number {
+  // Step 1: Case Type - always complete if we have a case
+
+  // Step 2: Qualifier - check if customer selected and qualifier completed
+  if (!waHasValue(caseStudy.customerName) || !caseStudy.qualifierType) {
+    return 2; // Qualifier
+  }
+
+  // Step 3: Basic Info
+  if (!waHasValue(caseStudy.customerName) || !waHasValue(caseStudy.industry) ||
+      !waHasValue(caseStudy.location) || !waHasValue(caseStudy.componentWorkpiece) ||
+      !caseStudy.workType || !caseStudy.wearType ||
+      (caseStudy.wearType as string[]).length === 0 ||
+      !waHasValue(caseStudy.baseMetal) || !waHasValue(caseStudy.generalDimensions)) {
+    return 3; // Basic Info
+  }
+
+  // Step 4: Problem
+  if (!waHasValue(caseStudy.problemDescription) || !waHasValue(caseStudy.previousSolution)) {
+    return 4; // Problem
+  }
+
+  // Step 5: Solution
+  if (!waHasValue(caseStudy.waSolution) || !waHasValue(caseStudy.waProduct) ||
+      !waHasValue(caseStudy.technicalAdvantages)) {
+    return 5; // Solution
+  }
+
+  // Step 6: WPS (for TECH and STAR)
+  if (caseType === 'TECH' || caseType === 'STAR') {
+    if (!waIsWpsComplete(wpsData)) {
+      return 6; // WPS
+    }
+  }
+
+  // Step 7 (or 6 for APPLICATION): Review - check financial fields and images
+  // Note: Financial fields are numbers/Decimals, check if they exist and are > 0
+  const reviewStep = (caseType === 'TECH' || caseType === 'STAR') ? 7 : 6;
+  const hasValidRevenue = caseStudy.solutionValueRevenue !== null && caseStudy.solutionValueRevenue !== undefined;
+  const hasValidAnnualRevenue = caseStudy.annualPotentialRevenue !== null && caseStudy.annualPotentialRevenue !== undefined;
+  const hasValidSavings = caseStudy.customerSavingsAmount !== null && caseStudy.customerSavingsAmount !== undefined;
+  const hasImages = caseStudy.images && (caseStudy.images as string[]).length >= 1;
+
+  if (!hasValidRevenue || !hasValidAnnualRevenue || !hasValidSavings || !hasImages) {
+    return reviewStep; // Review
+  }
+
+  // All complete - go to last step (Review)
+  return reviewStep;
+}
 
 export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: Props) {
   const router = useRouter();
-  const [currentStep, setCurrentStep] = useState(1);
+  const caseType = caseStudy.type as 'APPLICATION' | 'TECH' | 'STAR';
+
+  // For DRAFT: resume from first incomplete step; For others: start at step 1
+  const initialStep = caseStudy.status === 'DRAFT'
+    ? waCalculateResumeStep(caseStudy, wpsData, caseType)
+    : 1;
+
+  const [currentStep, setCurrentStep] = useState(initialStep);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Pre-fill form data with existing case study values
   const [formData, setFormData] = useState<CaseStudyFormData>({
     type: caseStudy.type as 'APPLICATION' | 'TECH' | 'STAR',
+    // Load qualifier data from database
+    customerSelected: !!caseStudy.customerName, // If customer exists, it was selected
+    qualifierType: caseStudy.qualifierType as 'NEW_CUSTOMER' | 'CROSS_SELL' | 'MAINTENANCE' | undefined,
+    isTarget: caseStudy.isTarget ?? false, // Load from DB or default to false (matches DB default)
+    qualifierCompleted: !!caseStudy.qualifierType, // Completed if qualifierType exists
+    title: caseStudy.title || '',
     customerName: caseStudy.customerName,
     industry: caseStudy.industry,
     location: caseStudy.location,
@@ -118,6 +239,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
     wearType: caseStudy.wearType as string[],
     baseMetal: caseStudy.baseMetal || '',
     generalDimensions: caseStudy.generalDimensions || '',
+    oem: (caseStudy as any).oem || '',
     problemDescription: caseStudy.problemDescription,
     previousSolution: caseStudy.previousSolution || '',
     previousServiceLife: caseStudy.previousServiceLife || '',
@@ -131,6 +253,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
     customerSavingsAmount: caseStudy.customerSavingsAmount ? caseStudy.customerSavingsAmount.toString() : '',
     images: caseStudy.images as string[],
     supportingDocs: caseStudy.supportingDocs as string[],
+    tags: (caseStudy as any).tags || [],
     wps: wpsData ? {
       baseMetalType: wpsData.baseMetalType || undefined,
       baseMetalGrade: wpsData.baseMetalGrade || undefined,
@@ -172,18 +295,19 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
     setFormData((prev) => ({ ...prev, ...data }));
   };
 
-  // Dynamic steps based on case type
+  // Dynamic steps based on case type (includes Qualifier step)
   const STEPS = useMemo(() => {
     const baseSteps = [
       { number: 1, title: 'Case Type', description: 'Select case study type' },
-      { number: 2, title: 'Basic Info', description: 'Customer and component details' },
-      { number: 3, title: 'Problem', description: 'Describe the challenge' },
-      { number: 4, title: 'Solution', description: 'WA solution details' },
+      { number: 2, title: 'Qualifier', description: 'Challenge qualification' },
+      { number: 3, title: 'Basic Info', description: 'Customer and component details' },
+      { number: 4, title: 'Problem', description: 'Describe the challenge' },
+      { number: 5, title: 'Solution', description: 'WA solution details' },
     ];
 
     // Add WPS step for TECH and STAR cases
     if (formData.type === 'TECH' || formData.type === 'STAR') {
-      baseSteps.push({ number: 5, title: 'WPS', description: 'Welding procedure specification' });
+      baseSteps.push({ number: 6, title: 'WPS', description: 'Welding procedure specification' });
     }
 
     // Always add Review step last
@@ -196,41 +320,76 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
     return baseSteps;
   }, [formData.type]);
 
-  const validateStep = (step: number): boolean => {
+  // Get missing fields for a step (returns array of field names that are missing)
+  const getMissingFields = (step: number): string[] => {
     const currentStepData = STEPS.find(s => s.number === step);
-    if (!currentStepData) return false;
+    if (!currentStepData) return [];
+
+    const missing: string[] = [];
 
     switch (currentStepData.title) {
       case 'Case Type':
-        return !!formData.type;
+        if (!formData.type) missing.push('Case Type');
+        break;
+      case 'Qualifier':
+        if (!formData.customerName) missing.push('Customer Name');
+        if (!formData.customerSelected) missing.push('Customer Selection (click a customer from the list)');
+        if (!formData.qualifierCompleted) missing.push('Qualifier Questions');
+        break;
       case 'Basic Info':
-        return !!(
-          formData.customerName &&
-          formData.industry &&
-          formData.location &&
-          formData.componentWorkpiece &&
-          formData.workType &&
-          formData.wearType.length > 0
-        );
+        if (!formData.customerName) missing.push('Customer Name');
+        if (!formData.industry) missing.push('Industry');
+        if (!formData.location) missing.push('Location');
+        if (!formData.componentWorkpiece) missing.push('Component/Workpiece');
+        if (!formData.workType) missing.push('Work Type');
+        if (!formData.wearType || formData.wearType.length === 0) missing.push('Type of Wear');
+        if (!formData.baseMetal) missing.push('Base Metal');
+        if (!formData.generalDimensions) missing.push('General Dimensions');
+        break;
       case 'Problem':
-        return !!formData.problemDescription;
+        if (!formData.problemDescription) missing.push('Problem Description');
+        if (!formData.previousSolution) missing.push('Previous Solution');
+        break;
       case 'Solution':
-        return !!(formData.waSolution && formData.waProduct);
+        if (!formData.waSolution) missing.push('WA Solution');
+        if (!formData.waProduct) missing.push('WA Product');
+        if (!formData.technicalAdvantages) missing.push('Technical Advantages');
+        break;
       case 'WPS':
-        // WPS required fields: waProductName and weldingProcess
-        return !!(formData.wps?.waProductName && formData.wps?.weldingProcess);
+        if (!formData.wps?.baseMetalType) missing.push('Base Metal Type');
+        if (!formData.wps?.surfacePreparation) missing.push('Surface Preparation');
+        if (!formData.wps?.waProductName) missing.push('WA Product Name');
+        if (!formData.wps?.shieldingGas) missing.push('Shielding Gas');
+        if (!formData.wps?.weldingProcess) missing.push('Welding Process');
+        if (!formData.wps?.weldingPosition) missing.push('Welding Position');
+        if (!formData.wps?.oscillationWidth && !formData.wps?.oscillationSpeed) missing.push('Oscillation (Width or Speed)');
+        if (!formData.wps?.preheatTemperature && !formData.wps?.interpassTemperature) missing.push('Temperature (Preheat or Interpass)');
+        if (!formData.wps?.additionalNotes) missing.push('Additional WPS Notes');
+        break;
       case 'Review':
-        return true; // Review step always valid
-      default:
-        return false;
+        if (!formData.solutionValueRevenue) missing.push('Solution Value/Revenue');
+        if (!formData.annualPotentialRevenue) missing.push('Annual Potential Revenue');
+        if (!formData.customerSavingsAmount) missing.push('Customer Savings');
+        if (!formData.images || formData.images.length < 1) missing.push('At least 1 image');
+        break;
     }
+
+    return missing;
+  };
+
+  const validateStep = (step: number): boolean => {
+    return getMissingFields(step).length === 0;
   };
 
   const handleNext = () => {
-    if (validateStep(currentStep)) {
+    const missingFields = getMissingFields(currentStep);
+    if (missingFields.length === 0) {
       setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
     } else {
-      toast.error('Please fill in all required fields');
+      // Show specific missing fields in toast
+      const fieldList = missingFields.slice(0, 3).join(', ');
+      const moreCount = missingFields.length > 3 ? ` and ${missingFields.length - 3} more` : '';
+      toast.error(`Missing required fields: ${fieldList}${moreCount}`);
     }
   };
 
@@ -252,16 +411,20 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
         customerSavingsAmount: formData.customerSavingsAmount ? parseFloat(formData.customerSavingsAmount) : null,
       };
 
-      await updateCaseStudy(caseStudy.id, updateData);
+      await waUpdateCaseStudy(caseStudy.id, updateData);
 
-      // If TECH or STAR and WPS data exists, save WPS
-      if (hasWPS && formData.wps && formData.wps.waProductName && formData.wps.weldingProcess) {
-        await saveWeldingProcedure({
-          caseStudyId: caseStudy.id,
-          waProductName: formData.wps.waProductName,
-          weldingProcess: formData.wps.weldingProcess,
-          ...formData.wps,
-        });
+      // If TECH or STAR and WPS data exists, save WPS (save any filled data for drafts)
+      if (hasWPS && formData.wps) {
+        // Check if any WPS field has data
+        const hasAnyWpsData = Object.values(formData.wps).some(v => v !== undefined && v !== '' && v !== null);
+        if (hasAnyWpsData) {
+          await waSaveWeldingProcedure({
+            caseStudyId: caseStudy.id,
+            waProductName: formData.wps.waProductName || '',
+            weldingProcess: formData.wps.weldingProcess || '',
+            ...formData.wps,
+          });
+        }
       }
 
       toast.success('Changes saved as draft');
@@ -275,15 +438,21 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
   };
 
   const handleUpdate = async () => {
-    // Validate all required steps
-    const hasWPS = formData.type === 'TECH' || formData.type === 'STAR';
-    for (let i = 1; i <= STEPS.length - 1; i++) { // -1 to exclude Review step
-      if (!validateStep(i)) {
-        toast.error('Please complete all required fields');
-        return;
-      }
+    // Validate all required steps and collect missing fields
+    const allMissingFields: string[] = [];
+    for (let i = 1; i <= STEPS.length; i++) {
+      const stepMissing = getMissingFields(i);
+      allMissingFields.push(...stepMissing);
     }
 
+    if (allMissingFields.length > 0) {
+      const fieldList = allMissingFields.slice(0, 3).join(', ');
+      const moreCount = allMissingFields.length > 3 ? ` and ${allMissingFields.length - 3} more` : '';
+      toast.error(`Missing required fields: ${fieldList}${moreCount}`);
+      return;
+    }
+
+    const hasWPS = formData.type === 'TECH' || formData.type === 'STAR';
     setIsSubmitting(true);
     try {
       // Determine the new status
@@ -302,11 +471,11 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
         submittedAt: newStatus === 'SUBMITTED' ? new Date() : caseStudy.submittedAt,
       };
 
-      await updateCaseStudy(caseStudy.id, updateData);
+      await waUpdateCaseStudy(caseStudy.id, updateData);
 
       // If TECH or STAR and WPS data exists, save WPS
       if (hasWPS && formData.wps) {
-        await saveWeldingProcedure({
+        await waSaveWeldingProcedure({
           caseStudyId: caseStudy.id,
           waProductName: formData.wps.waProductName || '',
           weldingProcess: formData.wps.weldingProcess || '',
@@ -328,21 +497,27 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
+      {/* Header - Different titles based on status */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">Edit Case Study</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">
+            {caseStudy.status === 'DRAFT' ? 'Continue Case Study' :
+             caseStudy.status === 'REJECTED' ? 'Edit & Resubmit Case Study' :
+             'Edit Case Study'}
+          </h1>
           <p className="text-gray-600 dark:text-muted-foreground mt-2">
-            Update your case study information
+            {caseStudy.status === 'DRAFT' ? 'Pick up where you left off' :
+             caseStudy.status === 'REJECTED' ? 'Address feedback and resubmit for approval' :
+             'Update your case study information'}
           </p>
         </div>
         <Button
           variant="outline"
-          onClick={() => router.push(`/dashboard/cases/${caseStudy.id}`)}
+          onClick={() => router.push(caseStudy.status === 'DRAFT' ? '/dashboard/my-cases' : `/dashboard/cases/${caseStudy.id}`)}
           className="dark:border-border dark:text-foreground dark:hover:bg-accent"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Cancel
+          {caseStudy.status === 'DRAFT' ? 'Back' : 'Cancel'}
         </Button>
       </div>
 
@@ -363,7 +538,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
                       currentStep === step.number
                         ? 'bg-wa-green-600 text-white'
                         : currentStep > step.number
-                        ? 'bg-green-500 text-white'
+                        ? 'bg-green-700 text-white' /* Darkened for WCAG AA contrast */
                         : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
                     }`}
                   >
@@ -376,7 +551,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
                   {step.number < STEPS.length && (
                     <div
                       className={`absolute top-5 left-[60%] w-full h-0.5 ${
-                        currentStep > step.number ? 'bg-green-500 dark:bg-green-500' : 'bg-gray-200 dark:bg-border'
+                        currentStep > step.number ? 'bg-green-600 dark:bg-green-600' : 'bg-gray-200 dark:bg-border'
                       }`}
                       style={{ zIndex: -1 }}
                     />
@@ -399,8 +574,97 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
           {STEPS[currentStep - 1]?.title === 'Case Type' && (
             <StepOne formData={formData} updateFormData={updateFormData} />
           )}
+          {STEPS[currentStep - 1]?.title === 'Qualifier' && (
+            <div className="space-y-6">
+              {/* Customer Search */}
+              <NetSuiteCustomerSearch
+                value={formData.customerName}
+                onChange={(value) => {
+                  if (!value) {
+                    // Reset qualifier when customer is cleared
+                    updateFormData({
+                      customerName: '',
+                      customerSelected: false,
+                      qualifierCompleted: false,
+                      qualifierType: undefined,
+                      isTarget: false,
+                      location: '',
+                      country: '',
+                      industry: '',
+                    });
+                  } else {
+                    updateFormData({ customerName: value });
+                  }
+                }}
+                onCustomerSelect={(customer: NetSuiteCustomer) => {
+                  const updates: Partial<CaseStudyFormData> = {
+                    customerName: customer.companyName,
+                    customerSelected: true,
+                    qualifierCompleted: false, // Need to re-answer qualifier questions
+                    qualifierType: undefined,
+                    isTarget: false,
+                  };
+                  if (customer.city) updates.location = customer.city;
+                  if (customer.country) updates.country = customer.country;
+                  if (customer.industry) updates.industry = customer.industry;
+                  updateFormData(updates);
+                }}
+                label="Customer Name"
+                required
+                placeholder="Click to search customers..."
+              />
+
+              {/* Qualifier Questions - Only show after customer is selected */}
+              {formData.customerSelected && (
+                <ChallengeQualifier
+                  key={formData.customerName}
+                  customerName={formData.customerName}
+                  initialQualifierType={formData.qualifierType}
+                  initialIsTarget={formData.isTarget}
+                  onComplete={(result: QualifierResult) => {
+                    updateFormData({
+                      qualifierType: result.qualifierType,
+                      isTarget: result.isTarget,
+                      qualifierCompleted: true,
+                    });
+                  }}
+                  onReset={() => {
+                    updateFormData({
+                      qualifierType: undefined,
+                      isTarget: false,
+                      qualifierCompleted: false,
+                    });
+                  }}
+                />
+              )}
+
+              {/* Show result if qualifier is completed */}
+              {formData.qualifierCompleted && formData.qualifierType && (
+                <div className={`p-4 rounded-lg border ${
+                  formData.isTarget
+                    ? 'bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800'
+                    : 'bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-sm font-medium ${
+                      formData.isTarget ? 'text-green-700 dark:text-green-300' : 'text-blue-700 dark:text-blue-300'
+                    }`}>
+                      {formData.isTarget ? '✓ Counts toward BHAG 10,000 goal' : 'ℹ Maintenance case (does not count toward BHAG)'}
+                    </span>
+                  </div>
+                  <p className="text-sm mt-1 text-gray-600 dark:text-gray-400">
+                    Qualifier Type: {formData.qualifierType?.replace('_', ' ')}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
           {STEPS[currentStep - 1]?.title === 'Basic Info' && (
-            <StepTwo formData={formData} updateFormData={updateFormData} />
+            <StepTwo
+              formData={formData}
+              updateFormData={updateFormData}
+              customerReadOnly={formData.customerSelected}
+            />
           )}
           {STEPS[currentStep - 1]?.title === 'Problem' && (
             <StepThree formData={formData} updateFormData={updateFormData} />
@@ -465,7 +729,10 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
             </Button>
           ) : (
             <Button onClick={handleUpdate} disabled={isSubmitting}>
-              {isSubmitting ? 'Updating...' : 'Update Case Study'}
+              {isSubmitting ? 'Saving...' :
+               caseStudy.status === 'DRAFT' ? 'Submit for Approval' :
+               caseStudy.status === 'REJECTED' ? 'Resubmit for Approval' :
+               'Save Changes'}
             </Button>
           )}
         </div>

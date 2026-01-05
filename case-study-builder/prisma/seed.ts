@@ -1,4 +1,4 @@
-import { PrismaClient, CaseType, Status, WorkType, WearType } from '@prisma/client';
+import { PrismaClient, CaseType, Status, WorkType } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -57,7 +57,45 @@ async function main() {
   // Create test users
   const users = [];
 
-  // Create APPROVER user
+  // Create ADMIN user with credentials (password: TestPassword123)
+  const adminPasswordHash = await bcrypt.hash('TestPassword123', 10);
+  const admin = await prisma.user.upsert({
+    where: { email: 'admin@weldingalloys.com' },
+    update: {},
+    create: {
+      email: 'admin@weldingalloys.com',
+      name: 'Admin User',
+      role: 'ADMIN',
+      emailVerified: new Date(),
+      totalPoints: 100,
+      badges: [],
+    },
+  });
+
+  // Create credentials account for admin
+  await prisma.account.upsert({
+    where: {
+      provider_providerAccountId: {
+        provider: 'credentials',
+        providerAccountId: admin.id,
+      },
+    },
+    update: {
+      access_token: adminPasswordHash,
+    },
+    create: {
+      userId: admin.id,
+      type: 'credentials',
+      provider: 'credentials',
+      providerAccountId: admin.id,
+      access_token: adminPasswordHash, // Store hashed password here
+    },
+  });
+  users.push(admin);
+  console.log('Created admin user with credentials');
+
+  // Create APPROVER user with credentials
+  const approverPasswordHash = await bcrypt.hash('TestPassword123', 10);
   const approver = await prisma.user.upsert({
     where: { email: 'approver@weldingalloys.com' },
     update: {},
@@ -70,9 +108,67 @@ async function main() {
       badges: [],
     },
   });
-  users.push(approver);
 
-  // Create CONTRIBUTOR users
+  // Create credentials account for approver
+  await prisma.account.upsert({
+    where: {
+      provider_providerAccountId: {
+        provider: 'credentials',
+        providerAccountId: approver.id,
+      },
+    },
+    update: {
+      access_token: approverPasswordHash,
+    },
+    create: {
+      userId: approver.id,
+      type: 'credentials',
+      provider: 'credentials',
+      providerAccountId: approver.id,
+      access_token: approverPasswordHash,
+    },
+  });
+  users.push(approver);
+  console.log('Created approver user with credentials');
+
+  // Create CONTRIBUTOR user with credentials (first one)
+  const contributorPasswordHash = await bcrypt.hash('TestPassword123', 10);
+  const contributor = await prisma.user.upsert({
+    where: { email: 'contributor@weldingalloys.com' },
+    update: {},
+    create: {
+      email: 'contributor@weldingalloys.com',
+      name: 'Test Contributor',
+      role: 'CONTRIBUTOR',
+      emailVerified: new Date(),
+      totalPoints: 25,
+      badges: [],
+    },
+  });
+
+  // Create credentials account for contributor
+  await prisma.account.upsert({
+    where: {
+      provider_providerAccountId: {
+        provider: 'credentials',
+        providerAccountId: contributor.id,
+      },
+    },
+    update: {
+      access_token: contributorPasswordHash,
+    },
+    create: {
+      userId: contributor.id,
+      type: 'credentials',
+      provider: 'credentials',
+      providerAccountId: contributor.id,
+      access_token: contributorPasswordHash,
+    },
+  });
+  users.push(contributor);
+  console.log('Created contributor user with credentials');
+
+  // Create additional CONTRIBUTOR users (without credentials - Google login only)
   const contributorNames = [
     'Sarah Chen', 'Michael Rodriguez', 'Emily Thompson', 'David Kim',
     'Maria Garcia', 'James Wilson', 'Linda Martinez', 'Robert Taylor',
@@ -126,8 +222,8 @@ async function main() {
     const submittedAt = new Date(Date.now() - Math.floor(Math.random() * 90) * 24 * 60 * 60 * 1000);
     const approvedAt = hasApprover ? new Date(Date.now() - Math.floor(Math.random() * 60) * 24 * 60 * 60 * 1000) : null;
 
-    // Random wearType array (1-3 types) - Use correct uppercase enum values
-    const allWearTypes = [WearType.ABRASION, WearType.IMPACT, WearType.CORROSION, WearType.TEMPERATURE, WearType.COMBINATION];
+    // Random wearType array (1-3 types) - Use string values now
+    const allWearTypes = ['ABRASION', 'IMPACT', 'CORROSION', 'TEMPERATURE', 'COMBINATION'];
     const wearTypeCount = 1 + Math.floor(Math.random() * 3);
     const selectedWearTypes = allWearTypes.slice(0, wearTypeCount);
 
@@ -136,7 +232,7 @@ async function main() {
     const selectedWorkType = workTypes[Math.floor(Math.random() * workTypes.length)];
 
     // Create case study directly inline
-    await prisma.caseStudy.create({
+    await prisma.waCaseStudy.create({
       data: {
         type: caseType,
         status: status,
@@ -201,7 +297,7 @@ async function main() {
   ];
 
   for (const config of configDefaults) {
-    await prisma.systemConfig.upsert({
+    await prisma.waSystemConfig.upsert({
       where: { key: config.key },
       update: {},
       create: config,
@@ -213,7 +309,7 @@ async function main() {
   // Update user points based on approved cases
   for (const user of users) {
     if (user.role === 'CONTRIBUTOR') {
-      const approvedCases = await prisma.caseStudy.findMany({
+      const approvedCases = await prisma.waCaseStudy.findMany({
         where: {
           contributorId: user.id,
           status: 'APPROVED',

@@ -7,18 +7,44 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Filter, X } from 'lucide-react';
-import { searchCaseStudies } from '@/lib/actions/search-actions';
-import { getSearchSuggestions } from '@/lib/actions/autocomplete-actions';
+import { Search, Filter, X, ChevronDown, ChevronUp, CheckCircle2, User, Calendar } from 'lucide-react';
+import { waSearchCaseStudies, waGetSearchFilterOptions } from '@/lib/actions/waSearchActions';
+import { waGetSearchSuggestions } from '@/lib/actions/waAutocompleteActions';
 import Link from 'next/link';
 import { SaveButton } from '@/components/save-button';
+import LanguageIndicator from '@/components/language-indicator';
 
+/**
+ * BRD Section 5 - Search & Filtering
+ * Database must be searchable by: Tags, Industry, Component, OEM, Wear Type,
+ * WA Product, Country, Customer, Revenue, and Contributor
+ */
 type SearchFilters = {
   query: string;
   type?: string;
   industry?: string;
   location?: string;
   status?: string;
+  // BRD Required Filters
+  componentWorkpiece?: string;
+  wearType?: string[];
+  oem?: string;
+  waProduct?: string;
+  country?: string;
+  contributorId?: string;
+  minRevenue?: number;
+  maxRevenue?: number;
+};
+
+type FilterOptions = {
+  industries: string[];
+  locations: string[];
+  components: string[];
+  wearTypes: string[];
+  oems: string[];
+  waProducts: string[];
+  countries: string[];
+  contributors: { id: string; name: string }[];
 };
 
 export default function SearchPage() {
@@ -31,11 +57,31 @@ export default function SearchPage() {
     industry: searchParams.get('industry') || undefined,
     location: searchParams.get('location') || undefined,
     status: searchParams.get('status') || 'APPROVED',
+    // BRD Required Filters
+    componentWorkpiece: searchParams.get('component') || undefined,
+    wearType: searchParams.get('wearType')?.split(',') || undefined,
+    oem: searchParams.get('oem') || undefined,
+    waProduct: searchParams.get('waProduct') || undefined,
+    country: searchParams.get('country') || undefined,
+    contributorId: searchParams.get('contributor') || undefined,
+    minRevenue: searchParams.get('minRevenue') ? Number(searchParams.get('minRevenue')) : undefined,
+    maxRevenue: searchParams.get('maxRevenue') ? Number(searchParams.get('maxRevenue')) : undefined,
   });
 
   const [results, setResults] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>({
+    industries: [],
+    locations: [],
+    components: [],
+    wearTypes: [],
+    oems: [],
+    waProducts: [],
+    countries: [],
+    contributors: [],
+  });
 
   // Autocomplete state
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -43,6 +89,27 @@ export default function SearchPage() {
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const searchInputRef = useRef<HTMLDivElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Load filter options on mount
+  useEffect(() => {
+    waLoadFilterOptions();
+  }, []);
+
+  const waLoadFilterOptions = async () => {
+    const result = await waGetSearchFilterOptions();
+    if (result.success) {
+      setFilterOptions({
+        industries: result.industries || [],
+        locations: result.locations || [],
+        components: result.components || [],
+        wearTypes: result.wearTypes || [],
+        oems: result.oems || [],
+        waProducts: result.waProducts || [],
+        countries: result.countries || [],
+        contributors: result.contributors || [],
+      });
+    }
+  };
 
   useEffect(() => {
     // Perform search if there are query params
@@ -61,7 +128,7 @@ export default function SearchPage() {
       setIsLoadingSuggestions(true);
       debounceTimerRef.current = setTimeout(async () => {
         try {
-          const result = await getSearchSuggestions(filters.query);
+          const result = await waGetSearchSuggestions(filters.query);
           if (result.success) {
             setSuggestions(result.suggestions || []);
             setShowSuggestions(true);
@@ -103,7 +170,7 @@ export default function SearchPage() {
     setHasSearched(true);
 
     try {
-      const result = await searchCaseStudies(filters);
+      const result = await waSearchCaseStudies(filters);
       if (result.success && result.caseStudies) {
         setResults(result.caseStudies);
       }
@@ -121,11 +188,40 @@ export default function SearchPage() {
       industry: undefined,
       location: undefined,
       status: 'APPROVED',
+      // BRD Required Filters
+      componentWorkpiece: undefined,
+      wearType: undefined,
+      oem: undefined,
+      waProduct: undefined,
+      country: undefined,
+      contributorId: undefined,
+      minRevenue: undefined,
+      maxRevenue: undefined,
     });
     setResults([]);
     setHasSearched(false);
     setSuggestions([]);
     setShowSuggestions(false);
+  };
+
+  const waHandleWearTypeToggle = (wearType: string) => {
+    const currentTypes = filters.wearType || [];
+    const newTypes = currentTypes.includes(wearType)
+      ? currentTypes.filter((t) => t !== wearType)
+      : [...currentTypes, wearType];
+    setFilters({ ...filters, wearType: newTypes.length > 0 ? newTypes : undefined });
+  };
+
+  const waGetActiveFilterCount = () => {
+    let count = 0;
+    if (filters.componentWorkpiece) count++;
+    if (filters.wearType && filters.wearType.length > 0) count++;
+    if (filters.oem) count++;
+    if (filters.waProduct) count++;
+    if (filters.country) count++;
+    if (filters.contributorId) count++;
+    if (filters.minRevenue !== undefined || filters.maxRevenue !== undefined) count++;
+    return count;
   };
 
   const handleSuggestionClick = (suggestion: any) => {
@@ -239,7 +335,7 @@ export default function SearchPage() {
             )}
           </div>
 
-          {/* Filters Row */}
+          {/* Basic Filters Row */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="text-sm font-medium mb-2 block dark:text-foreground">Type</label>
@@ -261,22 +357,38 @@ export default function SearchPage() {
 
             <div>
               <label className="text-sm font-medium mb-2 block dark:text-foreground">Industry</label>
-              <Input
-                placeholder="e.g., Mining, Manufacturing"
-                value={filters.industry || ''}
-                onChange={(e) => setFilters({ ...filters, industry: e.target.value || undefined })}
-                className="dark:bg-input dark:border-border dark:text-foreground"
-              />
+              <Select
+                value={filters.industry || 'all'}
+                onValueChange={(value) => setFilters({ ...filters, industry: value === 'all' ? undefined : value })}
+              >
+                <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
+                  <SelectValue placeholder="All Industries" />
+                </SelectTrigger>
+                <SelectContent className="dark:bg-popover dark:border-border max-h-60">
+                  <SelectItem value="all">All Industries</SelectItem>
+                  {filterOptions.industries.map((ind) => (
+                    <SelectItem key={ind} value={ind}>{ind}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
               <label className="text-sm font-medium mb-2 block dark:text-foreground">Location</label>
-              <Input
-                placeholder="e.g., USA, Australia"
-                value={filters.location || ''}
-                onChange={(e) => setFilters({ ...filters, location: e.target.value || undefined })}
-                className="dark:bg-input dark:border-border dark:text-foreground"
-              />
+              <Select
+                value={filters.location || 'all'}
+                onValueChange={(value) => setFilters({ ...filters, location: value === 'all' ? undefined : value })}
+              >
+                <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
+                  <SelectValue placeholder="All Locations" />
+                </SelectTrigger>
+                <SelectContent className="dark:bg-popover dark:border-border max-h-60">
+                  <SelectItem value="all">All Locations</SelectItem>
+                  {filterOptions.locations.map((loc) => (
+                    <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
@@ -298,6 +410,178 @@ export default function SearchPage() {
               </Select>
             </div>
           </div>
+
+          {/* Advanced Filters Toggle - BRD Section 5 */}
+          <Button
+            variant="outline"
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            className="w-full justify-between"
+          >
+            <span className="flex items-center gap-2">
+              <Filter className="h-4 w-4" />
+              Advanced Filters
+              {waGetActiveFilterCount() > 0 && (
+                <Badge variant="secondary" className="ml-2">{waGetActiveFilterCount()}</Badge>
+              )}
+            </span>
+            {showAdvancedFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+
+          {/* Advanced Filters Section - BRD Required */}
+          {showAdvancedFilters && (
+            <div className="border rounded-lg p-4 space-y-4 bg-gray-50 dark:bg-background dark:border-border">
+              <p className="text-sm font-medium text-gray-600 dark:text-muted-foreground">
+                Additional Search Filters
+              </p>
+
+              {/* Row 1: Component, WA Product, OEM */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block dark:text-foreground">Component/Workpiece</label>
+                  <Select
+                    value={filters.componentWorkpiece || 'all'}
+                    onValueChange={(value) => setFilters({ ...filters, componentWorkpiece: value === 'all' ? undefined : value })}
+                  >
+                    <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
+                      <SelectValue placeholder="All Components" />
+                    </SelectTrigger>
+                    <SelectContent className="dark:bg-popover dark:border-border max-h-60">
+                      <SelectItem value="all">All Components</SelectItem>
+                      {filterOptions.components.map((comp) => (
+                        <SelectItem key={comp} value={comp}>{comp}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-2 block dark:text-foreground">WA Product</label>
+                  <Select
+                    value={filters.waProduct || 'all'}
+                    onValueChange={(value) => setFilters({ ...filters, waProduct: value === 'all' ? undefined : value })}
+                  >
+                    <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
+                      <SelectValue placeholder="All Products" />
+                    </SelectTrigger>
+                    <SelectContent className="dark:bg-popover dark:border-border max-h-60">
+                      <SelectItem value="all">All Products</SelectItem>
+                      {filterOptions.waProducts.map((prod) => (
+                        <SelectItem key={prod} value={prod}>{prod}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-2 block dark:text-foreground">OEM/Competitor</label>
+                  <Select
+                    value={filters.oem || 'all'}
+                    onValueChange={(value) => setFilters({ ...filters, oem: value === 'all' ? undefined : value })}
+                  >
+                    <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
+                      <SelectValue placeholder="All OEMs" />
+                    </SelectTrigger>
+                    <SelectContent className="dark:bg-popover dark:border-border max-h-60">
+                      <SelectItem value="all">All OEMs</SelectItem>
+                      {filterOptions.oems.map((oem) => (
+                        <SelectItem key={oem} value={oem}>{oem}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Row 2: Country, Contributor */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block dark:text-foreground">Country</label>
+                  <Select
+                    value={filters.country || 'all'}
+                    onValueChange={(value) => setFilters({ ...filters, country: value === 'all' ? undefined : value })}
+                  >
+                    <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
+                      <SelectValue placeholder="All Countries" />
+                    </SelectTrigger>
+                    <SelectContent className="dark:bg-popover dark:border-border max-h-60">
+                      <SelectItem value="all">All Countries</SelectItem>
+                      {filterOptions.countries.map((country) => (
+                        <SelectItem key={country} value={country}>{country}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-2 block dark:text-foreground">Contributor</label>
+                  <Select
+                    value={filters.contributorId || 'all'}
+                    onValueChange={(value) => setFilters({ ...filters, contributorId: value === 'all' ? undefined : value })}
+                  >
+                    <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
+                      <SelectValue placeholder="All Contributors" />
+                    </SelectTrigger>
+                    <SelectContent className="dark:bg-popover dark:border-border max-h-60">
+                      <SelectItem value="all">All Contributors</SelectItem>
+                      {filterOptions.contributors.map((cont) => (
+                        <SelectItem key={cont.id} value={cont.id}>{cont.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Row 3: Wear Type (Multi-select) */}
+              <div>
+                <label className="text-sm font-medium mb-2 block dark:text-foreground">Wear Type</label>
+                <div className="flex flex-wrap gap-2">
+                  {filterOptions.wearTypes.map((wt) => (
+                    <Badge
+                      key={wt}
+                      variant={filters.wearType?.includes(wt) ? 'default' : 'outline'}
+                      className={`cursor-pointer transition-colors ${
+                        filters.wearType?.includes(wt)
+                          ? 'bg-wa-green-600 hover:bg-wa-green-700 text-white'
+                          : 'hover:bg-wa-green-50 dark:hover:bg-primary/10'
+                      }`}
+                      onClick={() => waHandleWearTypeToggle(wt)}
+                    >
+                      {wt}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {/* Row 4: Revenue Range */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block dark:text-foreground">Min Revenue ($)</label>
+                  <Input
+                    type="number"
+                    placeholder="e.g., 10000"
+                    value={filters.minRevenue || ''}
+                    onChange={(e) => setFilters({
+                      ...filters,
+                      minRevenue: e.target.value ? Number(e.target.value) : undefined
+                    })}
+                    className="dark:bg-input dark:border-border dark:text-foreground"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block dark:text-foreground">Max Revenue ($)</label>
+                  <Input
+                    type="number"
+                    placeholder="e.g., 1000000"
+                    value={filters.maxRevenue || ''}
+                    onChange={(e) => setFilters({
+                      ...filters,
+                      maxRevenue: e.target.value ? Number(e.target.value) : undefined
+                    })}
+                    className="dark:bg-input dark:border-border dark:text-foreground"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Action Buttons */}
           <div className="flex gap-2">
@@ -332,47 +616,115 @@ export default function SearchPage() {
                 <p className="text-sm mt-1">Try adjusting your search filters</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {results.map((caseStudy) => (
                   <Link
                     key={caseStudy.id}
                     href={`/dashboard/cases/${caseStudy.id}`}
                     className="block"
                   >
-                    <Card role="article" className="hover:shadow-md dark:bg-card dark:border-border dark:hover:border-primary transition-all cursor-pointer">
-                      <CardContent className="p-6">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Badge className={getTypeColor(caseStudy.type)}>
-                                {caseStudy.type}
-                              </Badge>
-                              <Badge variant="outline" className={getStatusColor(caseStudy.status)}>
-                                {caseStudy.status}
-                              </Badge>
-                              {caseStudy.status === 'APPROVED' && (
-                                <div onClick={(e) => e.preventDefault()}>
-                                  <SaveButton caseStudyId={caseStudy.id} variant="icon" size="sm" />
-                                </div>
-                              )}
+                    <Card role="article" className="group hover:shadow-xl dark:bg-card dark:border-border dark:hover:border-primary transition-all duration-300 cursor-pointer overflow-hidden h-full">
+                      {/* Type Badge Banner */}
+                      <div className={`h-1.5 ${
+                        caseStudy.type === 'STAR'
+                          ? 'bg-gradient-to-r from-yellow-400 to-amber-500'
+                          : caseStudy.type === 'TECH'
+                          ? 'bg-gradient-to-r from-purple-500 to-violet-600'
+                          : 'bg-gradient-to-r from-blue-500 to-cyan-500'
+                      }`} />
+
+                      <CardContent className="p-4">
+                        {/* Header with badges */}
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <Badge className={getTypeColor(caseStudy.type)}>
+                            {caseStudy.type}
+                          </Badge>
+                          <Badge variant="outline" className={getStatusColor(caseStudy.status)}>
+                            {caseStudy.status}
+                          </Badge>
+                          {/* Approved Date Badge */}
+                          {caseStudy.status === 'APPROVED' && caseStudy.approvedAt && (
+                            <Badge variant="outline" className="text-xs gap-1 text-green-600 border-green-200 dark:text-green-400 dark:border-green-800">
+                              <CheckCircle2 className="h-3 w-3" />
+                              {new Date(caseStudy.approvedAt).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric'
+                              })}
+                            </Badge>
+                          )}
+                          {/* Language Indicator - badge only, no link (link is on detail page) */}
+                          {caseStudy.originalLanguage && caseStudy.originalLanguage !== 'en' && (
+                            <LanguageIndicator
+                              originalLanguage={caseStudy.originalLanguage}
+                              translationAvailable={caseStudy.translationAvailable}
+                              caseStudyId={caseStudy.id}
+                              variant="badge"
+                              showLink={false}
+                            />
+                          )}
+                          {caseStudy.status === 'APPROVED' && (
+                            <div onClick={(e) => e.preventDefault()} className="ml-auto">
+                              <SaveButton caseStudyId={caseStudy.id} variant="icon" size="sm" />
                             </div>
-                            <h3 className="text-lg font-semibold mb-1 dark:text-foreground">{caseStudy.title}</h3>
-                            <p className="text-sm text-gray-600 dark:text-muted-foreground mb-2 line-clamp-2">
-                              {caseStudy.problemDescription}
-                            </p>
-                            <div className="flex flex-wrap gap-3 text-sm text-gray-500 dark:text-muted-foreground">
-                              <span>📍 {caseStudy.location}</span>
-                              <span>🏭 {caseStudy.industry}</span>
-                              <span>⚙️ {caseStudy.componentWorkpiece}</span>
-                              {caseStudy.productName && <span>🔧 {caseStudy.productName}</span>}
-                            </div>
+                          )}
+                        </div>
+
+                        {/* Title */}
+                        <h3 className="text-base font-semibold mb-2 dark:text-foreground group-hover:text-wa-green-600 dark:group-hover:text-primary transition-colors line-clamp-2">
+                          {caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}
+                        </h3>
+
+                        {/* Key Details Grid */}
+                        <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-md p-2">
+                            <p className="text-gray-500 dark:text-gray-400 mb-0.5">Component</p>
+                            <p className="font-medium text-gray-900 dark:text-foreground truncate">{caseStudy.componentWorkpiece}</p>
                           </div>
-                          <div className="text-right text-sm text-gray-500 dark:text-muted-foreground">
-                            <p className="font-medium">{caseStudy.contributor?.name}</p>
-                            <p className="text-xs">
-                              {new Date(caseStudy.createdAt).toLocaleDateString()}
-                            </p>
+                          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-md p-2">
+                            <p className="text-gray-500 dark:text-gray-400 mb-0.5">WA Product</p>
+                            <p className="font-medium text-gray-900 dark:text-foreground truncate">{caseStudy.waProduct}</p>
                           </div>
+                        </div>
+
+                        {/* Wear Types */}
+                        {caseStudy.wearType && caseStudy.wearType.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-3">
+                            {caseStudy.wearType.slice(0, 3).map((wear: string) => (
+                              <Badge key={wear} variant="outline" className="text-xs py-0 px-1.5 bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800">
+                                {wear}
+                              </Badge>
+                            ))}
+                            {caseStudy.wearType.length > 3 && (
+                              <Badge variant="outline" className="text-xs py-0 px-1.5">
+                                +{caseStudy.wearType.length - 3}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Problem Description */}
+                        <p className="text-sm text-gray-600 dark:text-muted-foreground mb-3 line-clamp-2">
+                          {caseStudy.problemDescription}
+                        </p>
+
+                        {/* Location & Industry */}
+                        <div className="flex flex-wrap gap-2 text-xs text-gray-500 dark:text-muted-foreground mb-3">
+                          <span className="flex items-center gap-1">📍 {caseStudy.location}{caseStudy.country ? `, ${caseStudy.country}` : ''}</span>
+                          <span className="flex items-center gap-1">🏭 {caseStudy.industry}</span>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="flex items-center justify-between pt-2 border-t dark:border-gray-700">
+                          <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-muted-foreground">
+                            <User className="h-3 w-3" />
+                            <span className="truncate max-w-[100px]">{caseStudy.contributor?.name || 'Unknown'}</span>
+                          </div>
+                          {caseStudy.solutionValueRevenue && (
+                            <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                              ${Number(caseStudy.solutionValueRevenue).toLocaleString('en-US')}
+                            </Badge>
+                          )}
                         </div>
                       </CardContent>
                     </Card>

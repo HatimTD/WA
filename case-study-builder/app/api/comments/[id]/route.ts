@@ -17,7 +17,7 @@ export async function DELETE(
     const { id: commentId } = await params;
 
     // Check if comment exists and get user info
-    const comment = await prisma.comment.findUnique({
+    const comment = await prisma.waComment.findUnique({
       where: { id: commentId },
       include: { user: true },
     });
@@ -44,7 +44,7 @@ export async function DELETE(
     }
 
     // Delete the comment (reactions will be cascade deleted)
-    await prisma.comment.delete({
+    await prisma.waComment.delete({
       where: { id: commentId },
     });
 

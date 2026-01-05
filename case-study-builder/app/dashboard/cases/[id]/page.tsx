@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ShareButton } from '@/components/share-button';
+import { ShareButtons } from '@/components/share-buttons';
+import { EmailPDFButton } from '@/components/email-pdf-button';
+import { TagColleagues } from '@/components/tag-colleagues';
 import {
   ArrowLeft,
   Edit,
@@ -25,13 +28,38 @@ import {
   FileText
 } from 'lucide-react';
 import CostCalculator from '@/components/cost-calculator';
-import { getCostCalculation } from '@/lib/actions/cost-calculator-actions';
+import { waGetCostCalculation } from '@/lib/actions/waCostCalculatorActions';
 import WeldingProcedureForm from '@/components/welding-procedure-form';
-import { getWeldingProcedure } from '@/lib/actions/wps-actions';
+import { waGetWeldingProcedure } from '@/lib/actions/waWpsActions';
 import EnhancedCommentsSection from '@/components/enhanced-comments-section';
-import { getComments } from '@/lib/actions/comment-actions';
+import { waGetComments } from '@/lib/actions/waCommentActions';
 import dynamic from 'next/dynamic';
 import type { CaseStudyPDFData } from '@/lib/pdf-export';
+import { CompletionIndicator } from '@/components/completion-indicator';
+import { waCalculateCompletionPercentage, waGetFieldBreakdown } from '@/lib/utils/waCaseQuality';
+import QualityScoreBadge from '@/components/quality-score-badge';
+import type { CaseStudyWithRelations } from '@/lib/utils/waQualityScore';
+import LanguageIndicator from '@/components/language-indicator';
+import TranslationPanel from '@/components/translation-panel';
+
+// Language names for display
+const LANGUAGE_NAMES: Record<string, string> = {
+  en: 'English',
+  es: 'Spanish',
+  fr: 'French',
+  de: 'German',
+  pt: 'Portuguese',
+  it: 'Italian',
+  zh: 'Chinese',
+  ja: 'Japanese',
+  ko: 'Korean',
+  ru: 'Russian',
+  ar: 'Arabic',
+  hi: 'Hindi',
+  nl: 'Dutch',
+  pl: 'Polish',
+  tr: 'Turkish',
+};
 
 // Dynamic import for PDF export (saves ~200KB from jspdf)
 const PDFExportButton = dynamic(() => import('@/components/pdf-export-button'), {
@@ -44,9 +72,10 @@ const PDFExportButton = dynamic(() => import('@/components/pdf-export-button'), 
 
 type Props = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ showOriginal?: string }>;
 };
 
-export default async function CaseStudyDetailPage({ params }: Props) {
+export default async function CaseStudyDetailPage({ params, searchParams }: Props) {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -54,8 +83,12 @@ export default async function CaseStudyDetailPage({ params }: Props) {
   }
 
   const { id } = await params;
+  const { showOriginal } = await searchParams;
 
-  const caseStudy = await prisma.caseStudy.findUnique({
+  // Determine if we should show original content or translated
+  const displayOriginal = showOriginal === 'true';
+
+  const caseStudy = await prisma.waCaseStudy.findUnique({
     where: { id },
     include: {
       contributor: {
@@ -81,15 +114,15 @@ export default async function CaseStudyDetailPage({ params }: Props) {
   }
 
   // Fetch cost calculation if exists
-  const costCalcResult = await getCostCalculation(id);
+  const costCalcResult = await waGetCostCalculation(id);
   const existingCostCalc = costCalcResult.calculation;
 
   // Fetch welding procedure if exists
-  const wpsResult = await getWeldingProcedure(id);
+  const wpsResult = await waGetWeldingProcedure(id);
   const existingWPS = wpsResult.wps;
 
   // Fetch comments
-  const commentsResult = await getComments(id);
+  const commentsResult = await waGetComments(id);
   const comments = commentsResult.comments || [];
 
   // Get current user info
@@ -103,6 +136,45 @@ export default async function CaseStudyDetailPage({ params }: Props) {
 
   const isOwner = caseStudy.contributorId === session.user.id;
   const canEdit = isOwner && caseStudy.status === 'DRAFT';
+
+  // BRD: Get display content - translated to English by default, original if requested
+  const hasTranslation = Boolean(caseStudy.translationAvailable && caseStudy.translatedText);
+  let displayContent = {
+    problemDescription: caseStudy.problemDescription,
+    previousSolution: caseStudy.previousSolution,
+    technicalAdvantages: caseStudy.technicalAdvantages,
+    waSolution: caseStudy.waSolution,
+    isTranslated: false,
+  };
+
+  // Use translated content by default (unless showOriginal=true)
+  if (hasTranslation && !displayOriginal) {
+    try {
+      const translation = JSON.parse(caseStudy.translatedText!);
+      const fields = translation.fields || {};
+      displayContent = {
+        problemDescription: fields.problemDescription || caseStudy.problemDescription,
+        previousSolution: fields.previousSolution || caseStudy.previousSolution,
+        technicalAdvantages: fields.technicalAdvantages || caseStudy.technicalAdvantages,
+        waSolution: fields.waSolution || caseStudy.waSolution,
+        isTranslated: true,
+      };
+    } catch {
+      // If parsing fails, use original content
+    }
+  }
+
+  // Calculate completion percentage
+  const completionPercentage = waCalculateCompletionPercentage(
+    caseStudy,
+    existingWPS,
+    existingCostCalc
+  );
+  const breakdown = waGetFieldBreakdown(
+    caseStudy,
+    existingWPS,
+    existingCostCalc
+  );
 
   // Prepare data for PDF export
   const pdfData: CaseStudyPDFData = {
@@ -137,6 +209,10 @@ export default async function CaseStudyDetailPage({ params }: Props) {
     } : undefined,
     createdAt: caseStudy.createdAt,
     approvedAt: caseStudy.approvedAt || undefined,
+    // Translation fields
+    originalLanguage: caseStudy.originalLanguage || undefined,
+    translationAvailable: caseStudy.translationAvailable || undefined,
+    translatedText: caseStudy.translatedText || undefined,
   };
 
   const getStatusIcon = (status: string) => {
@@ -180,7 +256,7 @@ export default async function CaseStudyDetailPage({ params }: Props) {
       case 'TECH':
         return 'bg-purple-50 text-purple-600 border-purple-200';
       case 'STAR':
-        return 'bg-yellow-50 text-yellow-600 border-yellow-200';
+        return 'bg-yellow-50 text-yellow-700 border-yellow-200'; /* Changed from yellow-600 for WCAG AA contrast */
       default:
         return 'bg-gray-50 text-gray-600 border-gray-200';
     }
@@ -210,9 +286,15 @@ export default async function CaseStudyDetailPage({ params }: Props) {
           </Button>
         </Link>
         <div className="flex gap-2">
-          <ShareButton
+          <ShareButtons
+            caseStudyId={caseStudy.id}
             title={`${caseStudy.customerName} - Case Study`}
-            text={`${caseStudy.industry} case study: ${caseStudy.problemDescription.substring(0, 100)}...`}
+            description={`${caseStudy.industry} case study: ${caseStudy.problemDescription.substring(0, 100)}...`}
+            variant="outline"
+            size="sm"
+          />
+          <EmailPDFButton
+            caseStudyId={caseStudy.id}
             variant="outline"
             size="sm"
           />
@@ -221,7 +303,7 @@ export default async function CaseStudyDetailPage({ params }: Props) {
             <Link href={`/dashboard/cases/${caseStudy.id}/edit`}>
               <Button variant="outline" size="sm" className="dark:border-border">
                 <Edit className="h-4 w-4 mr-2" />
-                Edit
+                Continue
               </Button>
             </Link>
           )}
@@ -233,11 +315,33 @@ export default async function CaseStudyDetailPage({ params }: Props) {
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">
-              {caseStudy.customerName} - {caseStudy.componentWorkpiece}
+              {caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}
             </h1>
             <p className="text-lg text-gray-600 dark:text-muted-foreground mt-2">
               {caseStudy.location}, {caseStudy.country || 'N/A'}
             </p>
+            {/* Language Indicator with View Original/Translated toggle link */}
+            {(caseStudy.originalLanguage !== 'en' || caseStudy.translationAvailable) && (
+              <div className="mt-3">
+                <LanguageIndicator
+                  originalLanguage={caseStudy.originalLanguage}
+                  translationAvailable={caseStudy.translationAvailable}
+                  translatedText={caseStudy.translatedText}
+                  caseStudyId={caseStudy.id}
+                  variant="inline"
+                  showLink={true}
+                  isViewingOriginal={displayOriginal}
+                />
+                {/* Show current view mode indicator */}
+                {caseStudy.translationAvailable && (
+                  <p className="text-xs text-gray-500 dark:text-muted-foreground mt-1">
+                    {displayOriginal
+                      ? `📄 Showing original ${LANGUAGE_NAMES[caseStudy.originalLanguage || 'en'] || caseStudy.originalLanguage} content`
+                      : '🌐 Showing translated English content'}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
           <div className="flex flex-col gap-2">
             <Badge className={`${getTypeColor(caseStudy.type)} border dark:border-border`}>
@@ -249,9 +353,116 @@ export default async function CaseStudyDetailPage({ params }: Props) {
                 {caseStudy.status}
               </span>
             </Badge>
+            <QualityScoreBadge
+              caseStudy={{
+                ...caseStudy,
+                // Convert Decimal fields to numbers for client component serialization
+                solutionValueRevenue: caseStudy.solutionValueRevenue ? Number(caseStudy.solutionValueRevenue) : null,
+                annualPotentialRevenue: caseStudy.annualPotentialRevenue ? Number(caseStudy.annualPotentialRevenue) : null,
+                customerSavingsAmount: caseStudy.customerSavingsAmount ? Number(caseStudy.customerSavingsAmount) : null,
+                wps: existingWPS,
+                costCalculator: existingCostCalc,
+              } as CaseStudyWithRelations}
+            />
           </div>
         </div>
       </div>
+
+      {/* Completion Quality Indicator */}
+      <Card role="article" className="dark:bg-card dark:border-border">
+        <CardHeader>
+          <CardTitle className="dark:text-foreground">Case Study Quality</CardTitle>
+          <CardDescription className="dark:text-muted-foreground">
+            Completion status based on filled fields
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <CompletionIndicator
+            percentage={completionPercentage}
+            variant="full"
+            showTooltip={true}
+            missingFields={breakdown.missingFields}
+          />
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t dark:border-border">
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-gray-500 dark:text-muted-foreground">Required Fields</p>
+              <p className="text-lg font-bold dark:text-foreground">
+                {breakdown.required.filled}/{breakdown.required.total}
+              </p>
+              <div className="h-1.5 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-wa-green-500 dark:bg-primary transition-all"
+                  style={{ width: `${(breakdown.required.filled / breakdown.required.total) * 100}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-gray-500 dark:text-muted-foreground">Optional Fields</p>
+              <p className="text-lg font-bold dark:text-foreground">
+                {breakdown.optional.filled}/{breakdown.optional.total}
+              </p>
+              <div className="h-1.5 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-blue-500 dark:bg-blue-600 transition-all"
+                  style={{ width: `${(breakdown.optional.filled / breakdown.optional.total) * 100}%` }}
+                />
+              </div>
+            </div>
+
+            {(caseStudy.type === 'TECH' || caseStudy.type === 'STAR') && (
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-gray-500 dark:text-muted-foreground">WPS Fields</p>
+                <p className="text-lg font-bold dark:text-foreground">
+                  {breakdown.wps.filled}/{breakdown.wps.total}
+                </p>
+                <div className="h-1.5 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-purple-500 dark:bg-purple-600 transition-all"
+                    style={{ width: `${breakdown.wps.total > 0 ? (breakdown.wps.filled / breakdown.wps.total) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {caseStudy.type === 'STAR' && (
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-gray-500 dark:text-muted-foreground">Cost Calculator</p>
+                <p className="text-lg font-bold dark:text-foreground">
+                  {breakdown.cost.filled}/{breakdown.cost.total}
+                </p>
+                <div className="h-1.5 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-yellow-500 dark:bg-yellow-600 transition-all"
+                    style={{ width: `${breakdown.cost.total > 0 ? (breakdown.cost.filled / breakdown.cost.total) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {breakdown.missingFields.length > 0 && (
+            <div className="pt-4 border-t dark:border-border">
+              <p className="text-sm font-medium text-gray-700 dark:text-foreground mb-2">
+                Missing Fields ({breakdown.missingFields.length}):
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {breakdown.missingFields.slice(0, 10).map((field, idx) => (
+                  <Badge key={idx} variant="outline" className="text-xs dark:border-border">
+                    {field}
+                  </Badge>
+                ))}
+                {breakdown.missingFields.length > 10 && (
+                  <Badge variant="outline" className="text-xs dark:border-border">
+                    +{breakdown.missingFields.length - 10} more
+                  </Badge>
+                )}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Basic Information */}
       <Card role="article" className="dark:bg-card dark:border-border">
@@ -306,6 +517,19 @@ export default async function CaseStudyDetailPage({ params }: Props) {
             </div>
           </div>
 
+          {(caseStudy.tags as string[])?.length > 0 && (
+            <div>
+              <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-2">Tags</p>
+              <div className="flex flex-wrap gap-2">
+                {(caseStudy.tags as string[]).map((tag) => (
+                  <Badge key={tag} variant="outline" className="bg-wa-green-50 text-wa-green-700 border-wa-green-200 dark:bg-wa-green-900/20 dark:text-wa-green-400 dark:border-wa-green-800">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
           {caseStudy.baseMetal && (
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Base Metal</p>
@@ -330,13 +554,13 @@ export default async function CaseStudyDetailPage({ params }: Props) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="prose max-w-none dark:prose-invert">
-            <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{caseStudy.problemDescription}</p>
+            <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{displayContent.problemDescription}</p>
           </div>
 
-          {caseStudy.previousSolution && (
+          {displayContent.previousSolution && (
             <div className="pt-4 border-t dark:border-border">
               <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Previous Solution</p>
-              <p className="text-base dark:text-foreground">{caseStudy.previousSolution}</p>
+              <p className="text-base dark:text-foreground">{displayContent.previousSolution}</p>
             </div>
           )}
 
@@ -364,7 +588,7 @@ export default async function CaseStudyDetailPage({ params }: Props) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="prose max-w-none dark:prose-invert">
-            <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{caseStudy.waSolution}</p>
+            <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{displayContent.waSolution}</p>
           </div>
 
           <div className="pt-4 border-t dark:border-border">
@@ -372,10 +596,10 @@ export default async function CaseStudyDetailPage({ params }: Props) {
             <p className="text-lg font-semibold text-wa-green-600 dark:text-primary">{caseStudy.waProduct}</p>
           </div>
 
-          {caseStudy.technicalAdvantages && (
+          {displayContent.technicalAdvantages && (
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Technical Advantages</p>
-              <p className="text-base dark:text-foreground whitespace-pre-wrap">{caseStudy.technicalAdvantages}</p>
+              <p className="text-base dark:text-foreground whitespace-pre-wrap">{displayContent.technicalAdvantages}</p>
             </div>
           )}
 
@@ -510,14 +734,24 @@ export default async function CaseStudyDetailPage({ params }: Props) {
         <CostCalculator
           caseStudyId={caseStudy.id}
           existingData={existingCostCalc ? {
-            materialCostBefore: Number(existingCostCalc.materialCostBefore),
-            materialCostAfter: Number(existingCostCalc.materialCostAfter),
-            laborCostBefore: Number(existingCostCalc.laborCostBefore),
-            laborCostAfter: Number(existingCostCalc.laborCostAfter),
-            downtimeCostBefore: Number(existingCostCalc.downtimeCostBefore),
-            downtimeCostAfter: Number(existingCostCalc.downtimeCostAfter),
-            maintenanceFrequencyBefore: existingCostCalc.maintenanceFrequencyBefore,
-            maintenanceFrequencyAfter: existingCostCalc.maintenanceFrequencyAfter,
+            materialCostBefore: Number(existingCostCalc.materialCostBefore) || 0,
+            materialCostAfter: Number(existingCostCalc.materialCostAfter) || 0,
+            laborCostBefore: Number(existingCostCalc.laborCostBefore) || 0,
+            laborCostAfter: Number(existingCostCalc.laborCostAfter) || 0,
+            downtimeCostBefore: Number(existingCostCalc.downtimeCostBefore) || 0,
+            downtimeCostAfter: Number(existingCostCalc.downtimeCostAfter) || 0,
+            maintenanceFrequencyBefore: existingCostCalc.maintenanceFrequencyBefore || 12,
+            maintenanceFrequencyAfter: existingCostCalc.maintenanceFrequencyAfter || 4,
+            // New fields for Part Lifecycle, Maintenance & Repair, Disassembly/Assembly, Extra Benefits
+            costOfPart: Number(existingCostCalc.costOfPart) || 0,
+            oldSolutionLifetimeDays: existingCostCalc.oldSolutionLifetimeDays || 0,
+            waSolutionLifetimeDays: existingCostCalc.waSolutionLifetimeDays || 0,
+            partsUsedPerYear: existingCostCalc.partsUsedPerYear || 0,
+            maintenanceRepairCostBefore: Number(existingCostCalc.maintenanceRepairCostBefore) || 0,
+            maintenanceRepairCostAfter: Number(existingCostCalc.maintenanceRepairCostAfter) || 0,
+            disassemblyCostBefore: Number(existingCostCalc.disassemblyCostBefore) || 0,
+            disassemblyCostAfter: Number(existingCostCalc.disassemblyCostAfter) || 0,
+            extraBenefits: existingCostCalc.extraBenefits || '',
           } : undefined}
         />
       )}
@@ -563,6 +797,27 @@ export default async function CaseStudyDetailPage({ params }: Props) {
         } : undefined}
         />
       )}
+
+      {/* Translation Panel */}
+      <TranslationPanel
+        caseStudyId={caseStudy.id}
+        originalLanguage={caseStudy.originalLanguage}
+        translationAvailable={caseStudy.translationAvailable}
+        translatedText={caseStudy.translatedText}
+      />
+
+      {/* Tag Colleagues */}
+      <Card role="article" className="dark:bg-card dark:border-border">
+        <CardHeader>
+          <CardTitle className="dark:text-foreground">Collaborate</CardTitle>
+          <CardDescription className="dark:text-muted-foreground">
+            Tag colleagues to notify them about this case study
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <TagColleagues caseStudyId={caseStudy.id} />
+        </CardContent>
+      </Card>
 
       {/* Metadata */}
       <Card role="article" className="dark:bg-card dark:border-border">

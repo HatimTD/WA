@@ -11,6 +11,7 @@ import { Clock, CheckCircle2, XCircle, Eye, Loader2, Search, X, Filter } from 'l
 
 interface CaseStudy {
   id: string;
+  title: string | null;
   customerName: string;
   waProduct: string;
   componentWorkpiece: string;
@@ -24,6 +25,10 @@ interface CaseStudy {
     name: string | null;
     email: string | null;
   };
+  approver?: {
+    id: string;
+    name: string | null;
+  } | null;
 }
 
 interface ApprovalsClientProps {
@@ -124,7 +129,7 @@ export default function ApprovalsClient({ userId }: ApprovalsClientProps) {
       case 'TECH':
         return 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400';
       case 'STAR':
-        return 'bg-yellow-50 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400';
+        return 'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'; /* Changed from yellow-600 for WCAG AA contrast */
       default:
         return 'bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
     }
@@ -315,7 +320,7 @@ export default function ApprovalsClient({ userId }: ApprovalsClientProps) {
                       </Badge>
                     </div>
                     <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">
-                      {caseStudy.customerName} - {caseStudy.componentWorkpiece}
+                      {caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                       {caseStudy.location} • {caseStudy.waProduct}
@@ -369,7 +374,7 @@ export default function ApprovalsClient({ userId }: ApprovalsClientProps) {
                       </Badge>
                     </div>
                     <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">
-                      {caseStudy.customerName} - {caseStudy.componentWorkpiece}
+                      {caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                       {caseStudy.location} • {caseStudy.waProduct}
