@@ -168,6 +168,60 @@ async function main() {
   users.push(contributor);
   console.log('Created contributor user with credentials');
 
+  // Create 10 additional test users with credentials (password: TestPassword123)
+  const testAccountsWithCredentials = [
+    { email: 'admin2@weldingalloys.com', name: 'Admin Two', role: 'ADMIN' as const },
+    { email: 'admin3@weldingalloys.com', name: 'Admin Three', role: 'ADMIN' as const },
+    { email: 'approver2@weldingalloys.com', name: 'Jane Approver', role: 'APPROVER' as const },
+    { email: 'approver3@weldingalloys.com', name: 'Mark Approver', role: 'APPROVER' as const },
+    { email: 'approver4@weldingalloys.com', name: 'Lisa Approver', role: 'APPROVER' as const },
+    { email: 'contributor2@weldingalloys.com', name: 'Alex Contributor', role: 'CONTRIBUTOR' as const },
+    { email: 'contributor3@weldingalloys.com', name: 'Emma Contributor', role: 'CONTRIBUTOR' as const },
+    { email: 'contributor4@weldingalloys.com', name: 'Noah Contributor', role: 'CONTRIBUTOR' as const },
+    { email: 'contributor5@weldingalloys.com', name: 'Sophia Contributor', role: 'CONTRIBUTOR' as const },
+    { email: 'contributor6@weldingalloys.com', name: 'Oliver Contributor', role: 'CONTRIBUTOR' as const },
+  ];
+
+  const testPasswordHash = await bcrypt.hash('TestPassword123', 10);
+
+  for (const account of testAccountsWithCredentials) {
+    const user = await prisma.user.upsert({
+      where: { email: account.email },
+      update: {},
+      create: {
+        email: account.email,
+        name: account.name,
+        role: account.role,
+        emailVerified: new Date(),
+        totalPoints: account.role === 'ADMIN' ? 100 : account.role === 'APPROVER' ? 50 : 25,
+        badges: [],
+      },
+    });
+
+    // Create credentials account for this user
+    await prisma.account.upsert({
+      where: {
+        provider_providerAccountId: {
+          provider: 'credentials',
+          providerAccountId: user.id,
+        },
+      },
+      update: {
+        access_token: testPasswordHash,
+      },
+      create: {
+        userId: user.id,
+        type: 'credentials',
+        provider: 'credentials',
+        providerAccountId: user.id,
+        access_token: testPasswordHash,
+      },
+    });
+
+    users.push(user);
+  }
+  console.log('Created 10 additional test users with credentials');
+
   // Create additional CONTRIBUTOR users (without credentials - Google login only)
   const contributorNames = [
     'Sarah Chen', 'Michael Rodriguez', 'Emily Thompson', 'David Kim',
