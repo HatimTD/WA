@@ -16,6 +16,7 @@ import StepCostCalculator from '@/components/case-study-form/step-cost-calculato
 import ChallengeQualifier, { type QualifierResult } from '@/components/case-study-form/challenge-qualifier';
 import { waCreateCaseStudy } from '@/lib/actions/waCaseStudyActions';
 import { waSaveWeldingProcedure } from '@/lib/actions/waWpsActions';
+import { waSaveCostCalculation } from '@/lib/actions/waCostCalculatorActions';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
 import NetSuiteCustomerSearch from '@/components/netsuite-customer-search';
@@ -41,22 +42,44 @@ export type CaseStudyFormData = {
   country: string;
   componentWorkpiece: string;
   workType: 'WORKSHOP' | 'ON_SITE' | 'BOTH';
+  jobType: 'PREVENTIVE' | 'CORRECTIVE' | 'IMPROVEMENT' | 'OTHER' | ''; // Type of maintenance job
+  jobTypeOther: string; // Custom job type when "OTHER" is selected
   wearType: string[];
+  wearTypeOthers: Array<{ name: string; severity: number }>; // Multiple custom wear types with severity
+  wearSeverities: Record<string, number>; // Severity per wear type (1=low, 5=high)
   baseMetal: string;
   generalDimensions: string;
   oem: string; // Original Equipment Manufacturer (BRD Section 5)
+  jobDurationHours: string; // Duration in hours
+  jobDurationDays: string; // Duration in days
+  jobDurationWeeks: string; // Duration in weeks
+  unitSystem: 'METRIC' | 'IMPERIAL'; // Unit system for dimensions
 
   // Step 3: Problem Description
   problemDescription: string;
   previousSolution: string;
   previousServiceLife: string;
+  previousServiceLifeHours: string; // Service life in hours
+  previousServiceLifeDays: string; // Service life in days
+  previousServiceLifeWeeks: string; // Service life in weeks
+  previousServiceLifeMonths: string; // Service life in months
+  previousServiceLifeYears: string; // Service life in years
+  oldJobDurationHours: string; // Old solution job duration in hours
+  oldJobDurationDays: string; // Old solution job duration in days
+  oldJobDurationWeeks: string; // Old solution job duration in weeks
   competitorName: string;
 
   // Step 4: WA Solution
   waSolution: string;
   waProduct: string;
+  waProductDiameter: string; // Wire diameter (e.g., 1.6mm or 0.063in)
   technicalAdvantages: string;
   expectedServiceLife: string;
+  expectedServiceLifeHours: string; // Expected service life in hours
+  expectedServiceLifeDays: string; // Expected service life in days
+  expectedServiceLifeWeeks: string; // Expected service life in weeks
+  expectedServiceLifeMonths: string; // Expected service life in months
+  expectedServiceLifeYears: string; // Expected service life in years
 
   // Step 5: Financial & Media
   solutionValueRevenue: string;
@@ -111,12 +134,30 @@ export type CaseStudyFormData = {
 
   // Step Cost Calculator: Cost Reduction Calculator (STAR only - BRD 3.3)
   costCalculator?: {
-    costOfPart?: string;
-    oldSolutionLifetime?: string;
-    waSolutionLifetime?: string;
-    partsUsedPerYear?: string;
-    maintenanceDowntimeCost?: string;
-    disassemblyAssemblyCost?: string;
+    currency?: 'USD' | 'EUR' | 'GBP' | 'AUD' | 'CAD' | 'CHF' | 'JPY' | 'CNY'; // Currency selector
+    costOfPart?: string;           // A - Cost of old solution/part
+    costOfWaSolution?: string;     // B - Cost of WA solution (new field)
+    // Old solution lifetime (mixed units)
+    oldLifetimeHours?: string;
+    oldLifetimeDays?: string;
+    oldLifetimeWeeks?: string;
+    oldLifetimeMonths?: string;
+    oldLifetimeYears?: string;
+    // WA solution lifetime (mixed units)
+    waLifetimeHours?: string;
+    waLifetimeDays?: string;
+    waLifetimeWeeks?: string;
+    waLifetimeMonths?: string;
+    waLifetimeYears?: string;
+    // Legacy fields (kept for backward compatibility)
+    oldSolutionLifetime?: string;  // C - Old solution lifetime (deprecated)
+    waSolutionLifetime?: string;   // D - WA solution lifetime (deprecated)
+    serviceLifeUnit?: 'HOURS' | 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS';  // Unit for lifetime values (deprecated)
+    partsUsedPerYear?: string;     // E - Parts used per year
+    maintenanceCostPerEvent?: string;  // F - Maintenance cost per replacement event
+    disassemblyAssemblyCost?: string;  // G - Disassembly/Assembly cost per event
+    downtimeCostPerEvent?: string;     // H - Downtime cost per event
+    extraBenefits?: string; // Qualitative benefits (BRD Row 38)
   };
 };
 
@@ -137,18 +178,40 @@ export default function NewCaseStudyPage() {
     country: '',
     componentWorkpiece: '',
     workType: 'WORKSHOP',
+    jobType: '',
+    jobTypeOther: '',
     wearType: [],
+    wearTypeOthers: [],
+    wearSeverities: {},
     baseMetal: '',
     generalDimensions: '',
     oem: '',
+    jobDurationHours: '',
+    jobDurationDays: '',
+    jobDurationWeeks: '',
+    unitSystem: 'METRIC',
     problemDescription: '',
     previousSolution: '',
     previousServiceLife: '',
+    previousServiceLifeHours: '',
+    previousServiceLifeDays: '',
+    previousServiceLifeWeeks: '',
+    previousServiceLifeMonths: '',
+    previousServiceLifeYears: '',
+    oldJobDurationHours: '',
+    oldJobDurationDays: '',
+    oldJobDurationWeeks: '',
     competitorName: '',
     waSolution: '',
     waProduct: '',
+    waProductDiameter: '',
     technicalAdvantages: '',
     expectedServiceLife: '',
+    expectedServiceLifeHours: '',
+    expectedServiceLifeDays: '',
+    expectedServiceLifeWeeks: '',
+    expectedServiceLifeMonths: '',
+    expectedServiceLifeYears: '',
     solutionValueRevenue: '',
     annualPotentialRevenue: '',
     customerSavingsAmount: '',
@@ -210,12 +273,22 @@ export default function NewCaseStudyPage() {
         if (!formData.qualifierCompleted) missing.push('Qualifier Questions');
         break;
       case 'Basic Info':
+        if (!formData.title) missing.push('Case Study Title');
         if (!formData.customerName) missing.push('Customer Name');
-        if (!formData.industry) missing.push('Industry');
+        if (!formData.industry || formData.industry === '__CUSTOM__') missing.push('Industry');
         if (!formData.location) missing.push('Location');
         if (!formData.componentWorkpiece) missing.push('Component/Workpiece');
         if (!formData.workType) missing.push('Work Type');
+        if (!formData.jobType) missing.push('Job Type');
+        if (formData.jobType === 'OTHER' && !formData.jobTypeOther) missing.push('Job Type (specify)');
         if (!formData.wearType || formData.wearType.length === 0) missing.push('Type of Wear');
+        // Check that at least one selected wear type has a severity (others are optional)
+        const wearTypesWithSeverity = formData.wearType?.filter(
+          type => formData.wearSeverities?.[type] && formData.wearSeverities[type] > 0
+        );
+        if (formData.wearType && formData.wearType.length > 0 && (!wearTypesWithSeverity || wearTypesWithSeverity.length === 0)) {
+          missing.push('Wear Severity (set for at least one wear type)');
+        }
         if (!formData.baseMetal) missing.push('Base Metal');
         if (!formData.generalDimensions) missing.push('General Dimensions');
         break;
@@ -240,17 +313,31 @@ export default function NewCaseStudyPage() {
         if (!formData.wps?.additionalNotes) missing.push('Additional WPS Notes');
         break;
       case 'Cost Calculator':
-        if (!formData.costCalculator?.costOfPart) missing.push('Cost of Part');
+        if (!formData.costCalculator?.costOfPart) missing.push('Cost of Part (Old Solution)');
+        if (!formData.costCalculator?.costOfWaSolution) missing.push('Cost of WA Solution');
         if (!formData.costCalculator?.partsUsedPerYear) missing.push('Parts Used Per Year');
-        if (!formData.costCalculator?.oldSolutionLifetime) missing.push('Old Solution Lifetime');
-        if (!formData.costCalculator?.waSolutionLifetime) missing.push('WA Solution Lifetime');
-        if (!formData.costCalculator?.maintenanceDowntimeCost) missing.push('Maintenance/Downtime Cost');
+        // Check if any old solution lifetime field has a value (mixed units)
+        const hasOldLifetime = formData.costCalculator?.oldLifetimeHours ||
+          formData.costCalculator?.oldLifetimeDays ||
+          formData.costCalculator?.oldLifetimeWeeks ||
+          formData.costCalculator?.oldLifetimeMonths ||
+          formData.costCalculator?.oldLifetimeYears;
+        if (!hasOldLifetime) missing.push('Old Solution Lifetime');
+        // Check if any WA solution lifetime field has a value (mixed units)
+        const hasWaLifetime = formData.costCalculator?.waLifetimeHours ||
+          formData.costCalculator?.waLifetimeDays ||
+          formData.costCalculator?.waLifetimeWeeks ||
+          formData.costCalculator?.waLifetimeMonths ||
+          formData.costCalculator?.waLifetimeYears;
+        if (!hasWaLifetime) missing.push('WA Solution Lifetime');
+        if (!formData.costCalculator?.maintenanceCostPerEvent) missing.push('Maintenance Cost Per Event');
         if (!formData.costCalculator?.disassemblyAssemblyCost) missing.push('Disassembly/Assembly Cost');
+        if (!formData.costCalculator?.downtimeCostPerEvent) missing.push('Downtime Cost Per Event');
         break;
       case 'Review':
         if (!formData.solutionValueRevenue) missing.push('Solution Value/Revenue');
         if (!formData.annualPotentialRevenue) missing.push('Annual Potential Revenue');
-        if (!formData.customerSavingsAmount) missing.push('Customer Savings');
+        // customerSavingsAmount is now optional
         if (!formData.images || formData.images.length < 1) missing.push('At least 1 image');
         break;
     }
@@ -278,10 +365,107 @@ export default function NewCaseStudyPage() {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
   };
 
+  /**
+   * Helper to convert mixed time units to total hours (for comparison)
+   */
+  const waConvertToTotalHours = (hours?: string, days?: string, weeks?: string, months?: string, years?: string): number => {
+    const h = parseFloat(hours || '0') || 0;
+    const d = parseFloat(days || '0') || 0;
+    const w = parseFloat(weeks || '0') || 0;
+    const m = parseFloat(months || '0') || 0;
+    const y = parseFloat(years || '0') || 0;
+    // Convert all to hours: 1d=24h, 1w=168h, 1m=730h (avg), 1y=8760h
+    return h + (d * 24) + (w * 168) + (m * 730) + (y * 8760);
+  };
+
+  /**
+   * Helper to convert simplified cost calculator form data to database schema format
+   * Uses new formula: Annual Cost Old = (A × E) + (E − 1) × (F + G + H)
+   *                   Annual Cost WA = (B × (E ÷ (D ÷ C))) + ((E ÷ (D ÷ C)) − 1) × (F + G + H)
+   */
+  const waMapCostCalculatorData = (cc: NonNullable<typeof formData.costCalculator>, caseStudyId: string) => {
+    const A = parseFloat(cc.costOfPart || '0') || 0;           // Cost of old solution
+    const B = parseFloat(cc.costOfWaSolution || '0') || 0;    // Cost of WA solution
+
+    // Convert mixed units to total hours, then to days for database storage
+    const oldLifetimeHours = waConvertToTotalHours(
+      cc.oldLifetimeHours, cc.oldLifetimeDays, cc.oldLifetimeWeeks,
+      cc.oldLifetimeMonths, cc.oldLifetimeYears
+    );
+    const waLifetimeHours = waConvertToTotalHours(
+      cc.waLifetimeHours, cc.waLifetimeDays, cc.waLifetimeWeeks,
+      cc.waLifetimeMonths, cc.waLifetimeYears
+    );
+
+    // Use mixed units if available, otherwise fall back to legacy fields
+    const C = oldLifetimeHours || parseFloat(cc.oldSolutionLifetime || '1') || 1; // Old lifetime (in hours)
+    const D = waLifetimeHours || parseFloat(cc.waSolutionLifetime || '1') || 1;   // WA lifetime (in hours)
+
+    const E = parseInt(cc.partsUsedPerYear || '0') || 0;      // Parts/year
+    const F = parseFloat(cc.maintenanceCostPerEvent || '0') || 0;  // Maintenance cost/event
+    const G = parseFloat(cc.disassemblyAssemblyCost || '0') || 0;  // Disassembly cost/event
+    const H = parseFloat(cc.downtimeCostPerEvent || '0') || 0;     // Downtime cost/event
+
+    // Calculate lifetime improvement factor
+    const lifetimeRatio = D / C;
+    const waPartsPerYear = E / lifetimeRatio;
+
+    // New formula calculations
+    // Annual Cost Old = (A × E) + (E − 1) × (F + G + H)
+    const annualCostOld = (A * E) + (E - 1) * (F + G + H);
+
+    // Annual Cost WA = (B × waPartsPerYear) + (waPartsPerYear − 1) × (F + G + H)
+    const annualCostWA = (B * waPartsPerYear) + Math.max(0, waPartsPerYear - 1) * (F + G + H);
+
+    const annualSavings = annualCostOld - annualCostWA;
+    const savingsPercentage = annualCostOld > 0 ? Math.round((annualSavings / annualCostOld) * 100) : 0;
+
+    // Map to database schema format (before/after format for compatibility)
+    const materialCostBefore = A * E;
+    const materialCostAfter = B * waPartsPerYear;
+    const laborCostBefore = (E - 1) * G;
+    const laborCostAfter = Math.max(0, waPartsPerYear - 1) * G;
+    const downtimeCostBefore = (E - 1) * H;
+    const downtimeCostAfter = Math.max(0, waPartsPerYear - 1) * H;
+
+    // Convert hours to days for database storage (C and D are in hours)
+    const oldLifetimeDays = Math.round(C / 24);
+    const waLifetimeDays = Math.round(D / 24);
+
+    return {
+      caseStudyId,
+      materialCostBefore,
+      materialCostAfter,
+      laborCostBefore,
+      laborCostAfter,
+      downtimeCostBefore,
+      downtimeCostAfter,
+      maintenanceFrequencyBefore: E,
+      maintenanceFrequencyAfter: Math.ceil(waPartsPerYear),
+      costOfPart: A,
+      costOfWaSolution: B,
+      oldSolutionLifetimeDays: oldLifetimeDays || 1, // Ensure at least 1 day
+      waSolutionLifetimeDays: waLifetimeDays || 1,   // Ensure at least 1 day
+      partsUsedPerYear: E,
+      disassemblyCostBefore: G,
+      disassemblyCostAfter: G,
+      maintenanceRepairCostBefore: F,
+      maintenanceRepairCostAfter: F,
+      downtimeCostPerEvent: H,
+      currency: cc.currency || 'EUR',
+      extraBenefits: cc.extraBenefits || undefined,
+      totalCostBefore: annualCostOld,
+      totalCostAfter: annualCostWA,
+      annualSavings,
+      savingsPercentage,
+    };
+  };
+
   const handleSaveDraft = async () => {
     setIsSubmitting(true);
     try {
       const hasWPS = formData.type === 'TECH' || formData.type === 'STAR';
+      const hasCostCalc = formData.type === 'STAR';
 
       // Create the case study draft
       const result = await waCreateCaseStudy({ ...formData, status: 'DRAFT' });
@@ -300,6 +484,15 @@ export default function NewCaseStudyPage() {
         }
       }
 
+      // If STAR and cost calculator data exists, save cost calculator
+      if (hasCostCalc && formData.costCalculator && result.id) {
+        const hasAnyCostData = Object.values(formData.costCalculator).some(v => v !== undefined && v !== '' && v !== null);
+        if (hasAnyCostData) {
+          const costCalcData = waMapCostCalculatorData(formData.costCalculator, result.id);
+          await waSaveCostCalculation(costCalcData);
+        }
+      }
+
       toast.success('Draft saved successfully');
       router.push('/dashboard/my-cases');
     } catch (error) {
@@ -313,6 +506,7 @@ export default function NewCaseStudyPage() {
   const handleSubmit = async () => {
     // Validate all required steps
     const hasWPS = formData.type === 'TECH' || formData.type === 'STAR';
+    const hasCostCalc = formData.type === 'STAR';
     for (let i = 1; i <= STEPS.length - 1; i++) { // -1 to exclude Review step
       if (!validateStep(i)) {
         toast.error('Please complete all required fields');
@@ -333,6 +527,12 @@ export default function NewCaseStudyPage() {
           weldingProcess: formData.wps.weldingProcess || '',
           ...formData.wps,
         });
+      }
+
+      // If STAR and cost calculator data exists, save cost calculator
+      if (hasCostCalc && formData.costCalculator && result.id) {
+        const costCalcData = waMapCostCalculatorData(formData.costCalculator, result.id);
+        await waSaveCostCalculation(costCalcData);
       }
 
       toast.success('Case study submitted for approval!');
@@ -362,38 +562,63 @@ export default function NewCaseStudyPage() {
         <CardContent className="pt-6">
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              {STEPS.map((step) => (
-                <div
-                  key={step.number}
-                  className={`flex flex-col items-center flex-1 ${
-                    step.number < STEPS.length ? 'relative' : ''
-                  }`}
-                >
+              {STEPS.map((step) => {
+                // Allow clicking on completed steps or current step
+                const canNavigate = step.number <= currentStep;
+                const handleStepClick = () => {
+                  if (step.number < currentStep) {
+                    // Navigate back to any previous step
+                    setCurrentStep(step.number);
+                  } else if (step.number > currentStep) {
+                    // For forward navigation, validate current step first
+                    const missingFields = getMissingFields(currentStep);
+                    if (missingFields.length === 0) {
+                      setCurrentStep(step.number);
+                    } else {
+                      const fieldList = missingFields.slice(0, 3).join(', ');
+                      const moreCount = missingFields.length > 3 ? ` and ${missingFields.length - 3} more` : '';
+                      toast.error(`Complete current step first: ${fieldList}${moreCount}`);
+                    }
+                  }
+                };
+
+                return (
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${
-                      currentStep === step.number
-                        ? 'bg-wa-green-600 text-white'
-                        : currentStep > step.number
-                        ? 'bg-green-700 text-white' /* Darkened for WCAG AA contrast */
-                        : 'bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+                    key={step.number}
+                    className={`flex flex-col items-center flex-1 ${
+                      step.number < STEPS.length ? 'relative' : ''
                     }`}
                   >
-                    {step.number}
+                    <button
+                      type="button"
+                      onClick={handleStepClick}
+                      disabled={isSubmitting}
+                      className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all ${
+                        currentStep === step.number
+                          ? 'bg-wa-green-600 text-white ring-2 ring-wa-green-300'
+                          : currentStep > step.number
+                          ? 'bg-green-700 text-white hover:bg-green-600 cursor-pointer'
+                          : 'bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600 cursor-pointer'
+                      } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      title={canNavigate ? `Go to ${step.title}` : `Complete previous steps to access ${step.title}`}
+                    >
+                      {step.number}
+                    </button>
+                    <div className="text-xs mt-2 text-center">
+                      <div className="font-semibold dark:text-foreground">{step.title}</div>
+                      <div className="text-gray-500 dark:text-muted-foreground hidden sm:block">{step.description}</div>
+                    </div>
+                    {step.number < STEPS.length && (
+                      <div
+                        className={`absolute top-5 left-[60%] w-full h-0.5 ${
+                          currentStep > step.number ? 'bg-green-600' : 'bg-gray-200 dark:bg-gray-700'
+                        }`}
+                        style={{ zIndex: -1 }}
+                      />
+                    )}
                   </div>
-                  <div className="text-xs mt-2 text-center">
-                    <div className="font-semibold dark:text-foreground">{step.title}</div>
-                    <div className="text-gray-500 dark:text-muted-foreground hidden sm:block">{step.description}</div>
-                  </div>
-                  {step.number < STEPS.length && (
-                    <div
-                      className={`absolute top-5 left-[60%] w-full h-0.5 ${
-                        currentStep > step.number ? 'bg-green-600' : 'bg-gray-200 dark:bg-gray-700'
-                      }`}
-                      style={{ zIndex: -1 }}
-                    />
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
             <Progress value={progress} className="h-2" />
           </div>

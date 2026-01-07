@@ -142,6 +142,7 @@ enum WearType {
   IMPACT
   CORROSION
   TEMPERATURE
+  METAL_METAL
   COMBINATION
 }
 
@@ -545,7 +546,44 @@ model WaCaseStudy {
   // Solution description (was missing)
   solutionDescription String? @db.Text
 
-  // Job Duration
+  // Wire Diameter (e.g., 1.6mm or 0.063in)
+  waProductDiameter String? @db.VarChar(50)
+
+  // Wear Type Severities and Others (JSON for flexibility)
+  wearSeverities Json? // { "ABRASION": 3, "IMPACT": 2, ... }
+  wearTypeOthers Json? // [{ "name": "Custom wear", "severity": 3 }, ...]
+
+  // Granular Service Life Fields (h/d/w/m/y)
+  previousServiceLifeHours  String?
+  previousServiceLifeDays   String?
+  previousServiceLifeWeeks  String?
+  previousServiceLifeMonths String?
+  previousServiceLifeYears  String?
+
+  expectedServiceLifeHours  String?
+  expectedServiceLifeDays   String?
+  expectedServiceLifeWeeks  String?
+  expectedServiceLifeMonths String?
+  expectedServiceLifeYears  String?
+
+  // Old Solution Job Duration (h/d/w)
+  oldJobDurationHours String?
+  oldJobDurationDays  String?
+  oldJobDurationWeeks String?
+
+  // Unit System (METRIC or IMPERIAL)
+  unitSystem String? @default("METRIC")
+
+  // Job Type (PREVENTIVE, CORRECTIVE, IMPROVEMENT, OTHER)
+  jobType      String?
+  jobTypeOther String?
+
+  // Job Duration (granular h/d/w)
+  jobDurationHours String?
+  jobDurationDays  String?
+  jobDurationWeeks String?
+
+  // Legacy Job Duration fields
   jobDuration       Decimal? @db.Decimal(10, 2)
   jobDurationUnitId String?
 
@@ -671,6 +709,7 @@ model WaCostCalculator {
 
   // NEW FIELDS (BRD Rows 28-33, 38)
   costOfPart                  Float?  @default(0)
+  costOfWaSolution            Float?  @default(0)
   oldSolutionLifetimeDays     Int?    @default(0)
   waSolutionLifetimeDays      Int?    @default(0)
   partsUsedPerYear            Int?    @default(0)
@@ -678,6 +717,8 @@ model WaCostCalculator {
   maintenanceRepairCostAfter  Float?  @default(0)
   disassemblyCostBefore       Float?  @default(0)
   disassemblyCostAfter        Float?  @default(0)
+  downtimeCostPerEvent        Float?  @default(0)
+  currency                    String? @default("EUR")
   extraBenefits               String? @db.Text
 
   // Calculated Totals

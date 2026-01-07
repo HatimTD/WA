@@ -5,35 +5,59 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CaseStudyFormData } from '@/app/dashboard/new/page';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, Upload, CheckCircle2, Sparkles, X, Plus } from 'lucide-react';
+import { DollarSign, Upload, CheckCircle2, Sparkles, X, Plus, Calculator } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import ImageUpload from '@/components/image-upload';
 import DocumentUpload from '@/components/document-upload';
-import CostCalculator from '@/components/cost-calculator';
 import { waSuggestTags } from '@/lib/actions/waAiSuggestionsActions';
 import { toast } from 'sonner';
 
 type Props = {
   formData: CaseStudyFormData;
   updateFormData: (data: Partial<CaseStudyFormData>) => void;
-  caseStudyId?: string; // Optional: only provided in edit mode
-  existingCostCalc?: {
-    materialCostBefore: number;
-    materialCostAfter: number;
-    laborCostBefore: number;
-    laborCostAfter: number;
-    downtimeCostBefore: number;
-    downtimeCostAfter: number;
-    maintenanceFrequencyBefore: number;
-    maintenanceFrequencyAfter: number;
-  };
 };
 
-export default function StepFive({ formData, updateFormData, caseStudyId, existingCostCalc }: Props) {
+export default function StepFive({ formData, updateFormData }: Props) {
   const [isGeneratingTags, setIsGeneratingTags] = useState(false);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
+
+  // Calculate cost calculator summary for STAR cases (same formula as step-cost-calculator)
+  const waCalculateCostSummary = () => {
+    const cc = formData.costCalculator;
+    if (!cc?.costOfPart || !cc?.costOfWaSolution || !cc?.oldSolutionLifetime || !cc?.waSolutionLifetime ||
+        !cc?.partsUsedPerYear || !cc?.maintenanceCostPerEvent || !cc?.disassemblyAssemblyCost || !cc?.downtimeCostPerEvent) {
+      return null;
+    }
+
+    const A = parseFloat(cc.costOfPart) || 0;
+    const B = parseFloat(cc.costOfWaSolution) || 0;
+    const C = parseFloat(cc.oldSolutionLifetime) || 1;
+    const D = parseFloat(cc.waSolutionLifetime) || 1;
+    const E = parseFloat(cc.partsUsedPerYear) || 0;
+    const F = parseFloat(cc.maintenanceCostPerEvent) || 0;
+    const G = parseFloat(cc.disassemblyAssemblyCost) || 0;
+    const H = parseFloat(cc.downtimeCostPerEvent) || 0;
+
+    const lifetimeRatio = D / C;
+    const waPartsPerYear = E / lifetimeRatio;
+    const annualCostOld = (A * E) + (E - 1) * (F + G + H);
+    const annualCostWA = (B * waPartsPerYear) + Math.max(0, waPartsPerYear - 1) * (F + G + H);
+    const totalAnnualSavings = annualCostOld - annualCostWA;
+    const savingsPercentage = annualCostOld > 0 ? (totalAnnualSavings / annualCostOld) * 100 : 0;
+
+    return {
+      lifetimeRatio: lifetimeRatio.toFixed(1),
+      waPartsPerYear: waPartsPerYear.toFixed(1),
+      annualCostOld: annualCostOld.toFixed(2),
+      annualCostWA: annualCostWA.toFixed(2),
+      totalAnnualSavings: totalAnnualSavings.toFixed(2),
+      savingsPercentage: savingsPercentage.toFixed(1),
+    };
+  };
+
+  const costSummary = formData.type === 'STAR' ? waCalculateCostSummary() : null;
 
   const handleGenerateTags = async () => {
     // Check which required fields are missing
@@ -101,7 +125,7 @@ export default function StepFive({ formData, updateFormData, caseStudyId, existi
             Financial Information
           </CardTitle>
           <CardDescription className="dark:text-muted-foreground">
-            Document the business value and customer savings (all fields required)
+            Document the business value and potential customer savings
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -148,7 +172,7 @@ export default function StepFive({ formData, updateFormData, caseStudyId, existi
 
             <div className="space-y-2">
               <Label htmlFor="customerSavingsAmount" className="dark:text-foreground">
-                Customer Savings <span className="text-red-500 dark:text-red-400">*</span>
+                Customer Savings
               </Label>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -158,23 +182,84 @@ export default function StepFive({ formData, updateFormData, caseStudyId, existi
                   onChange={(e) => updateFormData({ customerSavingsAmount: e.target.value })}
                   placeholder="e.g., 50000"
                   className="pl-9 dark:bg-input dark:border-border dark:text-foreground"
-                  required
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Estimated customer cost savings
+                Estimated customer cost savings (optional)
               </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Cost Reduction Calculator - Only for STAR cases in edit mode */}
-      {formData.type === 'STAR' && caseStudyId && (
-        <CostCalculator
-          caseStudyId={caseStudyId}
-          existingData={existingCostCalc}
-        />
+      {/* Cost Calculator Summary - For STAR cases */}
+      {formData.type === 'STAR' && costSummary && (
+        <Card role="article" className="bg-wa-green-50 border-wa-green-200 dark:bg-accent dark:border-primary">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 dark:text-foreground">
+              <Calculator className="h-5 w-5 text-wa-green-600" />
+              Cost Calculator Summary
+            </CardTitle>
+            <CardDescription className="dark:text-muted-foreground">
+              Calculated savings from the WA solution
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="space-y-3">
+                <div className="text-center p-3 bg-white dark:bg-card rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">Annual Cost (Old Solution)</p>
+                  <p className="text-2xl font-bold text-gray-800 dark:text-foreground">
+                    ${parseFloat(costSummary.annualCostOld).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                </div>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <div className="flex justify-between">
+                    <span>Parts/year:</span>
+                    <span>{formData.costCalculator?.partsUsedPerYear}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="text-center p-3 bg-white dark:bg-card rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">Annual Cost (WA Solution)</p>
+                  <p className="text-2xl font-bold text-wa-green-600 dark:text-primary">
+                    ${parseFloat(costSummary.annualCostWA).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                </div>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <div className="flex justify-between">
+                    <span>Lifetime improvement:</span>
+                    <span className="font-semibold text-wa-green-700 dark:text-primary">{costSummary.lifetimeRatio}x</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Parts/year (reduced):</span>
+                    <span>{costSummary.waPartsPerYear}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="text-center p-3 bg-wa-green-100 dark:bg-primary/20 rounded-lg border-2 border-wa-green-300 dark:border-primary">
+                  <p className="text-xs text-wa-green-700 dark:text-primary mb-1">Total Annual Savings</p>
+                  <p className="text-3xl font-bold text-wa-green-700 dark:text-primary">
+                    ${parseFloat(costSummary.totalAnnualSavings).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                  <p className="text-sm font-semibold text-wa-green-600 dark:text-primary/80 mt-1">
+                    {costSummary.savingsPercentage}% reduction
+                  </p>
+                </div>
+              </div>
+            </div>
+            {formData.costCalculator?.extraBenefits && (
+              <div className="mt-4 pt-4 border-t border-wa-green-200 dark:border-primary/30">
+                <p className="text-sm font-semibold dark:text-foreground mb-1">Extra Benefits:</p>
+                <p className="text-sm text-muted-foreground">{formData.costCalculator.extraBenefits}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* AI-Powered Tags */}

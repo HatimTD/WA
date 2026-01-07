@@ -93,14 +93,17 @@ export default function StepWPS({ formData, updateFormData }: Props) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="waProductDiameter" className="dark:text-foreground">Product Diameter</Label>
+            <Label htmlFor="waProductDiameter" className="dark:text-foreground">Wire Diameter</Label>
             <Input
               id="waProductDiameter"
               value={formData.wps?.waProductDiameter || ''}
               onChange={(e) => updateFormData({ wps: { ...formData.wps, waProductDiameter: e.target.value } })}
-              placeholder="e.g., 1.2mm, 2.4mm"
+              placeholder={formData.unitSystem === 'IMPERIAL' ? 'e.g., 0.047in, 0.063in' : 'e.g., 1.2mm, 1.6mm, 2.4mm'}
               className="dark:bg-input dark:border-border dark:text-foreground"
             />
+            <p className="text-xs text-muted-foreground">
+              Diameter of the welding wire used ({formData.unitSystem === 'IMPERIAL' ? 'inches' : 'millimeters'})
+            </p>
           </div>
 
           <div className="space-y-2">

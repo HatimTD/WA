@@ -81,16 +81,112 @@ export default function StepThree({ formData, updateFormData }: Props) {
         </p>
       </div>
 
-      {/* Previous Service Life */}
+      {/* Previous Service Life - with scale selector */}
       <div className="space-y-2">
-        <Label htmlFor="previousServiceLife" className="dark:text-foreground">Previous Service Life</Label>
-        <Input
-          id="previousServiceLife"
-          value={formData.previousServiceLife}
-          onChange={(e) => updateFormData({ previousServiceLife: e.target.value })}
-          placeholder="e.g., 500 hours, 3 months"
-          className="dark:bg-input dark:border-border dark:text-foreground"
-        />
+        <Label className="dark:text-foreground">Previous Service Life</Label>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1">
+            <Input
+              type="number"
+              min="0"
+              value={formData.previousServiceLifeHours || ''}
+              onChange={(e) => updateFormData({ previousServiceLifeHours: e.target.value })}
+              placeholder="0"
+              className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
+            />
+            <span className="text-sm text-muted-foreground font-medium">h</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Input
+              type="number"
+              min="0"
+              value={formData.previousServiceLifeDays || ''}
+              onChange={(e) => updateFormData({ previousServiceLifeDays: e.target.value })}
+              placeholder="0"
+              className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
+            />
+            <span className="text-sm text-muted-foreground font-medium">d</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Input
+              type="number"
+              min="0"
+              value={formData.previousServiceLifeWeeks || ''}
+              onChange={(e) => updateFormData({ previousServiceLifeWeeks: e.target.value })}
+              placeholder="0"
+              className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
+            />
+            <span className="text-sm text-muted-foreground font-medium">w</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Input
+              type="number"
+              min="0"
+              value={formData.previousServiceLifeMonths || ''}
+              onChange={(e) => updateFormData({ previousServiceLifeMonths: e.target.value })}
+              placeholder="0"
+              className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
+            />
+            <span className="text-sm text-muted-foreground font-medium">m</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Input
+              type="number"
+              min="0"
+              value={formData.previousServiceLifeYears || ''}
+              onChange={(e) => updateFormData({ previousServiceLifeYears: e.target.value })}
+              placeholder="0"
+              className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
+            />
+            <span className="text-sm text-muted-foreground font-medium">y</span>
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          How long did the old solution last before needing replacement
+        </p>
+      </div>
+
+      {/* Old Solution Job Duration */}
+      <div className="space-y-2">
+        <Label className="dark:text-foreground">Old Solution Job Duration</Label>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1">
+            <Input
+              type="number"
+              min="0"
+              value={formData.oldJobDurationHours || ''}
+              onChange={(e) => updateFormData({ oldJobDurationHours: e.target.value })}
+              placeholder="0"
+              className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
+            />
+            <span className="text-sm text-muted-foreground font-medium">h</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Input
+              type="number"
+              min="0"
+              value={formData.oldJobDurationDays || ''}
+              onChange={(e) => updateFormData({ oldJobDurationDays: e.target.value })}
+              placeholder="0"
+              className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
+            />
+            <span className="text-sm text-muted-foreground font-medium">d</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Input
+              type="number"
+              min="0"
+              value={formData.oldJobDurationWeeks || ''}
+              onChange={(e) => updateFormData({ oldJobDurationWeeks: e.target.value })}
+              placeholder="0"
+              className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
+            />
+            <span className="text-sm text-muted-foreground font-medium">w</span>
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          How long did the repair/maintenance work take with the old solution
+        </p>
       </div>
 
       {/* Competitor Name */}
