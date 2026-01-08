@@ -224,11 +224,11 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
     translatedText: caseStudy.translatedText || undefined,
     // WPS data for TECH and STAR cases
     wps: existingWPS ? {
-      numberOfLayers: existingWPS.numberOfLayers || undefined,
+      numberOfLayers: existingWPS.layerNumbers || undefined,
       process: existingWPS.weldingProcess || undefined,
-      technique: existingWPS.technique || undefined,
+      technique: existingWPS.currentModeSynergy || undefined,
       weldingPosition: existingWPS.weldingPosition || undefined,
-      torchPosition: existingWPS.torchPosition || undefined,
+      torchPosition: existingWPS.torchAngle || undefined,
       baseMetal: existingWPS.baseMetalType || undefined,
       thickness: existingWPS.baseMetalThickness || undefined,
       surfacePreparation: existingWPS.surfacePreparation || undefined,
