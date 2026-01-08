@@ -145,6 +145,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token.totalPoints !== undefined && session.user) {
         session.user.totalPoints = token.totalPoints as number;
       }
+      // Ensure name is preserved from token
+      if (token.name && session.user) {
+        session.user.name = token.name as string;
+      }
       return session;
     },
     async jwt({ token, user, trigger, session }) {
@@ -157,6 +161,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           token.role = dbUser.role;
           token.region = dbUser.region;
           token.totalPoints = dbUser.totalPoints;
+          // Ensure name is stored in token
+          token.name = dbUser.name || user.name;
         }
       }
 
