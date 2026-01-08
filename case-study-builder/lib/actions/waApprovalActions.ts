@@ -21,7 +21,9 @@ export async function waApproveCaseStudy(caseStudyId: string) {
       select: { role: true },
     });
 
-    if (user?.role !== 'APPROVER') {
+    // Check if user has approval permission (APPROVER or ADMIN role)
+    // ADMIN has highest priority and can do everything, APPROVER can approve
+    if (user?.role !== 'APPROVER' && user?.role !== 'ADMIN') {
       return { success: false, error: 'Only approvers can approve case studies' };
     }
 
@@ -145,7 +147,9 @@ export async function waRejectCaseStudy(caseStudyId: string, reason: string) {
       select: { role: true },
     });
 
-    if (user?.role !== 'APPROVER') {
+    // Check if user has approval permission (APPROVER or ADMIN role)
+    // ADMIN has highest priority and can do everything, APPROVER can approve/reject
+    if (user?.role !== 'APPROVER' && user?.role !== 'ADMIN') {
       return { success: false, error: 'Only approvers can reject case studies' };
     }
 

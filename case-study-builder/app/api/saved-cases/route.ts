@@ -29,11 +29,16 @@ export async function GET(request: NextRequest) {
             componentWorkpiece: true,
             type: true,
             waProduct: true,
+            waProductDiameter: true,
             problemDescription: true,
             status: true,
             approvedAt: true,
             originalLanguage: true,
             translationAvailable: true,
+            // New fields
+            jobType: true,
+            jobTypeOther: true,
+            oem: true,
             contributor: {
               select: { id: true, name: true },
             },
