@@ -9,30 +9,37 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calculator, TrendingDown, DollarSign, Clock, Package, Users, Wrench, Settings, Sparkles } from 'lucide-react';
 import { waSaveCostCalculation } from '@/lib/actions/waCostCalculatorActions';
 
-type CostCalculatorProps = {
-  caseStudyId: string;
-  existingData?: {
-    materialCostBefore: number;
-    materialCostAfter: number;
-    laborCostBefore: number;
-    laborCostAfter: number;
-    downtimeCostBefore: number;
-    downtimeCostAfter: number;
-    maintenanceFrequencyBefore: number;
-    maintenanceFrequencyAfter: number;
-    costOfPart?: number;
-    oldSolutionLifetimeDays?: number;
-    waSolutionLifetimeDays?: number;
-    partsUsedPerYear?: number;
-    maintenanceRepairCostBefore?: number;
-    maintenanceRepairCostAfter?: number;
-    disassemblyCostBefore?: number;
-    disassemblyCostAfter?: number;
-    extraBenefits?: string;
-  };
+export type CostCalculatorValues = {
+  materialCostBefore: number;
+  materialCostAfter: number;
+  laborCostBefore: number;
+  laborCostAfter: number;
+  downtimeCostBefore: number;
+  downtimeCostAfter: number;
+  maintenanceFrequencyBefore: number;
+  maintenanceFrequencyAfter: number;
+  costOfPart: number;
+  oldSolutionLifetimeDays: number;
+  waSolutionLifetimeDays: number;
+  partsUsedPerYear: number;
+  maintenanceRepairCostBefore: number;
+  maintenanceRepairCostAfter: number;
+  disassemblyCostBefore: number;
+  disassemblyCostAfter: number;
+  extraBenefits: string;
+  totalCostBefore: number;
+  totalCostAfter: number;
+  annualSavings: number;
+  savingsPercentage: number;
 };
 
-export default function CostCalculator({ caseStudyId, existingData }: CostCalculatorProps) {
+type CostCalculatorProps = {
+  caseStudyId: string;
+  existingData?: Partial<CostCalculatorValues>;
+  onValuesChange?: (values: CostCalculatorValues) => void;
+};
+
+export default function CostCalculator({ caseStudyId, existingData, onValuesChange }: CostCalculatorProps) {
   const [values, setValues] = useState({
     materialCostBefore: existingData?.materialCostBefore || 0,
     materialCostAfter: existingData?.materialCostAfter || 0,
@@ -91,6 +98,19 @@ export default function CostCalculator({ caseStudyId, existingData }: CostCalcul
   const frequencyReductionPercent = values.maintenanceFrequencyBefore > 0
     ? Math.round((frequencyReduction / values.maintenanceFrequencyBefore) * 100)
     : 0;
+
+  // Report values to parent when they change
+  useEffect(() => {
+    if (onValuesChange) {
+      onValuesChange({
+        ...values,
+        totalCostBefore,
+        totalCostAfter,
+        annualSavings,
+        savingsPercentage,
+      });
+    }
+  }, [values, totalCostBefore, totalCostAfter, annualSavings, savingsPercentage, onValuesChange]);
 
   const handleChange = (field: string, value: string) => {
     const numValue = parseFloat(value) || 0;
@@ -194,7 +214,7 @@ export default function CostCalculator({ caseStudyId, existingData }: CostCalcul
             <div className="pt-2 border-t dark:border-border">
               <p className="text-sm font-medium text-gray-700 dark:text-muted-foreground">Savings:</p>
               <p className="text-2xl font-bold text-green-600 dark:text-primary">
-                ${(values.materialCostBefore - values.materialCostAfter).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ${(values.materialCostBefore - values.materialCostAfter).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
           </CardContent>
@@ -236,7 +256,7 @@ export default function CostCalculator({ caseStudyId, existingData }: CostCalcul
             <div className="pt-2 border-t dark:border-border">
               <p className="text-sm font-medium text-gray-700 dark:text-muted-foreground">Savings:</p>
               <p className="text-2xl font-bold text-green-600 dark:text-primary">
-                ${(values.laborCostBefore - values.laborCostAfter).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ${(values.laborCostBefore - values.laborCostAfter).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
           </CardContent>
@@ -278,7 +298,7 @@ export default function CostCalculator({ caseStudyId, existingData }: CostCalcul
             <div className="pt-2 border-t dark:border-border">
               <p className="text-sm font-medium text-gray-700 dark:text-muted-foreground">Savings:</p>
               <p className="text-2xl font-bold text-green-600 dark:text-primary">
-                ${(values.downtimeCostBefore - values.downtimeCostAfter).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ${(values.downtimeCostBefore - values.downtimeCostAfter).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
           </CardContent>
@@ -386,7 +406,7 @@ export default function CostCalculator({ caseStudyId, existingData }: CostCalcul
             <div className="pt-2 border-t dark:border-border">
               <p className="text-sm font-medium text-gray-700 dark:text-muted-foreground">Annual Part Replacement Savings:</p>
               <p className="text-2xl font-bold text-green-600 dark:text-primary">
-                €{(partReplacementCostBefore - partReplacementCostAfter).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                €{(partReplacementCostBefore - partReplacementCostAfter).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
           </CardContent>
@@ -428,7 +448,7 @@ export default function CostCalculator({ caseStudyId, existingData }: CostCalcul
             <div className="pt-2 border-t dark:border-border">
               <p className="text-sm font-medium text-gray-700 dark:text-muted-foreground">Savings:</p>
               <p className="text-2xl font-bold text-green-600 dark:text-primary">
-                €{(values.maintenanceRepairCostBefore - values.maintenanceRepairCostAfter).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                €{(values.maintenanceRepairCostBefore - values.maintenanceRepairCostAfter).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
           </CardContent>
@@ -470,7 +490,7 @@ export default function CostCalculator({ caseStudyId, existingData }: CostCalcul
             <div className="pt-2 border-t dark:border-border">
               <p className="text-sm font-medium text-gray-700 dark:text-muted-foreground">Annual Savings:</p>
               <p className="text-2xl font-bold text-green-600 dark:text-primary">
-                €{((values.disassemblyCostBefore * values.maintenanceFrequencyBefore) - (values.disassemblyCostAfter * values.maintenanceFrequencyAfter)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                €{((values.disassemblyCostBefore * values.maintenanceFrequencyBefore) - (values.disassemblyCostAfter * values.maintenanceFrequencyAfter)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
           </CardContent>
@@ -513,19 +533,19 @@ export default function CostCalculator({ caseStudyId, existingData }: CostCalcul
             <div className="text-center">
               <p className="text-sm text-gray-600 dark:text-muted-foreground mb-1">Total Cost Before</p>
               <p className="text-3xl font-bold text-gray-800 dark:text-foreground">
-                ${totalCostBefore.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ${totalCostBefore.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
             <div className="text-center">
               <p className="text-sm text-gray-600 dark:text-muted-foreground mb-1">Total Cost After</p>
               <p className="text-3xl font-bold text-wa-green-600 dark:text-primary">
-                ${totalCostAfter.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ${totalCostAfter.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
             <div className="text-center">
               <p className="text-sm text-gray-600 dark:text-muted-foreground mb-1">Annual Savings</p>
               <p className="text-4xl font-bold text-green-600 dark:text-primary">
-                ${annualSavings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ${annualSavings.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
               <p className="text-lg font-semibold text-green-700 dark:text-primary mt-1">
                 {savingsPercentage}% Reduction
