@@ -19,6 +19,8 @@ export interface CaseStudyPDFData {
   componentWorkpiece: string;
   workType?: string;
   wearType: string[];
+  wearSeverities?: Record<string, number>;
+  wearTypeOthers?: string[];
   problemDescription: string;
   previousSolution?: string;
   previousServiceLife?: string;
