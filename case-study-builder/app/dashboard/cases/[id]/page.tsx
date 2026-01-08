@@ -224,7 +224,7 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
     translatedText: caseStudy.translatedText || undefined,
     // WPS data for TECH and STAR cases
     wps: existingWPS ? {
-      numberOfLayers: existingWPS.layerNumbers || undefined,
+      numberOfLayers: existingWPS.layerNumbers?.toString() || undefined,
       process: existingWPS.weldingProcess || undefined,
       technique: existingWPS.currentModeSynergy || undefined,
       weldingPosition: existingWPS.weldingPosition || undefined,
