@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { SaveButton } from '@/components/save-button';
+import CostCalculatorDisplay from '@/components/cost-calculator-display';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -17,6 +18,7 @@ import {
   Calendar,
   FileText,
 } from 'lucide-react';
+import WearTypeProgressBar from '@/components/wear-type-progress-bar';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -139,18 +141,36 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
                   <p className="text-gray-900">{caseStudy.workType}</p>
                 </div>
               </div>
+              {caseStudy.jobType && (
+                <div className="flex items-start gap-3">
+                  <Wrench className="h-5 w-5 text-wa-green-600 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-sm text-gray-600">Job Type</p>
+                    <p className="text-gray-900">
+                      {caseStudy.jobType === 'OTHER' ? caseStudy.jobTypeOther || 'Other' : caseStudy.jobType}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {caseStudy.oem && (
+                <div className="flex items-start gap-3">
+                  <Package className="h-5 w-5 text-wa-green-600 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-sm text-gray-600">OEM</p>
+                    <p className="text-gray-900">{caseStudy.oem}</p>
+                  </div>
+                </div>
+              )}
               {caseStudy.wearType && caseStudy.wearType.length > 0 && (
                 <div className="flex items-start gap-3 md:col-span-2">
                   <FileText className="h-5 w-5 text-wa-green-600 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-sm text-gray-600">Wear Types</p>
-                    <div className="flex flex-wrap gap-2 mt-1">
-                      {caseStudy.wearType.map((type) => (
-                        <Badge key={type} variant="outline">
-                          {type}
-                        </Badge>
-                      ))}
-                    </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-sm text-gray-600 mb-2">Wear Types</p>
+                    <WearTypeProgressBar
+                      wearTypes={caseStudy.wearType}
+                      wearSeverities={caseStudy.wearSeverities as Record<string, number> | null}
+                      wearTypeOthers={caseStudy.wearTypeOthers as { name: string; severity: number }[] | null}
+                    />
                   </div>
                 </div>
               )}
@@ -210,9 +230,17 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
             <CardTitle className="text-green-800">Welding Alloys Solution</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <p className="font-medium text-sm text-green-700 mb-2">WA Product Used</p>
-              <p className="text-gray-900 text-lg font-semibold">{caseStudy.waProduct}</p>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <p className="font-medium text-sm text-green-700 mb-2">WA Product Used</p>
+                <p className="text-gray-900 text-lg font-semibold">{caseStudy.waProduct}</p>
+              </div>
+              {caseStudy.waProductDiameter && (
+                <div>
+                  <p className="font-medium text-sm text-green-700 mb-2">Wire Diameter</p>
+                  <p className="text-gray-900 text-lg font-semibold">{caseStudy.waProductDiameter}</p>
+                </div>
+              )}
             </div>
             <div>
               <p className="font-medium text-sm text-green-700 mb-2">Solution Description</p>
@@ -279,63 +307,35 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
 
         {/* Cost Calculator (STAR cases) */}
         {caseStudy.costCalculator && (
-          <Card role="article">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-green-600" />
-                Cost Analysis
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-3 gap-6">
-                <div>
-                  <p className="font-medium text-sm text-gray-600 mb-3">Before</p>
-                  <div className="space-y-2 text-sm">
-                    <p>
-                      Material: ${parseFloat(caseStudy.costCalculator.materialCostBefore.toString()).toLocaleString()}
-                    </p>
-                    <p>
-                      Labor: ${parseFloat(caseStudy.costCalculator.laborCostBefore.toString()).toLocaleString()}
-                    </p>
-                    <p>
-                      Downtime: ${parseFloat(caseStudy.costCalculator.downtimeCostBefore.toString()).toLocaleString()}
-                    </p>
-                    <p className="font-bold text-lg pt-2">
-                      Total: ${parseFloat(caseStudy.costCalculator.totalCostBefore.toString()).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-                <div>
-                  <p className="font-medium text-sm text-gray-600 mb-3">After</p>
-                  <div className="space-y-2 text-sm">
-                    <p>
-                      Material: ${parseFloat(caseStudy.costCalculator.materialCostAfter.toString()).toLocaleString()}
-                    </p>
-                    <p>
-                      Labor: ${parseFloat(caseStudy.costCalculator.laborCostAfter.toString()).toLocaleString()}
-                    </p>
-                    <p>
-                      Downtime: ${parseFloat(caseStudy.costCalculator.downtimeCostAfter.toString()).toLocaleString()}
-                    </p>
-                    <p className="font-bold text-lg pt-2">
-                      Total: ${parseFloat(caseStudy.costCalculator.totalCostAfter.toString()).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <p className="font-medium text-sm text-green-700 mb-3">Savings</p>
-                  <p className="text-3xl font-bold text-green-600">
-                    ${parseFloat(caseStudy.costCalculator.annualSavings.toString()).toLocaleString()}
-                  </p>
-                  <p className="text-sm text-green-700 mt-1">per year</p>
-                  <p className="text-2xl font-bold text-green-600 mt-4">
-                    {caseStudy.costCalculator.savingsPercentage}%
-                  </p>
-                  <p className="text-sm text-green-700">cost reduction</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <CostCalculatorDisplay
+            data={{
+              costOfPart: caseStudy.costCalculator.costOfPart ? Number(caseStudy.costCalculator.costOfPart) : null,
+              costOfWaSolution: caseStudy.costCalculator.costOfWaSolution ? Number(caseStudy.costCalculator.costOfWaSolution) : null,
+              oldSolutionLifetimeDays: caseStudy.costCalculator.oldSolutionLifetimeDays,
+              waSolutionLifetimeDays: caseStudy.costCalculator.waSolutionLifetimeDays,
+              partsUsedPerYear: caseStudy.costCalculator.partsUsedPerYear,
+              maintenanceRepairCostBefore: caseStudy.costCalculator.maintenanceRepairCostBefore ? Number(caseStudy.costCalculator.maintenanceRepairCostBefore) : null,
+              maintenanceRepairCostAfter: caseStudy.costCalculator.maintenanceRepairCostAfter ? Number(caseStudy.costCalculator.maintenanceRepairCostAfter) : null,
+              disassemblyCostBefore: caseStudy.costCalculator.disassemblyCostBefore ? Number(caseStudy.costCalculator.disassemblyCostBefore) : null,
+              disassemblyCostAfter: caseStudy.costCalculator.disassemblyCostAfter ? Number(caseStudy.costCalculator.disassemblyCostAfter) : null,
+              downtimeCostPerEvent: caseStudy.costCalculator.downtimeCostPerEvent ? Number(caseStudy.costCalculator.downtimeCostPerEvent) : null,
+              currency: caseStudy.costCalculator.currency,
+              extraBenefits: caseStudy.costCalculator.extraBenefits,
+              totalCostBefore: Number(caseStudy.costCalculator.totalCostBefore),
+              totalCostAfter: Number(caseStudy.costCalculator.totalCostAfter),
+              annualSavings: Number(caseStudy.costCalculator.annualSavings),
+              savingsPercentage: Number(caseStudy.costCalculator.savingsPercentage),
+              // Legacy fields for backwards compatibility
+              materialCostBefore: caseStudy.costCalculator.materialCostBefore ? Number(caseStudy.costCalculator.materialCostBefore) : null,
+              materialCostAfter: caseStudy.costCalculator.materialCostAfter ? Number(caseStudy.costCalculator.materialCostAfter) : null,
+              laborCostBefore: caseStudy.costCalculator.laborCostBefore ? Number(caseStudy.costCalculator.laborCostBefore) : null,
+              laborCostAfter: caseStudy.costCalculator.laborCostAfter ? Number(caseStudy.costCalculator.laborCostAfter) : null,
+              downtimeCostBefore: caseStudy.costCalculator.downtimeCostBefore ? Number(caseStudy.costCalculator.downtimeCostBefore) : null,
+              downtimeCostAfter: caseStudy.costCalculator.downtimeCostAfter ? Number(caseStudy.costCalculator.downtimeCostAfter) : null,
+              maintenanceFrequencyBefore: caseStudy.costCalculator.maintenanceFrequencyBefore,
+              maintenanceFrequencyAfter: caseStudy.costCalculator.maintenanceFrequencyAfter,
+            }}
+          />
         )}
 
         {/* Welding Procedure (TECH/STAR cases) */}

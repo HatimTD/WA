@@ -9,7 +9,8 @@ import NetSuiteCustomerSearch from '@/components/netsuite-customer-search';
 import { NetSuiteCustomer } from '@/lib/integrations/netsuite';
 import LocationAutocomplete from '@/components/location-autocomplete';
 import { useMasterList } from '@/lib/hooks/use-master-list';
-import { Star, Plus, X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
+import { InteractiveWearTypeBar } from '@/components/wear-type-progress-bar';
 
 type Props = {
   formData: CaseStudyFormData;
@@ -407,60 +408,47 @@ export default function StepTwo({ formData, updateFormData, customerReadOnly = f
         {wearTypesLoading ? (
           <span className="text-xs text-muted-foreground">Loading...</span>
         ) : (
-          <div className="space-y-1.5">
+          <div style={{ display: 'inline-block' }}>
             {wearTypes.map((wear) => {
               const displayLabel = (wear as any).label || wear.value;
               const severity = formData.wearSeverities?.[wear.value.toUpperCase()] || 0;
+              const wearKey = wear.value.toUpperCase();
 
               return (
-                <div key={wear.id} className="flex items-center gap-2">
-                  <span className="text-xs text-foreground w-24 shrink-0">{displayLabel}</span>
-                  <div className="flex gap-0.5">
-                    {[1, 2, 3, 4, 5].map((level) => (
-                      <button
-                        key={level}
-                        type="button"
-                        onClick={() => {
-                          const newSeverity = severity === level ? 0 : level;
-                          const newSeverities = { ...formData.wearSeverities };
-                          const wearKey = wear.value.toUpperCase();
+                <InteractiveWearTypeBar
+                  key={wear.id}
+                  label={displayLabel}
+                  value={severity}
+                  maxValue={6}
+                  onChange={(newSeverity) => {
+                    const newSeverities = { ...formData.wearSeverities };
 
-                          if (newSeverity === 0) {
-                            delete newSeverities[wearKey];
-                            updateFormData({
-                              wearType: (formData.wearType || []).filter(w => w.toUpperCase() !== wearKey),
-                              wearSeverities: newSeverities
-                            });
-                          } else {
-                            const currentTypes = formData.wearType || [];
-                            const hasType = currentTypes.some(w => w.toUpperCase() === wearKey);
-                            updateFormData({
-                              wearType: hasType ? currentTypes : [...currentTypes, wearKey],
-                              wearSeverities: { ...newSeverities, [wearKey]: newSeverity }
-                            });
-                          }
-                        }}
-                        className="p-0.5 transition-transform hover:scale-110"
-                        aria-label={`${displayLabel} severity ${level}`}
-                      >
-                        <Star
-                          className={`w-4 h-4 transition-colors ${
-                            level <= severity
-                              ? 'fill-amber-400 text-amber-400'
-                              : 'fill-transparent text-gray-300 dark:text-gray-600 hover:text-amber-300'
-                          }`}
-                        />
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                    if (newSeverity === 0) {
+                      delete newSeverities[wearKey];
+                      updateFormData({
+                        wearType: (formData.wearType || []).filter(w => w.toUpperCase() !== wearKey),
+                        wearSeverities: newSeverities
+                      });
+                    } else {
+                      const currentTypes = formData.wearType || [];
+                      const hasType = currentTypes.some(w => w.toUpperCase() === wearKey);
+                      updateFormData({
+                        wearType: hasType ? currentTypes : [...currentTypes, wearKey],
+                        wearSeverities: { ...newSeverities, [wearKey]: newSeverity }
+                      });
+                    }
+                  }}
+                />
               );
             })}
 
             {/* Other wear types - multiple entries */}
             {(formData.wearTypeOthers || []).map((other, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <Input
+              <div
+                key={index}
+                className="flex items-center mb-1 font-sans"
+              >
+                <input
                   placeholder="Other..."
                   value={other.name}
                   onChange={(e) => {
@@ -468,41 +456,53 @@ export default function StepTwo({ formData, updateFormData, customerReadOnly = f
                     newOthers[index] = { ...newOthers[index], name: e.target.value };
                     updateFormData({ wearTypeOthers: newOthers });
                   }}
-                  className="h-6 text-xs w-24 shrink-0 dark:bg-input dark:border-border"
+                  className="text-xs w-20 h-5 px-1 border border-border rounded flex-shrink-0 bg-input text-foreground"
                 />
-                <div className="flex gap-0.5">
-                  {[1, 2, 3, 4, 5].map((level) => (
-                    <button
-                      key={level}
-                      type="button"
-                      onClick={() => {
-                        const newOthers = [...(formData.wearTypeOthers || [])];
-                        newOthers[index] = {
-                          ...newOthers[index],
-                          severity: other.severity === level ? 0 : level
-                        };
-                        updateFormData({ wearTypeOthers: newOthers });
-                      }}
-                      className="p-0.5 transition-transform hover:scale-110"
-                      aria-label={`${other.name || 'Other'} severity ${level}`}
-                    >
-                      <Star
-                        className={`w-4 h-4 transition-colors ${
-                          level <= other.severity
-                            ? 'fill-amber-400 text-amber-400'
-                            : 'fill-transparent text-gray-300 dark:text-gray-600 hover:text-amber-300'
+                <div className="flex gap-1 ml-1">
+                  {[1, 2, 3, 4, 5, 6].map((level) => {
+                    const isFilled = level <= other.severity;
+                    return (
+                      <button
+                        key={level}
+                        type="button"
+                        className={`no-min-touch transition-colors ${
+                          isFilled
+                            ? 'bg-wa-green-600 hover:bg-wa-green-500'
+                            : 'bg-gray-300 dark:bg-gray-600 hover:bg-wa-green-200 dark:hover:bg-wa-green-800'
                         }`}
+                        onClick={() => {
+                          const newOthers = [...(formData.wearTypeOthers || [])];
+                          newOthers[index] = {
+                            ...newOthers[index],
+                            severity: other.severity === level ? 0 : level
+                          };
+                          updateFormData({ wearTypeOthers: newOthers });
+                        }}
+                        style={{
+                          width: 22,
+                          height: 8,
+                          minWidth: 22,
+                          minHeight: 8,
+                          maxWidth: 22,
+                          maxHeight: 8,
+                          border: 'none',
+                          padding: 0,
+                          margin: 0,
+                          cursor: 'pointer',
+                        }}
+                        aria-label={`${other.name || 'Other'} severity ${level}`}
                       />
-                    </button>
-                  ))}
+                    );
+                  })}
                 </div>
                 <button
                   type="button"
+                  className="no-min-touch ml-1 text-muted-foreground hover:text-foreground"
                   onClick={() => {
                     const newOthers = (formData.wearTypeOthers || []).filter((_, i) => i !== index);
                     updateFormData({ wearTypeOthers: newOthers });
                   }}
-                  className="p-0.5 text-gray-400 hover:text-red-500 transition-colors"
+                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
                   aria-label="Remove other wear type"
                 >
                   <X className="w-3.5 h-3.5" />

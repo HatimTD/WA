@@ -23,6 +23,7 @@ export async function GET(
       where: { id },
       select: {
         id: true,
+        title: true,
         customerName: true,
         industry: true,
         location: true,
@@ -30,9 +31,12 @@ export async function GET(
         componentWorkpiece: true,
         workType: true,
         wearType: true,
+        wearSeverities: true,
+        wearTypeOthers: true,
         problemDescription: true,
         waSolution: true,
         waProduct: true,
+        waProductDiameter: true,
         technicalAdvantages: true,
         expectedServiceLife: true,
         previousServiceLife: true,
@@ -41,6 +45,12 @@ export async function GET(
         customerSavingsAmount: true,
         type: true,
         status: true,
+        jobType: true,
+        jobTypeOther: true,
+        oem: true,
+        jobDurationHours: true,
+        jobDurationDays: true,
+        jobDurationWeeks: true,
       },
     });
 
