@@ -102,8 +102,8 @@ export async function waCreateCaseStudy(data: WaCreateCaseStudyInput) {
         componentWorkpiece: data.componentWorkpiece,
         workType: data.workType,
         wearType: normalizedWearType as any,
-        wearSeverities: data.wearSeverities || null,
-        wearTypeOthers: data.wearTypeOthers || null,
+        wearSeverities: data.wearSeverities || undefined,
+        wearTypeOthers: data.wearTypeOthers || undefined,
         baseMetal: data.baseMetal || null,
         generalDimensions: data.generalDimensions || null,
         oem: data.oem || null,
@@ -257,12 +257,12 @@ export async function waUpdateCaseStudy(id: string, data: any) {
 
     // Handle wearSeverities JSON
     if (data.wearSeverities !== undefined) {
-      updateData.wearSeverities = data.wearSeverities || null;
+      updateData.wearSeverities = data.wearSeverities || undefined;
     }
 
     // Handle wearTypeOthers JSON
     if (data.wearTypeOthers !== undefined) {
-      updateData.wearTypeOthers = data.wearTypeOthers || null;
+      updateData.wearTypeOthers = data.wearTypeOthers || undefined;
     }
 
     // Handle qualifierType - ensure it's saved correctly
