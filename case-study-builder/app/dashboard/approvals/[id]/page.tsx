@@ -22,7 +22,8 @@ import {
 import Image from 'next/image';
 import ApprovalActions from '@/components/approval-actions';
 import WeldingProcedureForm from '@/components/welding-procedure-form';
-import CostCalculator from '@/components/cost-calculator';
+import CostCalculatorDisplay from '@/components/cost-calculator-display';
+import WearTypeProgressBar from '@/components/wear-type-progress-bar';
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -112,6 +113,23 @@ export default async function ApprovalReviewPage({ params }: Props) {
     }
   };
 
+  // Currency symbols mapping
+  const CURRENCY_SYMBOLS: Record<string, string> = {
+    EUR: '€',
+    USD: '$',
+    GBP: '£',
+    AUD: 'A$',
+    CAD: 'C$',
+    CHF: 'CHF',
+    JPY: '¥',
+    CNY: '¥',
+    MAD: 'MAD',
+  };
+
+  function getCurrencySymbol(currency: string | null | undefined): string {
+    return CURRENCY_SYMBOLS[currency || 'EUR'] || '€';
+  }
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       {/* Header */}
@@ -194,17 +212,53 @@ export default async function ApprovalReviewPage({ params }: Props) {
                 <p className="text-base font-semibold dark:text-foreground">{caseStudy.workType}</p>
               </div>
             </div>
+
+            {caseStudy.jobType && (
+              <div className="flex items-start gap-3">
+                <Wrench className="h-5 w-5 text-gray-400 dark:text-muted-foreground mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Job Type</p>
+                  <p className="text-base font-semibold dark:text-foreground">
+                    {caseStudy.jobType === 'OTHER' ? caseStudy.jobTypeOther || 'Other' : caseStudy.jobType}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {caseStudy.oem && (
+              <div className="flex items-start gap-3">
+                <Package className="h-5 w-5 text-gray-400 dark:text-muted-foreground mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">OEM</p>
+                  <p className="text-base font-semibold dark:text-foreground">{caseStudy.oem}</p>
+                </div>
+              </div>
+            )}
+
+            {(caseStudy.jobDurationHours || caseStudy.jobDurationDays || caseStudy.jobDurationWeeks) && (
+              <div className="flex items-start gap-3">
+                <Calendar className="h-5 w-5 text-gray-400 dark:text-muted-foreground mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Job Duration</p>
+                  <p className="text-base font-semibold dark:text-foreground">
+                    {[
+                      caseStudy.jobDurationHours && `${caseStudy.jobDurationHours}h`,
+                      caseStudy.jobDurationDays && `${caseStudy.jobDurationDays}d`,
+                      caseStudy.jobDurationWeeks && `${caseStudy.jobDurationWeeks}w`,
+                    ].filter(Boolean).join(' ')}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div>
+          <div className="md:col-span-2">
             <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-2">Type of Wear</p>
-            <div className="flex flex-wrap gap-2">
-              {caseStudy.wearType.map((wear) => (
-                <Badge key={wear} variant="secondary">
-                  {wear}
-                </Badge>
-              ))}
-            </div>
+            <WearTypeProgressBar
+              wearTypes={caseStudy.wearType}
+              wearSeverities={caseStudy.wearSeverities as Record<string, number> | null}
+              wearTypeOthers={caseStudy.wearTypeOthers as { name: string; severity: number }[] | null}
+            />
           </div>
 
           {caseStudy.baseMetal && (
@@ -272,9 +326,17 @@ export default async function ApprovalReviewPage({ params }: Props) {
             <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{caseStudy.waSolution}</p>
           </div>
 
-          <div className="pt-4 border-t dark:border-border">
-            <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">WA Product Used</p>
-            <p className="text-lg font-semibold text-wa-green-600 dark:text-primary">{caseStudy.waProduct}</p>
+          <div className="pt-4 border-t dark:border-border grid md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">WA Product Used</p>
+              <p className="text-lg font-semibold text-wa-green-600 dark:text-primary">{caseStudy.waProduct}</p>
+            </div>
+            {caseStudy.waProductDiameter && (
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Wire Diameter</p>
+                <p className="text-lg font-semibold dark:text-foreground">{caseStudy.waProductDiameter}</p>
+              </div>
+            )}
           </div>
 
           {caseStudy.technicalAdvantages && (
@@ -383,7 +445,7 @@ export default async function ApprovalReviewPage({ params }: Props) {
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Solution Value/Revenue</p>
                   <p className="text-2xl font-bold text-green-600 dark:text-primary">
-                    ${Number(caseStudy.solutionValueRevenue).toLocaleString()}
+                    {getCurrencySymbol(caseStudy.revenueCurrency)}{Number(caseStudy.solutionValueRevenue).toLocaleString()}
                   </p>
                 </div>
               )}
@@ -392,7 +454,7 @@ export default async function ApprovalReviewPage({ params }: Props) {
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Annual Potential Revenue</p>
                   <p className="text-2xl font-bold text-green-600 dark:text-primary">
-                    ${Number(caseStudy.annualPotentialRevenue).toLocaleString()}
+                    {getCurrencySymbol(caseStudy.revenueCurrency)}{Number(caseStudy.annualPotentialRevenue).toLocaleString()}
                   </p>
                 </div>
               )}
@@ -401,7 +463,7 @@ export default async function ApprovalReviewPage({ params }: Props) {
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Customer Savings</p>
                   <p className="text-2xl font-bold text-green-600 dark:text-primary">
-                    ${Number(caseStudy.customerSavingsAmount).toLocaleString()}
+                    {getCurrencySymbol(caseStudy.revenueCurrency)}{Number(caseStudy.customerSavingsAmount).toLocaleString()}
                   </p>
                 </div>
               )}
@@ -453,19 +515,35 @@ export default async function ApprovalReviewPage({ params }: Props) {
       )}
 
       {/* Cost Reduction Calculator - Only for STAR cases */}
-      {caseStudy.type === 'STAR' && (
-        <CostCalculator
-          caseStudyId={caseStudy.id}
-          existingData={costCalcData ? {
-            materialCostBefore: Number(costCalcData.materialCostBefore),
-            materialCostAfter: Number(costCalcData.materialCostAfter),
-            laborCostBefore: Number(costCalcData.laborCostBefore),
-            laborCostAfter: Number(costCalcData.laborCostAfter),
-            downtimeCostBefore: Number(costCalcData.downtimeCostBefore),
-            downtimeCostAfter: Number(costCalcData.downtimeCostAfter),
+      {caseStudy.type === 'STAR' && costCalcData && (
+        <CostCalculatorDisplay
+          data={{
+            costOfPart: costCalcData.costOfPart ? Number(costCalcData.costOfPart) : null,
+            costOfWaSolution: costCalcData.costOfWaSolution ? Number(costCalcData.costOfWaSolution) : null,
+            oldSolutionLifetimeDays: costCalcData.oldSolutionLifetimeDays ? Number(costCalcData.oldSolutionLifetimeDays) : null,
+            waSolutionLifetimeDays: costCalcData.waSolutionLifetimeDays ? Number(costCalcData.waSolutionLifetimeDays) : null,
+            partsUsedPerYear: costCalcData.partsUsedPerYear ? Number(costCalcData.partsUsedPerYear) : null,
+            maintenanceRepairCostBefore: costCalcData.maintenanceRepairCostBefore ? Number(costCalcData.maintenanceRepairCostBefore) : null,
+            maintenanceRepairCostAfter: costCalcData.maintenanceRepairCostAfter ? Number(costCalcData.maintenanceRepairCostAfter) : null,
+            disassemblyCostBefore: costCalcData.disassemblyCostBefore ? Number(costCalcData.disassemblyCostBefore) : null,
+            disassemblyCostAfter: costCalcData.disassemblyCostAfter ? Number(costCalcData.disassemblyCostAfter) : null,
+            downtimeCostPerEvent: costCalcData.downtimeCostPerEvent ? Number(costCalcData.downtimeCostPerEvent) : null,
+            currency: costCalcData.currency,
+            extraBenefits: costCalcData.extraBenefits,
+            totalCostBefore: Number(costCalcData.totalCostBefore),
+            totalCostAfter: Number(costCalcData.totalCostAfter),
+            annualSavings: Number(costCalcData.annualSavings),
+            savingsPercentage: Number(costCalcData.savingsPercentage),
+            // Legacy fields
+            materialCostBefore: costCalcData.materialCostBefore ? Number(costCalcData.materialCostBefore) : null,
+            materialCostAfter: costCalcData.materialCostAfter ? Number(costCalcData.materialCostAfter) : null,
+            laborCostBefore: costCalcData.laborCostBefore ? Number(costCalcData.laborCostBefore) : null,
+            laborCostAfter: costCalcData.laborCostAfter ? Number(costCalcData.laborCostAfter) : null,
+            downtimeCostBefore: costCalcData.downtimeCostBefore ? Number(costCalcData.downtimeCostBefore) : null,
+            downtimeCostAfter: costCalcData.downtimeCostAfter ? Number(costCalcData.downtimeCostAfter) : null,
             maintenanceFrequencyBefore: costCalcData.maintenanceFrequencyBefore,
             maintenanceFrequencyAfter: costCalcData.maintenanceFrequencyAfter,
-          } : undefined}
+          }}
         />
       )}
 

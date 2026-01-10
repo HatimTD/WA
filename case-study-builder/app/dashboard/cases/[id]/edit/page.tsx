@@ -2,29 +2,25 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { notFound, redirect } from 'next/navigation';
 import EditCaseStudyForm from '@/components/edit-case-study-form';
-import { Decimal } from '@prisma/client/runtime/library';
 
 type Props = {
   params: Promise<{ id: string }>;
 };
 
 /**
- * Convert Decimal fields to numbers for client component serialization
+ * Convert Prisma objects to plain JSON for client component serialization
+ * Uses JSON.parse(JSON.stringify()) which handles Decimal, Date, and other special types
  */
-function waSerializeForClient<T extends Record<string, unknown>>(obj: T | null): T | null {
+function waSerializeForClient<T>(obj: T | null): T | null {
   if (!obj) return null;
-
-  const serialized: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(obj)) {
-    if (value instanceof Decimal) {
-      serialized[key] = value.toNumber();
-    } else if (value instanceof Date) {
-      serialized[key] = value.toISOString();
-    } else {
-      serialized[key] = value;
+  // JSON serialization automatically converts Decimal to number, Date to string
+  return JSON.parse(JSON.stringify(obj, (key, value) => {
+    // Handle Decimal objects (they have a toNumber method)
+    if (value && typeof value === 'object' && typeof value.toNumber === 'function') {
+      return value.toNumber();
     }
-  }
-  return serialized as T;
+    return value;
+  }));
 }
 
 export default async function EditCasePage({ params }: Props) {

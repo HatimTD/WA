@@ -13,8 +13,8 @@ export default function StepOne({ formData, updateFormData }: Props) {
   const caseTypes = [
     {
       value: 'APPLICATION',
-      label: 'Application Case',
-      description: 'Quick capture of a standard application',
+      label: 'Application Case Study',
+      description: 'Quick capture of a solved industrial challenge.',
       points: 1,
       icon: FileText,
       color: 'text-wa-green-600',
@@ -23,8 +23,8 @@ export default function StepOne({ formData, updateFormData }: Props) {
     },
     {
       value: 'TECH',
-      label: 'Tech Case',
-      description: 'Detailed technical case with WPS',
+      label: 'Tech Case Study',
+      description: 'Quick capture of a solved industrial challenge + WPS (Welding Procedure Specification).',
       points: 2,
       icon: Cpu,
       color: 'text-purple-600',
@@ -33,9 +33,9 @@ export default function StepOne({ formData, updateFormData }: Props) {
     },
     {
       value: 'STAR',
-      label: 'Star Case',
-      description: 'Complete case with cost calculator and visuals',
-      points: 3,
+      label: 'Star Case Study',
+      description: 'Quick capture of a solved industrial challenge + financial impact of the solution. Optional WPS adds +1 bonus point.',
+      points: '3-4',
       icon: Star,
       color: 'text-yellow-600',
       bgColor: 'bg-yellow-50',
@@ -45,15 +45,6 @@ export default function StepOne({ formData, updateFormData }: Props) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <Label className="text-base font-semibold dark:text-foreground">
-          Select Case Study Type <span className="text-red-500 dark:text-red-400">*</span>
-        </Label>
-        <p className="text-sm text-muted-foreground dark:text-muted-foreground mt-1">
-          Choose the type based on the detail level you can provide
-        </p>
-      </div>
-
       <RadioGroup
         value={formData.type}
         onValueChange={(value) =>
@@ -92,7 +83,7 @@ export default function StepOne({ formData, updateFormData }: Props) {
                   <p className="text-sm text-muted-foreground dark:text-muted-foreground mt-1">{type.description}</p>
                   <div className="flex items-center gap-2 mt-3">
                     <span className={`text-sm font-bold ${type.color}`}>
-                      +{type.points} Point{type.points > 1 ? 's' : ''}
+                      +{type.points} Point{typeof type.points === 'number' && type.points === 1 ? '' : 's'}
                     </span>
                     <span className="text-xs text-muted-foreground dark:text-muted-foreground">
                       • {type.value === 'APPLICATION' && '~2 min'}
@@ -106,21 +97,6 @@ export default function StepOne({ formData, updateFormData }: Props) {
           );
         })}
       </RadioGroup>
-
-      <div className="bg-wa-green-50 border border-wa-green-200 rounded-lg p-4 dark:bg-accent dark:border-primary">
-        <h4 className="font-semibold text-wa-green-900 mb-2 dark:text-foreground">What's Required?</h4>
-        <ul className="space-y-1 text-sm text-wa-green-800 dark:text-muted-foreground">
-          <li>
-            <span className="font-semibold dark:text-foreground">Application:</span> Customer, problem, solution, product
-          </li>
-          <li>
-            <span className="font-semibold dark:text-foreground">Tech:</span> Above + WPS (Welding Procedure Specification)
-          </li>
-          <li>
-            <span className="font-semibold dark:text-foreground">Star:</span> Above + Cost calculator + Images/videos
-          </li>
-        </ul>
-      </div>
     </div>
   );
 }

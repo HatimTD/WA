@@ -13,6 +13,7 @@ type WaCostCalculationData = {
   maintenanceFrequencyBefore: number;
   maintenanceFrequencyAfter: number;
   costOfPart?: number;
+  costOfWaSolution?: number;
   oldSolutionLifetimeDays?: number;
   waSolutionLifetimeDays?: number;
   partsUsedPerYear?: number;
@@ -20,6 +21,8 @@ type WaCostCalculationData = {
   maintenanceRepairCostAfter?: number;
   disassemblyCostBefore?: number;
   disassemblyCostAfter?: number;
+  downtimeCostPerEvent?: number;
+  currency?: string;
   extraBenefits?: string;
   totalCostBefore: number;
   totalCostAfter: number;
@@ -59,6 +62,7 @@ export async function waSaveCostCalculation(data: WaCostCalculationData) {
           maintenanceFrequencyBefore: data.maintenanceFrequencyBefore,
           maintenanceFrequencyAfter: data.maintenanceFrequencyAfter,
           costOfPart: data.costOfPart,
+          costOfWaSolution: data.costOfWaSolution,
           oldSolutionLifetimeDays: data.oldSolutionLifetimeDays,
           waSolutionLifetimeDays: data.waSolutionLifetimeDays,
           partsUsedPerYear: data.partsUsedPerYear,
@@ -66,6 +70,8 @@ export async function waSaveCostCalculation(data: WaCostCalculationData) {
           maintenanceRepairCostAfter: data.maintenanceRepairCostAfter,
           disassemblyCostBefore: data.disassemblyCostBefore,
           disassemblyCostAfter: data.disassemblyCostAfter,
+          downtimeCostPerEvent: data.downtimeCostPerEvent,
+          currency: data.currency,
           extraBenefits: data.extraBenefits,
           totalCostBefore: data.totalCostBefore,
           totalCostAfter: data.totalCostAfter,
@@ -88,6 +94,7 @@ export async function waSaveCostCalculation(data: WaCostCalculationData) {
           maintenanceFrequencyBefore: data.maintenanceFrequencyBefore,
           maintenanceFrequencyAfter: data.maintenanceFrequencyAfter,
           costOfPart: data.costOfPart,
+          costOfWaSolution: data.costOfWaSolution,
           oldSolutionLifetimeDays: data.oldSolutionLifetimeDays,
           waSolutionLifetimeDays: data.waSolutionLifetimeDays,
           partsUsedPerYear: data.partsUsedPerYear,
@@ -95,6 +102,8 @@ export async function waSaveCostCalculation(data: WaCostCalculationData) {
           maintenanceRepairCostAfter: data.maintenanceRepairCostAfter,
           disassemblyCostBefore: data.disassemblyCostBefore,
           disassemblyCostAfter: data.disassemblyCostAfter,
+          downtimeCostPerEvent: data.downtimeCostPerEvent,
+          currency: data.currency,
           extraBenefits: data.extraBenefits,
           totalCostBefore: data.totalCostBefore,
           totalCostAfter: data.totalCostAfter,

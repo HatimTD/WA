@@ -1,14 +1,32 @@
 'use client';
 
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { CaseStudyFormData } from '@/app/dashboard/new/page';
 import NetSuiteCustomerSearch from '@/components/netsuite-customer-search';
 import { NetSuiteCustomer } from '@/lib/integrations/netsuite';
 import LocationAutocomplete from '@/components/location-autocomplete';
-import { useMasterList } from '@/lib/hooks/use-master-list';
+import { Mic, Sparkles } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+// Dynamic imports for heavy components (saves ~150KB)
+const VoiceInput = dynamic(() => import('@/components/voice-input'), {
+  loading: () => (
+    <button className="p-2 rounded-lg border border-border bg-muted/50 opacity-50 cursor-not-allowed">
+      <Mic className="h-4 w-4 text-muted-foreground" />
+    </button>
+  ),
+});
+
+const AITextAssistant = dynamic(() => import('@/components/ai-text-assistant'), {
+  loading: () => (
+    <button className="p-2 rounded-lg border border-border bg-muted/50 opacity-50 cursor-not-allowed">
+      <Sparkles className="h-4 w-4 text-muted-foreground" />
+    </button>
+  ),
+});
 
 type Props = {
   formData: CaseStudyFormData;
@@ -16,54 +34,7 @@ type Props = {
   customerReadOnly?: boolean; // When customer was selected in Qualifier step
 };
 
-// Fallback values if Master List API fails
-const FALLBACK_INDUSTRIES = [
-  { id: 'mining', value: 'Mining & Quarrying', sortOrder: 0 },
-  { id: 'cement', value: 'Cement', sortOrder: 1 },
-  { id: 'steel', value: 'Steel & Metal Processing', sortOrder: 2 },
-  { id: 'power', value: 'Power Generation', sortOrder: 3 },
-  { id: 'pulp', value: 'Pulp & Paper', sortOrder: 4 },
-  { id: 'oil', value: 'Oil & Gas', sortOrder: 5 },
-  { id: 'chemical', value: 'Chemical & Petrochemical', sortOrder: 6 },
-  { id: 'marine', value: 'Marine', sortOrder: 7 },
-  { id: 'agriculture', value: 'Agriculture', sortOrder: 8 },
-  { id: 'construction', value: 'Construction', sortOrder: 9 },
-  { id: 'recycling', value: 'Recycling', sortOrder: 10 },
-  { id: 'other', value: 'Other', sortOrder: 11 },
-];
-
-// Values must match Prisma WearType enum exactly (ABRASION, IMPACT, CORROSION, TEMPERATURE, COMBINATION)
-const FALLBACK_WEAR_TYPES = [
-  { id: 'abrasion', value: 'ABRASION', label: 'Abrasion', sortOrder: 0 },
-  { id: 'impact', value: 'IMPACT', label: 'Impact', sortOrder: 1 },
-  { id: 'corrosion', value: 'CORROSION', label: 'Corrosion', sortOrder: 2 },
-  { id: 'temperature', value: 'TEMPERATURE', label: 'High Temperature', sortOrder: 3 },
-  { id: 'combination', value: 'COMBINATION', label: 'Combination', sortOrder: 4 },
-];
-
 export default function StepTwo({ formData, updateFormData, customerReadOnly = false }: Props) {
-  // Fetch master list data from API
-  const { items: industries, isLoading: industriesLoading } = useMasterList('Industry', FALLBACK_INDUSTRIES);
-  const { items: wearTypes, isLoading: wearTypesLoading } = useMasterList('WearType', FALLBACK_WEAR_TYPES);
-
-  // Helper to check if a wearType value is selected (case-insensitive)
-  const waIsWearTypeSelected = (value: string): boolean => {
-    const current = formData.wearType || [];
-    return current.some((w) => w.toUpperCase() === value.toUpperCase());
-  };
-
-  const toggleWearType = (value: string) => {
-    const current = formData.wearType || [];
-    // Normalize to uppercase for Prisma enum compatibility
-    const normalizedValue = value.toUpperCase();
-    const isSelected = current.some((w) => w.toUpperCase() === normalizedValue);
-
-    const updated = isSelected
-      ? current.filter((w) => w.toUpperCase() !== normalizedValue)
-      : [...current, normalizedValue]; // Store as uppercase
-    updateFormData({ wearType: updated });
-  };
-
   const handleCustomerSelect = (customer: NetSuiteCustomer) => {
     // Auto-fill fields from NetSuite customer data
     const updates: Partial<CaseStudyFormData> = {
@@ -87,10 +58,10 @@ export default function StepTwo({ formData, updateFormData, customerReadOnly = f
 
   return (
     <div className="space-y-6">
-      {/* Case Study Title - Full width */}
+      {/* Industrial Challenge Title - Full width */}
       <div className="space-y-2">
         <Label htmlFor="title" className="dark:text-foreground">
-          Case Study Title <span className="text-red-500 dark:text-red-400">*</span>
+          Industrial challenge title <span className="text-red-500 dark:text-red-400">*</span>
         </Label>
         <Input
           id="title"
@@ -100,9 +71,33 @@ export default function StepTwo({ formData, updateFormData, customerReadOnly = f
           className="dark:bg-input dark:border-border dark:text-foreground"
           required
         />
-        <p className="text-xs text-muted-foreground">
-          A descriptive title that summarizes this case study
-        </p>
+      </div>
+
+      {/* General Description - with AI and voice features */}
+      <div className="space-y-2">
+        <div className="flex justify-between items-center">
+          <Label htmlFor="generalDescription" className="dark:text-foreground">
+            General description
+          </Label>
+          <div className="flex gap-2">
+            <VoiceInput
+              currentValue={formData.generalDescription || ''}
+              onTranscript={(text) => updateFormData({ generalDescription: text })}
+            />
+            <AITextAssistant
+              text={formData.generalDescription || ''}
+              onTextChange={(text) => updateFormData({ generalDescription: text })}
+              fieldType="general"
+            />
+          </div>
+        </div>
+        <Textarea
+          id="generalDescription"
+          value={formData.generalDescription || ''}
+          onChange={(e) => updateFormData({ generalDescription: e.target.value })}
+          placeholder="Brief overview of the industrial challenge and context..."
+          className="min-h-[100px] dark:bg-input dark:border-border dark:text-foreground"
+        />
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
@@ -134,25 +129,6 @@ export default function StepTwo({ formData, updateFormData, customerReadOnly = f
             placeholder="Click to search customers..."
           />
         )}
-
-        {/* Industry */}
-        <div className="space-y-2">
-          <Label htmlFor="industry" className="dark:text-foreground">
-            Industry <span className="text-red-500 dark:text-red-400">*</span>
-          </Label>
-          <Select value={formData.industry} onValueChange={(value) => updateFormData({ industry: value })} disabled={industriesLoading}>
-            <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
-              <SelectValue placeholder={industriesLoading ? "Loading..." : "Select industry"} />
-            </SelectTrigger>
-            <SelectContent className="dark:bg-popover dark:border-border">
-              {industries.map((industry) => (
-                <SelectItem key={industry.id} value={industry.value}>
-                  {industry.value}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
 
         {/* Location - Google Places Autocomplete */}
         <LocationAutocomplete
@@ -213,34 +189,39 @@ export default function StepTwo({ formData, updateFormData, customerReadOnly = f
           </Select>
         </div>
 
-        {/* Base Metal - BRD 3.3 Required */}
+        {/* Job Type - Preventive, Corrective, etc. */}
         <div className="space-y-2">
-          <Label htmlFor="baseMetal" className="dark:text-foreground">
-            Base Metal <span className="text-red-500 dark:text-red-400">*</span>
+          <Label htmlFor="jobType" className="dark:text-foreground">
+            Job Type <span className="text-red-500 dark:text-red-400">*</span>
           </Label>
-          <Input
-            id="baseMetal"
-            value={formData.baseMetal}
-            onChange={(e) => updateFormData({ baseMetal: e.target.value })}
-            placeholder="e.g., Mild Steel"
-            className="dark:bg-input dark:border-border dark:text-foreground"
-            required
-          />
-        </div>
-
-        {/* General Dimensions - BRD 3.3 Required */}
-        <div className="space-y-2">
-          <Label htmlFor="generalDimensions" className="dark:text-foreground">
-            General Dimensions <span className="text-red-500 dark:text-red-400">*</span>
-          </Label>
-          <Input
-            id="generalDimensions"
-            value={formData.generalDimensions}
-            onChange={(e) => updateFormData({ generalDimensions: e.target.value })}
-            placeholder="e.g., 500mm x 200mm"
-            className="dark:bg-input dark:border-border dark:text-foreground"
-            required
-          />
+          <Select
+            value={formData.jobType}
+            onValueChange={(value) => {
+              updateFormData({ jobType: value as any });
+              if (value !== 'OTHER') {
+                updateFormData({ jobTypeOther: '' });
+              }
+            }}
+          >
+            <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
+              <SelectValue placeholder="Select job type" />
+            </SelectTrigger>
+            <SelectContent className="dark:bg-popover dark:border-border">
+              <SelectItem value="PREVENTIVE">Preventive</SelectItem>
+              <SelectItem value="CORRECTIVE">Corrective</SelectItem>
+              <SelectItem value="IMPROVEMENT">Improvement</SelectItem>
+              <SelectItem value="OTHER">Other (specify)</SelectItem>
+            </SelectContent>
+          </Select>
+          {formData.jobType === 'OTHER' && (
+            <Input
+              placeholder="Enter custom job type..."
+              value={formData.jobTypeOther}
+              onChange={(e) => updateFormData({ jobTypeOther: e.target.value })}
+              className="mt-2 dark:bg-input dark:border-border dark:text-foreground"
+              autoFocus
+            />
+          )}
         </div>
 
         {/* OEM - Original Equipment Manufacturer (BRD Section 5) */}
@@ -254,45 +235,7 @@ export default function StepTwo({ formData, updateFormData, customerReadOnly = f
             className="dark:bg-input dark:border-border dark:text-foreground"
           />
         </div>
-      </div>
 
-      {/* Wear Type - Compact chip/badge style */}
-      <div className="space-y-2">
-        <Label className="dark:text-foreground">
-          Type of Wear <span className="text-red-500 dark:text-red-400">*</span>
-        </Label>
-        <div className="flex flex-wrap gap-2">
-          {wearTypesLoading ? (
-            <span className="text-sm text-muted-foreground">Loading...</span>
-          ) : (
-            wearTypes.map((wear) => {
-              const isSelected = waIsWearTypeSelected(wear.value);
-              const displayLabel = (wear as any).label || wear.value;
-              return (
-                <button
-                  key={wear.id}
-                  type="button"
-                  onClick={() => toggleWearType(wear.value)}
-                  className={`
-                    inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium
-                    transition-all duration-150 border
-                    ${isSelected
-                      ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                      : 'bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-foreground'
-                    }
-                  `}
-                >
-                  {isSelected && (
-                    <svg className="w-3.5 h-3.5 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  )}
-                  {displayLabel}
-                </button>
-              );
-            })
-          )}
-        </div>
       </div>
     </div>
   );

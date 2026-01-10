@@ -154,7 +154,7 @@ export default async function LibraryPage({
         },
       },
       orderBy: [
-        { approvedAt: 'desc' },
+        { approvedAt: { sort: 'desc', nulls: 'last' } },
         { createdAt: 'desc' },
       ],
       take: perPage,

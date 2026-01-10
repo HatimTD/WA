@@ -454,15 +454,76 @@ export interface ComparisonPDFData {
   componentWorkpiece: string;
   workType: string;
   wearType: string[];
+  wearSeverities?: Record<string, number> | null;
+  wearTypeOthers?: Array<{ name: string; severity: number }> | null;
   problemDescription: string;
   waSolution: string;
   waProduct: string;
+  waProductDiameter?: string;
   technicalAdvantages?: string;
   expectedServiceLife?: string;
   previousServiceLife?: string;
+  previousSolution?: string;
+  baseMetal?: string;
+  generalDimensions?: string;
+  jobType?: string;
+  jobTypeOther?: string;
+  oem?: string;
   solutionValueRevenue?: number | null;
   annualPotentialRevenue?: number | null;
   customerSavingsAmount?: number | null;
+  jobDurationHours?: number | null;
+  jobDurationDays?: number | null;
+  jobDurationWeeks?: number | null;
+  approvedAt?: Date | string | null;
+  currency?: string | null;
+}
+
+// Currency symbols mapping for PDF export
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  EUR: 'EUR', USD: '$', GBP: 'GBP', AUD: 'A$', CAD: 'C$',
+  CHF: 'CHF', JPY: 'JPY', CNY: 'CNY', MAD: 'MAD',
+};
+
+// Get currency symbol from currency code
+function waGetCurrencySymbol(currency: string | null | undefined): string {
+  return CURRENCY_SYMBOLS[currency || 'EUR'] || 'EUR';
+}
+
+// WA Green color constant (RGB)
+const WA_GREEN = { r: 0, g: 130, b: 70 }; // #008246
+
+// Helper to draw wear severity progress bars in PDF
+function waDrawWearSeverityBars(
+  doc: jsPDF,
+  wearType: string,
+  severity: number,
+  xPos: number,
+  yPos: number,
+  maxWidth: number
+): void {
+  const segmentWidth = 12;
+  const segmentHeight = 4;
+  const gap = 2;
+  const totalSegments = 5;
+
+  // Draw label (truncated)
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'normal');
+  const label = wearType.length > 12 ? wearType.substring(0, 11) + '..' : wearType;
+  doc.text(label, xPos, yPos + 3);
+
+  // Draw segments
+  const barStartX = xPos + 45;
+  for (let i = 0; i < totalSegments; i++) {
+    const segX = barStartX + (i * (segmentWidth + gap));
+    if (i < severity) {
+      doc.setFillColor(WA_GREEN.r, WA_GREEN.g, WA_GREEN.b);
+    } else {
+      doc.setFillColor(220, 220, 220);
+    }
+    doc.roundedRect(segX, yPos, segmentWidth, segmentHeight, 1, 1, 'F');
+  }
 }
 
 export function generateComparisonPDF(
@@ -482,168 +543,386 @@ export function generateComparisonPDF(
     return doc;
   }
 
-  // Add watermark
-  doc.setTextColor(230, 230, 230);
-  doc.setFontSize(40);
-  doc.text('WELDING ALLOYS - COMPARISON', pageWidth / 2, pageHeight / 2, {
+  // Add subtle watermark
+  doc.setTextColor(240, 240, 240);
+  doc.setFontSize(35);
+  doc.text('WELDING ALLOYS - CONFIDENTIAL', pageWidth / 2, pageHeight / 2, {
     align: 'center',
-    angle: 30,
+    angle: 25,
   });
+
+  // BRD 5.4.3 - Add personalized watermark
+  if (options?.exportedByName) {
+    doc.setFontSize(14);
+    doc.text(`Downloaded by: ${options.exportedByName}`, pageWidth / 2, pageHeight / 2 + 25, {
+      align: 'center',
+      angle: 25,
+    });
+  }
   doc.setTextColor(0, 0, 0);
 
-  // Header
-  doc.setFillColor(37, 99, 235);
-  doc.rect(0, 0, pageWidth, 25, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(20);
-  doc.text('Case Study Comparison', 15, 15);
-  doc.setFontSize(10);
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth - 50, 15);
+  // WA Green Header
+  doc.setFillColor(WA_GREEN.r, WA_GREEN.g, WA_GREEN.b);
+  doc.rect(0, 0, pageWidth, 30, 'F');
 
+  // Header content
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(22);
+  doc.setFont('helvetica', 'bold');
+  doc.text('WELDING ALLOYS', 15, 13);
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Case Study Comparison Report', 15, 22);
+
+  // Right side header info
+  doc.setFontSize(9);
+  doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth - 15, 13, { align: 'right' });
+  doc.text(`Comparing ${validCases.length} Case Studies`, pageWidth - 15, 20, { align: 'right' });
   if (options?.exportedByName) {
-    doc.text(`Downloaded by: ${options.exportedByName}`, pageWidth - 50, 20);
+    doc.text(`By: ${options.exportedByName}`, pageWidth - 15, 27, { align: 'right' });
   }
 
   doc.setTextColor(0, 0, 0);
-  yPos = 35;
+  yPos = 40;
 
-  // Calculate column widths based on number of cases
+  // Calculate column widths
   const colCount = validCases.length;
-  const labelWidth = 50;
-  const availableWidth = pageWidth - 30 - labelWidth;
+  const labelWidth = 55;
+  const availableWidth = pageWidth - 25 - labelWidth;
   const colWidth = availableWidth / colCount;
 
-  // Helper to add comparison rows
-  const addComparisonRow = (label: string, values: (string | undefined)[], highlighted?: boolean) => {
-    if (yPos > pageHeight - 15) {
-      doc.addPage();
-      yPos = 20;
-    }
+  // Helper to add new page with header
+  const waAddNewPage = () => {
+    doc.addPage();
+    // Add watermark
+    doc.setTextColor(240, 240, 240);
+    doc.setFontSize(35);
+    doc.text('WELDING ALLOYS - CONFIDENTIAL', pageWidth / 2, pageHeight / 2, {
+      align: 'center',
+      angle: 25,
+    });
+    doc.setTextColor(0, 0, 0);
+    // Add header stripe
+    doc.setFillColor(WA_GREEN.r, WA_GREEN.g, WA_GREEN.b);
+    doc.rect(0, 0, pageWidth, 12, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10);
+    doc.text('WELDING ALLOYS - Case Study Comparison', 15, 8);
+    doc.setTextColor(0, 0, 0);
+    return 20;
+  };
 
-    if (highlighted) {
-      doc.setFillColor(255, 250, 220);
-      doc.rect(10, yPos - 4, pageWidth - 20, 10, 'F');
+  // Helper to add section header
+  const waAddSectionHeader = (title: string, bgColor?: { r: number; g: number; b: number }) => {
+    if (yPos > pageHeight - 30) {
+      yPos = waAddNewPage();
     }
-
-    doc.setFontSize(9);
+    const color = bgColor || { r: WA_GREEN.r, g: WA_GREEN.g, b: WA_GREEN.b };
+    doc.setFillColor(color.r, color.g, color.b);
+    doc.rect(10, yPos - 4, pageWidth - 20, 10, 'F');
+    doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text(title, 15, yPos + 2);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'normal');
+    yPos += 14;
+  };
+
+  // Helper to add comparison rows with better styling
+  const waAddComparisonRow = (
+    label: string,
+    values: (string | undefined)[],
+    options?: { highlighted?: boolean; bold?: boolean; multiLine?: boolean }
+  ) => {
+    const rowHeight = options?.multiLine ? 18 : 10;
+    if (yPos > pageHeight - rowHeight - 10) {
+      yPos = waAddNewPage();
+    }
+
+    // Alternating row background
+    if (options?.highlighted) {
+      doc.setFillColor(255, 250, 205); // Light yellow highlight
+      doc.rect(10, yPos - 4, pageWidth - 20, rowHeight, 'F');
+    }
+
+    doc.setFontSize(8);
+    doc.setFont('helvetica', options?.bold ? 'bold' : 'normal');
+    doc.setTextColor(80, 80, 80);
     doc.text(label, 15, yPos);
+    doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'normal');
 
     values.forEach((val, idx) => {
       const xPos = labelWidth + 15 + (idx * colWidth);
-      const text = val || 'N/A';
-      const maxWidth = colWidth - 5;
-      const lines = doc.splitTextToSize(text, maxWidth);
-      doc.text(lines.slice(0, 2).join(' '), xPos, yPos);
+      const text = val || '—';
+      const maxWidth = colWidth - 8;
+
+      if (options?.multiLine) {
+        const lines = doc.splitTextToSize(text, maxWidth);
+        doc.text(lines.slice(0, 3), xPos, yPos);
+      } else {
+        const truncated = text.length > 40 ? text.substring(0, 38) + '..' : text;
+        doc.text(truncated, xPos, yPos);
+      }
+    });
+
+    yPos += rowHeight;
+  };
+
+  // Case headers with type badges
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(100, 100, 100);
+  doc.text('FIELD', 15, yPos);
+
+  validCases.forEach((cs, idx) => {
+    const xPos = labelWidth + 15 + (idx * colWidth);
+
+    // Type badge
+    const typeColors: Record<string, number[]> = {
+      'STAR': [234, 179, 8],   // Gold
+      'TECH': [147, 51, 234],  // Purple
+      'BASIC': [100, 100, 100] // Gray
+    };
+    const color = typeColors[cs.type] || typeColors['BASIC'];
+    doc.setFillColor(color[0], color[1], color[2]);
+    doc.roundedRect(xPos - 2, yPos - 7, 25, 8, 2, 2, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(7);
+    doc.text(cs.type, xPos + 10.5, yPos - 1.5, { align: 'center' });
+
+    // Customer name
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(9);
+    const name = cs.customerName.length > 25 ? cs.customerName.substring(0, 23) + '..' : cs.customerName;
+    doc.text(name, xPos + 28, yPos);
+  });
+
+  doc.setTextColor(0, 0, 0);
+  yPos += 12;
+
+  // ═══════════════════════════════════════════════════════════════
+  // SECTION 1: BASIC INFORMATION
+  // ═══════════════════════════════════════════════════════════════
+  waAddSectionHeader('BASIC INFORMATION');
+
+  waAddComparisonRow('Industry', validCases.map(c => c.industry));
+  waAddComparisonRow('Location', validCases.map(c =>
+    `${c.location}${c.country ? ', ' + c.country : ''}`
+  ));
+  waAddComparisonRow('Component/Workpiece', validCases.map(c => c.componentWorkpiece));
+  waAddComparisonRow('Work Type', validCases.map(c => c.workType));
+  waAddComparisonRow('Job Type', validCases.map(c =>
+    c.jobType === 'Other' && c.jobTypeOther ? c.jobTypeOther : c.jobType || '—'
+  ));
+  waAddComparisonRow('OEM', validCases.map(c => c.oem || '—'));
+  waAddComparisonRow('Approved Date', validCases.map(c =>
+    c.approvedAt ? new Date(c.approvedAt).toLocaleDateString() : '—'
+  ));
+
+  // ═══════════════════════════════════════════════════════════════
+  // SECTION 2: WEAR TYPE ANALYSIS (with visual severity bars)
+  // ═══════════════════════════════════════════════════════════════
+  yPos += 5;
+  waAddSectionHeader('WEAR TYPE ANALYSIS', { r: 80, g: 80, b: 80 });
+
+  // Get all unique wear types across all cases
+  const allWearTypes = new Set<string>();
+  validCases.forEach(c => {
+    c.wearType?.forEach(wt => allWearTypes.add(wt));
+    c.wearTypeOthers?.forEach(other => allWearTypes.add(other.name));
+  });
+
+  // Draw wear types with severity bars for each case
+  Array.from(allWearTypes).forEach(wearType => {
+    if (yPos > pageHeight - 20) {
+      yPos = waAddNewPage();
+    }
+
+    // Draw wear type label
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80, 80, 80);
+    const label = wearType.length > 16 ? wearType.substring(0, 14) + '..' : wearType;
+    doc.text(label, 15, yPos);
+    doc.setTextColor(0, 0, 0);
+
+    // Draw severity bars for each case
+    validCases.forEach((cs, idx) => {
+      const xPos = labelWidth + 15 + (idx * colWidth);
+
+      // Get severity for this wear type
+      let severity = 0;
+      if (cs.wearType?.includes(wearType)) {
+        severity = (cs.wearSeverities as Record<string, number>)?.[wearType] || 1;
+      }
+      // Check in others
+      const otherMatch = cs.wearTypeOthers?.find(o => o.name === wearType);
+      if (otherMatch) {
+        severity = otherMatch.severity || 1;
+      }
+
+      // Draw segments
+      const segmentWidth = 10;
+      const segmentHeight = 5;
+      const gap = 2;
+      for (let i = 0; i < 5; i++) {
+        const segX = xPos + (i * (segmentWidth + gap));
+        if (i < severity) {
+          doc.setFillColor(WA_GREEN.r, WA_GREEN.g, WA_GREEN.b);
+        } else {
+          doc.setFillColor(220, 220, 220);
+        }
+        doc.roundedRect(segX, yPos - 4, segmentWidth, segmentHeight, 1, 1, 'F');
+      }
     });
 
     yPos += 10;
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // SECTION 3: TECHNICAL DETAILS
+  // ═══════════════════════════════════════════════════════════════
+  yPos += 5;
+  waAddSectionHeader('TECHNICAL DETAILS');
+
+  waAddComparisonRow('Base Metal', validCases.map(c => c.baseMetal || '—'));
+  waAddComparisonRow('Dimensions', validCases.map(c => c.generalDimensions || '—'));
+  waAddComparisonRow('Previous Solution', validCases.map(c => c.previousSolution || '—'));
+  waAddComparisonRow('Previous Service Life', validCases.map(c => c.previousServiceLife || '—'));
+
+  // ═══════════════════════════════════════════════════════════════
+  // SECTION 4: WA SOLUTION
+  // ═══════════════════════════════════════════════════════════════
+  yPos += 5;
+  waAddSectionHeader('WELDING ALLOYS SOLUTION', WA_GREEN);
+
+  waAddComparisonRow('WA Product', validCases.map(c => c.waProduct), { bold: true });
+  waAddComparisonRow('Product Diameter', validCases.map(c => c.waProductDiameter || '—'));
+  waAddComparisonRow('Expected Service Life', validCases.map(c => c.expectedServiceLife || '—'), { highlighted: true, bold: true });
+
+  // Job Duration
+  waAddComparisonRow('Job Duration', validCases.map(c => {
+    const parts = [];
+    if (c.jobDurationWeeks) parts.push(`${c.jobDurationWeeks}w`);
+    if (c.jobDurationDays) parts.push(`${c.jobDurationDays}d`);
+    if (c.jobDurationHours) parts.push(`${c.jobDurationHours}h`);
+    return parts.length > 0 ? parts.join(' ') : '—';
+  }));
+
+  // ═══════════════════════════════════════════════════════════════
+  // SECTION 5: FINANCIAL IMPACT (HIGHLIGHTED)
+  // ═══════════════════════════════════════════════════════════════
+  yPos += 5;
+  waAddSectionHeader('FINANCIAL IMPACT (KEY METRICS)', { r: 22, g: 163, b: 74 }); // Green
+
+  // Helper to format currency properly (handles strings and numbers, uses case currency)
+  const waFormatCurrencyWithSymbol = (value: number | string | null | undefined, currency: string | null | undefined): string => {
+    if (value === null || value === undefined) return '—';
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    if (isNaN(numValue) || numValue === 0) return '—';
+    const symbol = waGetCurrencySymbol(currency);
+    return `${symbol} ${numValue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
   };
 
-  // Case headers
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Field', 15, yPos);
-  validCases.forEach((cs, idx) => {
-    const xPos = labelWidth + 15 + (idx * colWidth);
-    doc.setFillColor(
-      cs.type === 'STAR' ? 234 : cs.type === 'TECH' ? 147 : 37,
-      cs.type === 'STAR' ? 179 : cs.type === 'TECH' ? 51 : 99,
-      cs.type === 'STAR' ? 8 : cs.type === 'TECH' ? 234 : 235
-    );
-    doc.roundedRect(xPos - 2, yPos - 8, colWidth - 5, 10, 2, 2, 'F');
+  waAddComparisonRow('Solution Value Revenue', validCases.map(c =>
+    waFormatCurrencyWithSymbol(c.solutionValueRevenue, c.currency)
+  ), { highlighted: true, bold: true });
+
+  waAddComparisonRow('Annual Potential Revenue', validCases.map(c =>
+    waFormatCurrencyWithSymbol(c.annualPotentialRevenue, c.currency)
+  ), { highlighted: true, bold: true });
+
+  waAddComparisonRow('Customer Savings', validCases.map(c =>
+    waFormatCurrencyWithSymbol(c.customerSavingsAmount, c.currency)
+  ), { highlighted: true, bold: true });
+
+  // Calculate totals row - ensure proper number parsing
+  const waParseNumber = (val: number | string | null | undefined): number => {
+    if (val === null || val === undefined) return 0;
+    const num = typeof val === 'string' ? parseFloat(val) : val;
+    return isNaN(num) ? 0 : num;
+  };
+
+  const totalSolutionValue = validCases.reduce((sum, c) => sum + waParseNumber(c.solutionValueRevenue), 0);
+  const totalAnnualRevenue = validCases.reduce((sum, c) => sum + waParseNumber(c.annualPotentialRevenue), 0);
+  const totalSavings = validCases.reduce((sum, c) => sum + waParseNumber(c.customerSavingsAmount), 0);
+
+  // Determine the primary currency for totals (use first case's currency or EUR)
+  const primaryCurrency = validCases.find(c => c.currency)?.currency || 'EUR';
+  const primarySymbol = waGetCurrencySymbol(primaryCurrency);
+
+  // Check if all cases have same currency
+  const allSameCurrency = validCases.every(c => !c.currency || c.currency === primaryCurrency);
+
+  if (totalSolutionValue > 0 || totalAnnualRevenue > 0 || totalSavings > 0) {
+    yPos += 3;
+    doc.setFillColor(22, 163, 74);
+    doc.rect(10, yPos - 4, pageWidth - 20, 12, 'F');
     doc.setTextColor(255, 255, 255);
-    const title = `${cs.customerName.substring(0, 20)}${cs.customerName.length > 20 ? '...' : ''}`;
-    doc.text(`${cs.type}: ${title}`, xPos, yPos);
-  });
-  doc.setTextColor(0, 0, 0);
-  yPos += 15;
-
-  // Basic Information Section
-  doc.setFillColor(240, 240, 240);
-  doc.rect(10, yPos - 4, pageWidth - 20, 8, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.text('BASIC INFORMATION', 15, yPos);
-  yPos += 12;
-  doc.setFont('helvetica', 'normal');
-
-  addComparisonRow('Industry', validCases.map(c => c.industry));
-  addComparisonRow('Location', validCases.map(c => `${c.location}${c.country ? ', ' + c.country : ''}`));
-  addComparisonRow('Component', validCases.map(c => c.componentWorkpiece));
-  addComparisonRow('Work Type', validCases.map(c => c.workType));
-  addComparisonRow('Wear Types', validCases.map(c => c.wearType?.join(', ')));
-
-  // Solution Section
-  yPos += 5;
-  doc.setFillColor(240, 240, 240);
-  doc.rect(10, yPos - 4, pageWidth - 20, 8, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.text('SOLUTION DETAILS', 15, yPos);
-  yPos += 12;
-  doc.setFont('helvetica', 'normal');
-
-  addComparisonRow('WA Product', validCases.map(c => c.waProduct));
-  addComparisonRow('Previous Life', validCases.map(c => c.previousServiceLife));
-
-  // BRD 3.4F - HIGHLIGHT: Service Life
-  addComparisonRow('★ Expected Life', validCases.map(c => c.expectedServiceLife), true);
-
-  // Financial Section - BRD 3.4F Highlight
-  yPos += 5;
-  doc.setFillColor(220, 252, 231);
-  doc.rect(10, yPos - 4, pageWidth - 20, 8, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.text('★ FINANCIAL IMPACT (HIGHLIGHTED)', 15, yPos);
-  yPos += 12;
-  doc.setFont('helvetica', 'normal');
-
-  addComparisonRow('Solution Value', validCases.map(c =>
-    c.solutionValueRevenue ? `$${c.solutionValueRevenue.toLocaleString()}` : undefined
-  ), true);
-
-  // BRD 3.4F - HIGHLIGHT: Annual Potential Revenue
-  addComparisonRow('★ Annual Revenue', validCases.map(c =>
-    c.annualPotentialRevenue ? `$${c.annualPotentialRevenue.toLocaleString()}` : undefined
-  ), true);
-
-  addComparisonRow('Customer Savings', validCases.map(c =>
-    c.customerSavingsAmount ? `$${c.customerSavingsAmount.toLocaleString()}` : undefined
-  ), true);
-
-  // Descriptions Section (abbreviated)
-  if (yPos < pageHeight - 60) {
-    yPos += 5;
-    doc.setFillColor(240, 240, 240);
-    doc.rect(10, yPos - 4, pageWidth - 20, 8, 'F');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text('PROBLEM & SOLUTION SUMMARY', 15, yPos);
-    yPos += 12;
-    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text(allSameCurrency ? 'COMBINED TOTAL' : 'COMBINED TOTAL (Mixed Currencies)', 15, yPos + 2);
 
-    addComparisonRow('Problem', validCases.map(c =>
-      c.problemDescription ? c.problemDescription.substring(0, 100) + '...' : undefined
-    ));
-    addComparisonRow('Solution', validCases.map(c =>
-      c.waSolution ? c.waSolution.substring(0, 100) + '...' : undefined
-    ));
+    // Show totals with proper currency formatting
+    const totalsText = [];
+    if (totalSolutionValue > 0) totalsText.push(`Solution: ${primarySymbol} ${totalSolutionValue.toLocaleString('en-US')}`);
+    if (totalAnnualRevenue > 0) totalsText.push(`Annual: ${primarySymbol} ${totalAnnualRevenue.toLocaleString('en-US')}`);
+    if (totalSavings > 0) totalsText.push(`Savings: ${primarySymbol} ${totalSavings.toLocaleString('en-US')}`);
+    doc.text(totalsText.join('  |  '), labelWidth + 60, yPos + 2);
+
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'normal');
+    yPos += 16;
   }
 
-  // Footer on all pages
+  // ═══════════════════════════════════════════════════════════════
+  // SECTION 6: PROBLEM & SOLUTION DESCRIPTION
+  // ═══════════════════════════════════════════════════════════════
+  yPos += 5;
+  waAddSectionHeader('PROBLEM & SOLUTION SUMMARY');
+
+  waAddComparisonRow('Problem Description', validCases.map(c =>
+    c.problemDescription ? (c.problemDescription.length > 120
+      ? c.problemDescription.substring(0, 118) + '..'
+      : c.problemDescription) : '—'
+  ), { multiLine: true });
+
+  waAddComparisonRow('WA Solution', validCases.map(c =>
+    c.waSolution ? (c.waSolution.length > 120
+      ? c.waSolution.substring(0, 118) + '..'
+      : c.waSolution) : '—'
+  ), { multiLine: true });
+
+  waAddComparisonRow('Technical Advantages', validCases.map(c =>
+    c.technicalAdvantages ? (c.technicalAdvantages.length > 120
+      ? c.technicalAdvantages.substring(0, 118) + '..'
+      : c.technicalAdvantages) : '—'
+  ), { multiLine: true });
+
+  // ═══════════════════════════════════════════════════════════════
+  // FOOTER ON ALL PAGES
+  // ═══════════════════════════════════════════════════════════════
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
-    doc.setFontSize(8);
-    doc.setTextColor(150, 150, 150);
+
+    // Footer line
+    doc.setDrawColor(WA_GREEN.r, WA_GREEN.g, WA_GREEN.b);
+    doc.setLineWidth(0.5);
+    doc.line(10, pageHeight - 12, pageWidth - 10, pageHeight - 12);
+
+    doc.setFontSize(7);
+    doc.setTextColor(100, 100, 100);
+
     const footerText = options?.exportedByName
-      ? `© ${new Date().getFullYear()} Welding Alloys Group - INTERNAL USE ONLY - Downloaded by: ${options.exportedByName}`
-      : `© ${new Date().getFullYear()} Welding Alloys Group - INTERNAL USE ONLY`;
-    doc.text(footerText, pageWidth / 2, pageHeight - 8, { align: 'center' });
-    doc.text(`Page ${i} of ${pageCount}`, pageWidth - 20, pageHeight - 8, { align: 'right' });
+      ? `© ${new Date().getFullYear()} Welding Alloys Group — INTERNAL USE ONLY — Downloaded by: ${options.exportedByName}`
+      : `© ${new Date().getFullYear()} Welding Alloys Group — INTERNAL USE ONLY`;
+
+    doc.text(footerText, pageWidth / 2, pageHeight - 6, { align: 'center' });
+    doc.text(`Page ${i} of ${pageCount}`, pageWidth - 15, pageHeight - 6, { align: 'right' });
+    doc.text(`Report ID: COMP-${Date.now().toString(36).toUpperCase()}`, 15, pageHeight - 6);
   }
 
   return doc;

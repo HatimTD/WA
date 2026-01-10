@@ -103,7 +103,7 @@ class NetSuiteClient {
       Authorization: authHeader,
       'Content-Type': 'application/json',
       Accept: 'application/json',
-      'X-NetSuite-AccountId': this.config.accountId,
+      'Prefer': 'transient', // Required for SuiteQL queries per NetSuite docs
     };
 
     const options: RequestInit = {
@@ -178,7 +178,7 @@ class NetSuiteClient {
         LIMIT 10
       `;
 
-      const response = await this.makeRequest('/services/rest/query/v1/suiteql', 'POST', {
+      const response = await this.makeRequest('/query/v1/suiteql', 'POST', {
         q: suiteqlQuery,
       });
 
@@ -213,7 +213,7 @@ class NetSuiteClient {
 
   async getCustomer(id: string): Promise<NetSuiteCustomer | null> {
     try {
-      const response = await this.makeRequest(`/services/rest/record/v1/customer/${id}`, 'GET');
+      const response = await this.makeRequest(`/record/v1/customer/${id}`, 'GET');
 
       if (response) {
         const companyName = response.companyName || '';
@@ -414,7 +414,7 @@ class NetSuiteClient {
       // This updates a custom field on the customer record
       // Requires custom field setup in NetSuite: custentity_case_studies (text/JSON)
       const response = await this.makeRequest(
-        `/services/rest/record/v1/customer/${customerId}`,
+        `/record/v1/customer/${customerId}`,
         'PATCH',
         {
           custentity_last_case_study_id: metadata.caseStudyId,

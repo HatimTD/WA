@@ -23,6 +23,7 @@ export async function GET(
       where: { id },
       select: {
         id: true,
+        title: true,
         customerName: true,
         industry: true,
         location: true,
@@ -30,17 +31,38 @@ export async function GET(
         componentWorkpiece: true,
         workType: true,
         wearType: true,
+        wearSeverities: true,
+        wearTypeOthers: true,
         problemDescription: true,
+        previousSolution: true,
+        baseMetal: true,
+        generalDimensions: true,
         waSolution: true,
         waProduct: true,
+        waProductDiameter: true,
         technicalAdvantages: true,
         expectedServiceLife: true,
         previousServiceLife: true,
         solutionValueRevenue: true,
         annualPotentialRevenue: true,
         customerSavingsAmount: true,
+        revenueCurrency: true,
+        currency: true,
         type: true,
         status: true,
+        jobType: true,
+        jobTypeOther: true,
+        oem: true,
+        jobDurationHours: true,
+        jobDurationDays: true,
+        jobDurationWeeks: true,
+        approvedAt: true,
+        // Include cost calculator to get currency
+        costCalculator: {
+          select: {
+            currency: true,
+          },
+        },
       },
     });
 
@@ -48,7 +70,15 @@ export async function GET(
       return NextResponse.json({ error: 'Case study not found' }, { status: 404 });
     }
 
-    return NextResponse.json(caseStudy);
+    // Transform to flatten currency from costCalculator or revenueCurrency
+    const { costCalculator, ...rest } = caseStudy;
+    const transformedCase = {
+      ...rest,
+      // Use costCalculator currency (STAR) if available, otherwise use revenueCurrency (APPLICATION), default to EUR
+      currency: costCalculator?.currency || rest.revenueCurrency || rest.currency || 'EUR',
+    };
+
+    return NextResponse.json(transformedCase);
   } catch (error) {
     console.error('[API] Error fetching case study:', error);
     return NextResponse.json(

@@ -142,6 +142,7 @@ enum WearType {
   IMPACT
   CORROSION
   TEMPERATURE
+  METAL_METAL
   COMBINATION
 }
 
@@ -456,12 +457,14 @@ model WaCaseStudy {
   competitorName      String?
   baseMetal           String?
   generalDimensions   String?
+  generalDescription  String?    @db.Text // Overview based on components/basic info
 
   // WA Solution
   waSolution             String
   waProduct              String
   technicalAdvantages    String?  @db.Text
   expectedServiceLife    String?
+  revenueCurrency        String   @default("EUR")
   solutionValueRevenue   Decimal? @db.Decimal(12, 2)
   annualPotentialRevenue Decimal? @db.Decimal(12, 2)
   customerSavingsAmount  Decimal? @db.Decimal(12, 2)
@@ -545,7 +548,44 @@ model WaCaseStudy {
   // Solution description (was missing)
   solutionDescription String? @db.Text
 
-  // Job Duration
+  // Wire Diameter (e.g., 1.6mm or 0.063in)
+  waProductDiameter String? @db.VarChar(50)
+
+  // Wear Type Severities and Others (JSON for flexibility)
+  wearSeverities Json? // { "ABRASION": 3, "IMPACT": 2, ... }
+  wearTypeOthers Json? // [{ "name": "Custom wear", "severity": 3 }, ...]
+
+  // Granular Service Life Fields (h/d/w/m/y)
+  previousServiceLifeHours  String?
+  previousServiceLifeDays   String?
+  previousServiceLifeWeeks  String?
+  previousServiceLifeMonths String?
+  previousServiceLifeYears  String?
+
+  expectedServiceLifeHours  String?
+  expectedServiceLifeDays   String?
+  expectedServiceLifeWeeks  String?
+  expectedServiceLifeMonths String?
+  expectedServiceLifeYears  String?
+
+  // Old Solution Job Duration (h/d/w)
+  oldJobDurationHours String?
+  oldJobDurationDays  String?
+  oldJobDurationWeeks String?
+
+  // Unit System (METRIC or IMPERIAL)
+  unitSystem String? @default("METRIC")
+
+  // Job Type (PREVENTIVE, CORRECTIVE, IMPROVEMENT, OTHER)
+  jobType      String?
+  jobTypeOther String?
+
+  // Job Duration (granular h/d/w)
+  jobDurationHours String?
+  jobDurationDays  String?
+  jobDurationWeeks String?
+
+  // Legacy Job Duration fields
   jobDuration       Decimal? @db.Decimal(10, 2)
   jobDurationUnitId String?
 
@@ -671,6 +711,7 @@ model WaCostCalculator {
 
   // NEW FIELDS (BRD Rows 28-33, 38)
   costOfPart                  Float?  @default(0)
+  costOfWaSolution            Float?  @default(0)
   oldSolutionLifetimeDays     Int?    @default(0)
   waSolutionLifetimeDays      Int?    @default(0)
   partsUsedPerYear            Int?    @default(0)
@@ -678,6 +719,8 @@ model WaCostCalculator {
   maintenanceRepairCostAfter  Float?  @default(0)
   disassemblyCostBefore       Float?  @default(0)
   disassemblyCostAfter        Float?  @default(0)
+  downtimeCostPerEvent        Float?  @default(0)
+  currency                    String? @default("EUR")
   extraBenefits               String? @db.Text
 
   // Calculated Totals
@@ -940,4 +983,78 @@ model WaNetSuiteSyncJob {
   @@index([status])
   @@index([startedAt])
   @@map("NetSuiteSyncJob")
+}
+
+// =====================================================
+// MOCK DATA FOR TESTING (NetSuite fallback)
+// Used when NetSuite is unavailable or for testing
+// =====================================================
+
+// Mock customers - mirrors NetSuite customer structure
+model WaMockCustomer {
+  id String @id @default(cuid())
+
+  // NetSuite-like identifiers
+  netsuiteId String  @unique // Simulated NetSuite internal ID
+  entityId   String  @unique // Simulated customer UID like "E9001"
+
+  // Customer information
+  companyName String
+  displayName String // Combined: "CompanyName (EntityId)"
+  address     String?
+  city        String?
+  state       String?
+  country     String?
+  postalCode  String?
+  industry    String?
+
+  // Contact information
+  email String?
+  phone String?
+
+  // Metadata
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyName])
+  @@index([entityId])
+  @@index([city])
+  @@index([industry])
+  @@map("MockCustomer")
+}
+
+// Mock items (products) - mirrors NetSuite item structure
+model WaMockItem {
+  id String @id @default(cuid())
+
+  // NetSuite-like identifiers
+  netsuiteId String @unique // Simulated NetSuite internal ID
+  itemId     String @unique // Item code like "WA-001"
+
+  // Item information
+  itemName    String
+  displayName String // Item name with code
+  description String?
+  category    String?
+  type        String? // e.g., "Welding Wire", "Electrode"
+
+  // Product specifications
+  diameter      String?
+  composition   String?
+  process       String? // Welding process
+  application   String?
+  hardness      String?
+  manufacturer  String? @default("Welding Alloys")
+
+  // Metadata
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([itemName])
+  @@index([itemId])
+  @@index([category])
+  @@index([type])
+  @@map("MockItem")
 }

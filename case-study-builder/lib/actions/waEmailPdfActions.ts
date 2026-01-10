@@ -174,6 +174,15 @@ export async function waEmailCaseStudyPDF({
 
     console.log(`[Email PDF] Sent case study ${caseId} to ${recipientEmail}`, result);
 
+    // Check if Resend returned an error (API errors don't throw, they return in result)
+    if ('error' in result && result.error) {
+      const errorMessage = typeof result.error === 'object' && 'message' in result.error
+        ? (result.error as { message: string }).message
+        : 'Failed to send email';
+      console.error('[Email PDF] Resend API error:', result.error);
+      return { success: false, error: errorMessage };
+    }
+
     // Create audit log (optional - you can add this to track shares)
     // Could create a new model for tracking shares or use existing notification system
 

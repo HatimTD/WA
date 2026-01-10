@@ -23,6 +23,7 @@ interface SavedCase {
     componentWorkpiece: string;
     type: string;
     waProduct: string;
+    waProductDiameter?: string | null;
     problemDescription: string;
     status: string;
     approvedAt: string;
@@ -30,6 +31,10 @@ interface SavedCase {
     translationAvailable?: boolean;
     contributor?: { id: string; name: string | null } | null;
     approver?: { id: string; name: string | null } | null;
+    // New fields
+    jobType?: string | null;
+    jobTypeOther?: string | null;
+    oem?: string | null;
   };
 }
 
@@ -194,7 +199,7 @@ export default function SavedCasesPage() {
               {/* Type Filter */}
               <Select value={typeFilter} onValueChange={setTypeFilter}>
                 <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
-                  <SelectValue placeholder="Case Type" />
+                  <SelectValue placeholder="Case Study Type" />
                 </SelectTrigger>
                 <SelectContent className="dark:bg-popover dark:border-border">
                   <SelectItem value="all">All Types</SelectItem>
@@ -309,7 +314,19 @@ export default function SavedCasesPage() {
                   </p>
                   <p className="text-gray-600 dark:text-muted-foreground">
                     <span className="font-medium">Product:</span> {saved.caseStudy.waProduct}
+                    {saved.caseStudy.waProductDiameter && ` (${saved.caseStudy.waProductDiameter})`}
                   </p>
+                  {saved.caseStudy.oem && (
+                    <p className="text-gray-600 dark:text-muted-foreground">
+                      <span className="font-medium">OEM:</span> {saved.caseStudy.oem}
+                    </p>
+                  )}
+                  {saved.caseStudy.jobType && (
+                    <p className="text-gray-600 dark:text-muted-foreground">
+                      <span className="font-medium">Job Type:</span>{' '}
+                      {saved.caseStudy.jobType === 'OTHER' ? saved.caseStudy.jobTypeOther : saved.caseStudy.jobType}
+                    </p>
+                  )}
                 </div>
                 <p className="text-sm text-gray-700 dark:text-foreground line-clamp-3">
                   {saved.caseStudy.problemDescription}

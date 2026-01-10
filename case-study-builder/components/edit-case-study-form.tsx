@@ -1,113 +1,51 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, ArrowRight, Save } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, ArrowRight, Save, Building2, Loader2 } from 'lucide-react';
 import StepOne from '@/components/case-study-form/step-one';
 import StepTwo from '@/components/case-study-form/step-two';
 import StepThree from '@/components/case-study-form/step-three';
 import StepFour from '@/components/case-study-form/step-four';
 import StepFive from '@/components/case-study-form/step-five';
 import StepWPS from '@/components/case-study-form/step-wps';
+import StepCostCalculator from '@/components/case-study-form/step-cost-calculator';
 import ChallengeQualifier, { QualifierResult } from '@/components/case-study-form/challenge-qualifier';
 import NetSuiteCustomerSearch from '@/components/netsuite-customer-search';
 import { NetSuiteCustomer } from '@/lib/integrations/netsuite';
-import { waUpdateCaseStudy } from '@/lib/actions/waCaseStudyActions';
+import { waUpdateCaseStudy, waGetCustomerIndustry } from '@/lib/actions/waCaseStudyActions';
 import { waSaveWeldingProcedure } from '@/lib/actions/waWpsActions';
+import { waSaveCostCalculation } from '@/lib/actions/waCostCalculatorActions';
+import { CostCalculatorValues } from '@/components/cost-calculator';
+import { useMasterList } from '@/lib/hooks/use-master-list';
 import { toast } from 'sonner';
 import { WaCaseStudy, WaWeldingProcedure, WaCostCalculator } from '@prisma/client';
+import type { CaseStudyFormData } from '@/app/dashboard/new/page';
 
-export type CaseStudyFormData = {
-  // Step 1: Case Type
-  type: 'APPLICATION' | 'TECH' | 'STAR';
+// Fallback industries if Master List API fails
+const FALLBACK_INDUSTRIES = [
+  { id: 'mining', value: 'Mining & Quarrying', sortOrder: 0 },
+  { id: 'cement', value: 'Cement', sortOrder: 1 },
+  { id: 'steel', value: 'Steel & Metal Processing', sortOrder: 2 },
+  { id: 'power', value: 'Power Generation', sortOrder: 3 },
+  { id: 'pulp', value: 'Pulp & Paper', sortOrder: 4 },
+  { id: 'oil', value: 'Oil & Gas', sortOrder: 5 },
+  { id: 'chemical', value: 'Chemical & Petrochemical', sortOrder: 6 },
+  { id: 'marine', value: 'Marine', sortOrder: 7 },
+  { id: 'agriculture', value: 'Agriculture', sortOrder: 8 },
+  { id: 'construction', value: 'Construction', sortOrder: 9 },
+  { id: 'recycling', value: 'Recycling', sortOrder: 10 },
+  { id: 'other', value: 'Other', sortOrder: 11 },
+];
 
-  // Qualifier (BRD 3.1)
-  customerSelected: boolean; // Whether customer was selected from search
-  qualifierType?: 'NEW_CUSTOMER' | 'CROSS_SELL' | 'MAINTENANCE';
-  isTarget: boolean; // Counts toward BHAG 10,000 goal
-  qualifierCompleted: boolean; // Whether qualifier questions were answered
-
-  // Title (case study display name)
-  title: string;
-
-  // Step 2: Basic Information
-  customerName: string;
-  industry: string;
-  location: string;
-  country: string;
-  componentWorkpiece: string;
-  workType: 'WORKSHOP' | 'ON_SITE' | 'BOTH';
-  wearType: string[];
-  baseMetal: string;
-  generalDimensions: string;
-  oem: string; // Original Equipment Manufacturer (BRD Section 5)
-
-  // Step 3: Problem Description
-  problemDescription: string;
-  previousSolution: string;
-  previousServiceLife: string;
-  competitorName: string;
-
-  // Step 4: WA Solution
-  waSolution: string;
-  waProduct: string;
-  technicalAdvantages: string;
-  expectedServiceLife: string;
-
-  // Step 5: Financial & Media
-  solutionValueRevenue: string;
-  annualPotentialRevenue: string;
-  customerSavingsAmount: string;
-  images: string[];
-  supportingDocs: string[];
-  tags: string[];
-
-  // Step WPS: Welding Procedure Specification (TECH & STAR only)
-  wps?: {
-    // Base Metal
-    baseMetalType?: string;
-    baseMetalGrade?: string;
-    baseMetalThickness?: string;
-    surfacePreparation?: string;
-    // WA Product
-    waProductName?: string;
-    waProductDiameter?: string;
-    shieldingGas?: string;
-    shieldingFlowRate?: string;
-    flux?: string;
-    standardDesignation?: string;
-    // Welding Parameters
-    weldingProcess?: string;
-    currentType?: string;
-    currentModeSynergy?: string;
-    wireFeedSpeed?: string;
-    intensity?: string;
-    voltage?: string;
-    heatInput?: string;
-    weldingPosition?: string;
-    torchAngle?: string;
-    stickOut?: string;
-    travelSpeed?: string;
-    // Oscillation
-    oscillationWidth?: string;
-    oscillationSpeed?: string;
-    oscillationStepOver?: string;
-    oscillationTempo?: string;
-    // Temperature
-    preheatTemperature?: string;
-    interpassTemperature?: string;
-    postheatTemperature?: string;
-    pwhtDetails?: string;
-    // Results
-    layerNumbers?: number;
-    hardness?: string;
-    defectsObserved?: string;
-    additionalNotes?: string;
-  };
-};
+// Re-export for backward compatibility
+export type { CaseStudyFormData };
 
 type Props = {
   caseStudy: WaCaseStudy;
@@ -159,54 +97,61 @@ function waCalculateResumeStep(
   wpsData: WaWeldingProcedure | null | undefined,
   caseType: 'APPLICATION' | 'TECH' | 'STAR'
 ): number {
-  // Step 1: Case Type - always complete if we have a case
+  // Step 1: Case Study Type - always complete if we have a case
 
-  // Step 2: Qualifier - check if customer selected and qualifier completed
+  // Step 2: Customer Info - check if customer selected and qualifier completed
   if (!waHasValue(caseStudy.customerName) || !caseStudy.qualifierType) {
-    return 2; // Qualifier
+    return 2; // Customer Info
   }
 
-  // Step 3: Basic Info
-  if (!waHasValue(caseStudy.customerName) || !waHasValue(caseStudy.industry) ||
+  // Step 3: Basic Info (title, customer, location, component, work type, job type)
+  if (!waHasValue(caseStudy.title) || !waHasValue(caseStudy.customerName) || !waHasValue(caseStudy.industry) ||
       !waHasValue(caseStudy.location) || !waHasValue(caseStudy.componentWorkpiece) ||
-      !caseStudy.workType || !caseStudy.wearType ||
-      (caseStudy.wearType as string[]).length === 0 ||
-      !waHasValue(caseStudy.baseMetal) || !waHasValue(caseStudy.generalDimensions)) {
+      !caseStudy.workType) {
     return 3; // Basic Info
   }
 
-  // Step 4: Problem
-  if (!waHasValue(caseStudy.problemDescription) || !waHasValue(caseStudy.previousSolution)) {
-    return 4; // Problem
+  // Step 4: The Challenge (wear type and problem description)
+  if (!caseStudy.wearType || (caseStudy.wearType as string[]).length === 0 ||
+      !waHasValue(caseStudy.problemDescription)) {
+    return 4; // The Challenge
   }
 
-  // Step 5: Solution
-  if (!waHasValue(caseStudy.waSolution) || !waHasValue(caseStudy.waProduct) ||
-      !waHasValue(caseStudy.technicalAdvantages)) {
-    return 5; // Solution
+  // Step 5: The Solution (base metal, dimensions, solution details, and images)
+  const hasImages = caseStudy.images && (caseStudy.images as string[]).length >= 1;
+  if (!waHasValue(caseStudy.baseMetal) || !waHasValue(caseStudy.generalDimensions) ||
+      !waHasValue(caseStudy.waSolution) || !waHasValue(caseStudy.waProduct) ||
+      !waHasValue(caseStudy.technicalAdvantages) || !hasImages) {
+    return 5; // The Solution
   }
 
-  // Step 6: WPS (for TECH and STAR)
+  // Step 6: Welding Procedure (for TECH and STAR)
   if (caseType === 'TECH' || caseType === 'STAR') {
     if (!waIsWpsComplete(wpsData)) {
-      return 6; // WPS
+      return 6; // Welding Procedure
     }
   }
 
-  // Step 7 (or 6 for APPLICATION): Review - check financial fields and images
-  // Note: Financial fields are numbers/Decimals, check if they exist and are > 0
-  const reviewStep = (caseType === 'TECH' || caseType === 'STAR') ? 7 : 6;
+  // Calculate Finalize step number based on case type
+  // APPLICATION: 6 steps (Type, Customer, Basic, Challenge, Solution, Finalize)
+  // TECH: 7 steps (adds Welding Procedure)
+  // STAR: 8 steps (adds Welding Procedure + Cost Reduction Analysis)
+  const finalizeStep = caseType === 'STAR' ? 8 : (caseType === 'TECH' ? 7 : 6);
+
+  // Step 7: Cost Reduction Analysis (for STAR only) - always optional, skip validation
+
+  // Final step: Finalize - check financial fields
+  // Note: Financial fields are numbers/Decimals, check if they exist
+  // customerSavingsAmount is now optional, so we don't check for it
   const hasValidRevenue = caseStudy.solutionValueRevenue !== null && caseStudy.solutionValueRevenue !== undefined;
   const hasValidAnnualRevenue = caseStudy.annualPotentialRevenue !== null && caseStudy.annualPotentialRevenue !== undefined;
-  const hasValidSavings = caseStudy.customerSavingsAmount !== null && caseStudy.customerSavingsAmount !== undefined;
-  const hasImages = caseStudy.images && (caseStudy.images as string[]).length >= 1;
 
-  if (!hasValidRevenue || !hasValidAnnualRevenue || !hasValidSavings || !hasImages) {
-    return reviewStep; // Review
+  if (!hasValidRevenue || !hasValidAnnualRevenue) {
+    return finalizeStep; // Finalize
   }
 
-  // All complete - go to last step (Review)
-  return reviewStep;
+  // All complete - go to last step (Finalize)
+  return finalizeStep;
 }
 
 export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: Props) {
@@ -220,6 +165,37 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
 
   const [currentStep, setCurrentStep] = useState(initialStep);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [industryLoading, setIndustryLoading] = useState(false);
+
+  // Fetch master list for industries
+  const { items: industries, isLoading: industriesLoading } = useMasterList('Industry', FALLBACK_INDUSTRIES);
+
+  // Ref to store full cost calculator values from CostCalculator component
+  const costCalcValuesRef = useRef<CostCalculatorValues | null>(
+    costCalcData ? {
+      materialCostBefore: Number(costCalcData.materialCostBefore) || 0,
+      materialCostAfter: Number(costCalcData.materialCostAfter) || 0,
+      laborCostBefore: Number(costCalcData.laborCostBefore) || 0,
+      laborCostAfter: Number(costCalcData.laborCostAfter) || 0,
+      downtimeCostBefore: Number(costCalcData.downtimeCostBefore) || 0,
+      downtimeCostAfter: Number(costCalcData.downtimeCostAfter) || 0,
+      maintenanceFrequencyBefore: costCalcData.maintenanceFrequencyBefore || 0,
+      maintenanceFrequencyAfter: costCalcData.maintenanceFrequencyAfter || 0,
+      costOfPart: Number(costCalcData.costOfPart) || 0,
+      oldSolutionLifetimeDays: costCalcData.oldSolutionLifetimeDays || 0,
+      waSolutionLifetimeDays: costCalcData.waSolutionLifetimeDays || 0,
+      partsUsedPerYear: costCalcData.partsUsedPerYear || 0,
+      maintenanceRepairCostBefore: Number(costCalcData.maintenanceRepairCostBefore) || 0,
+      maintenanceRepairCostAfter: Number(costCalcData.maintenanceRepairCostAfter) || 0,
+      disassemblyCostBefore: Number(costCalcData.disassemblyCostBefore) || 0,
+      disassemblyCostAfter: Number(costCalcData.disassemblyCostAfter) || 0,
+      extraBenefits: costCalcData.extraBenefits || '',
+      totalCostBefore: Number(costCalcData.totalCostBefore) || 0,
+      totalCostAfter: Number(costCalcData.totalCostAfter) || 0,
+      annualSavings: Number(costCalcData.annualSavings) || 0,
+      savingsPercentage: costCalcData.savingsPercentage || 0,
+    } : null
+  );
 
   // Pre-fill form data with existing case study values
   const [formData, setFormData] = useState<CaseStudyFormData>({
@@ -230,24 +206,51 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
     isTarget: caseStudy.isTarget ?? false, // Load from DB or default to false (matches DB default)
     qualifierCompleted: !!caseStudy.qualifierType, // Completed if qualifierType exists
     title: caseStudy.title || '',
+    generalDescription: (caseStudy as any).generalDescription || '',
     customerName: caseStudy.customerName,
     industry: caseStudy.industry,
     location: caseStudy.location,
     country: caseStudy.country || '',
     componentWorkpiece: caseStudy.componentWorkpiece,
     workType: caseStudy.workType as 'WORKSHOP' | 'ON_SITE' | 'BOTH',
+    jobType: ((caseStudy as any).jobType as 'PREVENTIVE' | 'CORRECTIVE' | 'IMPROVEMENT' | 'OTHER' | '') || '',
+    jobTypeOther: (caseStudy as any).jobTypeOther || '',
     wearType: caseStudy.wearType as string[],
+    wearTypeOthers: (caseStudy as any).wearTypeOthers || [],
+    wearSeverities: (caseStudy as any).wearSeverities || {},
     baseMetal: caseStudy.baseMetal || '',
     generalDimensions: caseStudy.generalDimensions || '',
     oem: (caseStudy as any).oem || '',
+    jobDurationHours: (caseStudy as any).jobDurationHours || '',
+    jobDurationDays: (caseStudy as any).jobDurationDays || '',
+    jobDurationWeeks: (caseStudy as any).jobDurationWeeks || '',
+    unitSystem: ((caseStudy as any).unitSystem as 'METRIC' | 'IMPERIAL') || 'METRIC',
     problemDescription: caseStudy.problemDescription,
     previousSolution: caseStudy.previousSolution || '',
     previousServiceLife: caseStudy.previousServiceLife || '',
+    // Granular previous service life fields
+    previousServiceLifeHours: (caseStudy as any).previousServiceLifeHours || '',
+    previousServiceLifeDays: (caseStudy as any).previousServiceLifeDays || '',
+    previousServiceLifeWeeks: (caseStudy as any).previousServiceLifeWeeks || '',
+    previousServiceLifeMonths: (caseStudy as any).previousServiceLifeMonths || '',
+    previousServiceLifeYears: (caseStudy as any).previousServiceLifeYears || '',
+    // Old solution job duration fields
+    oldJobDurationHours: (caseStudy as any).oldJobDurationHours || '',
+    oldJobDurationDays: (caseStudy as any).oldJobDurationDays || '',
+    oldJobDurationWeeks: (caseStudy as any).oldJobDurationWeeks || '',
     competitorName: caseStudy.competitorName || '',
     waSolution: caseStudy.waSolution,
     waProduct: caseStudy.waProduct,
+    waProductDiameter: (caseStudy as any).waProductDiameter || '',
     technicalAdvantages: caseStudy.technicalAdvantages || '',
     expectedServiceLife: caseStudy.expectedServiceLife || '',
+    // Granular expected service life fields
+    expectedServiceLifeHours: (caseStudy as any).expectedServiceLifeHours || '',
+    expectedServiceLifeDays: (caseStudy as any).expectedServiceLifeDays || '',
+    expectedServiceLifeWeeks: (caseStudy as any).expectedServiceLifeWeeks || '',
+    expectedServiceLifeMonths: (caseStudy as any).expectedServiceLifeMonths || '',
+    expectedServiceLifeYears: (caseStudy as any).expectedServiceLifeYears || '',
+    revenueCurrency: (caseStudy as any).revenueCurrency || 'EUR',
     solutionValueRevenue: caseStudy.solutionValueRevenue ? caseStudy.solutionValueRevenue.toString() : '',
     annualPotentialRevenue: caseStudy.annualPotentialRevenue ? caseStudy.annualPotentialRevenue.toString() : '',
     customerSavingsAmount: caseStudy.customerSavingsAmount ? caseStudy.customerSavingsAmount.toString() : '',
@@ -289,6 +292,20 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
       defectsObserved: wpsData.defectsObserved || undefined,
       additionalNotes: wpsData.additionalNotes || undefined,
     } : undefined,
+    // Cost calculator form data - loaded from database
+    costCalculator: costCalcData ? {
+      costOfPart: costCalcData.costOfPart?.toString() || '',
+      costOfWaSolution: costCalcData.costOfWaSolution?.toString() || '',
+      partsUsedPerYear: costCalcData.partsUsedPerYear?.toString() || '',
+      // Convert days back to days field (user can adjust if needed)
+      oldLifetimeDays: costCalcData.oldSolutionLifetimeDays?.toString() || '',
+      waLifetimeDays: costCalcData.waSolutionLifetimeDays?.toString() || '',
+      maintenanceCostPerEvent: costCalcData.maintenanceRepairCostBefore?.toString() || '',
+      disassemblyAssemblyCost: costCalcData.disassemblyCostBefore?.toString() || '',
+      downtimeCostPerEvent: costCalcData.downtimeCostPerEvent?.toString() || '',
+      currency: (costCalcData.currency as any) || 'EUR',
+      extraBenefits: costCalcData.extraBenefits || '',
+    } : undefined,
   });
 
   const updateFormData = (data: Partial<CaseStudyFormData>) => {
@@ -298,23 +315,28 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
   // Dynamic steps based on case type (includes Qualifier step)
   const STEPS = useMemo(() => {
     const baseSteps = [
-      { number: 1, title: 'Case Type', description: 'Select case study type' },
-      { number: 2, title: 'Qualifier', description: 'Challenge qualification' },
-      { number: 3, title: 'Basic Info', description: 'Customer and component details' },
-      { number: 4, title: 'Problem', description: 'Describe the challenge' },
-      { number: 5, title: 'Solution', description: 'WA solution details' },
+      { number: 1, title: 'Case Study Type', description: '' },
+      { number: 2, title: 'Customer Info', description: '' },
+      { number: 3, title: 'Basic Info', description: '' },
+      { number: 4, title: 'The Challenge', description: '' },
+      { number: 5, title: 'The Solution', description: '' },
     ];
 
     // Add WPS step for TECH and STAR cases
     if (formData.type === 'TECH' || formData.type === 'STAR') {
-      baseSteps.push({ number: 6, title: 'WPS', description: 'Welding procedure specification' });
+      baseSteps.push({ number: baseSteps.length + 1, title: 'Welding Procedure', description: '' });
     }
 
-    // Always add Review step last
+    // Add Cost Calculator step for STAR cases only
+    if (formData.type === 'STAR') {
+      baseSteps.push({ number: baseSteps.length + 1, title: 'Cost Reduction Analysis', description: '' });
+    }
+
+    // Always add Finalize step last
     baseSteps.push({
       number: baseSteps.length + 1,
-      title: 'Review',
-      description: 'Additional details and review'
+      title: 'Finalize',
+      description: ''
     });
 
     return baseSteps;
@@ -328,49 +350,63 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
     const missing: string[] = [];
 
     switch (currentStepData.title) {
-      case 'Case Type':
-        if (!formData.type) missing.push('Case Type');
+      case 'Case Study Type':
+        if (!formData.type) missing.push('Case Study Type');
         break;
-      case 'Qualifier':
+      case 'Customer Info':
         if (!formData.customerName) missing.push('Customer Name');
         if (!formData.customerSelected) missing.push('Customer Selection (click a customer from the list)');
+        if (!formData.industry || formData.industry === '__CUSTOM__') missing.push('Industry');
         if (!formData.qualifierCompleted) missing.push('Qualifier Questions');
         break;
       case 'Basic Info':
+        if (!formData.title) missing.push('Industrial Challenge Title');
         if (!formData.customerName) missing.push('Customer Name');
-        if (!formData.industry) missing.push('Industry');
         if (!formData.location) missing.push('Location');
         if (!formData.componentWorkpiece) missing.push('Component/Workpiece');
         if (!formData.workType) missing.push('Work Type');
+        if (!formData.jobType) missing.push('Job Type');
+        if (formData.jobType === 'OTHER' && !formData.jobTypeOther) missing.push('Job Type (specify)');
+        break;
+      case 'The Challenge':
+        // Wear type validation
         if (!formData.wearType || formData.wearType.length === 0) missing.push('Type of Wear');
+        // Check that at least one selected wear type has a severity
+        const wearTypesWithSeverity = formData.wearType?.filter(
+          type => formData.wearSeverities?.[type] && formData.wearSeverities[type] > 0
+        );
+        if (formData.wearType && formData.wearType.length > 0 && (!wearTypesWithSeverity || wearTypesWithSeverity.length === 0)) {
+          missing.push('Wear Severity (set for at least one wear type)');
+        }
+        if (!formData.problemDescription) missing.push('Problem Description');
+        break;
+      case 'The Solution':
+        // Base metal, dimensions moved here from Problem step
         if (!formData.baseMetal) missing.push('Base Metal');
         if (!formData.generalDimensions) missing.push('General Dimensions');
-        break;
-      case 'Problem':
-        if (!formData.problemDescription) missing.push('Problem Description');
-        if (!formData.previousSolution) missing.push('Previous Solution');
-        break;
-      case 'Solution':
         if (!formData.waSolution) missing.push('WA Solution');
         if (!formData.waProduct) missing.push('WA Product');
         if (!formData.technicalAdvantages) missing.push('Technical Advantages');
+        if (!formData.images || formData.images.length < 1) missing.push('At least 1 image');
         break;
-      case 'WPS':
-        if (!formData.wps?.baseMetalType) missing.push('Base Metal Type');
-        if (!formData.wps?.surfacePreparation) missing.push('Surface Preparation');
-        if (!formData.wps?.waProductName) missing.push('WA Product Name');
-        if (!formData.wps?.shieldingGas) missing.push('Shielding Gas');
-        if (!formData.wps?.weldingProcess) missing.push('Welding Process');
-        if (!formData.wps?.weldingPosition) missing.push('Welding Position');
-        if (!formData.wps?.oscillationWidth && !formData.wps?.oscillationSpeed) missing.push('Oscillation (Width or Speed)');
-        if (!formData.wps?.preheatTemperature && !formData.wps?.interpassTemperature) missing.push('Temperature (Preheat or Interpass)');
-        if (!formData.wps?.additionalNotes) missing.push('Additional WPS Notes');
+      case 'Welding Procedure':
+        // WPS is required for TECH cases
+        // WPS is optional for STAR cases, but if Next is clicked (not Skip), validate for bonus point
+        if (formData.type === 'TECH' || formData.type === 'STAR') {
+          if (!formData.wps?.baseMetalType) missing.push('Base Metal Type');
+          if (!formData.wps?.surfacePreparation) missing.push('Surface Preparation');
+          if (!formData.wps?.waProductName) missing.push('WA Product Name');
+          if (!formData.wps?.shieldingGas) missing.push('Shielding Gas');
+          if (!formData.wps?.weldingProcess) missing.push('Welding Process');
+          if (!formData.wps?.weldingPosition) missing.push('Welding Position');
+          if (!formData.wps?.oscillationWidth && !formData.wps?.oscillationSpeed) missing.push('Oscillation (Width or Speed)');
+          if (!formData.wps?.preheatTemperature && !formData.wps?.interpassTemperature) missing.push('Temperature (Preheat or Interpass)');
+          if (!formData.wps?.additionalNotes) missing.push('Additional WPS Notes');
+        }
         break;
-      case 'Review':
+      case 'Finalize':
         if (!formData.solutionValueRevenue) missing.push('Solution Value/Revenue');
         if (!formData.annualPotentialRevenue) missing.push('Annual Potential Revenue');
-        if (!formData.customerSavingsAmount) missing.push('Customer Savings');
-        if (!formData.images || formData.images.length < 1) missing.push('At least 1 image');
         break;
     }
 
@@ -395,6 +431,97 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
 
   const handlePrevious = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
+  };
+
+  const handleSkipWPS = () => {
+    // Skip WPS step without validation (for STAR cases)
+    // This means no bonus point (+0 instead of +1)
+    setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
+  };
+
+  // Handle cost calculator value changes from CostCalculator component
+  const handleCostCalcChange = (values: CostCalculatorValues) => {
+    costCalcValuesRef.current = values;
+  };
+
+  /**
+   * Helper to convert mixed time units to total hours (for comparison)
+   */
+  const waConvertToTotalHours = (hours?: string, days?: string, weeks?: string, months?: string, years?: string): number => {
+    const h = parseFloat(hours || '0') || 0;
+    const d = parseFloat(days || '0') || 0;
+    const w = parseFloat(weeks || '0') || 0;
+    const m = parseFloat(months || '0') || 0;
+    const y = parseFloat(years || '0') || 0;
+    return h + (d * 24) + (w * 168) + (m * 730) + (y * 8760);
+  };
+
+  /**
+   * Helper to convert cost calculator form data to database schema format
+   */
+  const waMapCostCalculatorData = (cc: NonNullable<typeof formData.costCalculator>, caseStudyId: string) => {
+    const A = parseFloat(cc.costOfPart || '0') || 0;
+    const B = parseFloat(cc.costOfWaSolution || '0') || 0;
+
+    const oldLifetimeHours = waConvertToTotalHours(
+      cc.oldLifetimeHours, cc.oldLifetimeDays, cc.oldLifetimeWeeks,
+      cc.oldLifetimeMonths, cc.oldLifetimeYears
+    );
+    const waLifetimeHours = waConvertToTotalHours(
+      cc.waLifetimeHours, cc.waLifetimeDays, cc.waLifetimeWeeks,
+      cc.waLifetimeMonths, cc.waLifetimeYears
+    );
+
+    const C = oldLifetimeHours || parseFloat(cc.oldSolutionLifetime || '1') || 1;
+    const D = waLifetimeHours || parseFloat(cc.waSolutionLifetime || '1') || 1;
+    const E = parseInt(cc.partsUsedPerYear || '0') || 0;
+    const F = parseFloat(cc.maintenanceCostPerEvent || '0') || 0;
+    const G = parseFloat(cc.disassemblyAssemblyCost || '0') || 0;
+    const H = parseFloat(cc.downtimeCostPerEvent || '0') || 0;
+
+    const lifetimeRatio = D / C;
+    const waPartsPerYear = E / lifetimeRatio;
+    const annualCostOld = (A * E) + (E - 1) * (F + G + H);
+    const annualCostWA = (B * waPartsPerYear) + Math.max(0, waPartsPerYear - 1) * (F + G + H);
+    const annualSavings = annualCostOld - annualCostWA;
+    const savingsPercentage = annualCostOld > 0 ? (annualSavings / annualCostOld) * 100 : 0;
+
+    const materialCostBefore = A * E;
+    const materialCostAfter = B * waPartsPerYear;
+    const laborCostBefore = (E - 1) * G;
+    const laborCostAfter = Math.max(0, waPartsPerYear - 1) * G;
+    const downtimeCostBefore = (E - 1) * H;
+    const downtimeCostAfter = Math.max(0, waPartsPerYear - 1) * H;
+    const oldLifetimeDays = Math.round(C / 24);
+    const waLifetimeDays = Math.round(D / 24);
+
+    return {
+      caseStudyId,
+      materialCostBefore,
+      materialCostAfter,
+      laborCostBefore,
+      laborCostAfter,
+      downtimeCostBefore,
+      downtimeCostAfter,
+      maintenanceFrequencyBefore: E,
+      maintenanceFrequencyAfter: Math.ceil(waPartsPerYear),
+      costOfPart: A,
+      costOfWaSolution: B,
+      oldSolutionLifetimeDays: oldLifetimeDays || 1,
+      waSolutionLifetimeDays: waLifetimeDays || 1,
+      partsUsedPerYear: E,
+      disassemblyCostBefore: G,
+      disassemblyCostAfter: G,
+      maintenanceRepairCostBefore: F,
+      maintenanceRepairCostAfter: F,
+      downtimeCostPerEvent: H,
+      currency: cc.currency || 'EUR',
+      extraBenefits: cc.extraBenefits || undefined,
+      totalCostBefore: annualCostOld,
+      totalCostAfter: annualCostWA,
+      annualSavings,
+      savingsPercentage,
+    };
   };
 
   const handleSaveDraft = async () => {
@@ -424,6 +551,15 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
             weldingProcess: formData.wps.weldingProcess || '',
             ...formData.wps,
           });
+        }
+      }
+
+      // If STAR and cost calculator data exists, save cost calculator
+      if (formData.type === 'STAR' && formData.costCalculator) {
+        const hasAnyCostData = Object.values(formData.costCalculator).some(v => v !== undefined && v !== '' && v !== null);
+        if (hasAnyCostData) {
+          const costCalcData = waMapCostCalculatorData(formData.costCalculator, caseStudy.id);
+          await waSaveCostCalculation(costCalcData);
         }
       }
 
@@ -483,6 +619,12 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
         });
       }
 
+      // If STAR and cost calculator data exists, save cost calculator
+      if (formData.type === 'STAR' && formData.costCalculator) {
+        const costCalcData = waMapCostCalculatorData(formData.costCalculator, caseStudy.id);
+        await waSaveCostCalculation(costCalcData);
+      }
+
       toast.success('Case study updated successfully!');
       router.push(`/dashboard/cases/${caseStudy.id}`);
     } catch (error) {
@@ -525,39 +667,68 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
       <Card className="dark:bg-card dark:border-border">
         <CardContent className="pt-6">
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              {STEPS.map((step) => (
-                <div
-                  key={step.number}
-                  className={`flex flex-col items-center flex-1 ${
-                    step.number < STEPS.length ? 'relative' : ''
-                  }`}
-                >
+            <div className="flex justify-between items-start">
+              {STEPS.map((step, index) => {
+                // Allow clicking on completed steps or current step
+                const canNavigate = step.number <= currentStep;
+                const handleStepClick = () => {
+                  if (step.number < currentStep) {
+                    // Navigate back to any previous step
+                    setCurrentStep(step.number);
+                  } else if (step.number > currentStep) {
+                    // For forward navigation, validate current step first
+                    const missingFields = getMissingFields(currentStep);
+                    if (missingFields.length === 0) {
+                      setCurrentStep(step.number);
+                    } else {
+                      const fieldList = missingFields.slice(0, 3).join(', ');
+                      const moreCount = missingFields.length > 3 ? ` and ${missingFields.length - 3} more` : '';
+                      toast.error(`Complete current step first: ${fieldList}${moreCount}`);
+                    }
+                  }
+                };
+
+                return (
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${
-                      currentStep === step.number
-                        ? 'bg-wa-green-600 text-white'
-                        : currentStep > step.number
-                        ? 'bg-green-700 text-white' /* Darkened for WCAG AA contrast */
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-                    }`}
+                    key={step.number}
+                    className="flex flex-col items-center relative"
+                    style={{ flex: '1 1 0', minWidth: 0 }}
                   >
-                    {step.number}
+                    {/* Connecting line - positioned between circles */}
+                    {index < STEPS.length - 1 && (
+                      <div
+                        className={`absolute top-5 h-0.5 ${
+                          currentStep > step.number ? 'bg-green-600' : 'bg-gray-200 dark:bg-gray-700'
+                        }`}
+                        style={{
+                          left: 'calc(50% + 20px)',
+                          right: 'calc(-50% + 20px)',
+                          zIndex: 0
+                        }}
+                      />
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleStepClick}
+                      disabled={isSubmitting}
+                      className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all flex-shrink-0 ${
+                        currentStep === step.number
+                          ? 'bg-wa-green-600 text-white ring-2 ring-wa-green-300'
+                          : currentStep > step.number
+                          ? 'bg-green-700 text-white hover:bg-green-600 cursor-pointer'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600 cursor-pointer'
+                      } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      title={canNavigate ? `Go to ${step.title}` : `Complete previous steps to access ${step.title}`}
+                    >
+                      {step.number}
+                    </button>
+                    <div className="text-xs mt-2 text-center w-full px-1">
+                      <div className="font-semibold dark:text-foreground break-words leading-tight">{step.title}</div>
+                      <div className="text-gray-500 dark:text-muted-foreground hidden sm:block break-words">{step.description}</div>
+                    </div>
                   </div>
-                  <div className="text-xs mt-2 text-center">
-                    <div className="font-semibold dark:text-foreground">{step.title}</div>
-                    <div className="text-gray-500 dark:text-muted-foreground hidden sm:block">{step.description}</div>
-                  </div>
-                  {step.number < STEPS.length && (
-                    <div
-                      className={`absolute top-5 left-[60%] w-full h-0.5 ${
-                        currentStep > step.number ? 'bg-green-600 dark:bg-green-600' : 'bg-gray-200 dark:bg-border'
-                      }`}
-                      style={{ zIndex: -1 }}
-                    />
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
             <Progress value={progress} className="h-2" />
           </div>
@@ -571,10 +742,10 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
           <CardDescription className="dark:text-muted-foreground">{STEPS[currentStep - 1].description}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {STEPS[currentStep - 1]?.title === 'Case Type' && (
+          {STEPS[currentStep - 1]?.title === 'Case Study Type' && (
             <StepOne formData={formData} updateFormData={updateFormData} />
           )}
-          {STEPS[currentStep - 1]?.title === 'Qualifier' && (
+          {STEPS[currentStep - 1]?.title === 'Customer Info' && (
             <div className="space-y-6">
               {/* Customer Search */}
               <NetSuiteCustomerSearch
@@ -596,7 +767,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
                     updateFormData({ customerName: value });
                   }
                 }}
-                onCustomerSelect={(customer: NetSuiteCustomer) => {
+                onCustomerSelect={async (customer: NetSuiteCustomer) => {
                   const updates: Partial<CaseStudyFormData> = {
                     customerName: customer.companyName,
                     customerSelected: true,
@@ -606,7 +777,25 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
                   };
                   if (customer.city) updates.location = customer.city;
                   if (customer.country) updates.country = customer.country;
-                  if (customer.industry) updates.industry = customer.industry;
+
+                  // Try to get industry from NetSuite first
+                  if (customer.industry) {
+                    updates.industry = customer.industry;
+                  } else {
+                    // If no industry from NetSuite, try to fetch from DB
+                    setIndustryLoading(true);
+                    try {
+                      const result = await waGetCustomerIndustry(customer.companyName);
+                      if (result.success && result.industry) {
+                        updates.industry = result.industry;
+                      }
+                    } catch (error) {
+                      console.error('Failed to fetch customer industry:', error);
+                    } finally {
+                      setIndustryLoading(false);
+                    }
+                  }
+
                   updateFormData(updates);
                 }}
                 label="Customer Name"
@@ -614,8 +803,76 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
                 placeholder="Click to search customers..."
               />
 
-              {/* Qualifier Questions - Only show after customer is selected */}
-              {formData.customerSelected && (
+              {/* Industry Selection - Show after customer is selected */}
+              {formData.customerSelected && formData.customerName && (
+                <div className="space-y-2">
+                  <Label className="dark:text-foreground flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                    Industry <span className="text-red-500 dark:text-red-400">*</span>
+                  </Label>
+                  {industryLoading ? (
+                    <div className="flex items-center gap-2 px-4 py-3 rounded-lg border bg-gray-50 dark:bg-muted border-border">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      <span className="text-sm text-muted-foreground">Loading industry...</span>
+                    </div>
+                  ) : (
+                    <>
+                      {(() => {
+                        const isOther = formData.industry && !industries.some(i => i.value === formData.industry) && formData.industry !== '__CUSTOM__';
+                        const selectValue = isOther ? '__OTHER__' : formData.industry;
+                        return (
+                          <>
+                            <Select
+                              value={selectValue}
+                              onValueChange={(value) => {
+                                if (value === '__OTHER__') {
+                                  updateFormData({ industry: '__CUSTOM__' });
+                                } else {
+                                  updateFormData({ industry: value });
+                                }
+                              }}
+                              disabled={industriesLoading}
+                            >
+                              <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
+                                <SelectValue placeholder={industriesLoading ? "Loading..." : "Select industry"} />
+                              </SelectTrigger>
+                              <SelectContent className="dark:bg-popover dark:border-border">
+                                {industries
+                                  .filter((industry) => industry.value.toLowerCase() !== 'other')
+                                  .map((industry) => (
+                                    <SelectItem key={industry.id} value={industry.value}>
+                                      {industry.value}
+                                    </SelectItem>
+                                  ))}
+                                <SelectItem value="__OTHER__">Other (specify)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            {(isOther || formData.industry === '__CUSTOM__') && (
+                              <Input
+                                placeholder="Enter custom industry..."
+                                value={formData.industry === '__CUSTOM__' ? '' : formData.industry}
+                                onChange={(e) => updateFormData({ industry: e.target.value || '__CUSTOM__' })}
+                                className="mt-2 dark:bg-input dark:border-border dark:text-foreground"
+                                autoFocus
+                              />
+                            )}
+                          </>
+                        );
+                      })()}
+                      {formData.industry && formData.industry !== '__CUSTOM__' && (
+                        <p className="text-xs text-muted-foreground">
+                          {industries.some(i => i.value === formData.industry)
+                            ? 'Industry auto-filled from customer data'
+                            : 'Custom industry specified'}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Qualifier Questions - Only show after customer is selected and industry is selected */}
+              {formData.customerSelected && formData.industry && formData.industry !== '__CUSTOM__' && (
                 <ChallengeQualifier
                   key={formData.customerName}
                   customerName={formData.customerName}
@@ -649,12 +906,13 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
                     <span className={`text-sm font-medium ${
                       formData.isTarget ? 'text-green-700 dark:text-green-300' : 'text-blue-700 dark:text-blue-300'
                     }`}>
-                      {formData.isTarget ? '✓ Counts toward BHAG 10,000 goal' : 'ℹ Maintenance case (does not count toward BHAG)'}
+                      {formData.isTarget
+                        ? formData.qualifierType === 'NEW_CUSTOMER'
+                          ? '✓ Counts toward the BHAG 10,000 goal and is qualified as New Customer.'
+                          : '✓ Counts toward the BHAG 10,000 goal and is qualified as Cross-Sell.'
+                        : 'ℹ Maintenance case (does not count toward BHAG)'}
                     </span>
                   </div>
-                  <p className="text-sm mt-1 text-gray-600 dark:text-gray-400">
-                    Qualifier Type: {formData.qualifierType?.replace('_', ' ')}
-                  </p>
                 </div>
               )}
             </div>
@@ -666,30 +924,22 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
               customerReadOnly={formData.customerSelected}
             />
           )}
-          {STEPS[currentStep - 1]?.title === 'Problem' && (
+          {STEPS[currentStep - 1]?.title === 'The Challenge' && (
             <StepThree formData={formData} updateFormData={updateFormData} />
           )}
-          {STEPS[currentStep - 1]?.title === 'Solution' && (
+          {STEPS[currentStep - 1]?.title === 'The Solution' && (
             <StepFour formData={formData} updateFormData={updateFormData} />
           )}
-          {STEPS[currentStep - 1]?.title === 'WPS' && (
+          {STEPS[currentStep - 1]?.title === 'Welding Procedure' && (
             <StepWPS formData={formData} updateFormData={updateFormData} />
           )}
-          {STEPS[currentStep - 1]?.title === 'Review' && (
+          {STEPS[currentStep - 1]?.title === 'Cost Reduction Analysis' && (
+            <StepCostCalculator formData={formData} updateFormData={updateFormData} />
+          )}
+          {STEPS[currentStep - 1]?.title === 'Finalize' && (
             <StepFive
               formData={formData}
               updateFormData={updateFormData}
-              caseStudyId={caseStudy.id}
-              existingCostCalc={costCalcData ? {
-                materialCostBefore: Number(costCalcData.materialCostBefore),
-                materialCostAfter: Number(costCalcData.materialCostAfter),
-                laborCostBefore: Number(costCalcData.laborCostBefore),
-                laborCostAfter: Number(costCalcData.laborCostAfter),
-                downtimeCostBefore: Number(costCalcData.downtimeCostBefore),
-                downtimeCostAfter: Number(costCalcData.downtimeCostAfter),
-                maintenanceFrequencyBefore: costCalcData.maintenanceFrequencyBefore,
-                maintenanceFrequencyAfter: costCalcData.maintenanceFrequencyAfter,
-              } : undefined}
             />
           )}
         </CardContent>
@@ -722,9 +972,23 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
             Save Draft
           </Button>
 
+          {/* Show Skip button for WPS step on STAR cases (optional bonus point) */}
+          {currentStep < STEPS.length &&
+           STEPS[currentStep - 1]?.title === 'Welding Procedure' &&
+           formData.type === 'STAR' && (
+            <Button
+              variant="outline"
+              onClick={handleSkipWPS}
+              disabled={isSubmitting}
+              className="dark:border-border dark:text-foreground dark:hover:bg-accent"
+            >
+              Skip
+            </Button>
+          )}
+
           {currentStep < STEPS.length ? (
             <Button onClick={handleNext} disabled={isSubmitting}>
-              Next
+              Next{STEPS[currentStep - 1]?.title === 'Welding Procedure' && formData.type === 'STAR' ? ' (+1 pt)' : ''}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           ) : (

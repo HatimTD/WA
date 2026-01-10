@@ -27,20 +27,21 @@ import {
   Image as ImageIcon,
   FileText
 } from 'lucide-react';
-import CostCalculator from '@/components/cost-calculator';
+import CostCalculatorDisplay from '@/components/cost-calculator-display';
 import { waGetCostCalculation } from '@/lib/actions/waCostCalculatorActions';
 import WeldingProcedureForm from '@/components/welding-procedure-form';
 import { waGetWeldingProcedure } from '@/lib/actions/waWpsActions';
 import EnhancedCommentsSection from '@/components/enhanced-comments-section';
 import { waGetComments } from '@/lib/actions/waCommentActions';
 import dynamic from 'next/dynamic';
-import type { CaseStudyPDFData } from '@/lib/pdf-export';
+import type { CaseStudyPDFData } from '@/lib/pdf-export-ppt';
 import { CompletionIndicator } from '@/components/completion-indicator';
 import { waCalculateCompletionPercentage, waGetFieldBreakdown } from '@/lib/utils/waCaseQuality';
 import QualityScoreBadge from '@/components/quality-score-badge';
 import type { CaseStudyWithRelations } from '@/lib/utils/waQualityScore';
 import LanguageIndicator from '@/components/language-indicator';
 import TranslationPanel from '@/components/translation-panel';
+import WearTypeProgressBar from '@/components/wear-type-progress-bar';
 
 // Language names for display
 const LANGUAGE_NAMES: Record<string, string> = {
@@ -60,6 +61,16 @@ const LANGUAGE_NAMES: Record<string, string> = {
   pl: 'Polish',
   tr: 'Turkish',
 };
+
+// Currency symbols mapping
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  EUR: '€', USD: '$', GBP: '£', AUD: 'A$', CAD: 'C$',
+  CHF: 'CHF', JPY: '¥', CNY: '¥', MAD: 'MAD',
+};
+
+function getCurrencySymbol(currency: string | null | undefined): string {
+  return CURRENCY_SYMBOLS[currency || 'EUR'] || '€';
+}
 
 // Dynamic import for PDF export (saves ~200KB from jspdf)
 const PDFExportButton = dynamic(() => import('@/components/pdf-export-button'), {
@@ -176,14 +187,15 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
     existingCostCalc
   );
 
-  // Prepare data for PDF export
+  // Prepare data for PDF export (PPT-style)
   const pdfData: CaseStudyPDFData = {
     id: caseStudy.id,
-    type: caseStudy.type,
+    type: caseStudy.type as 'APPLICATION' | 'TECH' | 'STAR',
+    title: caseStudy.title || undefined,
     customerName: caseStudy.customerName,
     industry: caseStudy.industry,
     componentWorkpiece: caseStudy.componentWorkpiece,
-    workType: caseStudy.workType,
+    workType: caseStudy.workType || undefined,
     wearType: caseStudy.wearType,
     problemDescription: caseStudy.problemDescription,
     previousSolution: caseStudy.previousSolution || undefined,
@@ -193,16 +205,24 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
     generalDimensions: caseStudy.generalDimensions || undefined,
     waSolution: caseStudy.waSolution,
     waProduct: caseStudy.waProduct,
+    waProductDiameter: caseStudy.waProductDiameter || undefined,
     technicalAdvantages: caseStudy.technicalAdvantages || undefined,
     expectedServiceLife: caseStudy.expectedServiceLife || undefined,
+    revenueCurrency: caseStudy.revenueCurrency || 'EUR',
     solutionValueRevenue: caseStudy.solutionValueRevenue ? Number(caseStudy.solutionValueRevenue) : undefined,
     annualPotentialRevenue: caseStudy.annualPotentialRevenue ? Number(caseStudy.annualPotentialRevenue) : undefined,
     customerSavingsAmount: caseStudy.customerSavingsAmount ? Number(caseStudy.customerSavingsAmount) : undefined,
     location: caseStudy.location,
     country: caseStudy.country || undefined,
+    // New fields
+    jobType: caseStudy.jobType || undefined,
+    jobTypeOther: caseStudy.jobTypeOther || undefined,
+    oem: caseStudy.oem || undefined,
+    jobDurationHours: caseStudy.jobDurationHours || undefined,
+    jobDurationDays: caseStudy.jobDurationDays || undefined,
+    jobDurationWeeks: caseStudy.jobDurationWeeks || undefined,
     contributor: {
       name: caseStudy.contributor.name || 'Unknown',
-      email: caseStudy.contributor.email || '',
     },
     approver: caseStudy.approver ? {
       name: caseStudy.approver.name || 'Unknown',
@@ -213,6 +233,53 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
     originalLanguage: caseStudy.originalLanguage || undefined,
     translationAvailable: caseStudy.translationAvailable || undefined,
     translatedText: caseStudy.translatedText || undefined,
+    // WPS data for TECH and STAR cases
+    wps: existingWPS ? {
+      numberOfLayers: existingWPS.layerNumbers?.toString() || undefined,
+      process: existingWPS.weldingProcess || undefined,
+      technique: existingWPS.currentModeSynergy || undefined,
+      weldingPosition: existingWPS.weldingPosition || undefined,
+      torchPosition: existingWPS.torchAngle || undefined,
+      baseMetal: existingWPS.baseMetalType || undefined,
+      thickness: existingWPS.baseMetalThickness || undefined,
+      surfacePreparation: existingWPS.surfacePreparation || undefined,
+      productName: existingWPS.waProductName || undefined,
+      diameter: existingWPS.waProductDiameter || undefined,
+      shieldingGas: existingWPS.shieldingGas || undefined,
+      flowRate: existingWPS.shieldingFlowRate || undefined,
+      flux: existingWPS.flux || undefined,
+      stickOut: existingWPS.stickOut || undefined,
+      currentType: existingWPS.currentType || undefined,
+      wireSpeed: existingWPS.wireFeedSpeed || undefined,
+      intensity: existingWPS.intensity || undefined,
+      voltage: existingWPS.voltage || undefined,
+      weldingSpeed: existingWPS.travelSpeed || undefined,
+      oscillationWidth: existingWPS.oscillationWidth || undefined,
+      oscillationSpeed: existingWPS.oscillationSpeed || undefined,
+      preheatTemperature: existingWPS.preheatTemperature || undefined,
+      interpassTemperature: existingWPS.interpassTemperature || undefined,
+      pwht: existingWPS.pwhtDetails || undefined,
+    } : undefined,
+    // Cost Calculator data for STAR cases
+    costCalculator: existingCostCalc ? {
+      equipmentName: caseStudy.componentWorkpiece,
+      costOfPart: existingCostCalc.costOfPart ? Number(existingCostCalc.costOfPart) : undefined,
+      costOfWaSolution: existingCostCalc.costOfWaSolution ? Number(existingCostCalc.costOfWaSolution) : undefined,
+      oldSolutionLifetimeDays: existingCostCalc.oldSolutionLifetimeDays || undefined,
+      waSolutionLifetimeDays: existingCostCalc.waSolutionLifetimeDays || undefined,
+      partsUsedPerYear: existingCostCalc.partsUsedPerYear || undefined,
+      maintenanceRepairCost: existingCostCalc.maintenanceRepairCostBefore ? Number(existingCostCalc.maintenanceRepairCostBefore) : undefined,
+      disassemblyCost: existingCostCalc.disassemblyCostBefore ? Number(existingCostCalc.disassemblyCostBefore) : undefined,
+      downtimeCost: existingCostCalc.downtimeCostPerEvent ? Number(existingCostCalc.downtimeCostPerEvent) : undefined,
+      currency: existingCostCalc.currency || undefined,
+      totalCostBefore: existingCostCalc.totalCostBefore ? Number(existingCostCalc.totalCostBefore) : undefined,
+      totalCostAfter: existingCostCalc.totalCostAfter ? Number(existingCostCalc.totalCostAfter) : undefined,
+      annualSavings: existingCostCalc.annualSavings ? Number(existingCostCalc.annualSavings) : undefined,
+      savingsPercentage: existingCostCalc.savingsPercentage ? Number(existingCostCalc.savingsPercentage) : undefined,
+      extraBenefits: existingCostCalc.extraBenefits || undefined,
+    } : undefined,
+    // Images for PDF export
+    images: caseStudy.images && caseStudy.images.length > 0 ? caseStudy.images : undefined,
   };
 
   const getStatusIcon = (status: string) => {
@@ -298,7 +365,11 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
             variant="outline"
             size="sm"
           />
-          <PDFExportButton caseStudy={pdfData} />
+          <PDFExportButton
+            caseStudy={pdfData}
+            userName={session.user.name || 'Unknown User'}
+            userEmail={session.user.email || undefined}
+          />
           {canEdit && (
             <Link href={`/dashboard/cases/${caseStudy.id}/edit`}>
               <Button variant="outline" size="sm" className="dark:border-border">
@@ -506,15 +577,13 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
             </div>
           </div>
 
-          <div>
+          <div className="md:col-span-2">
             <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-2">Type of Wear</p>
-            <div className="flex flex-wrap gap-2">
-              {caseStudy.wearType.map((wear) => (
-                <Badge key={wear} variant="secondary" className="dark:bg-gray-800 dark:text-foreground">
-                  {wear}
-                </Badge>
-              ))}
-            </div>
+            <WearTypeProgressBar
+              wearTypes={caseStudy.wearType}
+              wearSeverities={caseStudy.wearSeverities as Record<string, number> | null}
+              wearTypeOthers={caseStudy.wearTypeOthers as { name: string; severity: number }[] | null}
+            />
           </div>
 
           {(caseStudy.tags as string[])?.length > 0 && (
@@ -702,7 +771,7 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Solution Value/Revenue</p>
                   <p className="text-2xl font-bold text-green-600">
-                    ${Number(caseStudy.solutionValueRevenue).toLocaleString()}
+                    {getCurrencySymbol(caseStudy.revenueCurrency)}{Number(caseStudy.solutionValueRevenue).toLocaleString()}
                   </p>
                 </div>
               )}
@@ -711,7 +780,7 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Annual Potential Revenue</p>
                   <p className="text-2xl font-bold text-green-600">
-                    ${Number(caseStudy.annualPotentialRevenue).toLocaleString()}
+                    {getCurrencySymbol(caseStudy.revenueCurrency)}{Number(caseStudy.annualPotentialRevenue).toLocaleString()}
                   </p>
                 </div>
               )}
@@ -720,7 +789,7 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Customer Savings</p>
                   <p className="text-2xl font-bold text-green-600">
-                    ${Number(caseStudy.customerSavingsAmount).toLocaleString()}
+                    {getCurrencySymbol(caseStudy.revenueCurrency)}{Number(caseStudy.customerSavingsAmount).toLocaleString()}
                   </p>
                 </div>
               )}
@@ -729,30 +798,36 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
         </Card>
       )}
 
-      {/* Cost Reduction Calculator - Only for STAR cases */}
-      {caseStudy.type === 'STAR' && (
-        <CostCalculator
-          caseStudyId={caseStudy.id}
-          existingData={existingCostCalc ? {
-            materialCostBefore: Number(existingCostCalc.materialCostBefore) || 0,
-            materialCostAfter: Number(existingCostCalc.materialCostAfter) || 0,
-            laborCostBefore: Number(existingCostCalc.laborCostBefore) || 0,
-            laborCostAfter: Number(existingCostCalc.laborCostAfter) || 0,
-            downtimeCostBefore: Number(existingCostCalc.downtimeCostBefore) || 0,
-            downtimeCostAfter: Number(existingCostCalc.downtimeCostAfter) || 0,
-            maintenanceFrequencyBefore: existingCostCalc.maintenanceFrequencyBefore || 12,
-            maintenanceFrequencyAfter: existingCostCalc.maintenanceFrequencyAfter || 4,
-            // New fields for Part Lifecycle, Maintenance & Repair, Disassembly/Assembly, Extra Benefits
-            costOfPart: Number(existingCostCalc.costOfPart) || 0,
-            oldSolutionLifetimeDays: existingCostCalc.oldSolutionLifetimeDays || 0,
-            waSolutionLifetimeDays: existingCostCalc.waSolutionLifetimeDays || 0,
-            partsUsedPerYear: existingCostCalc.partsUsedPerYear || 0,
-            maintenanceRepairCostBefore: Number(existingCostCalc.maintenanceRepairCostBefore) || 0,
-            maintenanceRepairCostAfter: Number(existingCostCalc.maintenanceRepairCostAfter) || 0,
-            disassemblyCostBefore: Number(existingCostCalc.disassemblyCostBefore) || 0,
-            disassemblyCostAfter: Number(existingCostCalc.disassemblyCostAfter) || 0,
-            extraBenefits: existingCostCalc.extraBenefits || '',
-          } : undefined}
+      {/* Cost Reduction Calculator - Only for STAR cases with existing data */}
+      {caseStudy.type === 'STAR' && existingCostCalc && (
+        <CostCalculatorDisplay
+          data={{
+            costOfPart: existingCostCalc.costOfPart ? Number(existingCostCalc.costOfPart) : null,
+            costOfWaSolution: existingCostCalc.costOfWaSolution ? Number(existingCostCalc.costOfWaSolution) : null,
+            oldSolutionLifetimeDays: existingCostCalc.oldSolutionLifetimeDays,
+            waSolutionLifetimeDays: existingCostCalc.waSolutionLifetimeDays,
+            partsUsedPerYear: existingCostCalc.partsUsedPerYear,
+            maintenanceRepairCostBefore: existingCostCalc.maintenanceRepairCostBefore ? Number(existingCostCalc.maintenanceRepairCostBefore) : null,
+            maintenanceRepairCostAfter: existingCostCalc.maintenanceRepairCostAfter ? Number(existingCostCalc.maintenanceRepairCostAfter) : null,
+            disassemblyCostBefore: existingCostCalc.disassemblyCostBefore ? Number(existingCostCalc.disassemblyCostBefore) : null,
+            disassemblyCostAfter: existingCostCalc.disassemblyCostAfter ? Number(existingCostCalc.disassemblyCostAfter) : null,
+            downtimeCostPerEvent: existingCostCalc.downtimeCostPerEvent ? Number(existingCostCalc.downtimeCostPerEvent) : null,
+            currency: existingCostCalc.currency,
+            extraBenefits: existingCostCalc.extraBenefits,
+            totalCostBefore: Number(existingCostCalc.totalCostBefore),
+            totalCostAfter: Number(existingCostCalc.totalCostAfter),
+            annualSavings: Number(existingCostCalc.annualSavings),
+            savingsPercentage: Number(existingCostCalc.savingsPercentage),
+            // Legacy fields for backwards compatibility
+            materialCostBefore: existingCostCalc.materialCostBefore ? Number(existingCostCalc.materialCostBefore) : null,
+            materialCostAfter: existingCostCalc.materialCostAfter ? Number(existingCostCalc.materialCostAfter) : null,
+            laborCostBefore: existingCostCalc.laborCostBefore ? Number(existingCostCalc.laborCostBefore) : null,
+            laborCostAfter: existingCostCalc.laborCostAfter ? Number(existingCostCalc.laborCostAfter) : null,
+            downtimeCostBefore: existingCostCalc.downtimeCostBefore ? Number(existingCostCalc.downtimeCostBefore) : null,
+            downtimeCostAfter: existingCostCalc.downtimeCostAfter ? Number(existingCostCalc.downtimeCostAfter) : null,
+            maintenanceFrequencyBefore: existingCostCalc.maintenanceFrequencyBefore,
+            maintenanceFrequencyAfter: existingCostCalc.maintenanceFrequencyAfter,
+          }}
         />
       )}
 

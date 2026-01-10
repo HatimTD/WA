@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Target, TrendingUp, Globe, Building2, Users, UserCheck, UserPlus, RefreshCw } from 'lucide-react';
 import { waGetBhagProgress, waGetRegionalBhagProgress, waGetIndustryBhagProgress, waGetQualifierTypeBhagProgress, waGetContributorRegionBhagProgress } from '@/lib/actions/waBhagActions';
 import type { Metadata } from 'next';
+import { ExpandableRegionSection, ExpandableIndustrySection } from '@/components/bhag-expandable-section';
 
 
 export const metadata: Metadata = {
@@ -107,7 +108,7 @@ export default async function BHAGPage() {
       {/* Breakdown by Type */}
       <Card role="article" className="dark:bg-card dark:border-border">
         <CardHeader>
-          <CardTitle className="dark:text-foreground">Breakdown by Case Type</CardTitle>
+          <CardTitle className="dark:text-foreground">Breakdown by Case Study Type</CardTitle>
           <CardDescription className="dark:text-muted-foreground">Unique cases per category</CardDescription>
         </CardHeader>
         <CardContent>
@@ -232,20 +233,11 @@ export default async function BHAGPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {contributorRegionData.slice(0, 8).map((region) => (
-                <div key={region.region} className="bg-purple-50 border border-purple-200 rounded-lg p-4 dark:bg-purple-900/20 dark:border-purple-700">
-                  <p className="text-sm font-medium text-purple-700 dark:text-purple-300 mb-1">{region.region}</p>
-                  <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{region.uniqueCount}</p>
-                  <p className="text-xs text-gray-500 dark:text-muted-foreground">unique cases</p>
-                </div>
-              ))}
-            </div>
-            {contributorRegionData.length > 8 && (
-              <p className="text-sm text-gray-500 dark:text-muted-foreground mt-4 text-center">
-                + {contributorRegionData.length - 8} more regions
-              </p>
-            )}
+            <ExpandableRegionSection
+              data={contributorRegionData}
+              initialCount={8}
+              variant="contributorRegion"
+            />
           </CardContent>
         </Card>
       )}
@@ -261,20 +253,11 @@ export default async function BHAGPage() {
             <CardDescription className="dark:text-muted-foreground">Unique cases by case study location (original)</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {regionalData.slice(0, 8).map((region) => (
-                <div key={region.region} className="bg-gray-50 border border-gray-200 rounded-lg p-4 dark:bg-background dark:border-border">
-                  <p className="text-sm font-medium text-gray-700 dark:text-foreground mb-1">{region.region}</p>
-                  <p className="text-2xl font-bold text-wa-green-600 dark:text-primary">{region.uniqueCount}</p>
-                  <p className="text-xs text-gray-500 dark:text-muted-foreground">unique cases</p>
-                </div>
-              ))}
-            </div>
-            {regionalData.length > 8 && (
-              <p className="text-sm text-gray-500 dark:text-muted-foreground mt-4 text-center">
-                + {regionalData.length - 8} more regions
-              </p>
-            )}
+            <ExpandableRegionSection
+              data={regionalData}
+              initialCount={8}
+              variant="region"
+            />
           </CardContent>
         </Card>
       )}
@@ -290,28 +273,11 @@ export default async function BHAGPage() {
             <CardDescription className="dark:text-muted-foreground">Unique cases by industry</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {industryData.slice(0, 10).map((industry, index) => (
-                <div key={industry.industry} className="flex items-center gap-4">
-                  <div className="w-8 text-center font-bold text-gray-400 dark:text-muted-foreground">#{index + 1}</div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-sm font-medium dark:text-foreground">{industry.industry}</p>
-                      <p className="text-sm font-bold text-wa-green-600 dark:text-primary">{industry.uniqueCount}</p>
-                    </div>
-                    <Progress
-                      value={(industry.uniqueCount / uniqueCount) * 100}
-                      className="h-2"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-            {industryData.length > 10 && (
-              <p className="text-sm text-gray-500 dark:text-muted-foreground mt-4 text-center">
-                + {industryData.length - 10} more industries
-              </p>
-            )}
+            <ExpandableIndustrySection
+              data={industryData}
+              initialCount={10}
+              totalUnique={uniqueCount}
+            />
           </CardContent>
         </Card>
       )}

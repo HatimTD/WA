@@ -34,6 +34,12 @@ import {
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { downloadComparisonPDF, type ComparisonPDFData } from '@/lib/pdf-export';
+import WearTypeProgressBar from '@/components/wear-type-progress-bar';
+
+type WearTypeOther = {
+  name: string;
+  severity: number;
+};
 
 type CaseStudySummary = {
   id: string;
@@ -45,9 +51,15 @@ type CaseStudySummary = {
   componentWorkpiece: string;
   workType: string;
   wearType: string[];
+  wearSeverities: Record<string, number> | null;
+  wearTypeOthers: WearTypeOther[] | null;
   problemDescription: string;
+  previousSolution: string | null;
+  baseMetal: string | null;
+  generalDimensions: string | null;
   waSolution: string;
   waProduct: string;
+  waProductDiameter: string | null;
   technicalAdvantages: string;
   expectedServiceLife: string;
   previousServiceLife: string;
@@ -56,6 +68,15 @@ type CaseStudySummary = {
   customerSavingsAmount: number | null;
   type: string;
   status: string;
+  // Additional fields
+  jobType: string | null;
+  jobTypeOther: string | null;
+  oem: string | null;
+  jobDurationHours: number | null;
+  jobDurationDays: number | null;
+  jobDurationWeeks: number | null;
+  approvedAt: string | null;
+  currency: string | null;
 };
 
 type SectionKey = 'basic' | 'solution' | 'financial' | 'details';
@@ -78,6 +99,23 @@ export default function ComparePage() {
   const [showFilter, setShowFilter] = useState(false);
   const [hiddenFields, setHiddenFields] = useState<Set<string>>(new Set());
   const [isPrintMode, setIsPrintMode] = useState(false);
+
+  // Currency symbols mapping
+  const CURRENCY_SYMBOLS: Record<string, string> = {
+    EUR: '€',
+    USD: '$',
+    GBP: '£',
+    AUD: 'A$',
+    CAD: 'C$',
+    CHF: 'CHF',
+    JPY: '¥',
+    CNY: '¥',
+    MAD: 'MAD',
+  };
+
+  const getCurrencySymbol = (currency: string | null | undefined): string => {
+    return CURRENCY_SYMBOLS[currency || 'EUR'] || '€';
+  };
 
   // Load pre-selected cases from URL params
   useEffect(() => {
@@ -197,15 +235,29 @@ export default function ComparePage() {
         componentWorkpiece: cs.componentWorkpiece,
         workType: cs.workType,
         wearType: cs.wearType,
+        wearSeverities: cs.wearSeverities,
+        wearTypeOthers: cs.wearTypeOthers,
         problemDescription: cs.problemDescription,
+        previousSolution: cs.previousSolution,
+        baseMetal: cs.baseMetal,
+        generalDimensions: cs.generalDimensions,
         waSolution: cs.waSolution,
         waProduct: cs.waProduct,
+        waProductDiameter: cs.waProductDiameter,
         technicalAdvantages: cs.technicalAdvantages,
         expectedServiceLife: cs.expectedServiceLife,
         previousServiceLife: cs.previousServiceLife,
         solutionValueRevenue: cs.solutionValueRevenue,
         annualPotentialRevenue: cs.annualPotentialRevenue,
         customerSavingsAmount: cs.customerSavingsAmount,
+        jobType: cs.jobType,
+        jobTypeOther: cs.jobTypeOther,
+        oem: cs.oem,
+        jobDurationHours: cs.jobDurationHours,
+        jobDurationDays: cs.jobDurationDays,
+        jobDurationWeeks: cs.jobDurationWeeks,
+        approvedAt: cs.approvedAt,
+        currency: cs.currency,
       } as ComparisonPDFData;
     });
 
@@ -654,8 +706,12 @@ export default function ComparePage() {
                 { key: 'location', label: 'Location' },
                 { key: 'component', label: 'Component' },
                 { key: 'workType', label: 'Work Type' },
+                { key: 'jobType', label: 'Job Type' },
+                { key: 'oem', label: 'OEM' },
+                { key: 'jobDuration', label: 'Job Duration' },
                 { key: 'wearTypes', label: 'Wear Types' },
                 { key: 'product', label: 'WA Product' },
+                { key: 'wireDiameter', label: 'Wire Diameter' },
                 { key: 'previousLife', label: 'Previous Life' },
                 { key: 'expectedLife', label: 'Expected Life' },
                 { key: 'solutionValue', label: 'Solution Value' },
@@ -691,7 +747,7 @@ export default function ComparePage() {
         <div className="space-y-6">
           {/* Basic Information Section */}
           <div className="space-y-4">
-            <SectionHeader section="basic" title="Basic Information" icon={Building2} count={6} />
+            <SectionHeader section="basic" title="Basic Information" icon={Building2} count={10} />
 
             {expandedSections.has('basic') && (
               <div className="space-y-4 pl-4">
@@ -726,18 +782,61 @@ export default function ComparePage() {
                   fieldKey="workType"
                 />
                 <ComparisonCard
-                  label="Wear Types"
-                  values={selectedCases.map(c => c?.wearType?.join(', '))}
-                  icon={Zap}
-                  fieldKey="wearTypes"
+                  label="Job Type"
+                  values={selectedCases.map(c => c?.jobType === 'OTHER' ? c?.jobTypeOther : c?.jobType)}
+                  icon={Wrench}
+                  fieldKey="jobType"
                 />
+                <ComparisonCard
+                  label="OEM"
+                  values={selectedCases.map(c => c?.oem)}
+                  icon={Building2}
+                  fieldKey="oem"
+                />
+                <ComparisonCard
+                  label="Job Duration"
+                  values={selectedCases.map(c => {
+                    const parts = [];
+                    if (c?.jobDurationWeeks) parts.push(`${c.jobDurationWeeks}w`);
+                    if (c?.jobDurationDays) parts.push(`${c.jobDurationDays}d`);
+                    if (c?.jobDurationHours) parts.push(`${c.jobDurationHours}h`);
+                    return parts.length > 0 ? parts.join(' ') : null;
+                  })}
+                  icon={Target}
+                  fieldKey="jobDuration"
+                />
+                {/* Wear Types with Progress Bars */}
+                {!hiddenFields.has('wearTypes') && (
+                  <div className="bg-white dark:bg-card rounded-lg border border-gray-200 dark:border-border p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100 dark:border-border">
+                      <Zap className="h-4 w-4 text-wa-green-600 dark:text-primary" />
+                      <h4 className="text-sm font-semibold text-gray-700 dark:text-foreground">Wear Types</h4>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {selectedCases.map((c, index) => (
+                        <div key={index} className="p-3 rounded-lg bg-gray-50 dark:bg-muted/50 border border-gray-100 dark:border-border">
+                          {c?.wearType && c.wearType.length > 0 ? (
+                            <WearTypeProgressBar
+                              wearTypes={c.wearType}
+                              wearSeverities={c.wearSeverities}
+                              wearTypeOthers={c.wearTypeOthers}
+                              showOnlySelected
+                            />
+                          ) : (
+                            <span className="text-gray-400 dark:text-muted-foreground text-sm italic">Not selected</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
 
           {/* Solution Details Section */}
           <div className="space-y-4">
-            <SectionHeader section="solution" title="Solution Details" icon={Target} count={3} />
+            <SectionHeader section="solution" title="Solution Details" icon={Target} count={4} />
 
             {expandedSections.has('solution') && (
               <div className="space-y-4 pl-4">
@@ -746,6 +845,12 @@ export default function ComparePage() {
                   values={selectedCases.map(c => c?.waProduct)}
                   icon={Package}
                   fieldKey="product"
+                />
+                <ComparisonCard
+                  label="Wire Diameter"
+                  values={selectedCases.map(c => c?.waProductDiameter)}
+                  icon={Package}
+                  fieldKey="wireDiameter"
                 />
                 <ComparisonCard
                   label="Previous Service Life"
@@ -773,7 +878,7 @@ export default function ComparePage() {
                 <ComparisonCard
                   label="Solution Value Revenue"
                   values={selectedCases.map(c =>
-                    c?.solutionValueRevenue ? `$${c.solutionValueRevenue.toLocaleString()}` : null
+                    c?.solutionValueRevenue ? `${getCurrencySymbol(c.currency)}${c.solutionValueRevenue.toLocaleString()}` : null
                   )}
                   icon={DollarSign}
                   fieldKey="solutionValue"
@@ -782,7 +887,7 @@ export default function ComparePage() {
                 <ComparisonCard
                   label="Annual Potential Revenue"
                   values={selectedCases.map(c =>
-                    c?.annualPotentialRevenue ? `$${c.annualPotentialRevenue.toLocaleString()}` : null
+                    c?.annualPotentialRevenue ? `${getCurrencySymbol(c.currency)}${c.annualPotentialRevenue.toLocaleString()}` : null
                   )}
                   icon={DollarSign}
                   fieldKey="annualRevenue"
@@ -791,7 +896,7 @@ export default function ComparePage() {
                 <ComparisonCard
                   label="Customer Savings Amount"
                   values={selectedCases.map(c =>
-                    c?.customerSavingsAmount ? `$${c.customerSavingsAmount.toLocaleString()}` : null
+                    c?.customerSavingsAmount ? `${getCurrencySymbol(c.currency)}${c.customerSavingsAmount.toLocaleString()}` : null
                   )}
                   icon={DollarSign}
                   fieldKey="savings"
