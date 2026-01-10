@@ -33,6 +33,7 @@ export interface CaseStudyPDFData {
   technicalAdvantages?: string;
   expectedServiceLife?: string;
   solutionValueRevenue?: number;
+  revenueCurrency?: string;
   annualPotentialRevenue?: number;
   customerSavingsAmount?: number;
   jobType?: string;

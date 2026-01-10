@@ -1,6 +1,7 @@
 'use server';
 
 import { netsuiteClient, NetSuiteCustomer } from '@/lib/integrations/netsuite';
+import { waSearchCustomers, waGetCustomer } from '@/lib/integrations/netsuite-dual-source';
 import { prisma } from '@/lib/prisma';
 
 // Extended customer type with case study info
@@ -23,122 +24,37 @@ export async function waSearchNetSuiteCustomers(
       return { success: true, customers: [] };
     }
 
-    // Check if NetSuite is configured
-    const isNetSuiteConfigured = !!(
-      process.env.NETSUITE_ACCOUNT_ID &&
-      process.env.NETSUITE_CONSUMER_KEY &&
-      process.env.NETSUITE_REST_URL
-    );
+    // Use dual-source service (automatically uses NetSuite or mock data based on config)
+    const customers = await waSearchCustomers(query);
 
-    let enrichedCustomers: NetSuiteCustomerWithCases[] = [];
-
-    if (isNetSuiteConfigured) {
-      // Production: Get customers from NetSuite
-      const customers = await netsuiteClient.searchCustomers(query);
-
-      // Enrich with case study data from our database
-      enrichedCustomers = await Promise.all(
-        customers.map(async (customer) => {
-          const caseStudies = await prisma.waCaseStudy.findMany({
-            where: {
-              customerName: {
-                equals: customer.companyName,
-                mode: 'insensitive',
-              },
+    // Enrich with case study data from our database
+    const enrichedCustomers = await Promise.all(
+      customers.map(async (customer) => {
+        const caseStudies = await prisma.waCaseStudy.findMany({
+          where: {
+            customerName: {
+              equals: customer.companyName,
+              mode: 'insensitive',
             },
-            select: {
-              id: true,
-              title: true,
-              type: true,
-              status: true,
-              createdAt: true,
-            },
-            orderBy: { createdAt: 'desc' },
-            take: 3,
-          });
-
-          return {
-            ...customer,
-            caseStudyCount: caseStudies.length,
-            recentCaseStudies: caseStudies,
-          };
-        })
-      );
-    } else {
-      // Development: Search from existing case studies in database
-      // Only show customers from APPROVED or PUBLISHED case studies
-      const caseStudies = await prisma.waCaseStudy.findMany({
-        where: {
-          customerName: {
-            contains: query,
-            mode: 'insensitive',
           },
-          status: {
-            in: ['APPROVED', 'PUBLISHED'],
+          select: {
+            id: true,
+            title: true,
+            type: true,
+            status: true,
+            createdAt: true,
           },
-        },
-        select: {
-          id: true,
-          title: true,
-          type: true,
-          status: true,
-          createdAt: true,
-          customerName: true,
-          industry: true,
-          location: true,
-          country: true,
-        },
-        orderBy: { createdAt: 'desc' },
-      });
-
-      // Group case studies by customer name
-      const customerMap = new Map<string, {
-        customerName: string;
-        industry: string | null;
-        location: string | null;
-        country: string | null;
-        caseStudies: typeof caseStudies;
-      }>();
-
-      caseStudies.forEach((cs) => {
-        const key = cs.customerName.toLowerCase();
-        if (!customerMap.has(key)) {
-          customerMap.set(key, {
-            customerName: cs.customerName,
-            industry: cs.industry,
-            location: cs.location,
-            country: cs.country,
-            caseStudies: [],
-          });
-        }
-        customerMap.get(key)!.caseStudies.push(cs);
-      });
-
-      // Convert to customer format
-      let index = 1;
-      customerMap.forEach((data) => {
-        enrichedCustomers.push({
-          id: `db-${index}`,
-          internalId: `db-${index}`,
-          entityId: `LOCAL-${index.toString().padStart(4, '0')}`,
-          companyName: data.customerName,
-          displayName: data.customerName,
-          address: '',
-          city: data.location || '',
-          country: data.country || '',
-          industry: data.industry || '',
-          caseStudyCount: data.caseStudies.length,
-          recentCaseStudies: data.caseStudies.slice(0, 3).map((cs) => ({
-            id: cs.id,
-            title: cs.title,
-            type: cs.type,
-            status: cs.status,
-            createdAt: cs.createdAt,
-          })),
+          orderBy: { createdAt: 'desc' },
+          take: 3,
         });
-        index++;
-      });
-    }
+
+        return {
+          ...customer,
+          caseStudyCount: caseStudies.length,
+          recentCaseStudies: caseStudies,
+        };
+      })
+    );
 
     return { success: true, customers: enrichedCustomers };
   } catch (error) {
@@ -158,7 +74,8 @@ export async function waGetNetSuiteCustomer(
       return { success: false, error: 'Customer ID is required' };
     }
 
-    const customer = await netsuiteClient.getCustomer(customerId);
+    // Use dual-source service (automatically uses NetSuite or mock data based on config)
+    const customer = await waGetCustomer(customerId);
 
     if (!customer) {
       return { success: false, error: 'Customer not found' };

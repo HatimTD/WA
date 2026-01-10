@@ -984,3 +984,77 @@ model WaNetSuiteSyncJob {
   @@index([startedAt])
   @@map("NetSuiteSyncJob")
 }
+
+// =====================================================
+// MOCK DATA FOR TESTING (NetSuite fallback)
+// Used when NetSuite is unavailable or for testing
+// =====================================================
+
+// Mock customers - mirrors NetSuite customer structure
+model WaMockCustomer {
+  id String @id @default(cuid())
+
+  // NetSuite-like identifiers
+  netsuiteId String  @unique // Simulated NetSuite internal ID
+  entityId   String  @unique // Simulated customer UID like "E9001"
+
+  // Customer information
+  companyName String
+  displayName String // Combined: "CompanyName (EntityId)"
+  address     String?
+  city        String?
+  state       String?
+  country     String?
+  postalCode  String?
+  industry    String?
+
+  // Contact information
+  email String?
+  phone String?
+
+  // Metadata
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyName])
+  @@index([entityId])
+  @@index([city])
+  @@index([industry])
+  @@map("MockCustomer")
+}
+
+// Mock items (products) - mirrors NetSuite item structure
+model WaMockItem {
+  id String @id @default(cuid())
+
+  // NetSuite-like identifiers
+  netsuiteId String @unique // Simulated NetSuite internal ID
+  itemId     String @unique // Item code like "WA-001"
+
+  // Item information
+  itemName    String
+  displayName String // Item name with code
+  description String?
+  category    String?
+  type        String? // e.g., "Welding Wire", "Electrode"
+
+  // Product specifications
+  diameter      String?
+  composition   String?
+  process       String? // Welding process
+  application   String?
+  hardness      String?
+  manufacturer  String? @default("Welding Alloys")
+
+  // Metadata
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([itemName])
+  @@index([itemId])
+  @@index([category])
+  @@index([type])
+  @@map("MockItem")
+}
