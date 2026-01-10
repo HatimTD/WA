@@ -151,6 +151,7 @@ export default async function PublicCaseDetailPage({
     waProductDiameter: caseStudy.waProductDiameter || undefined,
     technicalAdvantages: caseStudy.technicalAdvantages || undefined,
     expectedServiceLife: caseStudy.expectedServiceLife || undefined,
+    revenueCurrency: caseStudy.revenueCurrency || 'EUR',
     solutionValueRevenue: caseStudy.solutionValueRevenue ? Number(caseStudy.solutionValueRevenue) : undefined,
     annualPotentialRevenue: caseStudy.annualPotentialRevenue ? Number(caseStudy.annualPotentialRevenue) : undefined,
     customerSavingsAmount: caseStudy.customerSavingsAmount ? Number(caseStudy.customerSavingsAmount) : undefined,
@@ -505,7 +506,7 @@ export default async function PublicCaseDetailPage({
                 <div>
                   <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground mb-1">Solution Value Revenue</p>
                   <p className="text-2xl font-bold text-green-600">
-                    ${parseFloat(caseStudy.solutionValueRevenue.toString()).toLocaleString()}
+                    {getCurrencySymbol(caseStudy.revenueCurrency)}{parseFloat(caseStudy.solutionValueRevenue.toString()).toLocaleString()}
                   </p>
                 </div>
               )}
@@ -515,7 +516,7 @@ export default async function PublicCaseDetailPage({
                     Annual Potential Revenue
                   </p>
                   <p className="text-2xl font-bold text-purple-600">
-                    ${parseFloat(caseStudy.annualPotentialRevenue.toString()).toLocaleString()}
+                    {getCurrencySymbol(caseStudy.revenueCurrency)}{parseFloat(caseStudy.annualPotentialRevenue.toString()).toLocaleString()}
                   </p>
                 </div>
               )}
@@ -523,7 +524,7 @@ export default async function PublicCaseDetailPage({
                 <div>
                   <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground mb-1">Customer Savings</p>
                   <p className="text-2xl font-bold text-orange-600">
-                    ${parseFloat(caseStudy.customerSavingsAmount.toString()).toLocaleString()}
+                    {getCurrencySymbol(caseStudy.revenueCurrency)}{parseFloat(caseStudy.customerSavingsAmount.toString()).toLocaleString()}
                   </p>
                 </div>
               )}
@@ -531,7 +532,7 @@ export default async function PublicCaseDetailPage({
           </CardContent>
         </Card>
 
-        {/* Cost Calculator (STAR cases) */}
+        {/* Cost Reduction Analysis (STAR cases) */}
         {caseStudy.costCalculator && (
           <CostCalculatorDisplay
             data={{

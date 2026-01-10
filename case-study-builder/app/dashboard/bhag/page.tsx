@@ -108,7 +108,7 @@ export default async function BHAGPage() {
       {/* Breakdown by Type */}
       <Card role="article" className="dark:bg-card dark:border-border">
         <CardHeader>
-          <CardTitle className="dark:text-foreground">Breakdown by Case Type</CardTitle>
+          <CardTitle className="dark:text-foreground">Breakdown by Case Study Type</CardTitle>
           <CardDescription className="dark:text-muted-foreground">Unique cases per category</CardDescription>
         </CardHeader>
         <CardContent>

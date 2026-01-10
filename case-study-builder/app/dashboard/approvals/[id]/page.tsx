@@ -113,6 +113,23 @@ export default async function ApprovalReviewPage({ params }: Props) {
     }
   };
 
+  // Currency symbols mapping
+  const CURRENCY_SYMBOLS: Record<string, string> = {
+    EUR: '€',
+    USD: '$',
+    GBP: '£',
+    AUD: 'A$',
+    CAD: 'C$',
+    CHF: 'CHF',
+    JPY: '¥',
+    CNY: '¥',
+    MAD: 'MAD',
+  };
+
+  function getCurrencySymbol(currency: string | null | undefined): string {
+    return CURRENCY_SYMBOLS[currency || 'EUR'] || '€';
+  }
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       {/* Header */}
@@ -428,7 +445,7 @@ export default async function ApprovalReviewPage({ params }: Props) {
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Solution Value/Revenue</p>
                   <p className="text-2xl font-bold text-green-600 dark:text-primary">
-                    ${Number(caseStudy.solutionValueRevenue).toLocaleString()}
+                    {getCurrencySymbol(caseStudy.revenueCurrency)}{Number(caseStudy.solutionValueRevenue).toLocaleString()}
                   </p>
                 </div>
               )}
@@ -437,7 +454,7 @@ export default async function ApprovalReviewPage({ params }: Props) {
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Annual Potential Revenue</p>
                   <p className="text-2xl font-bold text-green-600 dark:text-primary">
-                    ${Number(caseStudy.annualPotentialRevenue).toLocaleString()}
+                    {getCurrencySymbol(caseStudy.revenueCurrency)}{Number(caseStudy.annualPotentialRevenue).toLocaleString()}
                   </p>
                 </div>
               )}
@@ -446,7 +463,7 @@ export default async function ApprovalReviewPage({ params }: Props) {
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Customer Savings</p>
                   <p className="text-2xl font-bold text-green-600 dark:text-primary">
-                    ${Number(caseStudy.customerSavingsAmount).toLocaleString()}
+                    {getCurrencySymbol(caseStudy.revenueCurrency)}{Number(caseStudy.customerSavingsAmount).toLocaleString()}
                   </p>
                 </div>
               )}

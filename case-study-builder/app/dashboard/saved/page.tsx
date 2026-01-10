@@ -199,7 +199,7 @@ export default function SavedCasesPage() {
               {/* Type Filter */}
               <Select value={typeFilter} onValueChange={setTypeFilter}>
                 <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
-                  <SelectValue placeholder="Case Type" />
+                  <SelectValue placeholder="Case Study Type" />
                 </SelectTrigger>
                 <SelectContent className="dark:bg-popover dark:border-border">
                   <SelectItem value="all">All Types</SelectItem>

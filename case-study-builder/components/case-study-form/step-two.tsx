@@ -1,16 +1,32 @@
 'use client';
 
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { CaseStudyFormData } from '@/app/dashboard/new/page';
 import NetSuiteCustomerSearch from '@/components/netsuite-customer-search';
 import { NetSuiteCustomer } from '@/lib/integrations/netsuite';
 import LocationAutocomplete from '@/components/location-autocomplete';
-import { useMasterList } from '@/lib/hooks/use-master-list';
-import { Plus, X } from 'lucide-react';
-import { InteractiveWearTypeBar } from '@/components/wear-type-progress-bar';
+import { Mic, Sparkles } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+// Dynamic imports for heavy components (saves ~150KB)
+const VoiceInput = dynamic(() => import('@/components/voice-input'), {
+  loading: () => (
+    <button className="p-2 rounded-lg border border-border bg-muted/50 opacity-50 cursor-not-allowed">
+      <Mic className="h-4 w-4 text-muted-foreground" />
+    </button>
+  ),
+});
+
+const AITextAssistant = dynamic(() => import('@/components/ai-text-assistant'), {
+  loading: () => (
+    <button className="p-2 rounded-lg border border-border bg-muted/50 opacity-50 cursor-not-allowed">
+      <Sparkles className="h-4 w-4 text-muted-foreground" />
+    </button>
+  ),
+});
 
 type Props = {
   formData: CaseStudyFormData;
@@ -18,55 +34,7 @@ type Props = {
   customerReadOnly?: boolean; // When customer was selected in Qualifier step
 };
 
-// Fallback values if Master List API fails
-const FALLBACK_INDUSTRIES = [
-  { id: 'mining', value: 'Mining & Quarrying', sortOrder: 0 },
-  { id: 'cement', value: 'Cement', sortOrder: 1 },
-  { id: 'steel', value: 'Steel & Metal Processing', sortOrder: 2 },
-  { id: 'power', value: 'Power Generation', sortOrder: 3 },
-  { id: 'pulp', value: 'Pulp & Paper', sortOrder: 4 },
-  { id: 'oil', value: 'Oil & Gas', sortOrder: 5 },
-  { id: 'chemical', value: 'Chemical & Petrochemical', sortOrder: 6 },
-  { id: 'marine', value: 'Marine', sortOrder: 7 },
-  { id: 'agriculture', value: 'Agriculture', sortOrder: 8 },
-  { id: 'construction', value: 'Construction', sortOrder: 9 },
-  { id: 'recycling', value: 'Recycling', sortOrder: 10 },
-  { id: 'other', value: 'Other', sortOrder: 11 },
-];
-
-// Default wear types - actual values come from master data and can include custom types
-const FALLBACK_WEAR_TYPES = [
-  { id: 'abrasion', value: 'ABRASION', label: 'Abrasion', sortOrder: 0 },
-  { id: 'impact', value: 'IMPACT', label: 'Impact', sortOrder: 1 },
-  { id: 'corrosion', value: 'CORROSION', label: 'Corrosion', sortOrder: 2 },
-  { id: 'temperature', value: 'TEMPERATURE', label: 'High Temperature', sortOrder: 3 },
-  { id: 'metal_metal', value: 'METAL_METAL', label: 'Metal-Metal', sortOrder: 4 },
-  { id: 'combination', value: 'COMBINATION', label: 'Combination', sortOrder: 5 },
-];
-
 export default function StepTwo({ formData, updateFormData, customerReadOnly = false }: Props) {
-  // Fetch master list data from API
-  const { items: industries, isLoading: industriesLoading } = useMasterList('Industry', FALLBACK_INDUSTRIES);
-  const { items: wearTypes, isLoading: wearTypesLoading } = useMasterList('WearType', FALLBACK_WEAR_TYPES);
-
-  // Helper to check if a wearType value is selected (case-insensitive)
-  const waIsWearTypeSelected = (value: string): boolean => {
-    const current = formData.wearType || [];
-    return current.some((w) => w.toUpperCase() === value.toUpperCase());
-  };
-
-  const toggleWearType = (value: string) => {
-    const current = formData.wearType || [];
-    // Normalize to uppercase for Prisma enum compatibility
-    const normalizedValue = value.toUpperCase();
-    const isSelected = current.some((w) => w.toUpperCase() === normalizedValue);
-
-    const updated = isSelected
-      ? current.filter((w) => w.toUpperCase() !== normalizedValue)
-      : [...current, normalizedValue]; // Store as uppercase
-    updateFormData({ wearType: updated });
-  };
-
   const handleCustomerSelect = (customer: NetSuiteCustomer) => {
     // Auto-fill fields from NetSuite customer data
     const updates: Partial<CaseStudyFormData> = {
@@ -90,10 +58,10 @@ export default function StepTwo({ formData, updateFormData, customerReadOnly = f
 
   return (
     <div className="space-y-6">
-      {/* Case Study Title - Full width */}
+      {/* Industrial Challenge Title - Full width */}
       <div className="space-y-2">
         <Label htmlFor="title" className="dark:text-foreground">
-          Case Study Title <span className="text-red-500 dark:text-red-400">*</span>
+          Industrial challenge title <span className="text-red-500 dark:text-red-400">*</span>
         </Label>
         <Input
           id="title"
@@ -103,9 +71,33 @@ export default function StepTwo({ formData, updateFormData, customerReadOnly = f
           className="dark:bg-input dark:border-border dark:text-foreground"
           required
         />
-        <p className="text-xs text-muted-foreground">
-          A descriptive title that summarizes this case study
-        </p>
+      </div>
+
+      {/* General Description - with AI and voice features */}
+      <div className="space-y-2">
+        <div className="flex justify-between items-center">
+          <Label htmlFor="generalDescription" className="dark:text-foreground">
+            General description
+          </Label>
+          <div className="flex gap-2">
+            <VoiceInput
+              currentValue={formData.generalDescription || ''}
+              onTranscript={(text) => updateFormData({ generalDescription: text })}
+            />
+            <AITextAssistant
+              text={formData.generalDescription || ''}
+              onTextChange={(text) => updateFormData({ generalDescription: text })}
+              fieldType="general"
+            />
+          </div>
+        </div>
+        <Textarea
+          id="generalDescription"
+          value={formData.generalDescription || ''}
+          onChange={(e) => updateFormData({ generalDescription: e.target.value })}
+          placeholder="Brief overview of the industrial challenge and context..."
+          className="min-h-[100px] dark:bg-input dark:border-border dark:text-foreground"
+        />
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
@@ -137,56 +129,6 @@ export default function StepTwo({ formData, updateFormData, customerReadOnly = f
             placeholder="Click to search customers..."
           />
         )}
-
-        {/* Industry */}
-        <div className="space-y-2">
-          <Label htmlFor="industry" className="dark:text-foreground">
-            Industry <span className="text-red-500 dark:text-red-400">*</span>
-          </Label>
-          {(() => {
-            const isOther = formData.industry && !industries.some(i => i.value === formData.industry);
-            const selectValue = isOther ? '__OTHER__' : formData.industry;
-            return (
-              <>
-                <Select
-                  value={selectValue}
-                  onValueChange={(value) => {
-                    if (value === '__OTHER__') {
-                      updateFormData({ industry: '__CUSTOM__' }); // Trigger custom input
-                    } else {
-                      updateFormData({ industry: value });
-                    }
-                  }}
-                  disabled={industriesLoading}
-                >
-                  <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
-                    <SelectValue placeholder={industriesLoading ? "Loading..." : "Select industry"} />
-                  </SelectTrigger>
-                  <SelectContent className="dark:bg-popover dark:border-border">
-                    {industries
-                      .filter((industry) => industry.value.toLowerCase() !== 'other')
-                      .map((industry) => (
-                        <SelectItem key={industry.id} value={industry.value}>
-                          {industry.value}
-                        </SelectItem>
-                      ))}
-                    <SelectItem value="__OTHER__">Other (specify)</SelectItem>
-                  </SelectContent>
-                </Select>
-                {/* Show custom input when "Other" is selected */}
-                {isOther && (
-                  <Input
-                    placeholder="Enter custom industry..."
-                    value={formData.industry === '__CUSTOM__' ? '' : formData.industry}
-                    onChange={(e) => updateFormData({ industry: e.target.value || '__CUSTOM__' })}
-                    className="mt-2 dark:bg-input dark:border-border dark:text-foreground"
-                    autoFocus
-                  />
-                )}
-              </>
-            );
-          })()}
-        </div>
 
         {/* Location - Google Places Autocomplete */}
         <LocationAutocomplete
@@ -282,69 +224,6 @@ export default function StepTwo({ formData, updateFormData, customerReadOnly = f
           )}
         </div>
 
-        {/* Base Metal - BRD 3.3 Required */}
-        <div className="space-y-2">
-          <Label htmlFor="baseMetal" className="dark:text-foreground">
-            Base Metal <span className="text-red-500 dark:text-red-400">*</span>
-          </Label>
-          <Input
-            id="baseMetal"
-            value={formData.baseMetal}
-            onChange={(e) => updateFormData({ baseMetal: e.target.value })}
-            placeholder="e.g., Mild Steel"
-            className="dark:bg-input dark:border-border dark:text-foreground"
-            required
-          />
-        </div>
-
-        {/* Unit System Selector */}
-        <div className="space-y-2">
-          <Label className="dark:text-foreground">Unit System</Label>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => updateFormData({ unitSystem: 'METRIC' })}
-              className={`
-                flex-1 px-4 py-2 rounded-lg border text-sm font-medium transition-all
-                ${formData.unitSystem === 'METRIC'
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-background text-muted-foreground border-border hover:border-primary/50'
-                }
-              `}
-            >
-              Metric (mm, cm)
-            </button>
-            <button
-              type="button"
-              onClick={() => updateFormData({ unitSystem: 'IMPERIAL' })}
-              className={`
-                flex-1 px-4 py-2 rounded-lg border text-sm font-medium transition-all
-                ${formData.unitSystem === 'IMPERIAL'
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-background text-muted-foreground border-border hover:border-primary/50'
-                }
-              `}
-            >
-              Imperial (in, ft)
-            </button>
-          </div>
-        </div>
-
-        {/* General Dimensions - BRD 3.3 Required */}
-        <div className="space-y-2">
-          <Label htmlFor="generalDimensions" className="dark:text-foreground">
-            General Dimensions <span className="text-red-500 dark:text-red-400">*</span>
-          </Label>
-          <Input
-            id="generalDimensions"
-            value={formData.generalDimensions}
-            onChange={(e) => updateFormData({ generalDimensions: e.target.value })}
-            placeholder={formData.unitSystem === 'IMPERIAL' ? 'e.g., 20in x 8in' : 'e.g., 500mm x 200mm'}
-            className="dark:bg-input dark:border-border dark:text-foreground"
-            required
-          />
-        </div>
-
         {/* OEM - Original Equipment Manufacturer (BRD Section 5) */}
         <div className="space-y-2">
           <Label htmlFor="oem" className="dark:text-foreground">OEM (Original Equipment Manufacturer)</Label>
@@ -357,173 +236,6 @@ export default function StepTwo({ formData, updateFormData, customerReadOnly = f
           />
         </div>
 
-        {/* Job Duration - Hours + Days + Weeks combined */}
-        <div className="space-y-2">
-          <Label className="dark:text-foreground">Job Duration</Label>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1">
-              <Input
-                type="number"
-                min="0"
-                value={formData.jobDurationHours || ''}
-                onChange={(e) => updateFormData({ jobDurationHours: e.target.value })}
-                placeholder="0"
-                className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
-              />
-              <span className="text-sm text-muted-foreground font-medium">h</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Input
-                type="number"
-                min="0"
-                value={formData.jobDurationDays || ''}
-                onChange={(e) => updateFormData({ jobDurationDays: e.target.value })}
-                placeholder="0"
-                className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
-              />
-              <span className="text-sm text-muted-foreground font-medium">d</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Input
-                type="number"
-                min="0"
-                value={formData.jobDurationWeeks || ''}
-                onChange={(e) => updateFormData({ jobDurationWeeks: e.target.value })}
-                placeholder="0"
-                className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
-              />
-              <span className="text-sm text-muted-foreground font-medium">w</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Type of Wear - Star rating */}
-      <div className="space-y-2">
-        <Label className="dark:text-foreground flex items-center gap-1.5 text-sm">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-          Type of Wear <span className="text-red-500 dark:text-red-400">*</span>
-        </Label>
-
-        {wearTypesLoading ? (
-          <span className="text-xs text-muted-foreground">Loading...</span>
-        ) : (
-          <div style={{ display: 'inline-block' }}>
-            {wearTypes.map((wear) => {
-              const displayLabel = (wear as any).label || wear.value;
-              const severity = formData.wearSeverities?.[wear.value.toUpperCase()] || 0;
-              const wearKey = wear.value.toUpperCase();
-
-              return (
-                <InteractiveWearTypeBar
-                  key={wear.id}
-                  label={displayLabel}
-                  value={severity}
-                  maxValue={6}
-                  onChange={(newSeverity) => {
-                    const newSeverities = { ...formData.wearSeverities };
-
-                    if (newSeverity === 0) {
-                      delete newSeverities[wearKey];
-                      updateFormData({
-                        wearType: (formData.wearType || []).filter(w => w.toUpperCase() !== wearKey),
-                        wearSeverities: newSeverities
-                      });
-                    } else {
-                      const currentTypes = formData.wearType || [];
-                      const hasType = currentTypes.some(w => w.toUpperCase() === wearKey);
-                      updateFormData({
-                        wearType: hasType ? currentTypes : [...currentTypes, wearKey],
-                        wearSeverities: { ...newSeverities, [wearKey]: newSeverity }
-                      });
-                    }
-                  }}
-                />
-              );
-            })}
-
-            {/* Other wear types - multiple entries */}
-            {(formData.wearTypeOthers || []).map((other, index) => (
-              <div
-                key={index}
-                className="flex items-center mb-1 font-sans"
-              >
-                <input
-                  placeholder="Other..."
-                  value={other.name}
-                  onChange={(e) => {
-                    const newOthers = [...(formData.wearTypeOthers || [])];
-                    newOthers[index] = { ...newOthers[index], name: e.target.value };
-                    updateFormData({ wearTypeOthers: newOthers });
-                  }}
-                  className="text-xs w-20 h-5 px-1 border border-border rounded flex-shrink-0 bg-input text-foreground"
-                />
-                <div className="flex gap-1 ml-1">
-                  {[1, 2, 3, 4, 5, 6].map((level) => {
-                    const isFilled = level <= other.severity;
-                    return (
-                      <button
-                        key={level}
-                        type="button"
-                        className={`no-min-touch transition-colors ${
-                          isFilled
-                            ? 'bg-wa-green-600 hover:bg-wa-green-500'
-                            : 'bg-gray-300 dark:bg-gray-600 hover:bg-wa-green-200 dark:hover:bg-wa-green-800'
-                        }`}
-                        onClick={() => {
-                          const newOthers = [...(formData.wearTypeOthers || [])];
-                          newOthers[index] = {
-                            ...newOthers[index],
-                            severity: other.severity === level ? 0 : level
-                          };
-                          updateFormData({ wearTypeOthers: newOthers });
-                        }}
-                        style={{
-                          width: 22,
-                          height: 8,
-                          minWidth: 22,
-                          minHeight: 8,
-                          maxWidth: 22,
-                          maxHeight: 8,
-                          border: 'none',
-                          padding: 0,
-                          margin: 0,
-                          cursor: 'pointer',
-                        }}
-                        aria-label={`${other.name || 'Other'} severity ${level}`}
-                      />
-                    );
-                  })}
-                </div>
-                <button
-                  type="button"
-                  className="no-min-touch ml-1 text-muted-foreground hover:text-foreground"
-                  onClick={() => {
-                    const newOthers = (formData.wearTypeOthers || []).filter((_, i) => i !== index);
-                    updateFormData({ wearTypeOthers: newOthers });
-                  }}
-                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
-                  aria-label="Remove other wear type"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
-
-            {/* Add Other button */}
-            <button
-              type="button"
-              onClick={() => {
-                const newOthers = [...(formData.wearTypeOthers || []), { name: '', severity: 0 }];
-                updateFormData({ wearTypeOthers: newOthers });
-              }}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors mt-1"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add other</span>
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

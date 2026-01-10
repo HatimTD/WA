@@ -117,7 +117,7 @@ export function SystemConfigForm({ initialConfig }: SystemConfigFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="points_star">Star Case Studies</Label>
+              <Label htmlFor="points_star">Star Case Studies (without WPS)</Label>
               <Input
                 id="points_star"
                 type="number"
@@ -128,6 +128,21 @@ export function SystemConfigForm({ initialConfig }: SystemConfigFormProps) {
               />
               <p className="text-sm text-gray-500">
                 Currently: {config.points_star || '3'} points
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="points_star_with_wps">Star Case Studies (with WPS bonus)</Label>
+              <Input
+                id="points_star_with_wps"
+                type="number"
+                min="0"
+                value={config.points_star_with_wps || '4'}
+                onChange={(e) => handleChange('points_star_with_wps', e.target.value)}
+                disabled={isSaving}
+              />
+              <p className="text-sm text-gray-500">
+                Currently: {config.points_star_with_wps || '4'} points (WPS is optional for STAR)
               </p>
             </div>
           </div>

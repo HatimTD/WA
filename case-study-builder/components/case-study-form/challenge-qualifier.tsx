@@ -46,15 +46,15 @@ function waCreateResultFromType(qualifierType: 'NEW_CUSTOMER' | 'CROSS_SELL' | '
       return {
         qualifierType: 'NEW_CUSTOMER',
         isTarget: true,
-        message: 'New Industrial Challenge',
-        description: 'This customer has not purchased from Welding Alloys in the last 3 years. This case study will count toward the 10,000 Challenge target!'
+        message: 'New Customer',
+        description: 'Counts toward the BHAG 10,000 goal and is qualified as New Customer.'
       };
     case 'CROSS_SELL':
       return {
         qualifierType: 'CROSS_SELL',
         isTarget: true,
-        message: 'Cross-Sell Challenge',
-        description: 'This is a new product for an existing customer. This case study will count toward the 10,000 Challenge target!'
+        message: 'Cross-Sell',
+        description: 'Counts toward the BHAG 10,000 goal and is qualified as Cross-Sell.'
       };
     case 'MAINTENANCE':
       return {
@@ -99,8 +99,8 @@ export default function ChallengeQualifier({
       const res: QualifierResult = {
         qualifierType: 'NEW_CUSTOMER',
         isTarget: true,
-        message: 'New Industrial Challenge',
-        description: 'This customer has not purchased from Welding Alloys in the last 3 years. This case study will count toward the 10,000 Challenge target!'
+        message: 'New Customer',
+        description: 'Counts toward the BHAG 10,000 goal and is qualified as New Customer.'
       };
       setResult(res);
       setStep('complete');
@@ -116,8 +116,8 @@ export default function ChallengeQualifier({
       const res: QualifierResult = {
         qualifierType: 'CROSS_SELL',
         isTarget: true,
-        message: 'Cross-Sell Challenge',
-        description: 'This is a new product for an existing customer. This case study will count toward the 10,000 Challenge target!'
+        message: 'Cross-Sell',
+        description: 'Counts toward the BHAG 10,000 goal and is qualified as Cross-Sell.'
       };
       setResult(res);
       setStep('complete');
@@ -233,7 +233,7 @@ export default function ChallengeQualifier({
           Challenge Qualifier
         </CardTitle>
         <CardDescription className="dark:text-gray-400">
-          Answer these questions to determine if this case study counts toward the 10,000 Challenge target.
+          Answer these questions to confirm whether this case study counts toward the 10,000-challenge target.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -241,7 +241,7 @@ export default function ChallengeQualifier({
           <div className="space-y-4">
             <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
               <p className="text-lg font-medium text-blue-900 dark:text-blue-100">
-                Has <strong className="text-blue-600 dark:text-blue-300">{customerName || 'this customer'}</strong> purchased anything from Welding Alloys in the last 3 years?
+                Has this customer bought anything from Welding Alloys in the past 3 years?
               </p>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -271,7 +271,7 @@ export default function ChallengeQualifier({
           <div className="space-y-4">
             <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
               <p className="text-lg font-medium text-blue-900 dark:text-blue-100">
-                Has <strong className="text-blue-600 dark:text-blue-300">{customerName || 'this customer'}</strong> purchased <strong className="underline">this specific product or solution</strong> from WA before?
+                Has this customer used this WA product or solution before?
               </p>
             </div>
             <div className="grid grid-cols-2 gap-4">

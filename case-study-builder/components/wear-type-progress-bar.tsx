@@ -78,7 +78,7 @@ export default function WearTypeProgressBar({
 
         return (
           <div key={wearType.id || wearType.value} style={rowStyle}>
-            <span className="text-xs text-foreground w-24 flex-shrink-0">{displayLabel}</span>
+            <span className="text-xs text-foreground w-28 flex-shrink-0">{displayLabel}</span>
             <div style={segmentsContainerStyle}>
               {Array.from({ length: segments }).map((_, idx) => (
                 <div
@@ -95,7 +95,7 @@ export default function WearTypeProgressBar({
         const severity = waGetSeverity(customType);
         return (
           <div key={customType} style={rowStyle}>
-            <span className="text-xs text-foreground w-24 flex-shrink-0">{customType}</span>
+            <span className="text-xs text-foreground w-28 flex-shrink-0">{customType}</span>
             <div style={segmentsContainerStyle}>
               {Array.from({ length: segments }).map((_, idx) => (
                 <div
@@ -111,7 +111,7 @@ export default function WearTypeProgressBar({
       {/* User-added "Other" wear types */}
       {wearTypeOthers && wearTypeOthers.length > 0 && wearTypeOthers.map((other, index) => (
         <div key={`other-${index}`} style={rowStyle}>
-          <span className="text-xs text-foreground w-24 flex-shrink-0">{other.name || 'Other'}</span>
+          <span className="text-xs text-foreground w-28 flex-shrink-0">{other.name || 'Other'}</span>
           <div style={segmentsContainerStyle}>
             {Array.from({ length: segments }).map((_, idx) => (
               <div
@@ -143,7 +143,7 @@ export function InteractiveWearTypeBar({
 }) {
   return (
     <div className="flex items-center mb-1 font-sans">
-      <span className="text-xs text-foreground w-24 flex-shrink-0">
+      <span className="text-xs text-foreground w-28 flex-shrink-0">
         {label}
       </span>
       <div className="flex gap-1">

@@ -457,12 +457,14 @@ model WaCaseStudy {
   competitorName      String?
   baseMetal           String?
   generalDimensions   String?
+  generalDescription  String?    @db.Text // Overview based on components/basic info
 
   // WA Solution
   waSolution             String
   waProduct              String
   technicalAdvantages    String?  @db.Text
   expectedServiceLife    String?
+  revenueCurrency        String   @default("EUR")
   solutionValueRevenue   Decimal? @db.Decimal(12, 2)
   annualPotentialRevenue Decimal? @db.Decimal(12, 2)
   customerSavingsAmount  Decimal? @db.Decimal(12, 2)

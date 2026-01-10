@@ -10,6 +10,7 @@ import { waAutoTranslateOnSubmit } from './waTranslationActions';
 type WaCreateCaseStudyInput = {
   type: 'APPLICATION' | 'TECH' | 'STAR';
   title?: string;
+  generalDescription?: string; // Overview based on components/basic info
   status?: 'DRAFT' | 'SUBMITTED';
   customerName: string;
   industry: string;
@@ -55,6 +56,7 @@ type WaCreateCaseStudyInput = {
   expectedServiceLifeWeeks?: string;
   expectedServiceLifeMonths?: string;
   expectedServiceLifeYears?: string;
+  revenueCurrency?: 'USD' | 'EUR' | 'GBP' | 'MAD' | 'AUD' | 'CAD' | 'CHF' | 'JPY' | 'CNY';
   solutionValueRevenue: string;
   annualPotentialRevenue: string;
   customerSavingsAmount: string;
@@ -93,6 +95,7 @@ export async function waCreateCaseStudy(data: WaCreateCaseStudyInput) {
       data: {
         type: data.type,
         title: data.title || null,
+        generalDescription: data.generalDescription || null,
         status: data.status || 'DRAFT',
         contributorId: session.user.id,
         customerName: data.customerName,
@@ -139,6 +142,7 @@ export async function waCreateCaseStudy(data: WaCreateCaseStudyInput) {
         expectedServiceLifeWeeks: data.expectedServiceLifeWeeks || null,
         expectedServiceLifeMonths: data.expectedServiceLifeMonths || null,
         expectedServiceLifeYears: data.expectedServiceLifeYears || null,
+        revenueCurrency: data.revenueCurrency || 'EUR',
         solutionValueRevenue: solutionValue,
         annualPotentialRevenue: annualPotential,
         customerSavingsAmount: customerSavings,
@@ -298,6 +302,7 @@ export async function waUpdateCaseStudy(id: string, data: any) {
     if (data.country === '') updateData.country = null;
     if (data.baseMetal === '') updateData.baseMetal = null;
     if (data.generalDimensions === '') updateData.generalDimensions = null;
+    if (data.generalDescription === '') updateData.generalDescription = null;
     if (data.previousSolution === '') updateData.previousSolution = null;
     if (data.previousServiceLife === '') updateData.previousServiceLife = null;
     if (data.competitorName === '') updateData.competitorName = null;
@@ -412,5 +417,57 @@ export async function waDeleteCaseStudy(id: string) {
     });
     console.error('Error deleting case study:', error);
     throw new Error('Failed to delete case study');
+  }
+}
+
+/**
+ * Fetch the most recent industry for a customer from existing case studies
+ * This will be replaced with NetSuite API call when access is available
+ */
+export async function waGetCustomerIndustry(customerName: string): Promise<{
+  success: boolean;
+  industry?: string;
+  industries?: string[];
+  error?: string;
+}> {
+  try {
+    if (!customerName || customerName.trim().length < 2) {
+      return { success: false, error: 'Customer name is required' };
+    }
+
+    // Find all case studies for this customer and get their industries
+    const caseStudies = await prisma.waCaseStudy.findMany({
+      where: {
+        customerName: {
+          equals: customerName,
+          mode: 'insensitive',
+        },
+      },
+      select: {
+        industry: true,
+        createdAt: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 10,
+    });
+
+    if (caseStudies.length === 0) {
+      return { success: true, industry: undefined, industries: [] };
+    }
+
+    // Get unique industries
+    const uniqueIndustries = [...new Set(caseStudies.map(cs => cs.industry))];
+
+    // Return the most recent industry as the default
+    return {
+      success: true,
+      industry: caseStudies[0].industry,
+      industries: uniqueIndustries,
+    };
+  } catch (error) {
+    console.error('Error fetching customer industry:', error);
+    return { success: false, error: 'Failed to fetch customer industry' };
   }
 }

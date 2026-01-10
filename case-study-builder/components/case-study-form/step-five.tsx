@@ -5,11 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CaseStudyFormData } from '@/app/dashboard/new/page';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, Upload, CheckCircle2, Sparkles, X, Plus, Calculator } from 'lucide-react';
+import { DollarSign, CheckCircle2, Sparkles, X, Plus, Calculator, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import ImageUpload from '@/components/image-upload';
-import DocumentUpload from '@/components/document-upload';
 import { waSuggestTags } from '@/lib/actions/waAiSuggestionsActions';
 import { toast } from 'sonner';
 
@@ -117,76 +115,124 @@ export default function StepFive({ formData, updateFormData }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* Financial Information - BRD 3.3 Required */}
+      {/* Expected or new calculated service life */}
       <Card role="article" className="dark:bg-card dark:border-border">
-        <CardHeader>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 dark:text-foreground">
+            <Clock className="h-5 w-5 text-wa-green-600" />
+            Expected or new calculated service life
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-1">
+              <Input
+                type="number"
+                min="0"
+                value={formData.expectedServiceLifeDays || ''}
+                onChange={(e) => updateFormData({ expectedServiceLifeDays: e.target.value })}
+                placeholder="0"
+                className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
+              />
+              <span className="text-sm text-muted-foreground font-medium">d</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Input
+                type="number"
+                min="0"
+                value={formData.expectedServiceLifeWeeks || ''}
+                onChange={(e) => updateFormData({ expectedServiceLifeWeeks: e.target.value })}
+                placeholder="0"
+                className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
+              />
+              <span className="text-sm text-muted-foreground font-medium">w</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Input
+                type="number"
+                min="0"
+                value={formData.expectedServiceLifeMonths || ''}
+                onChange={(e) => updateFormData({ expectedServiceLifeMonths: e.target.value })}
+                placeholder="0"
+                className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
+              />
+              <span className="text-sm text-muted-foreground font-medium">m</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Input
+                type="number"
+                min="0"
+                value={formData.expectedServiceLifeYears || ''}
+                onChange={(e) => updateFormData({ expectedServiceLifeYears: e.target.value })}
+                placeholder="0"
+                className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
+              />
+              <span className="text-sm text-muted-foreground font-medium">y</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Revenue Information - BRD 3.3 Required */}
+      <Card role="article" className="dark:bg-card dark:border-border">
+        <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 dark:text-foreground">
             <DollarSign className="h-5 w-5 text-wa-green-600" />
-            Financial Information
+            Revenue Information
           </CardTitle>
-          <CardDescription className="dark:text-muted-foreground">
-            Document the business value and potential customer savings
-          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid md:grid-cols-3 gap-4">
             <div className="space-y-2">
+              <Label htmlFor="revenueCurrency" className="dark:text-foreground">
+                Currency <span className="text-red-500 dark:text-red-400">*</span>
+              </Label>
+              <select
+                id="revenueCurrency"
+                value={formData.revenueCurrency || 'EUR'}
+                onChange={(e) => updateFormData({ revenueCurrency: e.target.value as any })}
+                className="w-full h-10 px-3 rounded-md border border-border bg-input text-foreground dark:bg-input dark:border-border dark:text-foreground"
+              >
+                <option value="EUR">EUR (€)</option>
+                <option value="USD">USD ($)</option>
+                <option value="GBP">GBP (£)</option>
+                <option value="MAD">MAD (د.م.)</option>
+                <option value="AUD">AUD ($)</option>
+                <option value="CAD">CAD ($)</option>
+                <option value="CHF">CHF (Fr)</option>
+                <option value="JPY">JPY (¥)</option>
+                <option value="CNY">CNY (¥)</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="solutionValueRevenue" className="dark:text-foreground">
                 Solution Value/Revenue <span className="text-red-500 dark:text-red-400">*</span>
               </Label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="solutionValueRevenue"
-                  value={formData.solutionValueRevenue}
-                  onChange={(e) => updateFormData({ solutionValueRevenue: e.target.value })}
-                  placeholder="e.g., 25000"
-                  className="pl-9 dark:bg-input dark:border-border dark:text-foreground"
-                  required
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Value of the WA solution sold
-              </p>
+              <Input
+                id="solutionValueRevenue"
+                type="number"
+                value={formData.solutionValueRevenue}
+                onChange={(e) => updateFormData({ solutionValueRevenue: e.target.value })}
+                placeholder="e.g., 25000"
+                className="dark:bg-input dark:border-border dark:text-foreground"
+                required
+              />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="annualPotentialRevenue" className="dark:text-foreground">
                 Annual Potential Revenue <span className="text-red-500 dark:text-red-400">*</span>
               </Label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="annualPotentialRevenue"
-                  value={formData.annualPotentialRevenue}
-                  onChange={(e) => updateFormData({ annualPotentialRevenue: e.target.value })}
-                  placeholder="e.g., 100000"
-                  className="pl-9 dark:bg-input dark:border-border dark:text-foreground"
-                  required
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Potential annual revenue from customer
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="customerSavingsAmount" className="dark:text-foreground">
-                Customer Savings
-              </Label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="customerSavingsAmount"
-                  value={formData.customerSavingsAmount}
-                  onChange={(e) => updateFormData({ customerSavingsAmount: e.target.value })}
-                  placeholder="e.g., 50000"
-                  className="pl-9 dark:bg-input dark:border-border dark:text-foreground"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Estimated customer cost savings (optional)
-              </p>
+              <Input
+                id="annualPotentialRevenue"
+                type="number"
+                value={formData.annualPotentialRevenue}
+                onChange={(e) => updateFormData({ annualPotentialRevenue: e.target.value })}
+                placeholder="e.g., 100000"
+                className="dark:bg-input dark:border-border dark:text-foreground"
+                required
+              />
             </div>
           </div>
         </CardContent>
@@ -359,46 +405,6 @@ export default function StepFive({ formData, updateFormData }: Props) {
             <p className="text-xs text-muted-foreground dark:text-muted-foreground">
               Press Enter or click + to add a custom tag
             </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Media Upload - BRD 3.3 Images Required */}
-      <Card role="article" className="dark:bg-card dark:border-border">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 dark:text-foreground">
-            <Upload className="h-5 w-5 text-wa-green-600" />
-            Images & Documents
-          </CardTitle>
-          <CardDescription className="dark:text-muted-foreground">
-            Upload photos, videos, or supporting documents. At least one image is required.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label className="dark:text-foreground">
-              Images <span className="text-red-500 dark:text-red-400">*</span>
-              <span className="text-xs text-muted-foreground ml-2">(Minimum 1 required)</span>
-            </Label>
-            <ImageUpload
-              onImagesChange={(images) => updateFormData({ images })}
-              existingImages={formData.images}
-              maxImages={5}
-            />
-            {formData.images.length === 0 && (
-              <p className="text-xs text-red-500 dark:text-red-400">
-                Please upload at least one image before submitting
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label className="dark:text-foreground">Supporting Documents</Label>
-            <DocumentUpload
-              onDocumentsChange={(documents) => updateFormData({ supportingDocs: documents })}
-              existingDocuments={formData.supportingDocs}
-              maxDocuments={5}
-            />
           </div>
         </CardContent>
       </Card>

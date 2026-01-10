@@ -36,6 +36,12 @@ export async function waApproveCaseStudy(caseStudyId: string) {
         contributorId: true,
         customerName: true,
         industry: true,
+        wps: {
+          select: {
+            id: true,
+            weldingProcess: true,
+          },
+        },
       },
     });
 
@@ -48,12 +54,18 @@ export async function waApproveCaseStudy(caseStudyId: string) {
     }
 
     // Calculate points based on type
+    // STAR with WPS filled: 4 points, STAR without WPS: 3 points
     const pointsMap = {
       APPLICATION: 1,
       TECH: 2,
       STAR: 3,
     };
-    const points = pointsMap[caseStudy.type];
+    let points = pointsMap[caseStudy.type];
+
+    // Bonus point for STAR case studies that include WPS data
+    if (caseStudy.type === 'STAR' && caseStudy.wps?.weldingProcess) {
+      points = 4;
+    }
 
     // Update case study and award points in a transaction
     await prisma.$transaction([

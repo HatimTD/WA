@@ -134,6 +134,9 @@ const COLORS = {
   red: { r: 200, g: 0, b: 0 },
   yellow: { r: 255, g: 248, b: 220 },
   blue: { r: 0, g: 112, b: 192 },
+  // Case type colors
+  purple: { r: 147, g: 51, b: 234 },      // TECH case color
+  starYellow: { r: 202, g: 138, b: 4 },   // STAR case color (darker yellow for visibility)
 };
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -499,22 +502,44 @@ async function waGeneratePage1(
   }
 
   // ===== CASE TYPE TABS =====
+  // Highlight logic:
+  // - APPLICATION: highlight APPLICATION only (green)
+  // - TECH: highlight APPLICATION (green) and TECH (purple)
+  // - STAR with WPS: highlight APPLICATION (green), TECH (purple), and STAR (yellow)
+  // - STAR without WPS: highlight APPLICATION (green) and STAR (yellow) - skip TECH
   doc.setFontSize(9);
   const types = [
-    { label: 'Application Case study', type: 'APPLICATION' },
-    { label: 'Tech Case study', type: 'TECH' },
-    { label: 'Star case study', type: 'STAR' },
+    { label: 'Application Case study', type: 'APPLICATION', color: COLORS.waGreen },
+    { label: 'Tech Case study', type: 'TECH', color: COLORS.purple },
+    { label: 'Star case study', type: 'STAR', color: COLORS.starYellow },
   ];
 
+  // Determine which types to highlight based on case type and WPS data
+  const hasWpsData = data.wps?.process || data.wps?.weldingPosition || data.wps?.shieldingGas;
+  const highlightedTypes: string[] = ['APPLICATION']; // Always highlight APPLICATION
+
+  if (data.type === 'TECH') {
+    highlightedTypes.push('TECH');
+  } else if (data.type === 'STAR') {
+    if (hasWpsData) {
+      // STAR with WPS: highlight all three
+      highlightedTypes.push('TECH', 'STAR');
+    } else {
+      // STAR without WPS: skip TECH, highlight STAR
+      highlightedTypes.push('STAR');
+    }
+  }
+
   let tabX = margin;
-  types.forEach(({ label, type }, idx) => {
-    const isActive = data.type === type;
+  types.forEach(({ label, type, color }, idx) => {
+    const isActive = highlightedTypes.includes(type);
     const textWidth = doc.getTextWidth(label);
 
     if (isActive) {
-      doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+      // Use type-specific color for highlighting
+      doc.setTextColor(color.r, color.g, color.b);
       doc.setFont('helvetica', 'bold');
-      doc.setDrawColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+      doc.setDrawColor(color.r, color.g, color.b);
       doc.setLineWidth(1);
       doc.line(tabX, y + 6, tabX + textWidth, y + 6);
     } else {

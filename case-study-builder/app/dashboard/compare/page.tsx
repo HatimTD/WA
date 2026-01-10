@@ -100,6 +100,23 @@ export default function ComparePage() {
   const [hiddenFields, setHiddenFields] = useState<Set<string>>(new Set());
   const [isPrintMode, setIsPrintMode] = useState(false);
 
+  // Currency symbols mapping
+  const CURRENCY_SYMBOLS: Record<string, string> = {
+    EUR: '€',
+    USD: '$',
+    GBP: '£',
+    AUD: 'A$',
+    CAD: 'C$',
+    CHF: 'CHF',
+    JPY: '¥',
+    CNY: '¥',
+    MAD: 'MAD',
+  };
+
+  const getCurrencySymbol = (currency: string | null | undefined): string => {
+    return CURRENCY_SYMBOLS[currency || 'EUR'] || '€';
+  };
+
   // Load pre-selected cases from URL params
   useEffect(() => {
     const ids = searchParams.get('ids')?.split(',').filter(Boolean) || [];
@@ -861,7 +878,7 @@ export default function ComparePage() {
                 <ComparisonCard
                   label="Solution Value Revenue"
                   values={selectedCases.map(c =>
-                    c?.solutionValueRevenue ? `$${c.solutionValueRevenue.toLocaleString()}` : null
+                    c?.solutionValueRevenue ? `${getCurrencySymbol(c.currency)}${c.solutionValueRevenue.toLocaleString()}` : null
                   )}
                   icon={DollarSign}
                   fieldKey="solutionValue"
@@ -870,7 +887,7 @@ export default function ComparePage() {
                 <ComparisonCard
                   label="Annual Potential Revenue"
                   values={selectedCases.map(c =>
-                    c?.annualPotentialRevenue ? `$${c.annualPotentialRevenue.toLocaleString()}` : null
+                    c?.annualPotentialRevenue ? `${getCurrencySymbol(c.currency)}${c.annualPotentialRevenue.toLocaleString()}` : null
                   )}
                   icon={DollarSign}
                   fieldKey="annualRevenue"
@@ -879,7 +896,7 @@ export default function ComparePage() {
                 <ComparisonCard
                   label="Customer Savings Amount"
                   values={selectedCases.map(c =>
-                    c?.customerSavingsAmount ? `$${c.customerSavingsAmount.toLocaleString()}` : null
+                    c?.customerSavingsAmount ? `${getCurrencySymbol(c.currency)}${c.customerSavingsAmount.toLocaleString()}` : null
                   )}
                   icon={DollarSign}
                   fieldKey="savings"

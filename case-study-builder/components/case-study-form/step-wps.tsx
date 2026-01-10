@@ -11,14 +11,24 @@ type Props = {
 };
 
 export default function StepWPS({ formData, updateFormData }: Props) {
+  const isStarCase = formData.type === 'STAR';
+
   return (
     <div className="space-y-6">
-      {/* BRD 3.3 Required Fields Notice */}
-      <div className="bg-wa-green-50 border border-wa-green-200 rounded-lg p-4 dark:bg-accent dark:border-primary">
-        <p className="text-sm text-wa-green-800 dark:text-muted-foreground">
-          <span className="font-semibold dark:text-foreground">Tech Case Requirement:</span> WPS (Welding Procedure Specification) documentation is required for TECH and STAR case studies. Fields marked with <span className="text-red-500">*</span> are required.
-        </p>
-      </div>
+      {/* BRD 3.3 Required Fields Notice - Different for STAR vs TECH */}
+      {isStarCase ? (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 dark:bg-yellow-900/20 dark:border-yellow-700">
+          <p className="text-sm text-yellow-800 dark:text-yellow-200">
+            <span className="font-semibold dark:text-yellow-100">⭐ Bonus Point Opportunity:</span> WPS is <strong>optional</strong> for STAR case studies. Fill it out to earn <strong>+1 bonus point</strong> (4 points total instead of 3). You can skip this step if you prefer.
+          </p>
+        </div>
+      ) : (
+        <div className="bg-wa-green-50 border border-wa-green-200 rounded-lg p-4 dark:bg-accent dark:border-primary">
+          <p className="text-sm text-wa-green-800 dark:text-muted-foreground">
+            <span className="font-semibold dark:text-foreground">Tech Case Requirement:</span> WPS (Welding Procedure Specification) documentation is required for TECH case studies. Fields marked with <span className="text-red-500">*</span> are required.
+          </p>
+        </div>
+      )}
 
       {/* Base Metal Section */}
       <div className="space-y-4">

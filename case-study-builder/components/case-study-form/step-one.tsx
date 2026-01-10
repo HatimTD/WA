@@ -34,8 +34,8 @@ export default function StepOne({ formData, updateFormData }: Props) {
     {
       value: 'STAR',
       label: 'Star Case Study',
-      description: 'Quick capture of a solved industrial challenge + financial impact of the solution.',
-      points: 3,
+      description: 'Quick capture of a solved industrial challenge + financial impact of the solution. Optional WPS adds +1 bonus point.',
+      points: '3-4',
       icon: Star,
       color: 'text-yellow-600',
       bgColor: 'bg-yellow-50',
@@ -83,7 +83,7 @@ export default function StepOne({ formData, updateFormData }: Props) {
                   <p className="text-sm text-muted-foreground dark:text-muted-foreground mt-1">{type.description}</p>
                   <div className="flex items-center gap-2 mt-3">
                     <span className={`text-sm font-bold ${type.color}`}>
-                      +{type.points} Point{type.points > 1 ? 's' : ''}
+                      +{type.points} Point{typeof type.points === 'number' && type.points === 1 ? '' : 's'}
                     </span>
                     <span className="text-xs text-muted-foreground dark:text-muted-foreground">
                       • {type.value === 'APPLICATION' && '~2 min'}

@@ -62,6 +62,16 @@ const LANGUAGE_NAMES: Record<string, string> = {
   tr: 'Turkish',
 };
 
+// Currency symbols mapping
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  EUR: '€', USD: '$', GBP: '£', AUD: 'A$', CAD: 'C$',
+  CHF: 'CHF', JPY: '¥', CNY: '¥', MAD: 'MAD',
+};
+
+function getCurrencySymbol(currency: string | null | undefined): string {
+  return CURRENCY_SYMBOLS[currency || 'EUR'] || '€';
+}
+
 // Dynamic import for PDF export (saves ~200KB from jspdf)
 const PDFExportButton = dynamic(() => import('@/components/pdf-export-button'), {
   loading: () => (
@@ -198,6 +208,7 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
     waProductDiameter: caseStudy.waProductDiameter || undefined,
     technicalAdvantages: caseStudy.technicalAdvantages || undefined,
     expectedServiceLife: caseStudy.expectedServiceLife || undefined,
+    revenueCurrency: caseStudy.revenueCurrency || 'EUR',
     solutionValueRevenue: caseStudy.solutionValueRevenue ? Number(caseStudy.solutionValueRevenue) : undefined,
     annualPotentialRevenue: caseStudy.annualPotentialRevenue ? Number(caseStudy.annualPotentialRevenue) : undefined,
     customerSavingsAmount: caseStudy.customerSavingsAmount ? Number(caseStudy.customerSavingsAmount) : undefined,
@@ -760,7 +771,7 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Solution Value/Revenue</p>
                   <p className="text-2xl font-bold text-green-600">
-                    ${Number(caseStudy.solutionValueRevenue).toLocaleString()}
+                    {getCurrencySymbol(caseStudy.revenueCurrency)}{Number(caseStudy.solutionValueRevenue).toLocaleString()}
                   </p>
                 </div>
               )}
@@ -769,7 +780,7 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Annual Potential Revenue</p>
                   <p className="text-2xl font-bold text-green-600">
-                    ${Number(caseStudy.annualPotentialRevenue).toLocaleString()}
+                    {getCurrencySymbol(caseStudy.revenueCurrency)}{Number(caseStudy.annualPotentialRevenue).toLocaleString()}
                   </p>
                 </div>
               )}
@@ -778,7 +789,7 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Customer Savings</p>
                   <p className="text-2xl font-bold text-green-600">
-                    ${Number(caseStudy.customerSavingsAmount).toLocaleString()}
+                    {getCurrencySymbol(caseStudy.revenueCurrency)}{Number(caseStudy.customerSavingsAmount).toLocaleString()}
                   </p>
                 </div>
               )}
