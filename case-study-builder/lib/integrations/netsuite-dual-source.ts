@@ -90,8 +90,9 @@ export async function waSearchCustomers(query: string): Promise<NetSuiteCustomer
     }
   }
 
-  // Use mock data
+  // Use mock data - require query for mock (no "get all" support for mock)
   if (!query || query.length < 2) {
+    console.log('[Mock DB] Empty query - returning empty array (mock does not support get all)');
     return [];
   }
 

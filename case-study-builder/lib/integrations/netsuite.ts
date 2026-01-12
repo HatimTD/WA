@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { redisCache } from '@/lib/cache/redis-client';
 
 interface NetSuiteConfig {
   accountId: string;
@@ -149,60 +150,141 @@ class NetSuiteClient {
 
   async searchCustomers(query: string): Promise<NetSuiteCustomer[]> {
     try {
-      // Sanitize and validate input
+      // Sanitize input (allow empty query for getting all customers)
       const sanitizedQuery = this.sanitizeSearchInput(query);
+      const isGetAll = sanitizedQuery.length === 0;
 
-      // Validate minimum length after sanitization
-      if (sanitizedQuery.length < 2) {
-        return this.getMockCustomers(query);
+      console.log(`[NetSuite] ${isGetAll ? 'Getting ALL customers' : `Searching customers for: "${sanitizedQuery}"`}`);
+
+      // Try Redis cache first (chunked to handle Upstash 10MB limit)
+      const cacheKey = 'netsuite:customers';
+      let allCustomers: any[] | null = await redisCache.getChunked<any>(cacheKey);
+
+      if (!allCustomers) {
+        // Fetch from RESTlet API which we confirmed works
+        const restletUrl = process.env.NETSUITE_RESTLET_URL;
+
+        if (!restletUrl) {
+          throw new Error('NETSUITE_RESTLET_URL not configured');
+        }
+
+        // Build URL for getting all customers
+        const url = `${restletUrl}&waType=customer`;
+        const authHeader = this.generateOAuthHeader('GET', url);
+
+        console.log('[NetSuite] Fetching all customers from RESTlet (this may take ~35 seconds)...');
+        const startTime = Date.now();
+
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Authorization': authHeader,
+            'Content-Type': 'application/json',
+          },
+          // Increased timeout for large dataset
+          signal: AbortSignal.timeout(120000), // 120 seconds
+        });
+
+        if (!response.ok) {
+          throw new Error(`NetSuite RESTlet error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+        console.log(`[NetSuite] Fetched ${Array.isArray(data) ? data.length : 0} customers in ${elapsed}s`);
+
+        if (!Array.isArray(data)) {
+          throw new Error('Unexpected response format from RESTlet');
+        }
+
+        // Store only essential fields and use chunked caching for Upstash 10MB limit
+        const essentialData = data.map((c: any) => ({
+          internalid: c.internalid,
+          entityid: c.entityid,
+          companyname: c.companyname,
+          email: c.email || '',
+          phone: c.phone || '',
+          billcity: c.billcity || '',
+          billcountrycode: c.billcountrycode || '',
+          category: c.category || '',
+          address: c.address || '',
+        }));
+
+        // Cache using chunked storage (splits into ~5MB chunks) for 1 week (604800 seconds)
+        const cacheSuccess = await redisCache.setChunked(cacheKey, essentialData, 604800);
+        if (cacheSuccess) {
+          console.log(`[NetSuite] Cached ${essentialData.length} customers (chunked) in Redis`);
+        } else {
+          console.error(`[NetSuite] Failed to cache customers in Redis`);
+        }
+
+        allCustomers = essentialData;
       }
 
-      // Use SuiteQL for searching customers by Name + UID (entityid)
-      // entityid is the customer UID like "E9008y", companyname is the company name
-      const suiteqlQuery = `
-        SELECT
-          id,
-          entityid,
-          companyname,
-          billaddress,
-          billcity,
-          billcountry,
-          category
-        FROM
-          customer
-        WHERE
-          LOWER(companyname) LIKE LOWER('%${sanitizedQuery}%')
-          OR LOWER(entityid) LIKE LOWER('%${sanitizedQuery}%')
-        ORDER BY
-          companyname
-        LIMIT 10
-      `;
+      // Filter customers client-side based on search query
+      // Search in: company name, entity ID, city, and industry
+      let filteredCustomers: any[];
 
-      const response = await this.makeRequest('/query/v1/suiteql', 'POST', {
-        q: suiteqlQuery,
-      });
+      if (isGetAll) {
+        // Return ALL customers for client-side caching
+        filteredCustomers = allCustomers;
+        console.log(`[NetSuite] Returning ALL ${filteredCustomers.length} customers for caching`);
+      } else {
+        // Filter based on query
+        const lowerQuery = sanitizedQuery.toLowerCase();
+        filteredCustomers = allCustomers
+          .filter((customer: any) => {
+            const companyName = (customer.companyname || '').toLowerCase();
+            const entityId = (customer.entityid || '').toLowerCase();
+            const city = (customer.billcity || '').toLowerCase();
+            const address = (customer.address || '').toLowerCase();
+            const industry = (customer.category || '').toLowerCase();
 
-      if (response.items && Array.isArray(response.items)) {
-        return response.items.map((item: any) => {
-          const companyName = item.companyname || '';
-          const entityId = item.entityid || item.id?.toString() || '';
-          return {
-            id: item.id?.toString() || '',
-            internalId: item.id?.toString() || '',
-            entityId: entityId,
-            companyName: companyName,
-            displayName: entityId ? `${companyName} (${entityId})` : companyName,
-            address: item.billaddress || '',
-            city: item.billcity || '',
-            country: item.billcountry || '',
-            industry: item.category || '',
-          };
+            return companyName.includes(lowerQuery) ||
+                   entityId.includes(lowerQuery) ||
+                   city.includes(lowerQuery) ||
+                   address.includes(lowerQuery) ||
+                   industry.includes(lowerQuery);
+          })
+          .slice(0, 10); // Return max 10 results
+        console.log(`[NetSuite] Found ${filteredCustomers.length} matching customers`);
+      // Debug: Log first customer's city data
+      if (filteredCustomers.length > 0) {
+        const first = filteredCustomers[0];
+        console.log(`[NetSuite] Sample customer data:`, {
+          companyname: first.companyname,
+          billcity: first.billcity,
+          billcountrycode: first.billcountrycode,
+          category: first.category
         });
       }
+      }
 
-      return [];
+      // Transform to NetSuiteCustomer format
+      return filteredCustomers.map((item: any, index: number) => {
+        const companyName = item.companyname || '';
+        const entityId = item.entityid || item.internalid || '';
+        const internalId = item.internalid || '';
+
+        // Generate truly unique ID: hash of all identifying fields + index
+        // This handles duplicate records in NetSuite (same ID but different data)
+        const uniqueId = `${internalId}-${entityId}-${index}-${Date.now()}`;
+
+        return {
+          id: uniqueId,
+          internalId: internalId,
+          entityId: entityId,
+          companyName: companyName,
+          displayName: entityId ? `${companyName} (${entityId})` : companyName,
+          address: item.address || '',
+          city: item.billcity || '',
+          country: item.billcountrycode || '',
+          industry: item.category || '',
+        };
+      });
+
     } catch (error) {
-      console.error('NetSuite search error:', error);
+      console.error('[NetSuite] Search error:', error);
       // Return mock data for development/testing when credentials are not configured
       if ((error as Error).message.includes('credentials not configured')) {
         return this.getMockCustomers(query);
@@ -429,6 +511,305 @@ class NetSuiteClient {
       console.error('NetSuite metadata update error:', error);
       return { success: false, error: (error as Error).message };
     }
+  }
+
+  /**
+   * Search items with caching for fast performance
+   * Same optimization as searchCustomers
+   */
+  async searchItems(query: string): Promise<any[]> {
+    try {
+      // Sanitize and validate input
+      const sanitizedQuery = this.sanitizeSearchInput(query);
+
+      // Validate minimum length after sanitization
+      if (sanitizedQuery.length < 2) {
+        return [];
+      }
+
+      console.log(`[NetSuite] Searching items for query: "${sanitizedQuery}"`);
+
+      // Try Redis cache first (chunked to handle Upstash 10MB limit)
+      const cacheKey = 'netsuite:items';
+      let allItems: any[] | null = await redisCache.getChunked<any>(cacheKey);
+
+      if (!allItems) {
+        // Fetch from RESTlet API
+        const restletUrl = process.env.NETSUITE_RESTLET_URL;
+
+        if (!restletUrl) {
+          throw new Error('NETSUITE_RESTLET_URL not configured');
+        }
+
+        // Build URL for getting all items
+        const url = `${restletUrl}&waType=item`;
+        const authHeader = this.generateOAuthHeader('GET', url);
+
+        console.log('[NetSuite] Fetching all items from RESTlet (this may take ~50 seconds)...');
+        const startTime = Date.now();
+
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Authorization': authHeader,
+            'Content-Type': 'application/json',
+          },
+          signal: AbortSignal.timeout(120000), // 120 seconds
+        });
+
+        if (!response.ok) {
+          throw new Error(`NetSuite RESTlet error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+        console.log(`[NetSuite] Fetched ${Array.isArray(data) ? data.length : 0} items in ${elapsed}s`);
+
+        if (!Array.isArray(data)) {
+          throw new Error('Unexpected response format from RESTlet');
+        }
+
+        // Store only essential fields and use chunked caching for Upstash 10MB limit
+        const essentialItems = data.map((i: any) => ({
+          internalid: i.internalid,
+          itemid: i.itemid,
+          displayname: i.displayname || '',
+          description: i.description || '',
+          type: i.type || '',
+          baseprice: i.baseprice || '',
+        }));
+
+        // Cache using chunked storage (splits into ~5MB chunks) for 1 week (604800 seconds)
+        const cacheSuccess = await redisCache.setChunked(cacheKey, essentialItems, 604800);
+        if (cacheSuccess) {
+          console.log(`[NetSuite] Cached ${essentialItems.length} items (chunked) in Redis`);
+        } else {
+          console.error(`[NetSuite] Failed to cache items in Redis`);
+        }
+
+        allItems = essentialItems;
+      }
+
+      // Filter items client-side based on search query
+      // Search in: item ID, item name, description, type
+      const lowerQuery = sanitizedQuery.toLowerCase();
+      const filteredItems = allItems
+        .filter((item: any) => {
+          const itemId = (item.itemid || '').toLowerCase();
+          const itemName = (item.displayname || '').toLowerCase();
+          const description = (item.description || '').toLowerCase();
+          const type = (item.type || '').toLowerCase();
+
+          return itemId.includes(lowerQuery) ||
+                 itemName.includes(lowerQuery) ||
+                 description.includes(lowerQuery) ||
+                 type.includes(lowerQuery);
+        })
+        .slice(0, 10); // Return max 10 results
+
+      console.log(`[NetSuite] Found ${filteredItems.length} matching items`);
+
+      // Transform to consistent format with unique IDs
+      return filteredItems.map((item: any, index: number) => {
+        const itemId = item.itemid || item.internalid || '';
+        const internalId = item.internalid || '';
+
+        // Generate truly unique ID: hash of all identifying fields + index
+        const uniqueId = `${internalId}-${itemId}-${index}-${Date.now()}`;
+
+        return {
+          id: uniqueId,
+          internalId: internalId,
+          itemId: itemId,
+          itemName: item.displayname || item.itemid || '',
+          displayName: item.displayname || item.itemid || '',
+          description: item.description || '',
+          type: item.type || '',
+          baseprice: item.baseprice || '',
+        };
+      });
+
+    } catch (error) {
+      console.error('[NetSuite] Item search error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Preload cache in background on server startup
+   * This makes all searches instant from the first query
+   */
+  async preloadCache(): Promise<void> {
+    try {
+      const restletUrl = process.env.NETSUITE_RESTLET_URL;
+      const dataSource = process.env.NETSUITE_DATA_SOURCE || 'auto';
+
+      // Only preload if using NetSuite data source
+      if (!restletUrl || dataSource === 'mock') {
+        console.log('[NetSuite] Preload skipped - using mock data or NetSuite not configured');
+        return;
+      }
+
+      console.log('[NetSuite] 🚀 Starting background cache preload...');
+      console.log('[NetSuite] This will take ~70 seconds (customers + items)');
+      const totalStart = Date.now();
+
+      // Preload customers
+      try {
+        const customerUrl = `${restletUrl}&waType=customer`;
+        const customerAuthHeader = this.generateOAuthHeader('GET', customerUrl);
+
+        console.log('[NetSuite] Preloading customers...');
+        const customerStart = Date.now();
+
+        const customerResponse = await fetch(customerUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': customerAuthHeader,
+            'Content-Type': 'application/json',
+          },
+          signal: AbortSignal.timeout(120000),
+        });
+
+        if (customerResponse.ok) {
+          const customerData = await customerResponse.json();
+          if (Array.isArray(customerData)) {
+            // Store only essential fields and use chunked caching for Upstash 10MB limit
+            // Full data is ~25MB, essential fields ~10MB, chunked to stay under limit
+            const essentialData = customerData.map((c: any) => ({
+              internalid: c.internalid,
+              entityid: c.entityid,
+              companyname: c.companyname,
+              email: c.email || '',
+              phone: c.phone || '',
+              billcity: c.billcity || '',
+              billcountrycode: c.billcountrycode || '',
+              category: c.category || '',
+              address: c.address || '',
+            }));
+
+            // Cache using chunked storage (splits into ~5MB chunks) for 1 week
+            const cacheSuccess = await redisCache.setChunked('netsuite:customers', essentialData, 604800);
+            const elapsed = ((Date.now() - customerStart) / 1000).toFixed(2);
+            if (cacheSuccess) {
+              console.log(`[NetSuite] ✅ Preloaded ${essentialData.length} customers in ${elapsed}s (chunked)`);
+            } else {
+              console.error(`[NetSuite] ❌ Failed to cache customers`);
+            }
+          } else {
+            console.error('[NetSuite] Customer preload: unexpected response format', typeof customerData);
+          }
+        } else {
+          const errorText = await customerResponse.text();
+          console.error(`[NetSuite] Customer preload failed: ${customerResponse.status} ${customerResponse.statusText}`);
+          console.error(`[NetSuite] Error details: ${errorText.substring(0, 500)}`);
+        }
+      } catch (error) {
+        console.error('[NetSuite] Customer preload error:', error);
+      }
+
+      // Wait 3 seconds between requests to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      // Preload items
+      try {
+        const itemUrl = `${restletUrl}&waType=item`;
+        const itemAuthHeader = this.generateOAuthHeader('GET', itemUrl);
+
+        console.log('[NetSuite] Preloading items...');
+        const itemStart = Date.now();
+
+        const itemResponse = await fetch(itemUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': itemAuthHeader,
+            'Content-Type': 'application/json',
+          },
+          signal: AbortSignal.timeout(120000),
+        });
+
+        if (itemResponse.ok) {
+          const itemData = await itemResponse.json();
+          if (Array.isArray(itemData)) {
+            // Store only essential fields and use chunked caching for Upstash 10MB limit
+            const essentialItems = itemData.map((i: any) => ({
+              internalid: i.internalid,
+              itemid: i.itemid,
+              displayname: i.displayname || '',
+              description: i.description || '',
+              type: i.type || '',
+              baseprice: i.baseprice || '',
+            }));
+
+            // Cache using chunked storage (splits into ~5MB chunks) for 1 week
+            const cacheSuccess = await redisCache.setChunked('netsuite:items', essentialItems, 604800);
+            const elapsed = ((Date.now() - itemStart) / 1000).toFixed(2);
+            if (cacheSuccess) {
+              console.log(`[NetSuite] ✅ Preloaded ${essentialItems.length} items in ${elapsed}s (chunked)`);
+            } else {
+              console.error(`[NetSuite] ❌ Failed to cache items`);
+            }
+          }
+        } else {
+          const errorText = await itemResponse.text();
+          console.error(`[NetSuite] Item preload failed: ${itemResponse.status} ${itemResponse.statusText}`);
+          console.error(`[NetSuite] Error details: ${errorText.substring(0, 500)}`);
+        }
+      } catch (error) {
+        console.error('[NetSuite] Item preload error:', error);
+      }
+
+      const totalElapsed = ((Date.now() - totalStart) / 1000).toFixed(2);
+      console.log(`[NetSuite] 🎉 Cache preload complete in ${totalElapsed}s`);
+      console.log('[NetSuite] All searches will now be INSTANT! ⚡');
+      console.log('[NetSuite] Cache valid for 1 week');
+
+    } catch (error) {
+      console.error('[NetSuite] Preload cache error:', error);
+    }
+  }
+
+  /**
+   * Get cache status for monitoring
+   */
+  async getCacheStatus(): Promise<{
+    customers: { cached: boolean; count: number };
+    items: { cached: boolean; count: number };
+    redis: { connected: boolean; type: 'redis' | 'memory' };
+  }> {
+    // Check chunked cache metadata for customers and items
+    const [customersMeta, itemsMeta, redisStatus] = await Promise.all([
+      redisCache.get<{ chunkCount: number; totalItems: number }>('netsuite:customers:meta'),
+      redisCache.get<{ chunkCount: number; totalItems: number }>('netsuite:items:meta'),
+      redisCache.getStatus()
+    ]);
+
+    return {
+      customers: {
+        cached: customersMeta !== null,
+        count: customersMeta?.totalItems || 0,
+      },
+      items: {
+        cached: itemsMeta !== null,
+        count: itemsMeta?.totalItems || 0,
+      },
+      redis: {
+        connected: redisStatus.connected,
+        type: redisStatus.type,
+      },
+    };
+  }
+
+  /**
+   * Manually clear cache (for admin/testing purposes)
+   */
+  async clearCache(): Promise<void> {
+    // Clear chunked data for customers and items
+    await Promise.all([
+      redisCache.delChunked('netsuite:customers'),
+      redisCache.delChunked('netsuite:items'),
+    ]);
+    console.log('[NetSuite] Cache cleared');
   }
 }
 

@@ -733,7 +733,12 @@ export default function NewCaseStudyPage() {
                   }
 
                   updateFormData(updates);
-                  console.log(`[Qualifier] Customer selected from NetSuite:`, customer.companyName, 'Industry:', updates.industry);
+                  console.log(`[Qualifier] Customer selected from NetSuite:`, customer.companyName, {
+                    city: customer.city,
+                    country: customer.country,
+                    industry: customer.industry,
+                    updates
+                  });
                 }}
                 label="Customer Name"
                 required

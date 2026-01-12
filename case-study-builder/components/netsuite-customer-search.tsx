@@ -11,10 +11,24 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { waSearchNetSuiteCustomers, NetSuiteCustomerWithCases } from '@/lib/actions/waNetsuiteActions';
+import { waGetAllCustomersForCache, waSearchNetSuiteCustomers } from '@/lib/actions/waNetsuiteActions';
 import { NetSuiteCustomer } from '@/lib/integrations/netsuite';
 import { Loader2, Building2, MapPin, Globe, Factory, Search, X, ChevronRight, FileText, Star, Cpu } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { indexedDBCache } from '@/lib/cache/indexeddb-client';
+
+// Extended customer type with optional case study info
+// Case study data may be unavailable when using cached data (trade-off for speed)
+type CustomerWithOptionalCases = NetSuiteCustomer & {
+  caseStudyCount?: number;
+  recentCaseStudies?: Array<{
+    id: string;
+    title: string | null;
+    type: string;
+    status: string;
+    createdAt: Date;
+  }>;
+};
 
 type Props = {
   value: string;
@@ -37,9 +51,9 @@ export default function NetSuiteCustomerSearch({
 }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [customers, setCustomers] = useState<NetSuiteCustomerWithCases[]>([]);
+  const [customers, setCustomers] = useState<CustomerWithOptionalCases[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<NetSuiteCustomerWithCases | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerWithOptionalCases | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
@@ -72,12 +86,68 @@ export default function NetSuiteCustomerSearch({
     setIsLoading(true);
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        const result = await waSearchNetSuiteCustomers(searchQuery);
-        if (result.success && result.customers) {
-          setCustomers(result.customers);
-        } else {
-          setCustomers([]);
+        let filteredCustomers: CustomerWithOptionalCases[] = [];
+
+        // Try hybrid cache approach first
+        try {
+          // 1. Try IndexedDB cache first (browser-side)
+          const cacheKey = 'netsuite:customers:all';
+          let allCustomers = await indexedDBCache.get<CustomerWithOptionalCases[]>(cacheKey);
+
+          if (!allCustomers || allCustomers.length === 0) {
+            // 2. Not in IndexedDB or stale empty cache, fetch from server
+            if (allCustomers && allCustomers.length === 0) {
+              console.log('[Hybrid Cache] IndexedDB has stale/empty data, clearing and refetching...');
+              await indexedDBCache.del(cacheKey);
+            } else {
+              console.log('[Hybrid Cache] IndexedDB MISS, fetching from server...');
+            }
+
+            const result = await waGetAllCustomersForCache();
+
+            if (result.success && result.customers && result.customers.length > 0) {
+              allCustomers = result.customers;
+              // 3. Cache in IndexedDB for 1 week
+              await indexedDBCache.set(cacheKey, allCustomers, 604800000);
+              console.log(`[Hybrid Cache] Cached ${allCustomers.length} customers in IndexedDB`);
+            }
+          } else {
+            console.log(`[Hybrid Cache] IndexedDB HIT - ${allCustomers.length} customers`);
+          }
+
+          // 4. Filter customers client-side based on search query
+          if (allCustomers && allCustomers.length > 0) {
+            const lowerQuery = searchQuery.toLowerCase();
+            filteredCustomers = allCustomers
+              .filter((customer) => {
+                const companyName = (customer.companyName || '').toLowerCase();
+                const entityId = (customer.entityId || '').toLowerCase();
+                const city = (customer.city || '').toLowerCase();
+                const industry = (customer.industry || '').toLowerCase();
+
+                return companyName.includes(lowerQuery) ||
+                       entityId.includes(lowerQuery) ||
+                       city.includes(lowerQuery) ||
+                       industry.includes(lowerQuery);
+              })
+              .slice(0, 10);
+          }
+        } catch (cacheError) {
+          console.warn('[Hybrid Cache] Failed:', cacheError);
         }
+
+        // FALLBACK: If hybrid cache returned nothing, use the old working search
+        if (filteredCustomers.length === 0) {
+          console.log('[Fallback] Hybrid cache empty, using direct search...');
+          const fallbackResult = await waSearchNetSuiteCustomers(searchQuery);
+          if (fallbackResult.success && fallbackResult.customers) {
+            filteredCustomers = fallbackResult.customers;
+            console.log(`[Fallback] Got ${filteredCustomers.length} customers from direct search`);
+          }
+        }
+
+        setCustomers(filteredCustomers);
+
       } catch (error) {
         console.error('Search error:', error);
         setCustomers([]);
@@ -93,7 +163,7 @@ export default function NetSuiteCustomerSearch({
     };
   }, [searchQuery]);
 
-  const handleCustomerSelect = (customer: NetSuiteCustomerWithCases) => {
+  const handleCustomerSelect = (customer: CustomerWithOptionalCases) => {
     setSelectedCustomer(customer);
     onChange(customer.companyName);
     setIsOpen(false);

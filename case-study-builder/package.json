@@ -54,6 +54,7 @@
     "@sentry/nextjs": "^10.29.0",
     "@serwist/next": "^9.2.1",
     "@types/xlsx": "^0.0.35",
+    "@upstash/redis": "^1.36.1",
     "@vercel/analytics": "^1.6.1",
     "bcryptjs": "^2.4.3",
     "canvas-confetti": "^1.9.4",

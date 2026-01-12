@@ -16,6 +16,38 @@ export type NetSuiteCustomerWithCases = NetSuiteCustomer & {
   }>;
 };
 
+/**
+ * Get ALL customers for client-side caching (without enrichment)
+ * Much faster than enriched search since it skips case study lookups
+ */
+export async function waGetAllCustomersForCache(): Promise<{
+  success: boolean;
+  customers?: NetSuiteCustomer[];
+  error?: string;
+}> {
+  try {
+    console.log('[waGetAllCustomersForCache] Starting to fetch all customers...');
+
+    // Get all customers from Redis cache (or NetSuite if not cached)
+    // Pass empty query to get all from cache
+    const customers = await waSearchCustomers('');
+
+    console.log(`[waGetAllCustomersForCache] Got ${customers?.length || 0} customers`);
+
+    if (!customers || customers.length === 0) {
+      console.warn('[waGetAllCustomersForCache] No customers returned!');
+    }
+
+    return { success: true, customers };
+  } catch (error) {
+    console.error('[waGetAllCustomersForCache] Failed:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch customers',
+    };
+  }
+}
+
 export async function waSearchNetSuiteCustomers(
   query: string
 ): Promise<{ success: boolean; customers?: NetSuiteCustomerWithCases[]; error?: string }> {

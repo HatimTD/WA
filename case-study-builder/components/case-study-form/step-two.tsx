@@ -51,7 +51,12 @@ export default function StepTwo({ formData, updateFormData, customerReadOnly = f
       updates.industry = customer.industry;
     }
 
-    console.log(`[NetSuite] Customer selected:`, customer.companyName);
+    console.log(`[NetSuite] Customer selected:`, customer.companyName, {
+      city: customer.city,
+      country: customer.country,
+      industry: customer.industry,
+      updates
+    });
 
     updateFormData(updates);
   };
