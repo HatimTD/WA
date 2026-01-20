@@ -20,6 +20,23 @@ import {
 } from 'lucide-react';
 import WearTypeProgressBar from '@/components/wear-type-progress-bar';
 
+// Helper to format expanded service life (hours, days, weeks, months, years)
+function waFormatExpandedServiceLife(data: {
+  hours?: string | null;
+  days?: string | null;
+  weeks?: string | null;
+  months?: string | null;
+  years?: string | null;
+}): string | null {
+  const parts: string[] = [];
+  if (data.years && parseInt(data.years) > 0) parts.push(`${data.years}y`);
+  if (data.months && parseInt(data.months) > 0) parts.push(`${data.months}mo`);
+  if (data.weeks && parseInt(data.weeks) > 0) parts.push(`${data.weeks}w`);
+  if (data.days && parseInt(data.days) > 0) parts.push(`${data.days}d`);
+  if (data.hours && parseInt(data.hours) > 0) parts.push(`${data.hours}h`);
+  return parts.length > 0 ? parts.join(' ') : null;
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const caseStudy = await prisma.waCaseStudy.findUnique({
@@ -267,11 +284,23 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-2 gap-6">
-              {caseStudy.expectedServiceLife && (
+              {(caseStudy.expectedServiceLife || waFormatExpandedServiceLife({
+                hours: caseStudy.expectedServiceLifeHours,
+                days: caseStudy.expectedServiceLifeDays,
+                weeks: caseStudy.expectedServiceLifeWeeks,
+                months: caseStudy.expectedServiceLifeMonths,
+                years: caseStudy.expectedServiceLifeYears,
+              })) && (
                 <div>
                   <p className="font-medium text-sm text-gray-600 mb-1">Expected Service Life</p>
                   <p className="text-2xl font-bold text-wa-green-600">
-                    {caseStudy.expectedServiceLife}
+                    {waFormatExpandedServiceLife({
+                      hours: caseStudy.expectedServiceLifeHours,
+                      days: caseStudy.expectedServiceLifeDays,
+                      weeks: caseStudy.expectedServiceLifeWeeks,
+                      months: caseStudy.expectedServiceLifeMonths,
+                      years: caseStudy.expectedServiceLifeYears,
+                    }) || caseStudy.expectedServiceLife}
                   </p>
                 </div>
               )}

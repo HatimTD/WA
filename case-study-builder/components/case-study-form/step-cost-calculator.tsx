@@ -5,7 +5,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calculator, DollarSign, Clock, Settings, Sparkles, Wrench, AlertCircle } from 'lucide-react';
+import { Calculator, Clock, Settings, Sparkles, Wrench, AlertCircle, TrendingDown } from 'lucide-react';
+import { ServiceLifePicker, ServiceLifeValue, DEFAULT_SERVICE_LIFE } from '@/components/ui/service-life-picker';
 import type { CaseStudyFormData } from '@/app/dashboard/new/page';
 
 type Props = {
@@ -38,6 +39,55 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
 
   // Get the currency symbol for display
   const currencySymbol = CURRENCY_SYMBOLS[formData.costCalculator?.currency || 'EUR'] || '€';
+  // Helper functions for ServiceLifePicker integration
+  const waGetOldLifetimeValue = (): ServiceLifeValue => {
+    const cc = formData.costCalculator;
+    return {
+      hours: parseInt(cc?.oldLifetimeHours || '0') || 0,
+      days: parseInt(cc?.oldLifetimeDays || '0') || 0,
+      weeks: parseInt(cc?.oldLifetimeWeeks || '0') || 0,
+      months: parseInt(cc?.oldLifetimeMonths || '0') || 0,
+      years: parseInt(cc?.oldLifetimeYears || '0') || 0,
+    };
+  };
+
+  const waGetWaLifetimeValue = (): ServiceLifeValue => {
+    const cc = formData.costCalculator;
+    return {
+      hours: parseInt(cc?.waLifetimeHours || '0') || 0,
+      days: parseInt(cc?.waLifetimeDays || '0') || 0,
+      weeks: parseInt(cc?.waLifetimeWeeks || '0') || 0,
+      months: parseInt(cc?.waLifetimeMonths || '0') || 0,
+      years: parseInt(cc?.waLifetimeYears || '0') || 0,
+    };
+  };
+
+  const waUpdateOldLifetime = (value: ServiceLifeValue) => {
+    updateFormData({
+      costCalculator: {
+        ...formData.costCalculator,
+        oldLifetimeHours: value.hours > 0 ? String(value.hours) : '',
+        oldLifetimeDays: value.days > 0 ? String(value.days) : '',
+        oldLifetimeWeeks: value.weeks > 0 ? String(value.weeks) : '',
+        oldLifetimeMonths: value.months > 0 ? String(value.months) : '',
+        oldLifetimeYears: value.years > 0 ? String(value.years) : '',
+      },
+    });
+  };
+
+  const waUpdateWaLifetime = (value: ServiceLifeValue) => {
+    updateFormData({
+      costCalculator: {
+        ...formData.costCalculator,
+        waLifetimeHours: value.hours > 0 ? String(value.hours) : '',
+        waLifetimeDays: value.days > 0 ? String(value.days) : '',
+        waLifetimeWeeks: value.weeks > 0 ? String(value.weeks) : '',
+        waLifetimeMonths: value.months > 0 ? String(value.months) : '',
+        waLifetimeYears: value.years > 0 ? String(value.years) : '',
+      },
+    });
+  };
+
 
   // Helper to convert mixed time units to total hours (for comparison)
   const waConvertToTotalHours = (hours?: string, days?: string, weeks?: string, months?: string, years?: string): number => {
@@ -116,10 +166,41 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
       eventSavings: eventSavings.toFixed(2),
       totalAnnualSavings: totalAnnualSavings.toFixed(2),
       savingsPercentage: savingsPercentage.toFixed(1),
+      oldLifetimeTotal,
+      waLifetimeTotal,
     };
   };
 
   const savings = waCalculateSavings();
+
+  // Calculate comparison bar widths
+  const waGetCostComparisonWidths = () => {
+    if (!savings) return { oldWidth: 50, waWidth: 50 };
+    const oldCost = parseFloat(savings.annualCostOld);
+    const waCost = parseFloat(savings.annualCostWA);
+    const maxCost = Math.max(oldCost, waCost);
+    if (maxCost === 0) return { oldWidth: 50, waWidth: 50 };
+    return {
+      oldWidth: Math.round((oldCost / maxCost) * 100),
+      waWidth: Math.round((waCost / maxCost) * 100),
+    };
+  };
+
+  const waGetLifetimeComparisonWidths = () => {
+    if (!savings) return { oldWidth: 50, waWidth: 50 };
+    const oldLife = savings.oldLifetimeTotal;
+    const waLife = savings.waLifetimeTotal;
+    const maxLife = Math.max(oldLife, waLife);
+    if (maxLife === 0) return { oldWidth: 50, waWidth: 50 };
+    return {
+      oldWidth: Math.round((oldLife / maxLife) * 100),
+      waWidth: Math.round((waLife / maxLife) * 100),
+    };
+  };
+
+  const costWidths = waGetCostComparisonWidths();
+  const lifetimeWidths = waGetLifetimeComparisonWidths();
+
 
   return (
     <div className="space-y-6">
@@ -172,11 +253,11 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
       <Card role="article" className="dark:bg-card dark:border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg dark:text-foreground">
-            <DollarSign className="h-5 w-5 text-wa-green-600" />
+            <TrendingDown className="h-5 w-5 text-wa-green-600" />
             Part & Material Costs
           </CardTitle>
           <CardDescription className="dark:text-muted-foreground">
-            Compare the cost of old solution vs WA solution ({formData.costCalculator?.currency || 'EUR'})
+            Compare the cost of old solution vs WA solution ({currencySymbol})
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -187,14 +268,14 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
               </Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">
-                  {formData.costCalculator?.currency || 'EUR'}
+                  {currencySymbol}
                 </span>
                 <Input
                   id="costOfPart"
                   type="number"
                   value={formData.costCalculator?.costOfPart || ''}
                   onChange={(e) => waUpdateCostCalculator('costOfPart', e.target.value)}
-                  placeholder="e.g., 5000"
+                  placeholder="Cost per unit with the old solution."
                   className="pl-12 dark:bg-input dark:border-border dark:text-foreground"
                   required
                 />
@@ -210,14 +291,14 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
               </Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">
-                  {formData.costCalculator?.currency || 'EUR'}
+                  {currencySymbol}
                 </span>
                 <Input
                   id="costOfWaSolution"
                   type="number"
                   value={formData.costCalculator?.costOfWaSolution || ''}
                   onChange={(e) => waUpdateCostCalculator('costOfWaSolution', e.target.value)}
-                  placeholder="e.g., 7500"
+                  placeholder="Cost per unit with the WA solution."
                   className="pl-12 dark:bg-input dark:border-border dark:text-foreground"
                   required
                 />
@@ -237,7 +318,7 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
               type="number"
               value={formData.costCalculator?.partsUsedPerYear || ''}
               onChange={(e) => waUpdateCostCalculator('partsUsedPerYear', e.target.value)}
-              placeholder="e.g., 12"
+              placeholder="Number of parts replaced per year with the old solution."
               className="dark:bg-input dark:border-border dark:text-foreground"
               required
             />
@@ -261,138 +342,74 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Old Solution Lifetime */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label className="dark:text-foreground">
               Old Solution Lifetime (C) <span className="text-red-500 dark:text-red-400">*</span>
             </Label>
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-1">
-                <Input
-                  type="number"
-                  min="0"
-                  value={formData.costCalculator?.oldLifetimeHours || ''}
-                  onChange={(e) => waUpdateCostCalculator('oldLifetimeHours', e.target.value)}
-                  placeholder="0"
-                  className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
-                />
-                <span className="text-sm text-muted-foreground font-medium">h</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Input
-                  type="number"
-                  min="0"
-                  value={formData.costCalculator?.oldLifetimeDays || ''}
-                  onChange={(e) => waUpdateCostCalculator('oldLifetimeDays', e.target.value)}
-                  placeholder="0"
-                  className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
-                />
-                <span className="text-sm text-muted-foreground font-medium">d</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Input
-                  type="number"
-                  min="0"
-                  value={formData.costCalculator?.oldLifetimeWeeks || ''}
-                  onChange={(e) => waUpdateCostCalculator('oldLifetimeWeeks', e.target.value)}
-                  placeholder="0"
-                  className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
-                />
-                <span className="text-sm text-muted-foreground font-medium">w</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Input
-                  type="number"
-                  min="0"
-                  value={formData.costCalculator?.oldLifetimeMonths || ''}
-                  onChange={(e) => waUpdateCostCalculator('oldLifetimeMonths', e.target.value)}
-                  placeholder="0"
-                  className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
-                />
-                <span className="text-sm text-muted-foreground font-medium">m</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Input
-                  type="number"
-                  min="0"
-                  value={formData.costCalculator?.oldLifetimeYears || ''}
-                  onChange={(e) => waUpdateCostCalculator('oldLifetimeYears', e.target.value)}
-                  placeholder="0"
-                  className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
-                />
-                <span className="text-sm text-muted-foreground font-medium">y</span>
-              </div>
-            </div>
+            <ServiceLifePicker
+              value={waGetOldLifetimeValue()}
+              onChange={waUpdateOldLifetime}
+              label="Old Solution Lifetime"
+              required
+            />
             <p className="text-xs text-muted-foreground">
-              Service life with old solution (e.g., 500h or 2m 1w)
+              Service life with the old solution
             </p>
           </div>
 
           {/* WA Solution Lifetime */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label className="dark:text-foreground">
               WA Solution Lifetime (D) <span className="text-red-500 dark:text-red-400">*</span>
             </Label>
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-1">
-                <Input
-                  type="number"
-                  min="0"
-                  value={formData.costCalculator?.waLifetimeHours || ''}
-                  onChange={(e) => waUpdateCostCalculator('waLifetimeHours', e.target.value)}
-                  placeholder="0"
-                  className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
-                />
-                <span className="text-sm text-muted-foreground font-medium">h</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Input
-                  type="number"
-                  min="0"
-                  value={formData.costCalculator?.waLifetimeDays || ''}
-                  onChange={(e) => waUpdateCostCalculator('waLifetimeDays', e.target.value)}
-                  placeholder="0"
-                  className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
-                />
-                <span className="text-sm text-muted-foreground font-medium">d</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Input
-                  type="number"
-                  min="0"
-                  value={formData.costCalculator?.waLifetimeWeeks || ''}
-                  onChange={(e) => waUpdateCostCalculator('waLifetimeWeeks', e.target.value)}
-                  placeholder="0"
-                  className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
-                />
-                <span className="text-sm text-muted-foreground font-medium">w</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Input
-                  type="number"
-                  min="0"
-                  value={formData.costCalculator?.waLifetimeMonths || ''}
-                  onChange={(e) => waUpdateCostCalculator('waLifetimeMonths', e.target.value)}
-                  placeholder="0"
-                  className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
-                />
-                <span className="text-sm text-muted-foreground font-medium">m</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Input
-                  type="number"
-                  min="0"
-                  value={formData.costCalculator?.waLifetimeYears || ''}
-                  onChange={(e) => waUpdateCostCalculator('waLifetimeYears', e.target.value)}
-                  placeholder="0"
-                  className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
-                />
-                <span className="text-sm text-muted-foreground font-medium">y</span>
-              </div>
-            </div>
+            <ServiceLifePicker
+              value={waGetWaLifetimeValue()}
+              onChange={waUpdateWaLifetime}
+              label="WA Solution Lifetime"
+              required
+            />
             <p className="text-xs text-muted-foreground">
-              Expected/achieved service life with WA solution (e.g., 2000h or 6m)
+              Expected/achieved service life with WA solution
             </p>
           </div>
+
+          {/* Visual Lifetime Comparison */}
+          {savings && (
+            <div className="mt-4 p-4 bg-muted/30 rounded-lg space-y-3">
+              <p className="text-sm font-semibold text-foreground">Lifetime Comparison</p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs w-24 text-muted-foreground">Old Solution</span>
+                  <div className="flex-1 h-6 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gray-500 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
+                      style={{ width: `${lifetimeWidths.oldWidth}%` }}
+                    >
+                      <span className="text-xs text-white font-medium">
+                        {savings.oldLifetimeTotal.toLocaleString()}h
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs w-24 text-muted-foreground">WA Solution</span>
+                  <div className="flex-1 h-6 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-wa-green-500 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
+                      style={{ width: `${lifetimeWidths.waWidth}%` }}
+                    >
+                      <span className="text-xs text-white font-medium">
+                        {savings.waLifetimeTotal.toLocaleString()}h
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs text-wa-green-700 dark:text-wa-green-400 font-semibold">
+                WA solution lasts {savings.lifetimeRatio}x longer!
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -414,13 +431,13 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
                 Maintenance Cost (F) <span className="text-red-500 dark:text-red-400">*</span>
               </Label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">{currencySymbol}</span>
                 <Input
                   id="maintenanceCostPerEvent"
                   type="number"
                   value={formData.costCalculator?.maintenanceCostPerEvent || ''}
                   onChange={(e) => waUpdateCostCalculator('maintenanceCostPerEvent', e.target.value)}
-                  placeholder="e.g., 500"
+                  placeholder="Maintenance/repair labor cost per replacement event."
                   className="pl-9 dark:bg-input dark:border-border dark:text-foreground"
                   required
                 />
@@ -435,13 +452,13 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
                 Disassembly/Assembly (G) <span className="text-red-500 dark:text-red-400">*</span>
               </Label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">{currencySymbol}</span>
                 <Input
                   id="disassemblyAssemblyCost"
                   type="number"
                   value={formData.costCalculator?.disassemblyAssemblyCost || ''}
                   onChange={(e) => waUpdateCostCalculator('disassemblyAssemblyCost', e.target.value)}
-                  placeholder="e.g., 300"
+                  placeholder="Labor cost to remove and reinstall per event."
                   className="pl-9 dark:bg-input dark:border-border dark:text-foreground"
                   required
                 />
@@ -456,13 +473,13 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
                 Downtime Cost (H) <span className="text-red-500 dark:text-red-400">*</span>
               </Label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">{currencySymbol}</span>
                 <Input
                   id="downtimeCostPerEvent"
                   type="number"
                   value={formData.costCalculator?.downtimeCostPerEvent || ''}
                   onChange={(e) => waUpdateCostCalculator('downtimeCostPerEvent', e.target.value)}
-                  placeholder="e.g., 2000"
+                  placeholder="Lost production cost per replacement event."
                   className="pl-9 dark:bg-input dark:border-border dark:text-foreground"
                   required
                 />
@@ -532,7 +549,41 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
               Calculated Annual Savings
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-6">
+            {/* Visual Cost Comparison Bars */}
+            <div className="p-4 bg-white dark:bg-card rounded-lg space-y-3">
+              <p className="text-sm font-semibold text-foreground">Annual Cost Comparison</p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs w-24 text-muted-foreground">Old Solution</span>
+                  <div className="flex-1 h-8 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-red-400 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
+                      style={{ width: `${costWidths.oldWidth}%` }}
+                    >
+                      <span className="text-xs text-white font-medium">
+                        {currencySymbol}{parseFloat(savings.annualCostOld).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs w-24 text-muted-foreground">WA Solution</span>
+                  <div className="flex-1 h-8 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-wa-green-500 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
+                      style={{ width: `${costWidths.waWidth}%` }}
+                    >
+                      <span className="text-xs text-white font-medium">
+                        {currencySymbol}{parseFloat(savings.annualCostWA).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Detailed Numbers Grid */}
             <div className="grid md:grid-cols-3 gap-6">
               <div className="space-y-3">
                 <div className="text-center p-3 bg-white dark:bg-card rounded-lg">

@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { CaseStudyFormData } from '@/app/dashboard/new/page';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, CheckCircle2, Sparkles, X, Plus, Calculator, Clock } from 'lucide-react';
+import { ServiceLifePicker, ServiceLifeValue } from '@/components/ui/service-life-picker';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { waSuggestTags } from '@/lib/actions/waAiSuggestionsActions';
@@ -20,6 +21,26 @@ export default function StepFive({ formData, updateFormData }: Props) {
   const [isGeneratingTags, setIsGeneratingTags] = useState(false);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
+
+  // Helper to convert form data strings to ServiceLifeValue
+  const waGetExpectedServiceLifeValue = (): ServiceLifeValue => ({
+    hours: parseInt(formData.expectedServiceLifeHours || '0') || 0,
+    days: parseInt(formData.expectedServiceLifeDays || '0') || 0,
+    weeks: parseInt(formData.expectedServiceLifeWeeks || '0') || 0,
+    months: parseInt(formData.expectedServiceLifeMonths || '0') || 0,
+    years: parseInt(formData.expectedServiceLifeYears || '0') || 0,
+  });
+
+  // Helper to handle ServiceLifePicker changes
+  const waHandleExpectedServiceLifeChange = (value: ServiceLifeValue) => {
+    updateFormData({
+      expectedServiceLifeHours: value.hours.toString(),
+      expectedServiceLifeDays: value.days.toString(),
+      expectedServiceLifeWeeks: value.weeks.toString(),
+      expectedServiceLifeMonths: value.months.toString(),
+      expectedServiceLifeYears: value.years.toString(),
+    });
+  };
 
   // Calculate cost calculator summary for STAR cases (same formula as step-cost-calculator)
   const waCalculateCostSummary = () => {
@@ -124,52 +145,10 @@ export default function StepFive({ formData, updateFormData }: Props) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-1">
-              <Input
-                type="number"
-                min="0"
-                value={formData.expectedServiceLifeDays || ''}
-                onChange={(e) => updateFormData({ expectedServiceLifeDays: e.target.value })}
-                placeholder="0"
-                className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
-              />
-              <span className="text-sm text-muted-foreground font-medium">d</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Input
-                type="number"
-                min="0"
-                value={formData.expectedServiceLifeWeeks || ''}
-                onChange={(e) => updateFormData({ expectedServiceLifeWeeks: e.target.value })}
-                placeholder="0"
-                className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
-              />
-              <span className="text-sm text-muted-foreground font-medium">w</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Input
-                type="number"
-                min="0"
-                value={formData.expectedServiceLifeMonths || ''}
-                onChange={(e) => updateFormData({ expectedServiceLifeMonths: e.target.value })}
-                placeholder="0"
-                className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
-              />
-              <span className="text-sm text-muted-foreground font-medium">m</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Input
-                type="number"
-                min="0"
-                value={formData.expectedServiceLifeYears || ''}
-                onChange={(e) => updateFormData({ expectedServiceLifeYears: e.target.value })}
-                placeholder="0"
-                className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
-              />
-              <span className="text-sm text-muted-foreground font-medium">y</span>
-            </div>
-          </div>
+          <ServiceLifePicker
+            value={waGetExpectedServiceLifeValue()}
+            onChange={waHandleExpectedServiceLifeChange}
+          />
         </CardContent>
       </Card>
 

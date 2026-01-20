@@ -130,6 +130,23 @@ export default async function ApprovalReviewPage({ params }: Props) {
     return CURRENCY_SYMBOLS[currency || 'EUR'] || '€';
   }
 
+  // Helper to format expanded service life (hours, days, weeks, months, years)
+  function waFormatExpandedServiceLife(data: {
+    hours?: string | null;
+    days?: string | null;
+    weeks?: string | null;
+    months?: string | null;
+    years?: string | null;
+  }): string | null {
+    const parts: string[] = [];
+    if (data.years && parseInt(data.years) > 0) parts.push(`${data.years}y`);
+    if (data.months && parseInt(data.months) > 0) parts.push(`${data.months}mo`);
+    if (data.weeks && parseInt(data.weeks) > 0) parts.push(`${data.weeks}w`);
+    if (data.days && parseInt(data.days) > 0) parts.push(`${data.days}d`);
+    if (data.hours && parseInt(data.hours) > 0) parts.push(`${data.hours}h`);
+    return parts.length > 0 ? parts.join(' ') : null;
+  }
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       {/* Header */}
@@ -178,6 +195,13 @@ export default async function ApprovalReviewPage({ params }: Props) {
           <CardTitle className="dark:text-foreground">Basic Information</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* General Description - Overview */}
+          {caseStudy.generalDescription && (
+            <div className="pb-4 border-b dark:border-border">
+              <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-2">Overview</p>
+              <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{caseStudy.generalDescription}</p>
+            </div>
+          )}
           <div className="grid md:grid-cols-2 gap-4">
             <div className="flex items-start gap-3">
               <Building2 className="h-5 w-5 text-gray-400 dark:text-muted-foreground mt-0.5" />
@@ -288,7 +312,13 @@ export default async function ApprovalReviewPage({ params }: Props) {
             <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{caseStudy.problemDescription}</p>
           </div>
 
-          {(caseStudy.previousSolution || caseStudy.previousServiceLife || caseStudy.competitorName) && (
+          {(caseStudy.previousSolution || caseStudy.previousServiceLife || waFormatExpandedServiceLife({
+            hours: caseStudy.previousServiceLifeHours,
+            days: caseStudy.previousServiceLifeDays,
+            weeks: caseStudy.previousServiceLifeWeeks,
+            months: caseStudy.previousServiceLifeMonths,
+            years: caseStudy.previousServiceLifeYears,
+          }) || caseStudy.competitorName) && (
             <div className="pt-4 border-t dark:border-border space-y-3">
               {caseStudy.previousSolution && (
                 <div>
@@ -297,10 +327,24 @@ export default async function ApprovalReviewPage({ params }: Props) {
                 </div>
               )}
 
-              {caseStudy.previousServiceLife && (
+              {(caseStudy.previousServiceLife || waFormatExpandedServiceLife({
+                hours: caseStudy.previousServiceLifeHours,
+                days: caseStudy.previousServiceLifeDays,
+                weeks: caseStudy.previousServiceLifeWeeks,
+                months: caseStudy.previousServiceLifeMonths,
+                years: caseStudy.previousServiceLifeYears,
+              })) && (
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Previous Service Life</p>
-                  <p className="text-base dark:text-foreground">{caseStudy.previousServiceLife}</p>
+                  <p className="text-base dark:text-foreground">
+                    {waFormatExpandedServiceLife({
+                      hours: caseStudy.previousServiceLifeHours,
+                      days: caseStudy.previousServiceLifeDays,
+                      weeks: caseStudy.previousServiceLifeWeeks,
+                      months: caseStudy.previousServiceLifeMonths,
+                      years: caseStudy.previousServiceLifeYears,
+                    }) || caseStudy.previousServiceLife}
+                  </p>
                 </div>
               )}
 
@@ -337,6 +381,22 @@ export default async function ApprovalReviewPage({ params }: Props) {
                 <p className="text-lg font-semibold dark:text-foreground">{caseStudy.waProductDiameter}</p>
               </div>
             )}
+            {waFormatExpandedServiceLife({
+              hours: caseStudy.jobDurationHours,
+              days: caseStudy.jobDurationDays,
+              weeks: caseStudy.jobDurationWeeks,
+            }) && (
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Job Duration</p>
+                <p className="text-lg font-semibold dark:text-foreground">
+                  {waFormatExpandedServiceLife({
+                    hours: caseStudy.jobDurationHours,
+                    days: caseStudy.jobDurationDays,
+                    weeks: caseStudy.jobDurationWeeks,
+                  })}
+                </p>
+              </div>
+            )}
           </div>
 
           {caseStudy.technicalAdvantages && (
@@ -346,10 +406,24 @@ export default async function ApprovalReviewPage({ params }: Props) {
             </div>
           )}
 
-          {caseStudy.expectedServiceLife && (
+          {(caseStudy.expectedServiceLife || waFormatExpandedServiceLife({
+            hours: caseStudy.expectedServiceLifeHours,
+            days: caseStudy.expectedServiceLifeDays,
+            weeks: caseStudy.expectedServiceLifeWeeks,
+            months: caseStudy.expectedServiceLifeMonths,
+            years: caseStudy.expectedServiceLifeYears,
+          })) && (
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Expected/Achieved Service Life</p>
-              <p className="text-base dark:text-foreground">{caseStudy.expectedServiceLife}</p>
+              <p className="text-base dark:text-foreground">
+                {waFormatExpandedServiceLife({
+                  hours: caseStudy.expectedServiceLifeHours,
+                  days: caseStudy.expectedServiceLifeDays,
+                  weeks: caseStudy.expectedServiceLifeWeeks,
+                  months: caseStudy.expectedServiceLifeMonths,
+                  years: caseStudy.expectedServiceLifeYears,
+                }) || caseStudy.expectedServiceLife}
+              </p>
             </div>
           )}
         </CardContent>
@@ -477,10 +551,15 @@ export default async function ApprovalReviewPage({ params }: Props) {
         <WeldingProcedureForm
           caseStudyId={caseStudy.id}
           existingData={wpsData ? {
+            // Base Metal
             baseMetalType: wpsData.baseMetalType || undefined,
             baseMetalGrade: wpsData.baseMetalGrade || undefined,
             baseMetalThickness: wpsData.baseMetalThickness || undefined,
             surfacePreparation: wpsData.surfacePreparation || undefined,
+            surfacePreparationOther: (wpsData as any).surfacePreparationOther || undefined,
+            // Layers (new multi-layer structure)
+            layers: (wpsData as any).layers || undefined,
+            // Legacy fields for backward compatibility
             waProductName: wpsData.waProductName,
             waProductDiameter: wpsData.waProductDiameter || undefined,
             shieldingGas: wpsData.shieldingGas || undefined,
@@ -502,10 +581,23 @@ export default async function ApprovalReviewPage({ params }: Props) {
             oscillationSpeed: wpsData.oscillationSpeed || undefined,
             oscillationStepOver: wpsData.oscillationStepOver || undefined,
             oscillationTempo: wpsData.oscillationTempo || undefined,
+            // Heating Procedure (new fields)
+            preheatingTemp: (wpsData as any).preheatingTemp || undefined,
+            interpassTemp: (wpsData as any).interpassTemp || undefined,
+            postheatingTemp: (wpsData as any).postheatingTemp || undefined,
+            // Legacy heating fields
             preheatTemperature: wpsData.preheatTemperature || undefined,
             interpassTemperature: wpsData.interpassTemperature || undefined,
             postheatTemperature: wpsData.postheatTemperature || undefined,
+            // PWHT (new fields)
+            pwhtRequired: (wpsData as any).pwhtRequired || undefined,
+            pwhtHeatingRate: (wpsData as any).pwhtHeatingRate || undefined,
+            pwhtTempHoldingTime: (wpsData as any).pwhtTempHoldingTime || undefined,
+            pwhtCoolingRate: (wpsData as any).pwhtCoolingRate || undefined,
             pwhtDetails: wpsData.pwhtDetails || undefined,
+            // Documents
+            documents: (wpsData as any).documents || undefined,
+            // Other fields
             layerNumbers: wpsData.layerNumbers || undefined,
             hardness: wpsData.hardness || undefined,
             defectsObserved: wpsData.defectsObserved || undefined,
