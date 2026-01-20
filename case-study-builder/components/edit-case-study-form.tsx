@@ -62,29 +62,37 @@ function waHasValue(value: string | null | undefined): boolean {
 function waIsWpsComplete(wpsData: WaWeldingProcedure | null | undefined): boolean {
   if (!wpsData) return false;
 
-  // Check all required string fields have meaningful content
+  // Check base metal section
+  if (!waHasValue(wpsData.baseMetalType) || !waHasValue(wpsData.surfacePreparation)) {
+    return false;
+  }
+
+  // Check if layers exist (new structure)
+  const layers = (wpsData as any).layers as Array<any> | undefined;
+  if (layers && layers.length > 0) {
+    const firstLayer = layers[0];
+    // Check required fields in first layer
+    if (!firstLayer.waProductName || !firstLayer.waProductDiameter ||
+        !firstLayer.weldingProcess || !firstLayer.weldingPosition ||
+        !firstLayer.torchAngle || !firstLayer.shieldingGas ||
+        !firstLayer.stickOut || !firstLayer.currentType ||
+        !firstLayer.currentModeSynergy || !firstLayer.wireFeedSpeed ||
+        !firstLayer.intensity || !firstLayer.voltage || !firstLayer.travelSpeed) {
+      return false;
+    }
+    return true;
+  }
+
+  // Legacy check for backward compatibility (no layers)
   const requiredFields = [
-    wpsData.baseMetalType,
-    wpsData.surfacePreparation,
     wpsData.waProductName,
     wpsData.shieldingGas,
     wpsData.weldingProcess,
     wpsData.weldingPosition,
-    wpsData.additionalNotes,
   ];
 
   // All required fields must have values
   if (requiredFields.some(field => !waHasValue(field))) {
-    return false;
-  }
-
-  // At least one oscillation field must be filled
-  if (!waHasValue(wpsData.oscillationWidth) && !waHasValue(wpsData.oscillationSpeed)) {
-    return false;
-  }
-
-  // At least one temperature field must be filled
-  if (!waHasValue(wpsData.preheatTemperature) && !waHasValue(wpsData.interpassTemperature)) {
     return false;
   }
 
@@ -97,6 +105,12 @@ function waCalculateResumeStep(
   wpsData: WaWeldingProcedure | null | undefined,
   caseType: 'APPLICATION' | 'TECH' | 'STAR'
 ): number {
+  // If user saved draft with a specific step, return to that step
+  const savedStep = (caseStudy as any).lastEditedStep;
+  if (savedStep && savedStep >= 1) {
+    return savedStep;
+  }
+
   // Step 1: Case Study Type - always complete if we have a case
 
   // Step 2: Customer Info - check if customer selected and qualifier completed
@@ -258,16 +272,22 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
     supportingDocs: caseStudy.supportingDocs as string[],
     tags: (caseStudy as any).tags || [],
     wps: wpsData ? {
+      // Base Metal
       baseMetalType: wpsData.baseMetalType || undefined,
       baseMetalGrade: wpsData.baseMetalGrade || undefined,
       baseMetalThickness: wpsData.baseMetalThickness || undefined,
       surfacePreparation: wpsData.surfacePreparation || undefined,
+      surfacePreparationOther: (wpsData as any).surfacePreparationOther || undefined,
+      // Layers (new multi-layer structure)
+      layers: (wpsData as any).layers || undefined,
+      // Legacy WA Product fields
       waProductName: wpsData.waProductName || undefined,
       waProductDiameter: wpsData.waProductDiameter || undefined,
       shieldingGas: wpsData.shieldingGas || undefined,
       shieldingFlowRate: wpsData.shieldingFlowRate || undefined,
       flux: wpsData.flux || undefined,
       standardDesignation: wpsData.standardDesignation || undefined,
+      // Legacy Welding Parameters
       weldingProcess: wpsData.weldingProcess || undefined,
       currentType: wpsData.currentType || undefined,
       currentModeSynergy: wpsData.currentModeSynergy || undefined,
@@ -279,14 +299,28 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
       torchAngle: wpsData.torchAngle || undefined,
       stickOut: wpsData.stickOut || undefined,
       travelSpeed: wpsData.travelSpeed || undefined,
+      // Legacy Oscillation
       oscillationWidth: wpsData.oscillationWidth || undefined,
       oscillationSpeed: wpsData.oscillationSpeed || undefined,
       oscillationStepOver: wpsData.oscillationStepOver || undefined,
       oscillationTempo: wpsData.oscillationTempo || undefined,
+      // Heating Procedure (new fields)
+      preheatingTemp: (wpsData as any).preheatingTemp || undefined,
+      interpassTemp: (wpsData as any).interpassTemp || undefined,
+      postheatingTemp: (wpsData as any).postheatingTemp || undefined,
+      // PWHT (new fields)
+      pwhtRequired: (wpsData as any).pwhtRequired || undefined,
+      pwhtHeatingRate: (wpsData as any).pwhtHeatingRate || undefined,
+      pwhtTempHoldingTime: (wpsData as any).pwhtTempHoldingTime || undefined,
+      pwhtCoolingRate: (wpsData as any).pwhtCoolingRate || undefined,
+      // Legacy Temperature fields
       preheatTemperature: wpsData.preheatTemperature || undefined,
       interpassTemperature: wpsData.interpassTemperature || undefined,
       postheatTemperature: wpsData.postheatTemperature || undefined,
       pwhtDetails: wpsData.pwhtDetails || undefined,
+      // Documents (new field)
+      documents: (wpsData as any).documents || undefined,
+      // Legacy Results
       layerNumbers: wpsData.layerNumbers || undefined,
       hardness: wpsData.hardness || undefined,
       defectsObserved: wpsData.defectsObserved || undefined,
@@ -393,15 +427,31 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
         // WPS is required for TECH cases
         // WPS is optional for STAR cases, but if Next is clicked (not Skip), validate for bonus point
         if (formData.type === 'TECH' || formData.type === 'STAR') {
+          // Base Metal Section
           if (!formData.wps?.baseMetalType) missing.push('Base Metal Type');
           if (!formData.wps?.surfacePreparation) missing.push('Surface Preparation');
-          if (!formData.wps?.waProductName) missing.push('WA Product Name');
-          if (!formData.wps?.shieldingGas) missing.push('Shielding Gas');
-          if (!formData.wps?.weldingProcess) missing.push('Welding Process');
-          if (!formData.wps?.weldingPosition) missing.push('Welding Position');
-          if (!formData.wps?.oscillationWidth && !formData.wps?.oscillationSpeed) missing.push('Oscillation (Width or Speed)');
-          if (!formData.wps?.preheatTemperature && !formData.wps?.interpassTemperature) missing.push('Temperature (Preheat or Interpass)');
-          if (!formData.wps?.additionalNotes) missing.push('Additional WPS Notes');
+          // Layers validation - check if at least one layer has required fields
+          const layers = formData.wps?.layers || [];
+          if (layers.length === 0) {
+            missing.push('At least one welding layer is required');
+          } else {
+            const firstLayer = layers[0];
+            // Check required fields in first layer
+            if (!firstLayer.waProductName) missing.push('Layer 1: WA Product Name');
+            if (!firstLayer.waProductDiameter) missing.push('Layer 1: Diameter');
+            if (!firstLayer.weldingProcess) missing.push('Layer 1: Process');
+            if (!firstLayer.weldingPosition) missing.push('Layer 1: Welding Position');
+            if (!firstLayer.torchAngle) missing.push('Layer 1: Torch Position');
+            if (!firstLayer.shieldingGas) missing.push('Layer 1: Shielding Gas');
+            // Check WA Parameters required fields
+            if (!firstLayer.stickOut) missing.push('Layer 1: Stick-out');
+            if (!firstLayer.currentType) missing.push('Layer 1: Type of Current');
+            if (!firstLayer.currentModeSynergy) missing.push('Layer 1: Welding Mode');
+            if (!firstLayer.wireFeedSpeed) missing.push('Layer 1: Wire Feed Speed');
+            if (!firstLayer.intensity) missing.push('Layer 1: Intensity');
+            if (!firstLayer.voltage) missing.push('Layer 1: Voltage');
+            if (!firstLayer.travelSpeed) missing.push('Layer 1: Welding Speed');
+          }
         }
         break;
       case 'Finalize':
@@ -533,6 +583,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
       const updateData: any = {
         ...formData,
         status: 'DRAFT',
+        lastEditedStep: currentStep, // Save which step user was on
         solutionValueRevenue: formData.solutionValueRevenue ? parseFloat(formData.solutionValueRevenue) : null,
         annualPotentialRevenue: formData.annualPotentialRevenue ? parseFloat(formData.annualPotentialRevenue) : null,
         customerSavingsAmount: formData.customerSavingsAmount ? parseFloat(formData.customerSavingsAmount) : null,
@@ -542,14 +593,41 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
 
       // If TECH or STAR and WPS data exists, save WPS (save any filled data for drafts)
       if (hasWPS && formData.wps) {
-        // Check if any WPS field has data
-        const hasAnyWpsData = Object.values(formData.wps).some(v => v !== undefined && v !== '' && v !== null);
+        // Check if any WPS field has data (excluding empty arrays)
+        const hasAnyWpsData = Object.entries(formData.wps).some(([key, v]) => {
+          if (Array.isArray(v)) return v.length > 0;
+          return v !== undefined && v !== '' && v !== null;
+        });
         if (hasAnyWpsData) {
+          // Filter out File objects from documents (can't be serialized)
+          const wpsDocuments = formData.wps.documents?.map(doc => ({
+            name: doc.name,
+            size: doc.size,
+            type: doc.type,
+            url: doc.url
+          })).filter(doc => doc.name);
+
           await waSaveWeldingProcedure({
             caseStudyId: caseStudy.id,
-            waProductName: formData.wps.waProductName || '',
-            weldingProcess: formData.wps.weldingProcess || '',
-            ...formData.wps,
+            // Base Metal
+            baseMetalType: formData.wps.baseMetalType,
+            surfacePreparation: formData.wps.surfacePreparation,
+            surfacePreparationOther: formData.wps.surfacePreparationOther,
+            // Layers (new multi-layer structure)
+            layers: formData.wps.layers,
+            // Heating Procedure
+            preheatingTemp: formData.wps.preheatingTemp,
+            interpassTemp: formData.wps.interpassTemp,
+            postheatingTemp: formData.wps.postheatingTemp,
+            // PWHT
+            pwhtRequired: formData.wps.pwhtRequired,
+            pwhtHeatingRate: formData.wps.pwhtHeatingRate,
+            pwhtTempHoldingTime: formData.wps.pwhtTempHoldingTime,
+            pwhtCoolingRate: formData.wps.pwhtCoolingRate,
+            // Documents
+            documents: wpsDocuments,
+            // Additional Notes
+            additionalNotes: formData.wps.additionalNotes,
           });
         }
       }
@@ -611,11 +689,35 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
 
       // If TECH or STAR and WPS data exists, save WPS
       if (hasWPS && formData.wps) {
+        // Filter out File objects from documents (can't be serialized)
+        const wpsDocuments = formData.wps.documents?.map(doc => ({
+          name: doc.name,
+          size: doc.size,
+          type: doc.type,
+          url: doc.url
+        })).filter(doc => doc.name);
+
         await waSaveWeldingProcedure({
           caseStudyId: caseStudy.id,
-          waProductName: formData.wps.waProductName || '',
-          weldingProcess: formData.wps.weldingProcess || '',
-          ...formData.wps,
+          // Base Metal
+          baseMetalType: formData.wps.baseMetalType,
+          surfacePreparation: formData.wps.surfacePreparation,
+          surfacePreparationOther: formData.wps.surfacePreparationOther,
+          // Layers (new multi-layer structure)
+          layers: formData.wps.layers,
+          // Heating Procedure
+          preheatingTemp: formData.wps.preheatingTemp,
+          interpassTemp: formData.wps.interpassTemp,
+          postheatingTemp: formData.wps.postheatingTemp,
+          // PWHT
+          pwhtRequired: formData.wps.pwhtRequired,
+          pwhtHeatingRate: formData.wps.pwhtHeatingRate,
+          pwhtTempHoldingTime: formData.wps.pwhtTempHoldingTime,
+          pwhtCoolingRate: formData.wps.pwhtCoolingRate,
+          // Documents
+          documents: wpsDocuments,
+          // Additional Notes
+          additionalNotes: formData.wps.additionalNotes,
         });
       }
 

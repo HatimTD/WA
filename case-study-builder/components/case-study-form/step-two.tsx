@@ -5,8 +5,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CaseStudyFormData } from '@/app/dashboard/new/page';
-import NetSuiteCustomerSearch from '@/components/netsuite-customer-search';
-import { NetSuiteCustomer } from '@/lib/integrations/netsuite';
 import LocationAutocomplete from '@/components/location-autocomplete';
 import { Mic, Sparkles } from 'lucide-react';
 import dynamic from 'next/dynamic';
@@ -31,36 +29,9 @@ const AITextAssistant = dynamic(() => import('@/components/ai-text-assistant'), 
 type Props = {
   formData: CaseStudyFormData;
   updateFormData: (data: Partial<CaseStudyFormData>) => void;
-  customerReadOnly?: boolean; // When customer was selected in Qualifier step
 };
 
-export default function StepTwo({ formData, updateFormData, customerReadOnly = false }: Props) {
-  const handleCustomerSelect = (customer: NetSuiteCustomer) => {
-    // Auto-fill fields from NetSuite customer data
-    const updates: Partial<CaseStudyFormData> = {
-      customerName: customer.companyName,
-    };
-
-    if (customer.city) {
-      updates.location = customer.city;
-    }
-    if (customer.country) {
-      updates.country = customer.country;
-    }
-    if (customer.industry) {
-      updates.industry = customer.industry;
-    }
-
-    console.log(`[NetSuite] Customer selected:`, customer.companyName, {
-      city: customer.city,
-      country: customer.country,
-      industry: customer.industry,
-      updates
-    });
-
-    updateFormData(updates);
-  };
-
+export default function StepTwo({ formData, updateFormData }: Props) {
   return (
     <div className="space-y-6">
       {/* Industrial Challenge Title - Full width */}
@@ -82,7 +53,7 @@ export default function StepTwo({ formData, updateFormData, customerReadOnly = f
       <div className="space-y-2">
         <div className="flex justify-between items-center">
           <Label htmlFor="generalDescription" className="dark:text-foreground">
-            General description
+            General description <span className="text-red-500 dark:text-red-400">*</span>
           </Label>
           <div className="flex gap-2">
             <VoiceInput
@@ -100,41 +71,13 @@ export default function StepTwo({ formData, updateFormData, customerReadOnly = f
           id="generalDescription"
           value={formData.generalDescription || ''}
           onChange={(e) => updateFormData({ generalDescription: e.target.value })}
-          placeholder="Brief overview of the industrial challenge and context..."
+          placeholder="Briefly describe the application and context, the equipment, how it is used, what it is used for, the type of wear and abrasive, etc."
           className="min-h-[100px] dark:bg-input dark:border-border dark:text-foreground"
+          required
         />
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Customer Name - Read-only if selected in Qualifier step, otherwise searchable */}
-        {customerReadOnly && formData.customerName ? (
-          <div className="space-y-2">
-            <Label className="dark:text-foreground">
-              Customer Name <span className="text-red-500 dark:text-red-400">*</span>
-            </Label>
-            <div className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-gray-50 dark:bg-muted border-border">
-              <div className="p-2 bg-primary/10 dark:bg-primary/20 rounded-lg shrink-0">
-                <span className="text-primary text-lg">🏢</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <span className="font-medium text-foreground">{formData.customerName}</span>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Selected in previous step • Go back to change
-                </p>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <NetSuiteCustomerSearch
-            value={formData.customerName}
-            onChange={(value) => updateFormData({ customerName: value })}
-            onCustomerSelect={handleCustomerSelect}
-            label="Customer Name"
-            required
-            placeholder="Click to search customers..."
-          />
-        )}
-
         {/* Location - Google Places Autocomplete */}
         <LocationAutocomplete
           value={formData.location}

@@ -8,6 +8,7 @@ import dynamic from 'next/dynamic';
 import { Mic, Sparkles, Plus, X } from 'lucide-react';
 import { useMasterList } from '@/lib/hooks/use-master-list';
 import { InteractiveWearTypeBar } from '@/components/wear-type-progress-bar';
+import { ServiceLifePicker, type ServiceLifeValue } from '@/components/ui/service-life-picker';
 
 // Dynamic imports for heavy components (saves ~150KB)
 const VoiceInput = dynamic(() => import('@/components/voice-input'), {
@@ -77,66 +78,32 @@ export default function StepThree({ formData, updateFormData }: Props) {
         />
       </div>
 
-      {/* Previous Service Life - with scale selector */}
+      {/* Previous Service Life - mobile-friendly picker */}
       <div className="space-y-2">
-        <Label className="dark:text-foreground">Previous Service Life</Label>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1">
-            <Input
-              type="number"
-              min="0"
-              value={formData.previousServiceLifeHours || ''}
-              onChange={(e) => updateFormData({ previousServiceLifeHours: e.target.value })}
-              placeholder="0"
-              className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
-            />
-            <span className="text-sm text-muted-foreground font-medium">h</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Input
-              type="number"
-              min="0"
-              value={formData.previousServiceLifeDays || ''}
-              onChange={(e) => updateFormData({ previousServiceLifeDays: e.target.value })}
-              placeholder="0"
-              className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
-            />
-            <span className="text-sm text-muted-foreground font-medium">d</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Input
-              type="number"
-              min="0"
-              value={formData.previousServiceLifeWeeks || ''}
-              onChange={(e) => updateFormData({ previousServiceLifeWeeks: e.target.value })}
-              placeholder="0"
-              className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
-            />
-            <span className="text-sm text-muted-foreground font-medium">w</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Input
-              type="number"
-              min="0"
-              value={formData.previousServiceLifeMonths || ''}
-              onChange={(e) => updateFormData({ previousServiceLifeMonths: e.target.value })}
-              placeholder="0"
-              className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
-            />
-            <span className="text-sm text-muted-foreground font-medium">m</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Input
-              type="number"
-              min="0"
-              value={formData.previousServiceLifeYears || ''}
-              onChange={(e) => updateFormData({ previousServiceLifeYears: e.target.value })}
-              placeholder="0"
-              className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
-            />
-            <span className="text-sm text-muted-foreground font-medium">y</span>
-          </div>
-        </div>
+        <Label className="dark:text-foreground">
+          Previous Service Life <span className="text-red-500 dark:text-red-400">*</span>
+        </Label>
+        <p className="text-xs text-muted-foreground">Tap to select duration</p>
+        <ServiceLifePicker
+          label="Previous Service Life"
+          required
+          value={{
+            hours: parseInt(formData.previousServiceLifeHours || '0') || 0,
+            days: parseInt(formData.previousServiceLifeDays || '0') || 0,
+            weeks: parseInt(formData.previousServiceLifeWeeks || '0') || 0,
+            months: parseInt(formData.previousServiceLifeMonths || '0') || 0,
+            years: parseInt(formData.previousServiceLifeYears || '0') || 0,
+          }}
+          onChange={(val: ServiceLifeValue) => {
+            updateFormData({
+              previousServiceLifeHours: val.hours > 0 ? String(val.hours) : '',
+              previousServiceLifeDays: val.days > 0 ? String(val.days) : '',
+              previousServiceLifeWeeks: val.weeks > 0 ? String(val.weeks) : '',
+              previousServiceLifeMonths: val.months > 0 ? String(val.months) : '',
+              previousServiceLifeYears: val.years > 0 ? String(val.years) : '',
+            });
+          }}
+        />
       </div>
 
       {/* Competitor Name */}
@@ -176,7 +143,7 @@ export default function StepThree({ formData, updateFormData }: Props) {
                   key={wear.id}
                   label={displayLabel}
                   value={severity}
-                  maxValue={6}
+                  maxValue={5}
                   onChange={(newSeverity) => {
                     const newSeverities = { ...formData.wearSeverities };
 
@@ -199,11 +166,11 @@ export default function StepThree({ formData, updateFormData }: Props) {
               );
             })}
 
-            {/* Other wear types - multiple entries with fixed alignment */}
+            {/* Other wear types - multiple entries with stars (aligned with main wear types) */}
             {(formData.wearTypeOthers || []).map((other, index) => (
               <div
                 key={index}
-                className="flex items-center gap-1 mb-1 font-sans"
+                className="flex items-center mb-2 font-sans"
               >
                 <input
                   placeholder="Other..."
@@ -213,20 +180,16 @@ export default function StepThree({ formData, updateFormData }: Props) {
                     newOthers[index] = { ...newOthers[index], name: e.target.value };
                     updateFormData({ wearTypeOthers: newOthers });
                   }}
-                  className="text-xs w-28 h-5 px-1 border border-border rounded flex-shrink-0 bg-input text-foreground"
+                  className="text-sm w-28 h-7 px-2 border border-border rounded flex-shrink-0 bg-input text-foreground"
                 />
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5, 6].map((level) => {
+                <div className="flex gap-0.5 ml-0">
+                  {[1, 2, 3, 4, 5].map((level) => {
                     const isFilled = level <= other.severity;
                     return (
                       <button
                         key={level}
                         type="button"
-                        className={`no-min-touch transition-colors ${
-                          isFilled
-                            ? 'bg-wa-green-600 hover:bg-wa-green-500'
-                            : 'bg-gray-300 dark:bg-gray-600 hover:bg-wa-green-200 dark:hover:bg-wa-green-800'
-                        }`}
+                        className="no-min-touch transition-colors p-0.5"
                         onClick={() => {
                           const newOthers = [...(formData.wearTypeOthers || [])];
                           newOthers[index] = {
@@ -236,19 +199,26 @@ export default function StepThree({ formData, updateFormData }: Props) {
                           updateFormData({ wearTypeOthers: newOthers });
                         }}
                         style={{
-                          width: 22,
-                          height: 8,
-                          minWidth: 22,
-                          minHeight: 8,
-                          maxWidth: 22,
-                          maxHeight: 8,
+                          background: 'none',
                           border: 'none',
-                          padding: 0,
-                          margin: 0,
                           cursor: 'pointer',
                         }}
                         aria-label={`${other.name || 'Other'} severity ${level}`}
-                      />
+                      >
+                        <svg
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill={isFilled ? '#16a34a' : 'none'}
+                          stroke={isFilled ? '#16a34a' : '#9ca3af'}
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="transition-colors hover:stroke-wa-green-500"
+                        >
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                      </button>
                     );
                   })}
                 </div>

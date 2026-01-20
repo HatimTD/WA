@@ -128,12 +128,12 @@ export default function WearTypeProgressBar({
 }
 
 /**
- * Interactive version for forms - clickable segments matching progressbar.png style
+ * Interactive version for forms - clickable stars (green)
  */
 export function InteractiveWearTypeBar({
   label,
   value,
-  maxValue = 6,
+  maxValue = 5,
   onChange,
 }: {
   label: string;
@@ -142,11 +142,11 @@ export function InteractiveWearTypeBar({
   onChange: (newValue: number) => void;
 }) {
   return (
-    <div className="flex items-center mb-1 font-sans">
-      <span className="text-xs text-foreground w-28 flex-shrink-0">
+    <div className="flex items-center mb-2 font-sans">
+      <span className="text-sm text-foreground w-28 flex-shrink-0">
         {label}
       </span>
-      <div className="flex gap-1">
+      <div className="flex gap-0.5">
         {Array.from({ length: maxValue }).map((_, idx) => {
           const level = idx + 1;
           const isFilled = idx < value;
@@ -154,26 +154,29 @@ export function InteractiveWearTypeBar({
             <button
               key={idx}
               type="button"
-              className={`no-min-touch transition-colors ${
-                isFilled
-                  ? 'bg-wa-green-600 hover:bg-wa-green-500'
-                  : 'bg-gray-300 dark:bg-gray-600 hover:bg-wa-green-200 dark:hover:bg-wa-green-800'
-              }`}
+              className="no-min-touch transition-colors p-0.5"
               onClick={() => onChange(value === level ? 0 : level)}
               style={{
-                width: 22,
-                height: 8,
-                minWidth: 22,
-                minHeight: 8,
-                maxWidth: 22,
-                maxHeight: 8,
+                background: 'none',
                 border: 'none',
-                padding: 0,
-                margin: 0,
                 cursor: 'pointer',
               }}
               aria-label={`Set ${label} to ${level}`}
-            />
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill={isFilled ? '#16a34a' : 'none'}
+                stroke={isFilled ? '#16a34a' : '#9ca3af'}
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="transition-colors hover:stroke-wa-green-500"
+              >
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
+            </button>
           );
         })}
       </div>

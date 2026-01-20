@@ -58,3 +58,4 @@ nul
 # SBOM generated files (keep README.md)
 sbom/*.json
 sbom/*.xml
+tmpclaude-*-cwd

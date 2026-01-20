@@ -120,14 +120,48 @@ export type CaseStudyFormData = {
     baseMetalGrade?: string;
     baseMetalThickness?: string;
     surfacePreparation?: string;
-    // WA Product
+    surfacePreparationOther?: string;
+    // Layers (new multi-layer structure for consumables, parameters, and oscillation)
+    layers?: Array<{
+      id: string;
+      // WA Consumables
+      waProductName?: string;
+      waProductDiameter?: string;
+      weldingProcess?: string;
+      weldingProcessOther?: string;
+      technique?: string;
+      techniqueOther?: string;
+      weldingPosition?: string;
+      weldingPositionOther?: string;
+      torchAngle?: string;
+      shieldingGas?: string;
+      shieldingGasOther?: string;
+      shieldingFlowRate?: string;
+      flux?: string;
+      fluxOther?: string;
+      standardDesignation?: string;
+      // WA Parameters
+      stickOut?: string;
+      currentType?: string;
+      currentModeSynergy?: string;
+      currentModeSynergyOther?: string;
+      wireFeedSpeed?: string;
+      intensity?: string;
+      voltage?: string;
+      travelSpeed?: string;
+      // Oscillation Details
+      oscillationAmplitude?: string;
+      oscillationPeriod?: string;
+      oscillationTempos?: string;
+    }>;
+    // Legacy WA Product (kept for backward compatibility)
     waProductName?: string;
     waProductDiameter?: string;
     shieldingGas?: string;
     shieldingFlowRate?: string;
     flux?: string;
     standardDesignation?: string;
-    // Welding Parameters
+    // Legacy Welding Parameters
     weldingProcess?: string;
     currentType?: string;
     currentModeSynergy?: string;
@@ -139,17 +173,28 @@ export type CaseStudyFormData = {
     torchAngle?: string;
     stickOut?: string;
     travelSpeed?: string;
-    // Oscillation
+    // Legacy Oscillation
     oscillationWidth?: string;
     oscillationSpeed?: string;
     oscillationStepOver?: string;
     oscillationTempo?: string;
-    // Temperature
+    // Heating Procedure (new fields)
+    preheatingTemp?: string;
+    interpassTemp?: string;
+    postheatingTemp?: string;
+    // PWHT (new fields)
+    pwhtRequired?: string; // 'Y' or 'N'
+    pwhtHeatingRate?: string;
+    pwhtTempHoldingTime?: string;
+    pwhtCoolingRate?: string;
+    // Legacy Temperature (kept for backward compatibility)
     preheatTemperature?: string;
     interpassTemperature?: string;
     postheatTemperature?: string;
     pwhtDetails?: string;
-    // Results
+    // Documents (new field)
+    documents?: Array<{ name: string; size?: number; type?: string; url?: string; file?: File }>;
+    // Legacy Results
     layerNumbers?: number;
     hardness?: string;
     defectsObserved?: string;
@@ -306,14 +351,23 @@ export default function NewCaseStudyPage() {
         break;
       case 'Basic Info':
         if (!formData.title) missing.push('Industrial Challenge Title');
-        if (!formData.customerName) missing.push('Customer Name');
+        if (!formData.generalDescription) missing.push('General Description');
         if (!formData.location) missing.push('Location');
+        if (!formData.country) missing.push('Country');
         if (!formData.componentWorkpiece) missing.push('Component/Workpiece');
         if (!formData.workType) missing.push('Work Type');
         if (!formData.jobType) missing.push('Job Type');
         if (formData.jobType === 'OTHER' && !formData.jobTypeOther) missing.push('Job Type (specify)');
         break;
       case 'The Challenge':
+        if (!formData.problemDescription) missing.push('Problem Description');
+        // Previous service life validation - at least one time unit must have a value
+        const hasPreviousServiceLife = formData.previousServiceLifeHours ||
+          formData.previousServiceLifeDays ||
+          formData.previousServiceLifeWeeks ||
+          formData.previousServiceLifeMonths ||
+          formData.previousServiceLifeYears;
+        if (!hasPreviousServiceLife) missing.push('Previous Service Life');
         // Wear type validation
         if (!formData.wearType || formData.wearType.length === 0) missing.push('Type of Wear');
         // Check that at least one selected wear type has a severity
@@ -323,16 +377,21 @@ export default function NewCaseStudyPage() {
         if (formData.wearType && formData.wearType.length > 0 && (!wearTypesWithSeverity || wearTypesWithSeverity.length === 0)) {
           missing.push('Wear Severity (set for at least one wear type)');
         }
-        if (!formData.problemDescription) missing.push('Problem Description');
         break;
       case 'The Solution':
         // Base metal, dimensions moved here from Problem step
         if (!formData.baseMetal) missing.push('Base Metal');
         if (!formData.generalDimensions) missing.push('General Dimensions');
-        if (!formData.waSolution) missing.push('WA Solution');
-        if (!formData.waProduct) missing.push('WA Product');
+        if (!formData.waSolution) missing.push('WA Solution Description');
+        if (!formData.waProduct) missing.push('WA Product Used');
+        if (!formData.waProductDiameter) missing.push('Diameter');
+        // Job duration validation - at least one time unit must have a value
+        const hasJobDuration = formData.jobDurationHours ||
+          formData.jobDurationDays ||
+          formData.jobDurationWeeks;
+        if (!hasJobDuration) missing.push('Job Duration');
         if (!formData.technicalAdvantages) missing.push('Technical Advantages');
-        if (!formData.images || formData.images.length < 1) missing.push('At least 1 image');
+        if (!formData.images || formData.images.length < 2) missing.push('At least 2 images');
         break;
       case 'Welding Procedure':
         // WPS is required for TECH cases
@@ -594,7 +653,7 @@ export default function NewCaseStudyPage() {
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">Create New Case Study</h1>
         <p className="text-gray-600 dark:text-muted-foreground mt-2">
-          Document a challenge and solution in just a few minutes
+          Create and submit your solved challenge in just a few minutes.
         </p>
       </div>
 
@@ -862,7 +921,6 @@ export default function NewCaseStudyPage() {
             <StepTwo
               formData={formData}
               updateFormData={updateFormData}
-              customerReadOnly={formData.customerSelected}
             />
           )}
           {STEPS[currentStep - 1]?.title === 'The Challenge' && (
