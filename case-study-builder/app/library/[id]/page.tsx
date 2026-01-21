@@ -18,7 +18,24 @@ import {
   Calendar,
   FileText,
 } from 'lucide-react';
-import WearTypeProgressBar from '@/components/wear-type-progress-bar';
+import { WearTypeStarsDisplay } from '@/components/wear-type-progress-bar';
+
+// Helper to format expanded service life (hours, days, weeks, months, years)
+function waFormatExpandedServiceLife(data: {
+  hours?: string | null;
+  days?: string | null;
+  weeks?: string | null;
+  months?: string | null;
+  years?: string | null;
+}): string | null {
+  const parts: string[] = [];
+  if (data.years && parseInt(data.years) > 0) parts.push(`${data.years}y`);
+  if (data.months && parseInt(data.months) > 0) parts.push(`${data.months}mo`);
+  if (data.weeks && parseInt(data.weeks) > 0) parts.push(`${data.weeks}w`);
+  if (data.days && parseInt(data.days) > 0) parts.push(`${data.days}d`);
+  if (data.hours && parseInt(data.hours) > 0) parts.push(`${data.hours}h`);
+  return parts.length > 0 ? parts.join(' ') : null;
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -58,6 +75,30 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
   // Only show approved cases in public library
   if (!caseStudy || caseStudy.status !== 'APPROVED') {
     notFound();
+  }
+
+  // BRD: Show translated content (English) by default for public library
+  const hasTranslation = Boolean(caseStudy.translationAvailable && caseStudy.translatedText);
+  let displayContent = {
+    problemDescription: caseStudy.problemDescription,
+    previousSolution: caseStudy.previousSolution,
+    technicalAdvantages: caseStudy.technicalAdvantages,
+    waSolution: caseStudy.waSolution,
+  };
+
+  if (hasTranslation) {
+    try {
+      const translation = JSON.parse(caseStudy.translatedText!);
+      const fields = translation.fields || {};
+      displayContent = {
+        problemDescription: fields.problemDescription || caseStudy.problemDescription,
+        previousSolution: fields.previousSolution || caseStudy.previousSolution,
+        technicalAdvantages: fields.technicalAdvantages || caseStudy.technicalAdvantages,
+        waSolution: fields.waSolution || caseStudy.waSolution,
+      };
+    } catch {
+      // If parsing fails, use original content
+    }
   }
 
   return (
@@ -166,10 +207,11 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
                   <FileText className="h-5 w-5 text-wa-green-600 mt-0.5" />
                   <div className="flex-1">
                     <p className="font-medium text-sm text-gray-600 mb-2">Wear Types</p>
-                    <WearTypeProgressBar
+                    <WearTypeStarsDisplay
                       wearTypes={caseStudy.wearType}
                       wearSeverities={caseStudy.wearSeverities as Record<string, number> | null}
                       wearTypeOthers={caseStudy.wearTypeOthers as { name: string; severity: number }[] | null}
+                      showOnlySelected
                     />
                   </div>
                 </div>
@@ -199,17 +241,17 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
             <CardTitle>Problem Description</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-700 whitespace-pre-wrap">{caseStudy.problemDescription}</p>
+            <p className="text-gray-700 whitespace-pre-wrap">{displayContent.problemDescription}</p>
           </CardContent>
         </Card>
 
-        {caseStudy.previousSolution && (
+        {displayContent.previousSolution && (
           <Card role="article">
             <CardHeader>
               <CardTitle>Previous Solution</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-700 whitespace-pre-wrap">{caseStudy.previousSolution}</p>
+              <p className="text-gray-700 whitespace-pre-wrap">{displayContent.previousSolution}</p>
               {caseStudy.previousServiceLife && (
                 <p className="text-sm text-gray-600 mt-2">
                   <span className="font-medium">Previous Service Life:</span>{' '}
@@ -244,13 +286,13 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
             </div>
             <div>
               <p className="font-medium text-sm text-green-700 mb-2">Solution Description</p>
-              <p className="text-gray-700 whitespace-pre-wrap">{caseStudy.waSolution}</p>
+              <p className="text-gray-700 whitespace-pre-wrap">{displayContent.waSolution}</p>
             </div>
-            {caseStudy.technicalAdvantages && (
+            {displayContent.technicalAdvantages && (
               <div>
                 <p className="font-medium text-sm text-green-700 mb-2">Technical Advantages</p>
                 <p className="text-gray-700 whitespace-pre-wrap">
-                  {caseStudy.technicalAdvantages}
+                  {displayContent.technicalAdvantages}
                 </p>
               </div>
             )}
@@ -267,11 +309,23 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-2 gap-6">
-              {caseStudy.expectedServiceLife && (
+              {(caseStudy.expectedServiceLife || waFormatExpandedServiceLife({
+                hours: caseStudy.expectedServiceLifeHours,
+                days: caseStudy.expectedServiceLifeDays,
+                weeks: caseStudy.expectedServiceLifeWeeks,
+                months: caseStudy.expectedServiceLifeMonths,
+                years: caseStudy.expectedServiceLifeYears,
+              })) && (
                 <div>
                   <p className="font-medium text-sm text-gray-600 mb-1">Expected Service Life</p>
                   <p className="text-2xl font-bold text-wa-green-600">
-                    {caseStudy.expectedServiceLife}
+                    {waFormatExpandedServiceLife({
+                      hours: caseStudy.expectedServiceLifeHours,
+                      days: caseStudy.expectedServiceLifeDays,
+                      weeks: caseStudy.expectedServiceLifeWeeks,
+                      months: caseStudy.expectedServiceLifeMonths,
+                      years: caseStudy.expectedServiceLifeYears,
+                    }) || caseStudy.expectedServiceLife}
                   </p>
                 </div>
               )}

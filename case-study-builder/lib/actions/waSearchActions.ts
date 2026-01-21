@@ -24,6 +24,7 @@ type WaSearchFilters = {
   contributorId?: string;
   minRevenue?: number;
   maxRevenue?: number;
+  region?: string; // Contributor's region filter
 };
 
 export async function waSearchCaseStudies(filters: WaSearchFilters) {
@@ -107,6 +108,14 @@ export async function waSearchCaseStudies(filters: WaSearchFilters) {
     // BRD: Contributor filter
     if (filters.contributorId) {
       where.contributorId = filters.contributorId;
+    }
+
+    // Region filter (filters by contributor's region)
+    if (filters.region) {
+      where.contributor = {
+        ...((where.contributor as object) || {}),
+        region: filters.region,
+      };
     }
 
     // BRD: Revenue filter (using annualPotentialRevenue)

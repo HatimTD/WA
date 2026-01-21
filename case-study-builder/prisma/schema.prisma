@@ -431,6 +431,9 @@ model WaCaseStudy {
   type   CaseType @default(APPLICATION)
   status Status   @default(DRAFT)
 
+  // Draft navigation - track which step user was on when saving draft
+  lastEditedStep Int?
+
   // Contributors & Approval
   contributorId String
   contributor   User      @relation("Contributor", fields: [contributorId], references: [id])
@@ -638,21 +641,28 @@ model WaWeldingProcedure {
   caseStudy   WaCaseStudy @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
 
   // Base Metal
-  baseMetalType      String?
-  baseMetalGrade     String?
-  baseMetalThickness String?
-  surfacePreparation String?
+  baseMetalType           String?
+  baseMetalGrade          String?
+  baseMetalThickness      String?
+  surfacePreparation      String?
+  surfacePreparationOther String?
 
-  // WA Product
-  waProductName       String
+  // Layers - JSON array of WpsLayer objects containing consumables, parameters, and oscillation
+  // Each layer includes: waProductName, waProductDiameter, weldingProcess, technique, weldingPosition,
+  // torchAngle, shieldingGas, flux, stickOut, currentType, currentModeSynergy, wireFeedSpeed,
+  // intensity, voltage, travelSpeed, oscillationAmplitude, oscillationPeriod, oscillationTempos
+  layers Json?
+
+  // Legacy WA Product fields (kept for backward compatibility, now stored per-layer)
+  waProductName       String?
   waProductDiameter   String?
   shieldingGas        String?
   shieldingFlowRate   String?
   flux                String?
   standardDesignation String?
 
-  // Welding Parameters
-  weldingProcess     String
+  // Legacy Welding Parameters (now stored per-layer)
+  weldingProcess     String?
   currentType        String?
   currentModeSynergy String?
   wireFeedSpeed      String?
@@ -664,19 +674,33 @@ model WaWeldingProcedure {
   stickOut           String?
   travelSpeed        String?
 
-  // Oscillation
+  // Legacy Oscillation (now stored per-layer)
   oscillationWidth    String?
   oscillationSpeed    String?
   oscillationStepOver String?
   oscillationTempo    String?
 
-  // Temperature
+  // Heating Procedure
+  preheatingTemp   String?
+  interpassTemp    String?
+  postheatingTemp  String?
+
+  // PWHT (Post Weld Heat Treatment)
+  pwhtRequired       String? // 'Y' or 'N'
+  pwhtHeatingRate    String?
+  pwhtTempHoldingTime String?
+  pwhtCoolingRate    String?
+
+  // Legacy Temperature fields (kept for backward compatibility)
   preheatTemperature   String?
   interpassTemperature String?
   postheatTemperature  String?
   pwhtDetails          String?
 
-  // Results
+  // Supporting Documents (JSON array of document metadata)
+  documents Json?
+
+  // Results (legacy)
   layerNumbers    Int?
   hardness        String?
   defectsObserved String?

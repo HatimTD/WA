@@ -1,98 +1,48 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { FileText, ChevronDown, ChevronUp, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { FileText, Save, ChevronDown, ChevronUp } from 'lucide-react';
-import { waSaveWeldingProcedure, type WaWpsFormData } from '@/lib/actions/waWpsActions';
-import { toast } from 'sonner';
+import type { WaWpsFormData, WpsLayer } from '@/lib/actions/waWpsActions';
 
 type WeldingProcedureFormProps = {
   caseStudyId: string;
   existingData?: Partial<WaWpsFormData>;
 };
 
+// Helper to display value or placeholder
+function waDisplayValue(value: string | number | undefined | null, placeholder = '-'): string {
+  if (value === undefined || value === null || value === '') return placeholder;
+  return String(value);
+}
+
 export default function WeldingProcedureForm({ caseStudyId, existingData }: WeldingProcedureFormProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [values, setValues] = useState<Omit<WaWpsFormData, 'caseStudyId'>>({
-    // Base Metal
-    baseMetalType: existingData?.baseMetalType || '',
-    baseMetalGrade: existingData?.baseMetalGrade || '',
-    baseMetalThickness: existingData?.baseMetalThickness || '',
-    surfacePreparation: existingData?.surfacePreparation || '',
-    // WA Product
-    waProductName: existingData?.waProductName || '',
-    waProductDiameter: existingData?.waProductDiameter || '',
-    shieldingGas: existingData?.shieldingGas || '',
-    shieldingFlowRate: existingData?.shieldingFlowRate || '',
-    flux: existingData?.flux || '',
-    standardDesignation: existingData?.standardDesignation || '',
-    // Welding Parameters
-    weldingProcess: existingData?.weldingProcess || '',
-    currentType: existingData?.currentType || '',
-    currentModeSynergy: existingData?.currentModeSynergy || '',
-    wireFeedSpeed: existingData?.wireFeedSpeed || '',
-    intensity: existingData?.intensity || '',
-    voltage: existingData?.voltage || '',
-    heatInput: existingData?.heatInput || '',
-    weldingPosition: existingData?.weldingPosition || '',
-    torchAngle: existingData?.torchAngle || '',
-    stickOut: existingData?.stickOut || '',
-    travelSpeed: existingData?.travelSpeed || '',
-    // Oscillation
-    oscillationWidth: existingData?.oscillationWidth || '',
-    oscillationSpeed: existingData?.oscillationSpeed || '',
-    oscillationStepOver: existingData?.oscillationStepOver || '',
-    oscillationTempo: existingData?.oscillationTempo || '',
-    // Temperature
-    preheatTemperature: existingData?.preheatTemperature || '',
-    interpassTemperature: existingData?.interpassTemperature || '',
-    postheatTemperature: existingData?.postheatTemperature || '',
-    pwhtDetails: existingData?.pwhtDetails || '',
-    // Results
-    layerNumbers: existingData?.layerNumbers || undefined,
-    hardness: existingData?.hardness || '',
-    defectsObserved: existingData?.defectsObserved || '',
-    additionalNotes: existingData?.additionalNotes || '',
-  });
 
-  const handleChange = (field: keyof typeof values, value: string | number) => {
-    setValues({ ...values, [field]: value });
-  };
-
-  const handleSave = async () => {
-    // Validate required fields
-    if (!values.waProductName || !values.weldingProcess) {
-      toast.error('Please fill in WA Product Name and Welding Process (required fields)');
-      return;
-    }
-
-    setIsSaving(true);
-
-    try {
-      const result = await waSaveWeldingProcedure({
-        caseStudyId,
-        ...values,
-      });
-
-      if (result.success) {
-        toast.success('Welding Procedure Specification saved successfully!');
-      } else {
-        toast.error(result.error || 'Failed to save WPS');
-      }
-    } catch (error) {
-      console.error('[WeldingProcedureForm] Error:', error);
-      toast.error('An error occurred while saving');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
+  // Check if we have layers (new structure) or legacy data
+  const layers = existingData?.layers as WpsLayer[] | undefined;
+  const hasLayers = layers && layers.length > 0;
   const hasData = existingData && Object.keys(existingData).length > 0;
+
+  if (!hasData) {
+    return (
+      <Card className="dark:bg-card dark:border-border">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <FileText className="h-6 w-6 text-wa-green-600 dark:text-primary" />
+            <div>
+              <CardTitle className="dark:text-foreground">Welding Procedure Specification (WPS)</CardTitle>
+              <CardDescription className="dark:text-muted-foreground">
+                No WPS data available for this case study
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   return (
     <Card className="dark:bg-card dark:border-border">
@@ -103,7 +53,7 @@ export default function WeldingProcedureForm({ caseStudyId, existingData }: Weld
             <div>
               <CardTitle className="dark:text-foreground">Welding Procedure Specification (WPS)</CardTitle>
               <CardDescription className="dark:text-muted-foreground">
-                {hasData ? 'View or edit the welding parameters' : 'Add detailed welding parameters for this case study'}
+                {hasLayers ? `${layers.length} layer(s) documented` : 'View welding parameters'}
               </CardDescription>
             </div>
           </div>
@@ -120,7 +70,7 @@ export default function WeldingProcedureForm({ caseStudyId, existingData }: Weld
             ) : (
               <>
                 <ChevronDown className="h-4 w-4 mr-2" />
-                {hasData ? 'View WPS' : 'Add WPS'}
+                View WPS
               </>
             )}
           </Button>
@@ -134,387 +84,362 @@ export default function WeldingProcedureForm({ caseStudyId, existingData }: Weld
             <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground border-b dark:border-border pb-2">Base Metal</h3>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="baseMetalType" className="dark:text-foreground">Base Metal Type</Label>
-                <Input
-                  id="baseMetalType"
-                  value={values.baseMetalType}
-                  onChange={(e) => handleChange('baseMetalType', e.target.value)}
-                  placeholder="e.g., Carbon Steel, Stainless Steel"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
+                <Label className="text-sm text-muted-foreground">Base Metal Type</Label>
+                <p className="font-medium dark:text-foreground">{waDisplayValue(existingData?.baseMetalType)}</p>
               </div>
               <div>
-                <Label htmlFor="baseMetalGrade" className="dark:text-foreground">Base Metal Grade</Label>
-                <Input
-                  id="baseMetalGrade"
-                  value={values.baseMetalGrade}
-                  onChange={(e) => handleChange('baseMetalGrade', e.target.value)}
-                  placeholder="e.g., ASTM A36, 316L"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
-              </div>
-              <div>
-                <Label htmlFor="baseMetalThickness" className="dark:text-foreground">Base Metal Thickness</Label>
-                <Input
-                  id="baseMetalThickness"
-                  value={values.baseMetalThickness}
-                  onChange={(e) => handleChange('baseMetalThickness', e.target.value)}
-                  placeholder="e.g., 10mm, 0.5 inch"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
-              </div>
-              <div>
-                <Label htmlFor="surfacePreparation" className="dark:text-foreground">Surface Preparation</Label>
-                <Input
-                  id="surfacePreparation"
-                  value={values.surfacePreparation}
-                  onChange={(e) => handleChange('surfacePreparation', e.target.value)}
-                  placeholder="e.g., Grinding, Machining"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
+                <Label className="text-sm text-muted-foreground">Surface Preparation</Label>
+                <p className="font-medium dark:text-foreground">
+                  {waDisplayValue(existingData?.surfacePreparation)}
+                  {existingData?.surfacePreparationOther && ` - ${existingData.surfacePreparationOther}`}
+                </p>
               </div>
             </div>
           </div>
 
-          {/* WA Product Section */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground border-b dark:border-border pb-2">WA Product</h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="waProductName" className="dark:text-foreground">
-                  WA Product Name <span className="text-red-500 dark:text-red-400">*</span>
-                </Label>
-                <Input
-                  id="waProductName"
-                  value={values.waProductName}
-                  onChange={(e) => handleChange('waProductName', e.target.value)}
-                  placeholder="e.g., Maxim 400, ENDURA 380"
-                  required
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
+          {/* Welding Layers Section */}
+          {hasLayers ? (
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground border-b dark:border-border pb-2 flex items-center gap-2">
+                <Layers className="h-5 w-5" />
+                Welding Layers
+              </h3>
+              {layers.map((layer, index) => (
+                <div key={layer.id || index} className="border border-border rounded-lg p-4 space-y-4">
+                  <h4 className="font-semibold text-wa-green-600 dark:text-primary">
+                    Layer {index + 1}
+                    {layer.waProductName && ` - ${layer.waProductName}`}
+                  </h4>
+
+                  {/* WA Consumables */}
+                  <div className="space-y-2">
+                    <h5 className="font-medium text-sm text-gray-700 dark:text-gray-300">WA Consumables</h5>
+                    <div className="grid md:grid-cols-3 gap-3 text-sm">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Product Name</Label>
+                        <p className="font-medium dark:text-foreground">{waDisplayValue(layer.waProductName)}</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Diameter</Label>
+                        <p className="font-medium dark:text-foreground">{waDisplayValue(layer.waProductDiameter)} {layer.waProductDiameter && 'mm'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Process</Label>
+                        <p className="font-medium dark:text-foreground">
+                          {waDisplayValue(layer.weldingProcess)}
+                          {layer.weldingProcessOther && ` - ${layer.weldingProcessOther}`}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Technique</Label>
+                        <p className="font-medium dark:text-foreground">
+                          {waDisplayValue(layer.technique)}
+                          {layer.techniqueOther && ` - ${layer.techniqueOther}`}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Welding Position</Label>
+                        <p className="font-medium dark:text-foreground">
+                          {waDisplayValue(layer.weldingPosition)}
+                          {layer.weldingPositionOther && ` - ${layer.weldingPositionOther}`}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Torch Position</Label>
+                        <p className="font-medium dark:text-foreground">{waDisplayValue(layer.torchAngle)}</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Shielding Gas</Label>
+                        <p className="font-medium dark:text-foreground">
+                          {waDisplayValue(layer.shieldingGas)}
+                          {layer.shieldingGasOther && ` - ${layer.shieldingGasOther}`}
+                        </p>
+                      </div>
+                      {layer.shieldingFlowRate && (
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Flow Rate</Label>
+                          <p className="font-medium dark:text-foreground">{layer.shieldingFlowRate}</p>
+                        </div>
+                      )}
+                      {layer.flux && (
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Flux</Label>
+                          <p className="font-medium dark:text-foreground">
+                            {layer.flux}
+                            {layer.fluxOther && ` - ${layer.fluxOther}`}
+                          </p>
+                        </div>
+                      )}
+                      {layer.standardDesignation && (
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Standard Designation</Label>
+                          <p className="font-medium dark:text-foreground">{layer.standardDesignation}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* WA Parameters */}
+                  <div className="space-y-2">
+                    <h5 className="font-medium text-sm text-gray-700 dark:text-gray-300">WA Parameters</h5>
+                    <div className="grid md:grid-cols-4 gap-3 text-sm">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Stick-out</Label>
+                        <p className="font-medium dark:text-foreground">{waDisplayValue(layer.stickOut)} {layer.stickOut && 'mm'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Type of Current</Label>
+                        <p className="font-medium dark:text-foreground">{waDisplayValue(layer.currentType)}</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Welding Mode</Label>
+                        <p className="font-medium dark:text-foreground">
+                          {waDisplayValue(layer.currentModeSynergy)}
+                          {layer.currentModeSynergyOther && ` - ${layer.currentModeSynergyOther}`}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Wire Feed Speed</Label>
+                        <p className="font-medium dark:text-foreground">{waDisplayValue(layer.wireFeedSpeed)} {layer.wireFeedSpeed && 'm/min'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Intensity</Label>
+                        <p className="font-medium dark:text-foreground">{waDisplayValue(layer.intensity)} {layer.intensity && 'A'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Voltage</Label>
+                        <p className="font-medium dark:text-foreground">{waDisplayValue(layer.voltage)} {layer.voltage && 'V'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Welding Speed</Label>
+                        <p className="font-medium dark:text-foreground">{waDisplayValue(layer.travelSpeed)} {layer.travelSpeed && 'cm/min'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Oscillation Details */}
+                  {(layer.oscillationAmplitude || layer.oscillationPeriod || layer.oscillationTempos) && (
+                    <div className="space-y-2">
+                      <h5 className="font-medium text-sm text-gray-700 dark:text-gray-300">Oscillation Details</h5>
+                      <div className="grid md:grid-cols-3 gap-3 text-sm">
+                        {layer.oscillationAmplitude && (
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Amplitude</Label>
+                            <p className="font-medium dark:text-foreground">{layer.oscillationAmplitude} mm</p>
+                          </div>
+                        )}
+                        {layer.oscillationPeriod && (
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Period</Label>
+                            <p className="font-medium dark:text-foreground">{layer.oscillationPeriod} s</p>
+                          </div>
+                        )}
+                        {layer.oscillationTempos && (
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Tempos</Label>
+                            <p className="font-medium dark:text-foreground">{layer.oscillationTempos} s</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            /* Legacy WA Product Display */
+            <>
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground border-b dark:border-border pb-2">WA Product</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm text-muted-foreground">WA Product Name</Label>
+                    <p className="font-medium dark:text-foreground">{waDisplayValue(existingData?.waProductName)}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">WA Product Diameter</Label>
+                    <p className="font-medium dark:text-foreground">{waDisplayValue(existingData?.waProductDiameter)}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Shielding Gas</Label>
+                    <p className="font-medium dark:text-foreground">{waDisplayValue(existingData?.shieldingGas)}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Shielding Flow Rate</Label>
+                    <p className="font-medium dark:text-foreground">{waDisplayValue(existingData?.shieldingFlowRate)}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Flux</Label>
+                    <p className="font-medium dark:text-foreground">{waDisplayValue(existingData?.flux)}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Standard Designation</Label>
+                    <p className="font-medium dark:text-foreground">{waDisplayValue(existingData?.standardDesignation)}</p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <Label htmlFor="waProductDiameter" className="dark:text-foreground">WA Product Diameter</Label>
-                <Input
-                  id="waProductDiameter"
-                  value={values.waProductDiameter}
-                  onChange={(e) => handleChange('waProductDiameter', e.target.value)}
-                  placeholder="e.g., 1.2mm, 3/32 inch"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground border-b dark:border-border pb-2">Welding Parameters</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Welding Process</Label>
+                    <p className="font-medium dark:text-foreground">{waDisplayValue(existingData?.weldingProcess)}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Current Type</Label>
+                    <p className="font-medium dark:text-foreground">{waDisplayValue(existingData?.currentType)}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Current Mode/Synergy</Label>
+                    <p className="font-medium dark:text-foreground">{waDisplayValue(existingData?.currentModeSynergy)}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Wire Feed Speed</Label>
+                    <p className="font-medium dark:text-foreground">{waDisplayValue(existingData?.wireFeedSpeed)}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Intensity (Current)</Label>
+                    <p className="font-medium dark:text-foreground">{waDisplayValue(existingData?.intensity)}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Voltage</Label>
+                    <p className="font-medium dark:text-foreground">{waDisplayValue(existingData?.voltage)}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Travel Speed</Label>
+                    <p className="font-medium dark:text-foreground">{waDisplayValue(existingData?.travelSpeed)}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Welding Position</Label>
+                    <p className="font-medium dark:text-foreground">{waDisplayValue(existingData?.weldingPosition)}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Torch Angle</Label>
+                    <p className="font-medium dark:text-foreground">{waDisplayValue(existingData?.torchAngle)}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Stick Out (CTWD)</Label>
+                    <p className="font-medium dark:text-foreground">{waDisplayValue(existingData?.stickOut)}</p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <Label htmlFor="shieldingGas" className="dark:text-foreground">Shielding Gas</Label>
-                <Input
-                  id="shieldingGas"
-                  value={values.shieldingGas}
-                  onChange={(e) => handleChange('shieldingGas', e.target.value)}
-                  placeholder="e.g., Ar/CO2 80/20"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
-              </div>
-              <div>
-                <Label htmlFor="shieldingFlowRate" className="dark:text-foreground">Shielding Flow Rate</Label>
-                <Input
-                  id="shieldingFlowRate"
-                  value={values.shieldingFlowRate}
-                  onChange={(e) => handleChange('shieldingFlowRate', e.target.value)}
-                  placeholder="e.g., 15 L/min"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
-              </div>
-              <div>
-                <Label htmlFor="flux" className="dark:text-foreground">Flux</Label>
-                <Input
-                  id="flux"
-                  value={values.flux}
-                  onChange={(e) => handleChange('flux', e.target.value)}
-                  placeholder="e.g., Agglomerated"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
-              </div>
-              <div>
-                <Label htmlFor="standardDesignation" className="dark:text-foreground">Standard Designation</Label>
-                <Input
-                  id="standardDesignation"
-                  value={values.standardDesignation}
-                  onChange={(e) => handleChange('standardDesignation', e.target.value)}
-                  placeholder="e.g., AWS A5.29"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
+
+              {/* Legacy Oscillation */}
+              {(existingData?.oscillationWidth || existingData?.oscillationSpeed) && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground border-b dark:border-border pb-2">Oscillation</h3>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm text-muted-foreground">Oscillation Width</Label>
+                      <p className="font-medium dark:text-foreground">{waDisplayValue(existingData?.oscillationWidth)}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-muted-foreground">Oscillation Speed</Label>
+                      <p className="font-medium dark:text-foreground">{waDisplayValue(existingData?.oscillationSpeed)}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Heating Procedure Section */}
+          {(existingData?.preheatingTemp || existingData?.interpassTemp || existingData?.postheatingTemp ||
+            existingData?.preheatTemperature || existingData?.interpassTemperature || existingData?.postheatTemperature) && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground border-b dark:border-border pb-2">Heating Procedure</h3>
+              <div className="grid md:grid-cols-3 gap-4">
+                <div>
+                  <Label className="text-sm text-muted-foreground">Preheating Temperature</Label>
+                  <p className="font-medium dark:text-foreground">
+                    {waDisplayValue(existingData?.preheatingTemp || existingData?.preheatTemperature)} {(existingData?.preheatingTemp || existingData?.preheatTemperature) && '°C'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm text-muted-foreground">Interpass Temperature</Label>
+                  <p className="font-medium dark:text-foreground">
+                    {waDisplayValue(existingData?.interpassTemp || existingData?.interpassTemperature)} {(existingData?.interpassTemp || existingData?.interpassTemperature) && '°C'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm text-muted-foreground">Postheating Temperature</Label>
+                  <p className="font-medium dark:text-foreground">
+                    {waDisplayValue(existingData?.postheatingTemp || existingData?.postheatTemperature)} {(existingData?.postheatingTemp || existingData?.postheatTemperature) && '°C'}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Welding Parameters Section */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground border-b dark:border-border pb-2">Welding Parameters</h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="weldingProcess" className="dark:text-foreground">
-                  Welding Process <span className="text-red-500 dark:text-red-400">*</span>
-                </Label>
-                <Input
-                  id="weldingProcess"
-                  value={values.weldingProcess}
-                  onChange={(e) => handleChange('weldingProcess', e.target.value)}
-                  placeholder="e.g., FCAW, GMAW, SAW"
-                  required
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
-              </div>
-              <div>
-                <Label htmlFor="currentType" className="dark:text-foreground">Current Type</Label>
-                <Input
-                  id="currentType"
-                  value={values.currentType}
-                  onChange={(e) => handleChange('currentType', e.target.value)}
-                  placeholder="e.g., DCEP, AC"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
-              </div>
-              <div>
-                <Label htmlFor="currentModeSynergy" className="dark:text-foreground">Current Mode/Synergy</Label>
-                <Input
-                  id="currentModeSynergy"
-                  value={values.currentModeSynergy}
-                  onChange={(e) => handleChange('currentModeSynergy', e.target.value)}
-                  placeholder="e.g., Spray, Pulse"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
-              </div>
-              <div>
-                <Label htmlFor="wireFeedSpeed" className="dark:text-foreground">Wire Feed Speed</Label>
-                <Input
-                  id="wireFeedSpeed"
-                  value={values.wireFeedSpeed}
-                  onChange={(e) => handleChange('wireFeedSpeed', e.target.value)}
-                  placeholder="e.g., 8 m/min"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
-              </div>
-              <div>
-                <Label htmlFor="intensity" className="dark:text-foreground">Intensity (Current)</Label>
-                <Input
-                  id="intensity"
-                  value={values.intensity}
-                  onChange={(e) => handleChange('intensity', e.target.value)}
-                  placeholder="e.g., 250A"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
-              </div>
-              <div>
-                <Label htmlFor="voltage" className="dark:text-foreground">Voltage</Label>
-                <Input
-                  id="voltage"
-                  value={values.voltage}
-                  onChange={(e) => handleChange('voltage', e.target.value)}
-                  placeholder="e.g., 28V"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
-              </div>
-              <div>
-                <Label htmlFor="heatInput" className="dark:text-foreground">Heat Input</Label>
-                <Input
-                  id="heatInput"
-                  value={values.heatInput}
-                  onChange={(e) => handleChange('heatInput', e.target.value)}
-                  placeholder="e.g., 1.5 kJ/mm"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
-              </div>
-              <div>
-                <Label htmlFor="weldingPosition" className="dark:text-foreground">Welding Position</Label>
-                <Input
-                  id="weldingPosition"
-                  value={values.weldingPosition}
-                  onChange={(e) => handleChange('weldingPosition', e.target.value)}
-                  placeholder="e.g., 1G (Flat), 2G (Horizontal)"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
-              </div>
-              <div>
-                <Label htmlFor="torchAngle" className="dark:text-foreground">Torch Angle</Label>
-                <Input
-                  id="torchAngle"
-                  value={values.torchAngle}
-                  onChange={(e) => handleChange('torchAngle', e.target.value)}
-                  placeholder="e.g., 15°, 90°"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
-              </div>
-              <div>
-                <Label htmlFor="stickOut" className="dark:text-foreground">Stick Out (CTWD)</Label>
-                <Input
-                  id="stickOut"
-                  value={values.stickOut}
-                  onChange={(e) => handleChange('stickOut', e.target.value)}
-                  placeholder="e.g., 20mm"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
-              </div>
-              <div>
-                <Label htmlFor="travelSpeed" className="dark:text-foreground">Travel Speed</Label>
-                <Input
-                  id="travelSpeed"
-                  value={values.travelSpeed}
-                  onChange={(e) => handleChange('travelSpeed', e.target.value)}
-                  placeholder="e.g., 30 cm/min"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
+          {/* PWHT Section */}
+          {existingData?.pwhtRequired === 'Y' && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground border-b dark:border-border pb-2">Post Weld Heat Treatment (PWHT)</h3>
+              <div className="grid md:grid-cols-3 gap-4">
+                <div>
+                  <Label className="text-sm text-muted-foreground">Heating Rate</Label>
+                  <p className="font-medium dark:text-foreground">{waDisplayValue(existingData?.pwhtHeatingRate)} {existingData?.pwhtHeatingRate && '°C/h'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm text-muted-foreground">Temperature & Holding Time</Label>
+                  <p className="font-medium dark:text-foreground">{waDisplayValue(existingData?.pwhtTempHoldingTime)}</p>
+                </div>
+                <div>
+                  <Label className="text-sm text-muted-foreground">Cooling Rate</Label>
+                  <p className="font-medium dark:text-foreground">{waDisplayValue(existingData?.pwhtCoolingRate)} {existingData?.pwhtCoolingRate && '°C/h'}</p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Oscillation Section */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground border-b dark:border-border pb-2">Oscillation (if applicable)</h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="oscillationWidth" className="dark:text-foreground">Oscillation Width</Label>
-                <Input
-                  id="oscillationWidth"
-                  value={values.oscillationWidth}
-                  onChange={(e) => handleChange('oscillationWidth', e.target.value)}
-                  placeholder="e.g., 10mm"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
-              </div>
-              <div>
-                <Label htmlFor="oscillationSpeed" className="dark:text-foreground">Oscillation Speed</Label>
-                <Input
-                  id="oscillationSpeed"
-                  value={values.oscillationSpeed}
-                  onChange={(e) => handleChange('oscillationSpeed', e.target.value)}
-                  placeholder="e.g., 20 mm/s"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
-              </div>
-              <div>
-                <Label htmlFor="oscillationStepOver" className="dark:text-foreground">Step Over</Label>
-                <Input
-                  id="oscillationStepOver"
-                  value={values.oscillationStepOver}
-                  onChange={(e) => handleChange('oscillationStepOver', e.target.value)}
-                  placeholder="e.g., 50%"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
-              </div>
-              <div>
-                <Label htmlFor="oscillationTempo" className="dark:text-foreground">Tempo/Dwell</Label>
-                <Input
-                  id="oscillationTempo"
-                  value={values.oscillationTempo}
-                  onChange={(e) => handleChange('oscillationTempo', e.target.value)}
-                  placeholder="e.g., 0.5s dwell"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
+          {/* Legacy PWHT Details */}
+          {existingData?.pwhtDetails && !existingData?.pwhtRequired && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground border-b dark:border-border pb-2">PWHT Details</h3>
+              <p className="font-medium dark:text-foreground">{existingData.pwhtDetails}</p>
+            </div>
+          )}
+
+          {/* Documents Section */}
+          {existingData?.documents && (existingData.documents as any[]).length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground border-b dark:border-border pb-2">Supporting Documents</h3>
+              <div className="space-y-2">
+                {(existingData.documents as any[]).map((doc: any, index: number) => {
+                  const isImage = doc.type?.startsWith('image/') || /\.(png|jpg|jpeg|gif|webp)$/i.test(doc.name);
+
+                  return (
+                    <div key={index} className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border border-border">
+                      <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                      <span className="text-sm font-medium flex-1 truncate">{doc.name}</span>
+                      {doc.url && (
+                        <div className="flex items-center gap-2">
+                          <a
+                            href={doc.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            download={doc.name}
+                            className="text-sm text-wa-green-600 hover:underline px-2 py-1 rounded hover:bg-wa-green-50"
+                          >
+                            {isImage ? 'View' : 'Download'}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Temperature Section */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground border-b dark:border-border pb-2">Temperature Control</h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="preheatTemperature" className="dark:text-foreground">Preheat Temperature</Label>
-                <Input
-                  id="preheatTemperature"
-                  value={values.preheatTemperature}
-                  onChange={(e) => handleChange('preheatTemperature', e.target.value)}
-                  placeholder="e.g., 150°C"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
-              </div>
-              <div>
-                <Label htmlFor="interpassTemperature" className="dark:text-foreground">Interpass Temperature</Label>
-                <Input
-                  id="interpassTemperature"
-                  value={values.interpassTemperature}
-                  onChange={(e) => handleChange('interpassTemperature', e.target.value)}
-                  placeholder="e.g., 200°C max"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
-              </div>
-              <div>
-                <Label htmlFor="postheatTemperature" className="dark:text-foreground">Postheat Temperature</Label>
-                <Input
-                  id="postheatTemperature"
-                  value={values.postheatTemperature}
-                  onChange={(e) => handleChange('postheatTemperature', e.target.value)}
-                  placeholder="e.g., 250°C"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
-              </div>
-              <div>
-                <Label htmlFor="pwhtDetails" className="dark:text-foreground">PWHT Details</Label>
-                <Input
-                  id="pwhtDetails"
-                  value={values.pwhtDetails}
-                  onChange={(e) => handleChange('pwhtDetails', e.target.value)}
-                  placeholder="e.g., 600°C for 2 hours"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
-              </div>
+          {/* Additional Notes Section */}
+          {existingData?.additionalNotes && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground border-b dark:border-border pb-2">Additional Notes</h3>
+              <p className="font-medium dark:text-foreground whitespace-pre-wrap">{existingData.additionalNotes}</p>
             </div>
-          </div>
-
-          {/* Results Section */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground border-b dark:border-border pb-2">Results & Observations</h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="layerNumbers" className="dark:text-foreground">Number of Layers</Label>
-                <Input
-                  id="layerNumbers"
-                  type="number"
-                  value={values.layerNumbers || ''}
-                  onChange={(e) => handleChange('layerNumbers', parseInt(e.target.value) || 0)}
-                  placeholder="e.g., 3"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
-              </div>
-              <div>
-                <Label htmlFor="hardness" className="dark:text-foreground">Hardness Achieved</Label>
-                <Input
-                  id="hardness"
-                  value={values.hardness}
-                  onChange={(e) => handleChange('hardness', e.target.value)}
-                  placeholder="e.g., 58-62 HRC"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <Label htmlFor="defectsObserved" className="dark:text-foreground">Defects Observed</Label>
-                <Input
-                  id="defectsObserved"
-                  value={values.defectsObserved}
-                  onChange={(e) => handleChange('defectsObserved', e.target.value)}
-                  placeholder="e.g., None, Minor porosity"
-                  className="dark:bg-input dark:border-border dark:text-foreground"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <Label htmlFor="additionalNotes" className="dark:text-foreground">Additional Notes</Label>
-                <Textarea
-                  id="additionalNotes"
-                  value={values.additionalNotes}
-                  onChange={(e) => handleChange('additionalNotes', e.target.value)}
-                  placeholder="Any additional observations, recommendations, or special considerations..."
-                  className="min-h-[100px] dark:bg-input dark:border-border dark:text-foreground"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Save Button */}
-          <div className="pt-4 border-t dark:border-border">
-            <Button onClick={handleSave} disabled={isSaving} className="w-full md:w-auto">
-              <Save className="h-4 w-4 mr-2" />
-              {isSaving ? 'Saving...' : 'Save Welding Procedure Specification'}
-            </Button>
-          </div>
+          )}
         </CardContent>
       )}
     </Card>

@@ -33,8 +33,8 @@ interface CaseStudy {
 
 interface WeldingProcedure {
   id: string;
-  waProductName: string;
-  weldingProcess: string;
+  waProductName?: string | null;
+  weldingProcess?: string | null;
 
   // Optional but important WPS fields
   baseMetalType?: string | null;

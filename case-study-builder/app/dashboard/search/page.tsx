@@ -13,6 +13,7 @@ import { waGetSearchSuggestions } from '@/lib/actions/waAutocompleteActions';
 import Link from 'next/link';
 import { SaveButton } from '@/components/save-button';
 import LanguageIndicator from '@/components/language-indicator';
+import { WA_REGIONS } from '@/lib/constants/waRegions';
 
 /**
  * BRD Section 5 - Search & Filtering
@@ -31,6 +32,7 @@ type SearchFilters = {
   oem?: string;
   waProduct?: string;
   country?: string;
+  region?: string; // Contributor's region filter
   contributorId?: string;
   minRevenue?: number;
   maxRevenue?: number;
@@ -63,6 +65,7 @@ export default function SearchPage() {
     oem: searchParams.get('oem') || undefined,
     waProduct: searchParams.get('waProduct') || undefined,
     country: searchParams.get('country') || undefined,
+    region: searchParams.get('region') || undefined,
     contributorId: searchParams.get('contributor') || undefined,
     minRevenue: searchParams.get('minRevenue') ? Number(searchParams.get('minRevenue')) : undefined,
     maxRevenue: searchParams.get('maxRevenue') ? Number(searchParams.get('maxRevenue')) : undefined,
@@ -194,6 +197,7 @@ export default function SearchPage() {
       oem: undefined,
       waProduct: undefined,
       country: undefined,
+      region: undefined,
       contributorId: undefined,
       minRevenue: undefined,
       maxRevenue: undefined,
@@ -219,6 +223,7 @@ export default function SearchPage() {
     if (filters.oem) count++;
     if (filters.waProduct) count++;
     if (filters.country) count++;
+    if (filters.region) count++;
     if (filters.contributorId) count++;
     if (filters.minRevenue !== undefined || filters.maxRevenue !== undefined) count++;
     return count;
@@ -491,8 +496,8 @@ export default function SearchPage() {
                 </div>
               </div>
 
-              {/* Row 2: Country, Contributor */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Row 2: Country, Region, Contributor */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="text-sm font-medium mb-2 block dark:text-foreground">Country</label>
                   <Select
@@ -506,6 +511,24 @@ export default function SearchPage() {
                       <SelectItem value="all">All Countries</SelectItem>
                       {filterOptions.countries.map((country) => (
                         <SelectItem key={country} value={country}>{country}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-2 block dark:text-foreground">Region</label>
+                  <Select
+                    value={filters.region || 'all'}
+                    onValueChange={(value) => setFilters({ ...filters, region: value === 'all' ? undefined : value })}
+                  >
+                    <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
+                      <SelectValue placeholder="All Regions" />
+                    </SelectTrigger>
+                    <SelectContent className="dark:bg-popover dark:border-border">
+                      <SelectItem value="all">All Regions</SelectItem>
+                      {WA_REGIONS.map((r) => (
+                        <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

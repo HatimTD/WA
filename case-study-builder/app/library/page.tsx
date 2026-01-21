@@ -235,6 +235,7 @@ export default async function PublicLibraryPage({
                   countryFilter={countryFilter}
                   wearTypeFilter={wearTypeFilter}
                   contributorFilter=""
+                  regionFilter=""
                   minRevenue={null}
                   maxRevenue={null}
                 />

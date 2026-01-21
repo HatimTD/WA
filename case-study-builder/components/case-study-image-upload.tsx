@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { X, Loader2, Plus, Camera, Box, Eye } from 'lucide-react';
+import { X, Loader2, Plus, Camera, Box, Eye, Crop } from 'lucide-react';
 import { toast } from 'sonner';
 import { waUploadImage, waDeleteImage } from '@/lib/actions/waImageUploadActions';
 import Image from 'next/image';
+import ImageCropper from '@/components/image-cropper';
 
 // Image view types with their icons and labels
 const VIEW_TYPES = [
@@ -60,6 +61,13 @@ export default function CaseStudyImageUpload({
   const [images, setImages] = useState<Record<ViewType | 'additional', ImageData[]>>(waParseExistingImages);
   const [uploading, setUploading] = useState<string | null>(null);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  // Image cropper state
+  const [cropperImage, setCropperImage] = useState<{
+    src: string;
+    viewType: ViewType | 'additional';
+    index?: number;
+  } | null>(null);
 
   const waGetAllImageUrls = (imageState: Record<ViewType | 'additional', ImageData[]>): string[] => {
     const urls: string[] = [];
@@ -174,6 +182,73 @@ export default function CaseStudyImageUpload({
     fileInputRefs.current[viewType]?.click();
   };
 
+  // Open cropper for an image
+  const waOpenCropper = (viewType: ViewType | 'additional', index?: number) => {
+    const imageSrc = viewType === 'additional' && index !== undefined
+      ? images.additional[index]?.url
+      : images[viewType as ViewType]?.[0]?.url;
+
+    if (imageSrc) {
+      setCropperImage({ src: imageSrc, viewType, index });
+    }
+  };
+
+  // Handle cropped image upload
+  const waHandleCroppedImage = async (croppedBlob: Blob) => {
+    if (!cropperImage) return;
+
+    setUploading(cropperImage.viewType);
+    setCropperImage(null);
+
+    try {
+      // Create a file from the blob
+      const file = new File([croppedBlob], 'cropped-image.jpg', { type: 'image/jpeg' });
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const result = await waUploadImage(formData);
+
+      if (result.success && result.url && result.publicId) {
+        const newImageData: ImageData = {
+          url: result.url,
+          publicId: result.publicId,
+          viewType: cropperImage.viewType,
+        };
+
+        const newImages = { ...images };
+
+        if (cropperImage.viewType === 'additional' && cropperImage.index !== undefined) {
+          // Delete old image
+          const oldImage = newImages.additional[cropperImage.index];
+          if (!existingImages.includes(oldImage.url)) {
+            await waDeleteImage(oldImage.publicId);
+          }
+          // Replace with cropped
+          newImages.additional[cropperImage.index] = newImageData;
+        } else if (cropperImage.viewType !== 'additional') {
+          // Delete old image
+          const oldImage = newImages[cropperImage.viewType as ViewType][0];
+          if (oldImage && !existingImages.includes(oldImage.url)) {
+            await waDeleteImage(oldImage.publicId);
+          }
+          // Replace with cropped
+          newImages[cropperImage.viewType as ViewType] = [newImageData];
+        }
+
+        setImages(newImages);
+        onImagesChange(waGetAllImageUrls(newImages));
+        toast.success('Image cropped and saved!');
+      } else {
+        toast.error(result.error || 'Failed to save cropped image');
+      }
+    } catch (error) {
+      console.error('[CaseStudyImageUpload] Error saving cropped image:', error);
+      toast.error('Failed to save cropped image');
+    } finally {
+      setUploading(null);
+    }
+  };
+
   const waRenderViewSlot = (viewType: ViewType, IconComponent: typeof Box, label: string) => {
     const hasImage = images[viewType].length > 0;
     const isUploading = uploading === viewType;
@@ -205,7 +280,27 @@ export default function CaseStudyImageUpload({
                 className="object-cover rounded-lg"
                 sizes="(max-width: 768px) 33vw, 150px"
               />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg" />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors rounded-lg" />
+              {/* Crop button */}
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  waOpenCropper(viewType);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.stopPropagation();
+                    waOpenCropper(viewType);
+                  }
+                }}
+                className="absolute top-1 left-1 w-5 h-5 flex items-center justify-center bg-black/60 hover:bg-wa-green-500 text-white rounded-full transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
+                title="Crop image"
+              >
+                <Crop className="h-3 w-3" />
+              </span>
+              {/* Remove button */}
               <span
                 role="button"
                 tabIndex={0}
@@ -307,7 +402,23 @@ export default function CaseStudyImageUpload({
                   className="object-cover rounded-lg border border-gray-200 dark:border-gray-700"
                   sizes="(max-width: 768px) 20vw, 100px"
                 />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg" />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors rounded-lg" />
+                {/* Crop button */}
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => waOpenCropper('additional', index)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      waOpenCropper('additional', index);
+                    }
+                  }}
+                  className="absolute top-0.5 left-0.5 w-4 h-4 flex items-center justify-center bg-black/60 hover:bg-wa-green-500 text-white rounded-full transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
+                  title="Crop image"
+                >
+                  <Crop className="h-2.5 w-2.5" />
+                </span>
+                {/* Remove button */}
                 <span
                   role="button"
                   tabIndex={0}
@@ -330,7 +441,19 @@ export default function CaseStudyImageUpload({
       {/* Helper text */}
       <p className="text-xs text-muted-foreground">
         Upload images of the component: Front, Back, and General views. Add more images as needed.
+        <br />
+        <span className="text-wa-green-600 dark:text-wa-green-400">Tip: Hover over an image and click the crop icon to adjust it.</span>
       </p>
+
+      {/* Image Cropper Modal */}
+      {cropperImage && (
+        <ImageCropper
+          imageSrc={cropperImage.src}
+          onCropComplete={waHandleCroppedImage}
+          onCancel={() => setCropperImage(null)}
+          aspectRatio={4 / 3}
+        />
+      )}
     </div>
   );
 }

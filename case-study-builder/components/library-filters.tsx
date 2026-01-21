@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Search, ChevronDown, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
+import { WA_REGIONS } from '@/lib/constants/waRegions';
 
 /**
  * BRD Section 5 - Search & Filtering
@@ -31,6 +32,7 @@ interface LibraryFiltersProps {
   componentFilter: string;
   waProductFilter: string;
   countryFilter: string;
+  regionFilter: string; // Contributor's region filter
   wearTypeFilter: string; // Comma-separated values for multi-select
   contributorFilter: string;
   minRevenue: number | null;
@@ -55,6 +57,7 @@ export function LibraryFilters({
   componentFilter,
   waProductFilter,
   countryFilter,
+  regionFilter,
   wearTypeFilter,
   contributorFilter,
   minRevenue,
@@ -68,7 +71,7 @@ export function LibraryFilters({
   const [localMaxRevenue, setLocalMaxRevenue] = useState(maxRevenue?.toString() || '');
 
   // Check if any advanced filters are active
-  const hasAdvancedFilters = componentFilter || waProductFilter || countryFilter || wearTypeFilter || contributorFilter || minRevenue || maxRevenue;
+  const hasAdvancedFilters = componentFilter || waProductFilter || countryFilter || regionFilter || wearTypeFilter || contributorFilter || minRevenue || maxRevenue;
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -98,6 +101,7 @@ export function LibraryFilters({
     if (componentFilter) params.component = componentFilter;
     if (waProductFilter) params.waProduct = waProductFilter;
     if (countryFilter) params.country = countryFilter;
+    if (regionFilter) params.region = regionFilter;
     if (wearTypeFilter) params.wearType = wearTypeFilter;
     if (contributorFilter) params.contributor = contributorFilter;
     if (minRevenue) params.minRevenue = minRevenue.toString();
@@ -401,6 +405,36 @@ export function LibraryFilters({
               </div>
             </div>
           )}
+
+          {/* Region Filter (Contributor's Region) */}
+          <div>
+            <label className="text-sm font-medium mb-2 block dark:text-foreground">Region</label>
+            <div className="space-y-2">
+              <Link
+                href={waGetFilterUrl({ region: undefined })}
+                className={`block px-3 py-2 rounded-md text-sm transition-colors ${
+                  !regionFilter
+                    ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
+                    : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
+                }`}
+              >
+                All Regions
+              </Link>
+              {WA_REGIONS.map((r) => (
+                <Link
+                  key={r.value}
+                  href={waGetFilterUrl({ region: r.value })}
+                  className={`block px-3 py-2 rounded-md text-sm transition-colors ${
+                    regionFilter === r.value
+                      ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
+                      : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
+                  }`}
+                >
+                  {r.label}
+                </Link>
+              ))}
+            </div>
+          </div>
 
           {/* Contributor Filter */}
           {contributors.length > 0 && (

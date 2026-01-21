@@ -9,6 +9,7 @@ import dynamic from 'next/dynamic';
 import { Mic, Sparkles, Camera, FileText } from 'lucide-react';
 import CaseStudyImageUpload from '@/components/case-study-image-upload';
 import DocumentUpload from '@/components/document-upload';
+import { ServiceLifePicker, type ServiceLifeValue } from '@/components/ui/service-life-picker';
 
 // Dynamic imports for heavy components (saves ~150KB)
 const VoiceInput = dynamic(() => import('@/components/voice-input'), {
@@ -169,7 +170,7 @@ export default function StepFour({ formData, updateFormData }: Props) {
       {/* General Dimensions + Unit System on same line */}
       <div className="space-y-2">
         <Label htmlFor="generalDimensions" className="dark:text-foreground">
-          General Dimensions <span className="text-red-500 dark:text-red-400">*</span>
+          General dimensions (in mm/inches) <span className="text-red-500 dark:text-red-400">*</span>
         </Label>
         <div className="flex gap-3 items-center">
           <Input
@@ -283,25 +284,27 @@ export default function StepFour({ formData, updateFormData }: Props) {
           )}
         </div>
 
-        {/* Diameter - Dropdown with mm values, auto-converts to inches */}
+        {/* Diameter - Dropdown with mm values (x.x format), auto-converts to inches */}
         <div className="space-y-2">
           <Label htmlFor="waProductDiameter" className="dark:text-foreground">
-            Diameter
+            Diameter <span className="text-red-500 dark:text-red-400">*</span>
           </Label>
           <select
             id="waProductDiameter"
             value={formData.waProductDiameter || ''}
             onChange={(e) => updateFormData({ waProductDiameter: e.target.value })}
             className="w-full h-10 px-3 rounded-md border border-border bg-input text-foreground dark:bg-input dark:border-border dark:text-foreground"
+            required
           >
             <option value="">Select diameter</option>
             {[1.0, 1.2, 1.3, 1.6, 2.0, 2.2, 2.4, 2.8, 3.2, 4.0, 5.0, 6.0, 8.0, 12.0].map((mm) => {
+              const mmFormatted = mm.toFixed(1); // Always x.x format
               const inches = (mm / 25.4).toFixed(3);
               const displayValue = formData.unitSystem === 'IMPERIAL'
                 ? `${inches} in`
-                : `${mm} mm`;
+                : `${mmFormatted} mm`;
               return (
-                <option key={mm} value={mm.toString()}>
+                <option key={mm} value={mmFormatted}>
                   {displayValue}
                 </option>
               );
@@ -310,47 +313,30 @@ export default function StepFour({ formData, updateFormData }: Props) {
         </div>
       </div>
 
-      {/* Job Duration - Hours + Days + Weeks combined */}
+      {/* Job Duration - mobile-friendly picker */}
       <div className="space-y-2">
-        <Label className="dark:text-foreground">Job Duration</Label>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1">
-            <Input
-              type="number"
-              min="0"
-              value={formData.jobDurationHours || ''}
-              onChange={(e) => updateFormData({ jobDurationHours: e.target.value })}
-              placeholder="0"
-              className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
-            />
-            <span className="text-sm text-muted-foreground font-medium">h</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Input
-              type="number"
-              min="0"
-              value={formData.jobDurationDays || ''}
-              onChange={(e) => updateFormData({ jobDurationDays: e.target.value })}
-              placeholder="0"
-              className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
-            />
-            <span className="text-sm text-muted-foreground font-medium">d</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Input
-              type="number"
-              min="0"
-              value={formData.jobDurationWeeks || ''}
-              onChange={(e) => updateFormData({ jobDurationWeeks: e.target.value })}
-              placeholder="0"
-              className="w-16 text-center dark:bg-input dark:border-border dark:text-foreground"
-            />
-            <span className="text-sm text-muted-foreground font-medium">w</span>
-          </div>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          How long did the WA solution job/maintenance take
-        </p>
+        <Label className="dark:text-foreground">
+          Job Duration <span className="text-red-500 dark:text-red-400">*</span>
+        </Label>
+        <p className="text-xs text-muted-foreground">How long did the WA solution job/maintenance take</p>
+        <ServiceLifePicker
+          label="Job Duration"
+          required
+          value={{
+            hours: parseInt(formData.jobDurationHours || '0') || 0,
+            days: parseInt(formData.jobDurationDays || '0') || 0,
+            weeks: parseInt(formData.jobDurationWeeks || '0') || 0,
+            months: 0,
+            years: 0,
+          }}
+          onChange={(val: ServiceLifeValue) => {
+            updateFormData({
+              jobDurationHours: val.hours > 0 ? String(val.hours) : '',
+              jobDurationDays: val.days > 0 ? String(val.days) : '',
+              jobDurationWeeks: val.weeks > 0 ? String(val.weeks) : '',
+            });
+          }}
+        />
       </div>
 
       {/* Technical Advantages - BRD 3.3 Required */}
@@ -375,13 +361,10 @@ export default function StepFour({ formData, updateFormData }: Props) {
           id="technicalAdvantages"
           value={formData.technicalAdvantages}
           onChange={(e) => updateFormData({ technicalAdvantages: e.target.value })}
-          placeholder="Describe key technical benefits (hardness, toughness, weldability, etc.)"
+          placeholder="Describe how the WA solution improved the job. You can mention service life, wear resistance, hardness, welding quality, repair speed, intervention time, reduced downtime, easier handling, or improved safety."
           className="min-h-[100px] dark:bg-input dark:border-border dark:text-foreground"
           required
         />
-        <p className="text-xs text-muted-foreground">
-          Why the WA solution is technically superior (e.g., hardness, wear resistance, weldability)
-        </p>
       </div>
 
       {/* Images Upload Section */}
@@ -389,16 +372,16 @@ export default function StepFour({ formData, updateFormData }: Props) {
         <Label className="dark:text-foreground flex items-center gap-2">
           <Camera className="h-4 w-4 text-wa-green-600" />
           Images <span className="text-red-500 dark:text-red-400">*</span>
-          <span className="text-xs text-muted-foreground">(At least 1 required)</span>
+          <span className="text-xs text-muted-foreground">(Minimum 2 required)</span>
         </Label>
         <CaseStudyImageUpload
           onImagesChange={(images) => updateFormData({ images })}
           existingImages={formData.images}
           maxAdditionalImages={5}
         />
-        {formData.images.length === 0 && (
+        {formData.images.length < 2 && (
           <p className="text-xs text-red-500 dark:text-red-400">
-            Please upload at least one image
+            Please upload at least 2 images ({formData.images.length}/2 uploaded)
           </p>
         )}
       </div>

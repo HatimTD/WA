@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { Badge as BadgeType } from '@prisma/client';
+import { WA_REGIONS } from '@/lib/constants/waRegions';
 
 export type LeaderboardUser = {
   id: string;
@@ -80,27 +81,16 @@ export async function waGetLeaderboardData(region?: string | null) {
 
 /**
  * Get all available regions for the filter dropdown
+ * Uses predefined WA_REGIONS from constants (matches NetSuite)
  */
 export async function waGetAvailableRegions() {
   try {
-    const regions = await prisma.user.findMany({
-      where: {
-        region: { not: null },
-      },
-      select: {
-        region: true,
-      },
-      distinct: ['region'],
-    });
-
-    const uniqueRegions = regions
-      .map((r) => r.region)
-      .filter((r): r is string => r !== null)
-      .sort();
+    // Return predefined regions from constants (aligned with NetSuite)
+    const regions = WA_REGIONS.map((r) => r.value);
 
     return {
       success: true,
-      regions: uniqueRegions,
+      regions,
     };
   } catch (error) {
     console.error('Error fetching regions:', error);

@@ -41,7 +41,7 @@ import QualityScoreBadge from '@/components/quality-score-badge';
 import type { CaseStudyWithRelations } from '@/lib/utils/waQualityScore';
 import LanguageIndicator from '@/components/language-indicator';
 import TranslationPanel from '@/components/translation-panel';
-import WearTypeProgressBar from '@/components/wear-type-progress-bar';
+import { WearTypeStarsDisplay } from '@/components/wear-type-progress-bar';
 
 // Language names for display
 const LANGUAGE_NAMES: Record<string, string> = {
@@ -70,6 +70,23 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
 
 function getCurrencySymbol(currency: string | null | undefined): string {
   return CURRENCY_SYMBOLS[currency || 'EUR'] || '€';
+}
+
+// Helper to format expanded service life (hours, days, weeks, months, years)
+function waFormatExpandedServiceLife(data: {
+  hours?: string | null;
+  days?: string | null;
+  weeks?: string | null;
+  months?: string | null;
+  years?: string | null;
+}): string | null {
+  const parts: string[] = [];
+  if (data.years && parseInt(data.years) > 0) parts.push(`${data.years}y`);
+  if (data.months && parseInt(data.months) > 0) parts.push(`${data.months}mo`);
+  if (data.weeks && parseInt(data.weeks) > 0) parts.push(`${data.weeks}w`);
+  if (data.days && parseInt(data.days) > 0) parts.push(`${data.days}d`);
+  if (data.hours && parseInt(data.hours) > 0) parts.push(`${data.hours}h`);
+  return parts.length > 0 ? parts.join(' ') : null;
 }
 
 // Dynamic import for PDF export (saves ~200KB from jspdf)
@@ -199,7 +216,13 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
     wearType: caseStudy.wearType,
     problemDescription: caseStudy.problemDescription,
     previousSolution: caseStudy.previousSolution || undefined,
-    previousServiceLife: caseStudy.previousServiceLife || undefined,
+    previousServiceLife: waFormatExpandedServiceLife({
+      hours: caseStudy.previousServiceLifeHours,
+      days: caseStudy.previousServiceLifeDays,
+      weeks: caseStudy.previousServiceLifeWeeks,
+      months: caseStudy.previousServiceLifeMonths,
+      years: caseStudy.previousServiceLifeYears,
+    }) || caseStudy.previousServiceLife || undefined,
     competitorName: caseStudy.competitorName || undefined,
     baseMetal: caseStudy.baseMetal || undefined,
     generalDimensions: caseStudy.generalDimensions || undefined,
@@ -207,7 +230,13 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
     waProduct: caseStudy.waProduct,
     waProductDiameter: caseStudy.waProductDiameter || undefined,
     technicalAdvantages: caseStudy.technicalAdvantages || undefined,
-    expectedServiceLife: caseStudy.expectedServiceLife || undefined,
+    expectedServiceLife: waFormatExpandedServiceLife({
+      hours: caseStudy.expectedServiceLifeHours,
+      days: caseStudy.expectedServiceLifeDays,
+      weeks: caseStudy.expectedServiceLifeWeeks,
+      months: caseStudy.expectedServiceLifeMonths,
+      years: caseStudy.expectedServiceLifeYears,
+    }) || caseStudy.expectedServiceLife || undefined,
     revenueCurrency: caseStudy.revenueCurrency || 'EUR',
     solutionValueRevenue: caseStudy.solutionValueRevenue ? Number(caseStudy.solutionValueRevenue) : undefined,
     annualPotentialRevenue: caseStudy.annualPotentialRevenue ? Number(caseStudy.annualPotentialRevenue) : undefined,
@@ -541,6 +570,13 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
           <CardTitle className="dark:text-foreground">Basic Information</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* General Description - Overview */}
+          {caseStudy.generalDescription && (
+            <div className="pb-4 border-b dark:border-border">
+              <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-2">Overview</p>
+              <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{caseStudy.generalDescription}</p>
+            </div>
+          )}
           <div className="grid md:grid-cols-2 gap-4">
             <div className="flex items-start gap-3">
               <Building2 className="h-5 w-5 text-gray-400 dark:text-gray-500 mt-0.5" />
@@ -575,14 +611,37 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
                 <p className="text-base font-semibold dark:text-foreground">{caseStudy.workType}</p>
               </div>
             </div>
+
+            {caseStudy.jobType && (
+              <div className="flex items-start gap-3">
+                <Wrench className="h-5 w-5 text-gray-400 dark:text-gray-500 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Job Type</p>
+                  <p className="text-base font-semibold dark:text-foreground">
+                    {caseStudy.jobType === 'OTHER' ? caseStudy.jobTypeOther || 'Other' : caseStudy.jobType}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {caseStudy.oem && (
+              <div className="flex items-start gap-3">
+                <Package className="h-5 w-5 text-gray-400 dark:text-gray-500 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">OEM</p>
+                  <p className="text-base font-semibold dark:text-foreground">{caseStudy.oem}</p>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="md:col-span-2">
             <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-2">Type of Wear</p>
-            <WearTypeProgressBar
+            <WearTypeStarsDisplay
               wearTypes={caseStudy.wearType}
               wearSeverities={caseStudy.wearSeverities as Record<string, number> | null}
               wearTypeOthers={caseStudy.wearTypeOthers as { name: string; severity: number }[] | null}
+              showOnlySelected
             />
           </div>
 
@@ -633,10 +692,24 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
             </div>
           )}
 
-          {caseStudy.previousServiceLife && (
+          {(caseStudy.previousServiceLife || waFormatExpandedServiceLife({
+            hours: caseStudy.previousServiceLifeHours,
+            days: caseStudy.previousServiceLifeDays,
+            weeks: caseStudy.previousServiceLifeWeeks,
+            months: caseStudy.previousServiceLifeMonths,
+            years: caseStudy.previousServiceLifeYears,
+          })) && (
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Previous Service Life</p>
-              <p className="text-base dark:text-foreground">{caseStudy.previousServiceLife}</p>
+              <p className="text-base dark:text-foreground">
+                {waFormatExpandedServiceLife({
+                  hours: caseStudy.previousServiceLifeHours,
+                  days: caseStudy.previousServiceLifeDays,
+                  weeks: caseStudy.previousServiceLifeWeeks,
+                  months: caseStudy.previousServiceLifeMonths,
+                  years: caseStudy.previousServiceLifeYears,
+                }) || caseStudy.previousServiceLife}
+              </p>
             </div>
           )}
 
@@ -665,6 +738,23 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
             <p className="text-lg font-semibold text-wa-green-600 dark:text-primary">{caseStudy.waProduct}</p>
           </div>
 
+          {waFormatExpandedServiceLife({
+            hours: caseStudy.jobDurationHours,
+            days: caseStudy.jobDurationDays,
+            weeks: caseStudy.jobDurationWeeks,
+          }) && (
+            <div>
+              <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Job Duration</p>
+              <p className="text-base dark:text-foreground">
+                {waFormatExpandedServiceLife({
+                  hours: caseStudy.jobDurationHours,
+                  days: caseStudy.jobDurationDays,
+                  weeks: caseStudy.jobDurationWeeks,
+                })}
+              </p>
+            </div>
+          )}
+
           {displayContent.technicalAdvantages && (
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Technical Advantages</p>
@@ -672,10 +762,24 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
             </div>
           )}
 
-          {caseStudy.expectedServiceLife && (
+          {(caseStudy.expectedServiceLife || waFormatExpandedServiceLife({
+            hours: caseStudy.expectedServiceLifeHours,
+            days: caseStudy.expectedServiceLifeDays,
+            weeks: caseStudy.expectedServiceLifeWeeks,
+            months: caseStudy.expectedServiceLifeMonths,
+            years: caseStudy.expectedServiceLifeYears,
+          })) && (
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Expected/Achieved Service Life</p>
-              <p className="text-base dark:text-foreground">{caseStudy.expectedServiceLife}</p>
+              <p className="text-base dark:text-foreground">
+                {waFormatExpandedServiceLife({
+                  hours: caseStudy.expectedServiceLifeHours,
+                  days: caseStudy.expectedServiceLifeDays,
+                  weeks: caseStudy.expectedServiceLifeWeeks,
+                  months: caseStudy.expectedServiceLifeMonths,
+                  years: caseStudy.expectedServiceLifeYears,
+                }) || caseStudy.expectedServiceLife}
+              </p>
             </div>
           )}
         </CardContent>
@@ -836,17 +940,23 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
         <WeldingProcedureForm
           caseStudyId={caseStudy.id}
         existingData={existingWPS ? {
+          // Base Metal
           baseMetalType: existingWPS.baseMetalType || undefined,
           baseMetalGrade: existingWPS.baseMetalGrade || undefined,
           baseMetalThickness: existingWPS.baseMetalThickness || undefined,
           surfacePreparation: existingWPS.surfacePreparation || undefined,
-          waProductName: existingWPS.waProductName,
+          surfacePreparationOther: (existingWPS as any).surfacePreparationOther || undefined,
+          // Layers (new multi-layer structure)
+          layers: (existingWPS as any).layers || undefined,
+          // Legacy WA Product fields
+          waProductName: existingWPS.waProductName || undefined,
           waProductDiameter: existingWPS.waProductDiameter || undefined,
           shieldingGas: existingWPS.shieldingGas || undefined,
           shieldingFlowRate: existingWPS.shieldingFlowRate || undefined,
           flux: existingWPS.flux || undefined,
           standardDesignation: existingWPS.standardDesignation || undefined,
-          weldingProcess: existingWPS.weldingProcess,
+          // Legacy Welding Parameters
+          weldingProcess: existingWPS.weldingProcess || undefined,
           currentType: existingWPS.currentType || undefined,
           currentModeSynergy: existingWPS.currentModeSynergy || undefined,
           wireFeedSpeed: existingWPS.wireFeedSpeed || undefined,
@@ -857,14 +967,28 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
           torchAngle: existingWPS.torchAngle || undefined,
           stickOut: existingWPS.stickOut || undefined,
           travelSpeed: existingWPS.travelSpeed || undefined,
+          // Legacy Oscillation
           oscillationWidth: existingWPS.oscillationWidth || undefined,
           oscillationSpeed: existingWPS.oscillationSpeed || undefined,
           oscillationStepOver: existingWPS.oscillationStepOver || undefined,
           oscillationTempo: existingWPS.oscillationTempo || undefined,
+          // Heating Procedure (new fields)
+          preheatingTemp: (existingWPS as any).preheatingTemp || undefined,
+          interpassTemp: (existingWPS as any).interpassTemp || undefined,
+          postheatingTemp: (existingWPS as any).postheatingTemp || undefined,
+          // PWHT (new fields)
+          pwhtRequired: (existingWPS as any).pwhtRequired || undefined,
+          pwhtHeatingRate: (existingWPS as any).pwhtHeatingRate || undefined,
+          pwhtTempHoldingTime: (existingWPS as any).pwhtTempHoldingTime || undefined,
+          pwhtCoolingRate: (existingWPS as any).pwhtCoolingRate || undefined,
+          // Legacy Temperature
           preheatTemperature: existingWPS.preheatTemperature || undefined,
           interpassTemperature: existingWPS.interpassTemperature || undefined,
           postheatTemperature: existingWPS.postheatTemperature || undefined,
           pwhtDetails: existingWPS.pwhtDetails || undefined,
+          // Documents (new field)
+          documents: (existingWPS as any).documents || undefined,
+          // Legacy Results
           layerNumbers: existingWPS.layerNumbers || undefined,
           hardness: existingWPS.hardness || undefined,
           defectsObserved: existingWPS.defectsObserved || undefined,
