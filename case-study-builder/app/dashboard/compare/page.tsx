@@ -34,7 +34,7 @@ import {
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { downloadComparisonPDF, type ComparisonPDFData } from '@/lib/pdf-export';
-import WearTypeProgressBar from '@/components/wear-type-progress-bar';
+import { WearTypeStarsDisplay } from '@/components/wear-type-progress-bar';
 
 type WearTypeOther = {
   name: string;
@@ -62,7 +62,19 @@ type CaseStudySummary = {
   waProductDiameter: string | null;
   technicalAdvantages: string;
   expectedServiceLife: string;
+  // Expanded expected service life fields
+  expectedServiceLifeHours: string | null;
+  expectedServiceLifeDays: string | null;
+  expectedServiceLifeWeeks: string | null;
+  expectedServiceLifeMonths: string | null;
+  expectedServiceLifeYears: string | null;
   previousServiceLife: string;
+  // Expanded previous service life fields
+  previousServiceLifeHours: string | null;
+  previousServiceLifeDays: string | null;
+  previousServiceLifeWeeks: string | null;
+  previousServiceLifeMonths: string | null;
+  previousServiceLifeYears: string | null;
   solutionValueRevenue: number | null;
   annualPotentialRevenue: number | null;
   customerSavingsAmount: number | null;
@@ -78,6 +90,23 @@ type CaseStudySummary = {
   approvedAt: string | null;
   currency: string | null;
 };
+
+// Helper to format expanded service life (hours, days, weeks, months, years)
+function waFormatExpandedServiceLife(data: {
+  hours?: string | null;
+  days?: string | null;
+  weeks?: string | null;
+  months?: string | null;
+  years?: string | null;
+}): string | null {
+  const parts: string[] = [];
+  if (data.years && parseInt(data.years) > 0) parts.push(`${data.years}y`);
+  if (data.months && parseInt(data.months) > 0) parts.push(`${data.months}mo`);
+  if (data.weeks && parseInt(data.weeks) > 0) parts.push(`${data.weeks}w`);
+  if (data.days && parseInt(data.days) > 0) parts.push(`${data.days}d`);
+  if (data.hours && parseInt(data.hours) > 0) parts.push(`${data.hours}h`);
+  return parts.length > 0 ? parts.join(' ') : null;
+}
 
 type SectionKey = 'basic' | 'solution' | 'financial' | 'details';
 
@@ -245,8 +274,20 @@ export default function ComparePage() {
         waProduct: cs.waProduct,
         waProductDiameter: cs.waProductDiameter,
         technicalAdvantages: cs.technicalAdvantages,
-        expectedServiceLife: cs.expectedServiceLife,
-        previousServiceLife: cs.previousServiceLife,
+        expectedServiceLife: waFormatExpandedServiceLife({
+          hours: cs.expectedServiceLifeHours,
+          days: cs.expectedServiceLifeDays,
+          weeks: cs.expectedServiceLifeWeeks,
+          months: cs.expectedServiceLifeMonths,
+          years: cs.expectedServiceLifeYears,
+        }) || cs.expectedServiceLife,
+        previousServiceLife: waFormatExpandedServiceLife({
+          hours: cs.previousServiceLifeHours,
+          days: cs.previousServiceLifeDays,
+          weeks: cs.previousServiceLifeWeeks,
+          months: cs.previousServiceLifeMonths,
+          years: cs.previousServiceLifeYears,
+        }) || cs.previousServiceLife,
         solutionValueRevenue: cs.solutionValueRevenue,
         annualPotentialRevenue: cs.annualPotentialRevenue,
         customerSavingsAmount: cs.customerSavingsAmount,
@@ -816,7 +857,7 @@ export default function ComparePage() {
                       {selectedCases.map((c, index) => (
                         <div key={index} className="p-3 rounded-lg bg-gray-50 dark:bg-muted/50 border border-gray-100 dark:border-border">
                           {c?.wearType && c.wearType.length > 0 ? (
-                            <WearTypeProgressBar
+                            <WearTypeStarsDisplay
                               wearTypes={c.wearType}
                               wearSeverities={c.wearSeverities}
                               wearTypeOthers={c.wearTypeOthers}
@@ -854,13 +895,25 @@ export default function ComparePage() {
                 />
                 <ComparisonCard
                   label="Previous Service Life"
-                  values={selectedCases.map(c => c?.previousServiceLife)}
+                  values={selectedCases.map(c => c ? (waFormatExpandedServiceLife({
+                    hours: c.previousServiceLifeHours,
+                    days: c.previousServiceLifeDays,
+                    weeks: c.previousServiceLifeWeeks,
+                    months: c.previousServiceLifeMonths,
+                    years: c.previousServiceLifeYears,
+                  }) || c.previousServiceLife) : null)}
                   icon={BarChart3}
                   fieldKey="previousLife"
                 />
                 <ComparisonCard
                   label="Expected Service Life"
-                  values={selectedCases.map(c => c?.expectedServiceLife)}
+                  values={selectedCases.map(c => c ? (waFormatExpandedServiceLife({
+                    hours: c.expectedServiceLifeHours,
+                    days: c.expectedServiceLifeDays,
+                    weeks: c.expectedServiceLifeWeeks,
+                    months: c.expectedServiceLifeMonths,
+                    years: c.expectedServiceLifeYears,
+                  }) || c.expectedServiceLife) : null)}
                   icon={TrendingUp}
                   fieldKey="expectedLife"
                   showIndicator

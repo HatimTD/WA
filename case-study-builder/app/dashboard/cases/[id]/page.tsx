@@ -41,7 +41,7 @@ import QualityScoreBadge from '@/components/quality-score-badge';
 import type { CaseStudyWithRelations } from '@/lib/utils/waQualityScore';
 import LanguageIndicator from '@/components/language-indicator';
 import TranslationPanel from '@/components/translation-panel';
-import WearTypeProgressBar from '@/components/wear-type-progress-bar';
+import { WearTypeStarsDisplay } from '@/components/wear-type-progress-bar';
 
 // Language names for display
 const LANGUAGE_NAMES: Record<string, string> = {
@@ -216,7 +216,13 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
     wearType: caseStudy.wearType,
     problemDescription: caseStudy.problemDescription,
     previousSolution: caseStudy.previousSolution || undefined,
-    previousServiceLife: caseStudy.previousServiceLife || undefined,
+    previousServiceLife: waFormatExpandedServiceLife({
+      hours: caseStudy.previousServiceLifeHours,
+      days: caseStudy.previousServiceLifeDays,
+      weeks: caseStudy.previousServiceLifeWeeks,
+      months: caseStudy.previousServiceLifeMonths,
+      years: caseStudy.previousServiceLifeYears,
+    }) || caseStudy.previousServiceLife || undefined,
     competitorName: caseStudy.competitorName || undefined,
     baseMetal: caseStudy.baseMetal || undefined,
     generalDimensions: caseStudy.generalDimensions || undefined,
@@ -224,7 +230,13 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
     waProduct: caseStudy.waProduct,
     waProductDiameter: caseStudy.waProductDiameter || undefined,
     technicalAdvantages: caseStudy.technicalAdvantages || undefined,
-    expectedServiceLife: caseStudy.expectedServiceLife || undefined,
+    expectedServiceLife: waFormatExpandedServiceLife({
+      hours: caseStudy.expectedServiceLifeHours,
+      days: caseStudy.expectedServiceLifeDays,
+      weeks: caseStudy.expectedServiceLifeWeeks,
+      months: caseStudy.expectedServiceLifeMonths,
+      years: caseStudy.expectedServiceLifeYears,
+    }) || caseStudy.expectedServiceLife || undefined,
     revenueCurrency: caseStudy.revenueCurrency || 'EUR',
     solutionValueRevenue: caseStudy.solutionValueRevenue ? Number(caseStudy.solutionValueRevenue) : undefined,
     annualPotentialRevenue: caseStudy.annualPotentialRevenue ? Number(caseStudy.annualPotentialRevenue) : undefined,
@@ -625,10 +637,11 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
 
           <div className="md:col-span-2">
             <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-2">Type of Wear</p>
-            <WearTypeProgressBar
+            <WearTypeStarsDisplay
               wearTypes={caseStudy.wearType}
               wearSeverities={caseStudy.wearSeverities as Record<string, number> | null}
               wearTypeOthers={caseStudy.wearTypeOthers as { name: string; severity: number }[] | null}
+              showOnlySelected
             />
           </div>
 

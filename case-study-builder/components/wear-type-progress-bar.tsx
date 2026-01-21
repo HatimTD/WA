@@ -128,6 +128,92 @@ export default function WearTypeProgressBar({
 }
 
 /**
+ * Read-only star display for detail/view pages
+ * Shows severity as filled green stars (non-clickable)
+ */
+export function WearTypeStarsDisplay({
+  wearTypes,
+  wearSeverities,
+  wearTypeOthers,
+  maxStars = 5,
+  showOnlySelected = false,
+}: {
+  wearTypes: string[];
+  wearSeverities?: WearSeverities | null;
+  wearTypeOthers?: WearTypeOther[] | null;
+  maxStars?: number;
+  showOnlySelected?: boolean;
+}) {
+  const { items: masterWearTypes } = useMasterList('WearType', FALLBACK_WEAR_TYPES);
+  const normalizedWearTypes = wearTypes.map((w) => w.toUpperCase());
+
+  const waGetSeverity = (wearTypeValue: string): number => {
+    if (!wearSeverities) return 0;
+    const normalized = wearTypeValue.toUpperCase();
+    return wearSeverities[normalized] || wearSeverities[wearTypeValue] || 0;
+  };
+
+  const waIsSelected = (wearTypeValue: string): boolean => {
+    return normalizedWearTypes.includes(wearTypeValue.toUpperCase());
+  };
+
+  const displayWearTypes = showOnlySelected
+    ? masterWearTypes.filter((wt) => waIsSelected(wt.value))
+    : masterWearTypes;
+
+  const waRenderStars = (severity: number) => (
+    <div className="flex gap-0.5">
+      {Array.from({ length: maxStars }).map((_, idx) => {
+        const isFilled = idx < severity;
+        return (
+          <svg
+            key={idx}
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill={isFilled ? '#16a34a' : 'none'}
+            stroke={isFilled ? '#16a34a' : '#d1d5db'}
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="dark:stroke-gray-600"
+          >
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+          </svg>
+        );
+      })}
+    </div>
+  );
+
+  return (
+    <div className="space-y-1.5">
+      {displayWearTypes.map((wearType) => {
+        const isSelected = waIsSelected(wearType.value);
+        const severity = isSelected ? waGetSeverity(wearType.value) : 0;
+        const displayLabel = (wearType as any).label || wearType.value;
+
+        // Skip unselected types if showOnlySelected is true
+        if (showOnlySelected && !isSelected) return null;
+
+        return (
+          <div key={wearType.id || wearType.value} className="flex items-center gap-3">
+            <span className="text-sm text-foreground w-24 flex-shrink-0">{displayLabel}</span>
+            {waRenderStars(severity)}
+          </div>
+        );
+      })}
+      {/* User-added "Other" wear types */}
+      {wearTypeOthers && wearTypeOthers.length > 0 && wearTypeOthers.map((other, index) => (
+        <div key={`other-${index}`} className="flex items-center gap-3">
+          <span className="text-sm text-foreground w-24 flex-shrink-0">{other.name || 'Other'}</span>
+          {waRenderStars(other.severity)}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
  * Interactive version for forms - clickable stars (green)
  */
 export function InteractiveWearTypeBar({

@@ -22,6 +22,7 @@ import { NetSuiteCustomer } from '@/lib/integrations/netsuite';
 import { waUpdateCaseStudy, waGetCustomerIndustry } from '@/lib/actions/waCaseStudyActions';
 import { waSaveWeldingProcedure } from '@/lib/actions/waWpsActions';
 import { waSaveCostCalculation } from '@/lib/actions/waCostCalculatorActions';
+import { waUploadDocument } from '@/lib/actions/waDocumentUploadActions';
 import { CostCalculatorValues } from '@/components/cost-calculator';
 import { useMasterList } from '@/lib/hooks/use-master-list';
 import { toast } from 'sonner';
@@ -574,6 +575,45 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
     };
   };
 
+  // Helper to upload WPS documents to Cloudinary and get URLs
+  const waUploadWpsDocuments = async (documents: any[] | undefined): Promise<{ name: string; size?: number; type?: string; url: string }[]> => {
+    console.log('[WPS Upload] Starting upload, documents:', documents?.length || 0);
+    if (!documents || documents.length === 0) return [];
+
+    const uploadedDocs: { name: string; size?: number; type?: string; url: string }[] = [];
+
+    for (const doc of documents) {
+      console.log('[WPS Upload] Processing doc:', doc.name, 'hasUrl:', !!doc.url, 'hasFile:', !!doc.file, 'isFile:', doc.file instanceof File);
+
+      // Skip if document already has a URL (already uploaded)
+      if (doc.url) {
+        console.log('[WPS Upload] Doc already has URL, skipping upload');
+        uploadedDocs.push({ name: doc.name, size: doc.size, type: doc.type, url: doc.url });
+        continue;
+      }
+
+      // Upload if document has a File object
+      if (doc.file instanceof File) {
+        console.log('[WPS Upload] Uploading file:', doc.file.name, 'size:', doc.file.size, 'type:', doc.file.type);
+        const formDataUpload = new FormData();
+        formDataUpload.append('file', doc.file);
+
+        const result = await waUploadDocument(formDataUpload);
+        console.log('[WPS Upload] Upload result:', result.success, result.url || result.error);
+        if (result.success && result.url) {
+          uploadedDocs.push({ name: doc.name, size: doc.size, type: doc.type, url: result.url });
+        } else {
+          console.error('[WPS Upload] Failed to upload document:', doc.name, result.error);
+        }
+      } else {
+        console.warn('[WPS Upload] Doc has no file and no URL, skipping:', doc.name);
+      }
+    }
+
+    console.log('[WPS Upload] Final uploaded docs:', uploadedDocs.length);
+    return uploadedDocs;
+  };
+
   const handleSaveDraft = async () => {
     setIsSubmitting(true);
     try {
@@ -599,13 +639,8 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
           return v !== undefined && v !== '' && v !== null;
         });
         if (hasAnyWpsData) {
-          // Filter out File objects from documents (can't be serialized)
-          const wpsDocuments = formData.wps.documents?.map(doc => ({
-            name: doc.name,
-            size: doc.size,
-            type: doc.type,
-            url: doc.url
-          })).filter(doc => doc.name);
+          // Upload documents to Cloudinary and get URLs
+          const uploadedDocs = await waUploadWpsDocuments(formData.wps.documents);
 
           await waSaveWeldingProcedure({
             caseStudyId: caseStudy.id,
@@ -625,7 +660,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
             pwhtTempHoldingTime: formData.wps.pwhtTempHoldingTime,
             pwhtCoolingRate: formData.wps.pwhtCoolingRate,
             // Documents
-            documents: wpsDocuments,
+            documents: uploadedDocs.length > 0 ? uploadedDocs : undefined,
             // Additional Notes
             additionalNotes: formData.wps.additionalNotes,
           });
@@ -689,13 +724,8 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
 
       // If TECH or STAR and WPS data exists, save WPS
       if (hasWPS && formData.wps) {
-        // Filter out File objects from documents (can't be serialized)
-        const wpsDocuments = formData.wps.documents?.map(doc => ({
-          name: doc.name,
-          size: doc.size,
-          type: doc.type,
-          url: doc.url
-        })).filter(doc => doc.name);
+        // Upload documents to Cloudinary and get URLs
+        const uploadedDocs = await waUploadWpsDocuments(formData.wps.documents);
 
         await waSaveWeldingProcedure({
           caseStudyId: caseStudy.id,
@@ -715,7 +745,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
           pwhtTempHoldingTime: formData.wps.pwhtTempHoldingTime,
           pwhtCoolingRate: formData.wps.pwhtCoolingRate,
           // Documents
-          documents: wpsDocuments,
+          documents: uploadedDocs.length > 0 ? uploadedDocs : undefined,
           // Additional Notes
           additionalNotes: formData.wps.additionalNotes,
         });

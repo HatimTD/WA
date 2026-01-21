@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -24,8 +25,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Search, UserCog, Trash2, Shield, Award, Monitor, Megaphone, Eye, ChevronDown, Check, Loader2 } from 'lucide-react';
+import { Search, UserCog, Trash2, Shield, Award, Monitor, Megaphone, Eye, ChevronDown, Check, Loader2, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 
 // All roles defined in Prisma schema
@@ -58,11 +68,33 @@ type Props = {
   users: User[];
 };
 
+// WA Regions for dropdown
+const WA_REGIONS = [
+  'CORPORATE',
+  'EUROPE',
+  'NORTH AMERICA',
+  'SOUTH AMERICA',
+  'ASIA PACIFIC',
+  'MIDDLE EAST',
+  'AFRICA',
+];
+
 export default function UserManagementTable({ users: initialUsers }: Props) {
   const [users, setUsers] = useState(initialUsers);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
+
+  // Create user dialog state
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [newUserData, setNewUserData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'CONTRIBUTOR' as string,
+    region: '',
+  });
 
   // Filter users based on search and role filter
   const filteredUsers = users.filter((user) => {
@@ -154,16 +186,205 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
     }
   };
 
+  const waHandleCreateUser = async () => {
+    // Validate email
+    if (!newUserData.email || !newUserData.email.includes('@')) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    // Validate password if provided
+    if (newUserData.password && newUserData.password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const response = await fetch('/api/admin/create-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newUserData.name || null,
+          email: newUserData.email,
+          password: newUserData.password || null,
+          role: newUserData.role,
+          region: newUserData.region || null,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Add new user to local state
+        setUsers((prev) => [result.user, ...prev]);
+        const loginMethod = newUserData.password ? 'email/password' : 'Google OAuth';
+        toast.success(`User ${result.user.email} created. They can log in via ${loginMethod}.`);
+
+        // Reset form and close dialog
+        setNewUserData({ name: '', email: '', password: '', role: 'CONTRIBUTOR', region: '' });
+        setIsCreateDialogOpen(false);
+      } else {
+        toast.error(result.error || 'Failed to create user');
+      }
+    } catch (error) {
+      console.error('[UserManagement] Create error:', error);
+      toast.error('An error occurred while creating the user');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   return (
     <Card className="dark:bg-card dark:border-border">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 dark:text-foreground">
-          <UserCog className="h-5 w-5 text-wa-green-600 dark:text-primary" />
-          All Users ({filteredUsers.length})
-        </CardTitle>
-        <CardDescription className="dark:text-muted-foreground">
-          View and manage user accounts and permissions
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2 dark:text-foreground">
+              <UserCog className="h-5 w-5 text-wa-green-600 dark:text-primary" />
+              All Users ({filteredUsers.length})
+            </CardTitle>
+            <CardDescription className="dark:text-muted-foreground mt-1">
+              View and manage user accounts and permissions
+            </CardDescription>
+          </div>
+
+          {/* Add User Button & Dialog */}
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-wa-green-600 hover:bg-wa-green-700 text-white">
+                <UserPlus className="h-4 w-4 mr-2" />
+                Add User
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px] dark:bg-card dark:border-border">
+              <DialogHeader>
+                <DialogTitle className="dark:text-foreground">Create New User</DialogTitle>
+                <DialogDescription className="dark:text-muted-foreground">
+                  Add a new user to the system. They will be able to log in with their email.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                {/* Name */}
+                <div className="grid gap-2">
+                  <Label htmlFor="name" className="dark:text-foreground">Name</Label>
+                  <Input
+                    id="name"
+                    placeholder="John Doe"
+                    value={newUserData.name}
+                    onChange={(e) => setNewUserData({ ...newUserData, name: e.target.value })}
+                    className="dark:bg-input dark:border-border dark:text-foreground"
+                  />
+                </div>
+
+                {/* Email */}
+                <div className="grid gap-2">
+                  <Label htmlFor="email" className="dark:text-foreground">
+                    Email <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="john.doe@weldingalloys.com"
+                    value={newUserData.email}
+                    onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
+                    className="dark:bg-input dark:border-border dark:text-foreground"
+                    required
+                  />
+                </div>
+
+                {/* Password */}
+                <div className="grid gap-2">
+                  <Label htmlFor="password" className="dark:text-foreground">
+                    Password <span className="text-xs text-muted-foreground">(optional)</span>
+                  </Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Leave empty for Google login only"
+                    value={newUserData.password}
+                    onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
+                    className="dark:bg-input dark:border-border dark:text-foreground"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Set a password for email/password login, or leave empty if user will login with Google.
+                  </p>
+                </div>
+
+                {/* Role */}
+                <div className="grid gap-2">
+                  <Label htmlFor="role" className="dark:text-foreground">Role</Label>
+                  <Select
+                    value={newUserData.role}
+                    onValueChange={(value) => setNewUserData({ ...newUserData, role: value })}
+                  >
+                    <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
+                      <SelectValue placeholder="Select a role" />
+                    </SelectTrigger>
+                    <SelectContent className="dark:bg-popover dark:border-border">
+                      {ALL_ROLES.map((role) => (
+                        <SelectItem key={role} value={role}>
+                          <div className="flex items-center gap-2">
+                            {ROLE_CONFIG[role]?.icon}
+                            <span>{ROLE_CONFIG[role]?.label || role}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Region */}
+                <div className="grid gap-2">
+                  <Label htmlFor="region" className="dark:text-foreground">Region</Label>
+                  <Select
+                    value={newUserData.region || 'NONE'}
+                    onValueChange={(value) => setNewUserData({ ...newUserData, region: value === 'NONE' ? '' : value })}
+                  >
+                    <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
+                      <SelectValue placeholder="Select a region (optional)" />
+                    </SelectTrigger>
+                    <SelectContent className="dark:bg-popover dark:border-border">
+                      <SelectItem value="NONE">No region</SelectItem>
+                      {WA_REGIONS.map((region) => (
+                        <SelectItem key={region} value={region}>
+                          {region}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsCreateDialogOpen(false)}
+                  disabled={isCreating}
+                  className="dark:bg-input dark:border-border dark:text-foreground"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={waHandleCreateUser}
+                  disabled={isCreating || !newUserData.email}
+                  className="bg-wa-green-600 hover:bg-wa-green-700 text-white"
+                >
+                  {isCreating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Create User
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </CardHeader>
       <CardContent>
         {/* Search and Filter */}

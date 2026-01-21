@@ -12,6 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { User, Settings, Download, Bell, Shield, Camera, Eye, Monitor, Megaphone } from 'lucide-react';
 import { toast } from 'sonner';
+import { WA_REGIONS } from '@/lib/constants/waRegions';
 
 // All roles from Prisma schema
 const ALL_ROLES = ['VIEWER', 'CONTRIBUTOR', 'APPROVER', 'ADMIN', 'IT_DEPARTMENT', 'MARKETING'] as const;
@@ -479,13 +480,9 @@ export default function SettingsForm({ user, assignedRoles = [] }: Props) {
                 <SelectValue placeholder="Select your region" />
               </SelectTrigger>
               <SelectContent className="dark:bg-popover dark:border-border">
-                <SelectItem value="North America">North America</SelectItem>
-                <SelectItem value="South America">South America</SelectItem>
-                <SelectItem value="Europe">Europe</SelectItem>
-                <SelectItem value="Asia">Asia</SelectItem>
-                <SelectItem value="Africa">Africa</SelectItem>
-                <SelectItem value="Oceania">Oceania</SelectItem>
-                <SelectItem value="Middle East">Middle East</SelectItem>
+                {WA_REGIONS.map((r) => (
+                  <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

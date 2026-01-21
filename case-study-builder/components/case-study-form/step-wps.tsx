@@ -963,6 +963,7 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) {
+                    console.log('[StepWPS] File selected:', file.name, 'type:', file.type, 'size:', file.size);
                     const currentDocs = formData.wps?.documents || [];
                     if (currentDocs.length < 5) {
                       const newDoc = {
@@ -971,6 +972,7 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                         type: file.type,
                         file: file
                       };
+                      console.log('[StepWPS] Adding doc to state, hasFile:', newDoc.file instanceof File);
                       waUpdateWps('documents', [...currentDocs, newDoc]);
                     }
                   }

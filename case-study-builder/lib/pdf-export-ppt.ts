@@ -1,7 +1,12 @@
 /**
- * PDF Export matching PowerPoint "Case Study REPORT.pptx" design exactly
- * Based on visual analysis of pdf1.png, pdf2.png, pdf3.png
- * Updated: Real WA logo, new cost calculator formula, real image embedding
+ * PDF Export - Professional Design v3
+ * Features:
+ * - New WA Logo (full horizontal logo)
+ * - Professional icons for each info category
+ * - Visual comparison section (before/after)
+ * - Elegant WPS card-based layout
+ * - Modern cost calculator design
+ * - HD image annexes (one image per page)
  */
 
 import jsPDF from 'jspdf';
@@ -55,7 +60,6 @@ export interface CaseStudyPDFData {
   translatedText?: string | null;
   wps?: WPSData;
   costCalculator?: CostCalculatorData;
-  // Images can be URL strings or objects with url/caption
   images?: string[] | { url: string; caption?: string }[];
 }
 
@@ -95,16 +99,16 @@ export interface WPSData {
 
 export interface CostCalculatorData {
   equipmentName?: string;
-  costOfPart?: number;            // A - Cost of Part
-  costOfWaSolution?: number;      // Cost of WA solution
+  costOfPart?: number;
+  costOfWaSolution?: number;
   oldSolutionLifetimeDays?: number;
   waSolutionLifetimeDays?: number;
   oldSolutionLifetimeUnit?: string;
   waSolutionLifetimeUnit?: string;
-  partsUsedPerYear?: number;      // E - Parts used per year
-  maintenanceRepairCost?: number; // F - Maintenance/Repair cost
-  disassemblyCost?: number;       // G - Disassembly cost
-  downtimeCost?: number;          // H - Downtime cost
+  partsUsedPerYear?: number;
+  maintenanceRepairCost?: number;
+  disassemblyCost?: number;
+  downtimeCost?: number;
   currency?: string;
   totalCostBefore?: number;
   totalCostAfter?: number;
@@ -121,23 +125,23 @@ export interface PDFExportOptions {
 
 // ============ CONSTANTS ============
 
-// Real WA Logo as base64 (from public/welding_alloys_logo.png)
-const WA_LOGO_BASE64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAYAAACtWK6eAAAQAElEQVR4Aex9B4CdRbX/b2a+csvW9ISS0KV3EAQBC2Ln6R/fs8DjWVBRqqKCLSoiigqigmJDUBRDB0F6QFFQegm9t/Sett31t/r8z917NhhSydxM2QCZzvmlnzpw5c87U3Y3GOrfWSGDmzJn6oB8fkxdYa5h6nTOyzkBWswKIku/788Pb3v79j0978/c/ueX+p37mLR8+9/hPH3nxD874+hU/v3bmpT974Gvnn/rcl8/5wYIv/O7kniN/8S17+BnfsJ/6yfH2mY5y2ga/3GlyZZf3sxP6j/7tdxd94ZyT5375vB8++bULTrvra5edftWX/3b6GYddcuKR//OnE979jtOP2H7f739y/f1PObgoba/m7rzuya0zkFGogCjlW3/0uc3f/pvj9v/wX79//JHX/+Ky/p3GP7xpfvJcUzXPL37yxTlP3v/Y9f+8/p+/OP/iSz575vnnvu2nF/xhqzP/+pf1fn39xRN+N/vSrj//+1r85T/X48I7Z+Oie27GxYSL7pqNv9x+PS698+b2c2+6YtzZ1186+Td/u3DGLy/98w5n/eW8A84+78+fverSa37y7xtuu+KZh56424/0s9MmbLqgf5cJT37p+l9f+dkbzjj+/8361lv3PfXoGe+deVhhFF183VddZyAjUIG3nXxQ5/4nHfqG//7NsYccd/7JF28zecvHVKn60PNzHr36ur9cftLZv/7te38z64+bXnDz1cVbn34ALyR9eC7uxXyU0e8nqFBVa20a1Tbl4uVchh5Tw2CQoMqypM0gJlTywCDxpaxEnCrTtaJCrahdvQE/xkJbwgtRL55nG/98+n5c8Pe/5X816w8bnvmbs9550e/OO+nxf9x1Xb5v8IkNNp7x2Ocv/OHFh5z/rf9998+P3vIdP/7EuBF0+XWPus5AVqICO//yMP+A731mxkd+c9yhx8w6+boZ3Zs9W+4dfPC2W/7z+99dfsGBv7nmoil3Pj1HPbvoRUQmgdfuQ+cNMi9DqlNkvoVXrOfBB/MyRDZGnNUhRQpthAHipzGipIaYkLDcqsyVsQSSdnVYN9UZlKfg5TwEBR+WbWXSFkOd146Hmpfgqd4XcedTc9Ssv10ydda';
-
 const COLORS = {
-  waGreen: { r: 0, g: 128, b: 64 },
+  waGreen: { r: 34, g: 139, b: 34 },
   darkGreen: { r: 0, g: 100, b: 50 },
   lightGreen: { r: 220, g: 252, b: 231 },
+  accentGreen: { r: 16, g: 185, b: 129 },
   black: { r: 0, g: 0, b: 0 },
   white: { r: 255, g: 255, b: 255 },
   gray: { r: 128, g: 128, b: 128 },
-  lightGray: { r: 240, g: 240, b: 240 },
-  red: { r: 200, g: 0, b: 0 },
+  lightGray: { r: 245, g: 245, b: 245 },
+  mediumGray: { r: 200, g: 200, b: 200 },
+  darkGray: { r: 60, g: 60, b: 60 },
+  red: { r: 220, g: 38, b: 38 },
   yellow: { r: 255, g: 248, b: 220 },
-  blue: { r: 0, g: 112, b: 192 },
-  // Case type colors
-  purple: { r: 147, g: 51, b: 234 },      // TECH case color
-  starYellow: { r: 202, g: 138, b: 4 },   // STAR case color (darker yellow for visibility)
+  blue: { r: 59, g: 130, b: 246 },
+  purple: { r: 147, g: 51, b: 234 },
+  starYellow: { r: 234, g: 179, b: 8 },
+  orange: { r: 249, g: 115, b: 22 },
 };
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -145,8 +149,16 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   JPY: '\u00A5', CNY: '\u00A5', MAD: 'MAD',
 };
 
+// ============ HELPER FUNCTIONS ============
+
 function waGetCurrency(code?: string): string {
   return CURRENCY_SYMBOLS[code || 'EUR'] || '\u20AC';
+}
+
+// Format currency with space after symbol
+function waFormatCurrency(amount: number, currencyCode?: string): string {
+  const symbol = waGetCurrency(currencyCode);
+  return `${symbol} ${waFormatNumber(amount)}`;
 }
 
 function waFormatDate(date?: Date | string): string {
@@ -155,37 +167,25 @@ function waFormatDate(date?: Date | string): string {
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-/**
- * Format number with thousands separator (using comma, not locale-specific)
- */
 function waFormatNumber(num: number): string {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
-// ============ NEW COST CALCULATOR FORMULA ============
-// Formula: Annual Cost = (A × E) + (E − 1) × (F + G + H)
-// Where: A = Cost of Part, E = Parts/Year, F = Maintenance, G = Disassembly, H = Downtime
-
 function waCalculateAnnualCost(
-  costOfPart: number,      // A
-  partsPerYear: number,    // E
-  maintenanceCost: number, // F
-  disassemblyCost: number, // G
-  downtimeCost: number     // H
+  costOfPart: number,
+  partsPerYear: number,
+  maintenanceCost: number,
+  disassemblyCost: number,
+  downtimeCost: number
 ): number {
   return (costOfPart * partsPerYear) + ((partsPerYear - 1) * (maintenanceCost + disassemblyCost + downtimeCost));
 }
 
 // ============ IMAGE HANDLING ============
 
-// Cache for loaded images
 const imageCache: Map<string, string> = new Map();
 
-/**
- * Fetches an image and converts it to base64 data URL
- */
 async function waFetchImageAsBase64(url: string): Promise<string | null> {
-  // Check cache first
   if (imageCache.has(url)) {
     return imageCache.get(url) || null;
   }
@@ -217,9 +217,6 @@ async function waFetchImageAsBase64(url: string): Promise<string | null> {
   }
 }
 
-/**
- * Get image format from data URL or URL
- */
 function waGetImageFormat(dataUrl: string): 'PNG' | 'JPEG' | 'GIF' | 'WEBP' {
   if (dataUrl.includes('image/png')) return 'PNG';
   if (dataUrl.includes('image/gif')) return 'GIF';
@@ -227,112 +224,274 @@ function waGetImageFormat(dataUrl: string): 'PNG' | 'JPEG' | 'GIF' | 'WEBP' {
   return 'JPEG';
 }
 
-/**
- * Normalizes images array to string URLs
- */
-function waNormalizeImages(images?: string[] | { url: string; caption?: string }[]): string[] {
+function waNormalizeImages(images?: string[] | { url: string; caption?: string }[]): { url: string; caption?: string }[] {
   if (!images || images.length === 0) return [];
-  return images.map(img => typeof img === 'string' ? img : img.url);
+  return images.map(img => typeof img === 'string' ? { url: img } : img);
 }
 
-// ============ DRAWING HELPERS ============
+// ============ PROFESSIONAL ICON DRAWING (Matching Lucide Icons) ============
 
 /**
- * Draw the real Welding Alloys logo using jsPDF drawing
- * This recreates the WA logo programmatically
+ * Draw Building2 icon (Lucide style) - for Industry
  */
-/**
- * Draw the WA logo - tries to use real PNG, falls back to drawn version
- */
-async function waDrawWALogoAsync(doc: jsPDF, x: number, y: number, size: number = 20): Promise<void> {
-  try {
-    // Try to load the real logo from public folder
-    const logoUrl = window?.location?.origin
-      ? `${window.location.origin}/welding_alloys_logo.png`
-      : '/welding_alloys_logo.png';
+function waDrawBuildingIcon(doc: jsPDF, x: number, y: number, size: number = 10): void {
+  doc.setDrawColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+  doc.setLineWidth(0.4);
 
-    const base64 = await waFetchImageAsBase64(logoUrl);
-    if (base64) {
-      doc.addImage(base64, 'PNG', x, y, size, size);
-      // Add "Welding Alloys" text next to logo
-      doc.setTextColor(0, 0, 0);
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Welding', x + size + 2, y + size * 0.35);
-      doc.text('Alloys', x + size + 2, y + size * 0.65);
-      return;
+  // Main building outline
+  const pad = size * 0.1;
+  const buildingWidth = size * 0.6;
+  const buildingHeight = size * 0.75;
+  const buildingX = x + (size - buildingWidth) / 2;
+  const buildingY = y + size * 0.15;
+
+  doc.rect(buildingX, buildingY, buildingWidth, buildingHeight, 'S');
+
+  // Windows (2x3 grid)
+  const windowSize = size * 0.1;
+  const windowGap = size * 0.08;
+  for (let row = 0; row < 3; row++) {
+    for (let col = 0; col < 2; col++) {
+      const wx = buildingX + size * 0.1 + col * (windowSize + windowGap);
+      const wy = buildingY + size * 0.08 + row * (windowSize + windowGap * 0.8);
+      doc.rect(wx, wy, windowSize, windowSize, 'S');
     }
-  } catch (e) {
-    console.log('[PDF] Could not load logo, using fallback', e);
   }
 
-  // Fallback to drawn logo
-  waDrawWALogoFallback(doc, x, y, size);
+  // Door
+  doc.rect(buildingX + buildingWidth / 2 - size * 0.08, buildingY + buildingHeight - size * 0.18, size * 0.16, size * 0.18, 'S');
 }
 
 /**
- * Fallback drawn WA logo when image cannot be loaded
+ * Draw Package icon (Lucide style) - for Component/Workpiece
  */
-function waDrawWALogoFallback(doc: jsPDF, x: number, y: number, size: number = 20): void {
-  const centerX = x + size / 2;
-  const centerY = y + size / 2;
-  const radius = size / 2;
+function waDrawPackageIcon(doc: jsPDF, x: number, y: number, size: number = 10): void {
+  doc.setDrawColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+  doc.setLineWidth(0.4);
 
-  // Green circle background - WA brand green
-  doc.setFillColor(34, 139, 34);
-  doc.circle(centerX, centerY, radius, 'F');
+  const cx = x + size / 2;
+  const cy = y + size / 2;
+  const boxSize = size * 0.35;
 
-  // White WA text inside
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(size * 0.5);
-  doc.setFont('helvetica', 'bold');
-  doc.text('WA', centerX, centerY + 1, { align: 'center', baseline: 'middle' });
+  // 3D box effect
+  // Front face
+  doc.rect(cx - boxSize * 0.8, cy - boxSize * 0.3, boxSize * 1.2, boxSize * 1.2, 'S');
 
-  // "Welding Alloys" text next to logo
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Welding', x + size + 2, y + size * 0.35);
-  doc.text('Alloys', x + size + 2, y + size * 0.65);
+  // Top face (parallelogram)
+  doc.line(cx - boxSize * 0.8, cy - boxSize * 0.3, cx - boxSize * 0.3, cy - boxSize * 0.8);
+  doc.line(cx - boxSize * 0.3, cy - boxSize * 0.8, cx + boxSize * 0.9, cy - boxSize * 0.8);
+  doc.line(cx + boxSize * 0.9, cy - boxSize * 0.8, cx + boxSize * 0.4, cy - boxSize * 0.3);
+
+  // Right face
+  doc.line(cx + boxSize * 0.4, cy - boxSize * 0.3, cx + boxSize * 0.9, cy - boxSize * 0.8);
+  doc.line(cx + boxSize * 0.9, cy - boxSize * 0.8, cx + boxSize * 0.9, cy + boxSize * 0.4);
+  doc.line(cx + boxSize * 0.4, cy + boxSize * 0.9, cx + boxSize * 0.9, cy + boxSize * 0.4);
+
+  // Center vertical line on front
+  doc.line(cx - boxSize * 0.2, cy - boxSize * 0.3, cx - boxSize * 0.2, cy + boxSize * 0.9);
 }
 
 /**
- * Sync version for non-async contexts
+ * Draw Wrench icon (Lucide style) - for Job Type/Work Type
  */
-function waDrawWALogo(doc: jsPDF, x: number, y: number, size: number = 20): void {
-  waDrawWALogoFallback(doc, x, y, size);
-}
+function waDrawWrenchIcon(doc: jsPDF, x: number, y: number, size: number = 10): void {
+  doc.setDrawColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+  doc.setLineWidth(0.5);
 
-/**
- * Adds the real WA logo from local file or URL
- */
-async function waAddRealLogo(doc: jsPDF, x: number, y: number, size: number = 25): Promise<void> {
-  try {
-    // Try to load the PNG logo from public folder
-    const logoUrl = '/welding_alloys_logo.png';
-    const base64 = await waFetchImageAsBase64(logoUrl);
+  // Wrench handle (diagonal)
+  doc.line(x + size * 0.2, y + size * 0.8, x + size * 0.65, y + size * 0.35);
 
-    if (base64) {
-      doc.addImage(base64, 'PNG', x, y, size, size);
-      // Add "Welding Alloys" text next to logo
-      doc.setTextColor(0, 0, 0);
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Welding', x + size + 3, y + 7);
-      doc.text('Alloys', x + size + 3, y + 13);
-    } else {
-      // Fallback to drawn logo
-      waDrawWALogo(doc, x, y, size);
-    }
-  } catch {
-    // Fallback to drawn logo
-    waDrawWALogo(doc, x, y, size);
-  }
-}
-
-function waDrawCircledNumber(doc: jsPDF, num: number, x: number, y: number, radius: number = 5): void {
+  // Wrench head (open end)
   doc.setFillColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+  doc.circle(x + size * 0.75, y + size * 0.25, size * 0.18, 'S');
+
+  // Wrench jaw opening
+  doc.line(x + size * 0.65, y + size * 0.15, x + size * 0.85, y + size * 0.15);
+  doc.line(x + size * 0.65, y + size * 0.35, x + size * 0.85, y + size * 0.35);
+}
+
+/**
+ * Draw MapPin icon (Lucide style) - for Location
+ */
+function waDrawMapPinIcon(doc: jsPDF, x: number, y: number, size: number = 10): void {
+  doc.setDrawColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+  doc.setFillColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+  doc.setLineWidth(0.4);
+
+  const cx = x + size / 2;
+  const topY = y + size * 0.1;
+  const pinRadius = size * 0.28;
+
+  // Pin head (circle outline)
+  doc.circle(cx, topY + pinRadius, pinRadius, 'S');
+
+  // Pin point (triangle lines)
+  doc.line(cx - pinRadius * 0.6, topY + pinRadius * 1.3, cx, y + size * 0.9);
+  doc.line(cx + pinRadius * 0.6, topY + pinRadius * 1.3, cx, y + size * 0.9);
+
+  // Inner dot
+  doc.circle(cx, topY + pinRadius, pinRadius * 0.35, 'F');
+}
+
+/**
+ * Draw Calendar icon (Lucide style) - for Dates
+ */
+function waDrawCalendarIcon(doc: jsPDF, x: number, y: number, size: number = 10): void {
+  doc.setDrawColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+  doc.setLineWidth(0.4);
+
+  // Calendar body
+  const pad = size * 0.12;
+  const calWidth = size - pad * 2;
+  const calHeight = size * 0.7;
+  doc.rect(x + pad, y + size * 0.22, calWidth, calHeight, 'S');
+
+  // Header bar
+  doc.line(x + pad, y + size * 0.4, x + size - pad, y + size * 0.4);
+
+  // Calendar rings/hooks
+  doc.line(x + size * 0.3, y + size * 0.1, x + size * 0.3, y + size * 0.28);
+  doc.line(x + size * 0.7, y + size * 0.1, x + size * 0.7, y + size * 0.28);
+
+  // Date dots
+  doc.setFillColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+  const dotSize = size * 0.055;
+  for (let row = 0; row < 2; row++) {
+    for (let col = 0; col < 3; col++) {
+      doc.circle(
+        x + size * 0.28 + col * size * 0.22,
+        y + size * 0.55 + row * size * 0.18,
+        dotSize,
+        'F'
+      );
+    }
+  }
+}
+
+/**
+ * Draw User icon (Lucide style) - for Contributor
+ */
+function waDrawUserIcon(doc: jsPDF, x: number, y: number, size: number = 10): void {
+  doc.setDrawColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+  doc.setLineWidth(0.4);
+
+  const cx = x + size / 2;
+
+  // Head
+  doc.circle(cx, y + size * 0.28, size * 0.2, 'S');
+
+  // Body (arc for shoulders)
+  doc.setFillColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+  // Simplified body shape
+  doc.line(x + size * 0.2, y + size * 0.9, x + size * 0.2, y + size * 0.65);
+  doc.line(x + size * 0.2, y + size * 0.65, x + size * 0.35, y + size * 0.52);
+  doc.line(x + size * 0.35, y + size * 0.52, x + size * 0.65, y + size * 0.52);
+  doc.line(x + size * 0.65, y + size * 0.52, x + size * 0.8, y + size * 0.65);
+  doc.line(x + size * 0.8, y + size * 0.65, x + size * 0.8, y + size * 0.9);
+}
+
+/**
+ * Draw Clipboard icon (Lucide style) - for Job Type
+ */
+function waDrawClipboardIcon(doc: jsPDF, x: number, y: number, size: number = 10): void {
+  doc.setDrawColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+  doc.setLineWidth(0.4);
+
+  // Clipboard body
+  const clipX = x + size * 0.15;
+  const clipY = y + size * 0.2;
+  const clipW = size * 0.7;
+  const clipH = size * 0.75;
+
+  doc.rect(clipX, clipY, clipW, clipH, 'S');
+
+  // Clipboard clip at top
+  const clipTopWidth = size * 0.35;
+  const clipTopX = x + (size - clipTopWidth) / 2;
+  doc.rect(clipTopX, y + size * 0.08, clipTopWidth, size * 0.18, 'S');
+
+  // Checklist lines
+  doc.line(clipX + size * 0.12, clipY + size * 0.25, clipX + clipW - size * 0.12, clipY + size * 0.25);
+  doc.line(clipX + size * 0.12, clipY + size * 0.4, clipX + clipW - size * 0.12, clipY + size * 0.4);
+  doc.line(clipX + size * 0.12, clipY + size * 0.55, clipX + clipW * 0.5, clipY + size * 0.55);
+}
+
+/**
+ * Draw FileText icon (Lucide style) - for Documents/Tags
+ */
+function waDrawFileIcon(doc: jsPDF, x: number, y: number, size: number = 10): void {
+  doc.setDrawColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+  doc.setLineWidth(0.4);
+
+  // Document outline
+  const docX = x + size * 0.2;
+  const docY = y + size * 0.1;
+  const docW = size * 0.6;
+  const docH = size * 0.8;
+  const foldSize = size * 0.15;
+
+  // Main rectangle (without top-right corner)
+  doc.line(docX, docY, docX + docW - foldSize, docY);
+  doc.line(docX + docW - foldSize, docY, docX + docW, docY + foldSize);
+  doc.line(docX + docW, docY + foldSize, docX + docW, docY + docH);
+  doc.line(docX + docW, docY + docH, docX, docY + docH);
+  doc.line(docX, docY + docH, docX, docY);
+
+  // Fold triangle
+  doc.line(docX + docW - foldSize, docY, docX + docW - foldSize, docY + foldSize);
+  doc.line(docX + docW - foldSize, docY + foldSize, docX + docW, docY + foldSize);
+
+  // Text lines
+  doc.line(docX + size * 0.1, docY + size * 0.3, docX + docW - size * 0.1, docY + size * 0.3);
+  doc.line(docX + size * 0.1, docY + size * 0.45, docX + docW - size * 0.1, docY + size * 0.45);
+  doc.line(docX + size * 0.1, docY + size * 0.6, docX + docW * 0.5, docY + size * 0.6);
+}
+
+/**
+ * Draw checkmark icon
+ */
+function waDrawCheckIcon(doc: jsPDF, x: number, y: number, size: number = 10): void {
+  doc.setDrawColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+  doc.setLineWidth(size * 0.15);
+
+  const cx = x + size / 2;
+  const cy = y + size / 2;
+
+  // Checkmark path
+  doc.line(x + size * 0.2, cy, x + size * 0.4, y + size * 0.7);
+  doc.line(x + size * 0.4, y + size * 0.7, x + size * 0.85, y + size * 0.25);
+}
+
+/**
+ * Draw arrow up icon (improvement)
+ */
+function waDrawArrowUpIcon(doc: jsPDF, x: number, y: number, size: number = 10): void {
+  doc.setFillColor(COLORS.accentGreen.r, COLORS.accentGreen.g, COLORS.accentGreen.b);
+
+  const cx = x + size / 2;
+
+  // Arrow shaft
+  doc.rect(cx - size * 0.1, y + size * 0.4, size * 0.2, size * 0.5, 'F');
+
+  // Arrow head
+  doc.triangle(
+    cx - size * 0.3, y + size * 0.45,
+    cx + size * 0.3, y + size * 0.45,
+    cx, y + size * 0.1,
+    'F'
+  );
+}
+
+/**
+ * Draw circled number with modern style
+ */
+function waDrawCircledNumber(doc: jsPDF, num: number, x: number, y: number, radius: number = 5): void {
+  // Gradient effect with two circles
+  doc.setFillColor(COLORS.darkGreen.r, COLORS.darkGreen.g, COLORS.darkGreen.b);
   doc.circle(x, y, radius, 'F');
+  doc.setFillColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+  doc.circle(x, y, radius * 0.9, 'F');
+
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(radius * 1.8);
   doc.setFont('helvetica', 'bold');
@@ -340,49 +499,60 @@ function waDrawCircledNumber(doc: jsPDF, num: number, x: number, y: number, radi
   doc.setTextColor(0, 0, 0);
 }
 
+/**
+ * Draw modern progress bar with gradient effect
+ */
 function waDrawProgressBar(doc: jsPDF, x: number, y: number, width: number, height: number, segments: number, filled: number): void {
-  const segmentWidth = (width - (segments - 1) * 1) / segments;
+  const segmentWidth = (width - (segments - 1) * 1.5) / segments;
+  const cornerRadius = height / 2;
 
   for (let i = 0; i < segments; i++) {
-    const segX = x + i * (segmentWidth + 1);
+    const segX = x + i * (segmentWidth + 1.5);
     if (i < filled) {
-      doc.setFillColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+      // Filled segment with gradient effect
+      const intensity = 1 - (i * 0.08);
+      doc.setFillColor(
+        Math.round(COLORS.waGreen.r * intensity),
+        Math.round(COLORS.waGreen.g * intensity),
+        Math.round(COLORS.waGreen.b * intensity)
+      );
     } else {
-      doc.setFillColor(220, 220, 220);
+      doc.setFillColor(230, 230, 230);
     }
-    doc.rect(segX, y, segmentWidth, height, 'F');
+    doc.roundedRect(segX, y, segmentWidth, height, cornerRadius, cornerRadius, 'F');
   }
 }
 
+/**
+ * Draw image placeholder with modern style
+ */
 function waDrawImagePlaceholder(doc: jsPDF, x: number, y: number, w: number, h: number): void {
-  doc.setDrawColor(200, 200, 200);
-  doc.setLineWidth(0.5);
-  doc.roundedRect(x, y, w, h, 3, 3, 'S');
+  // Background
+  doc.setFillColor(250, 250, 252);
+  doc.setDrawColor(220, 220, 225);
+  doc.setLineWidth(1);
+  doc.roundedRect(x, y, w, h, 4, 4, 'FD');
 
-  const iconSize = Math.min(w, h) * 0.4;
+  const iconSize = Math.min(w, h) * 0.3;
   const centerX = x + w / 2;
   const centerY = y + h / 2;
 
-  doc.setDrawColor(180, 180, 180);
-  doc.setLineWidth(1);
+  // Image icon
+  doc.setFillColor(200, 200, 205);
+  doc.roundedRect(centerX - iconSize / 2, centerY - iconSize / 2, iconSize, iconSize, 2, 2, 'F');
 
-  // Mountains
-  doc.line(centerX - iconSize / 2, centerY + iconSize / 4, centerX - iconSize / 6, centerY - iconSize / 4);
-  doc.line(centerX - iconSize / 6, centerY - iconSize / 4, centerX + iconSize / 6, centerY + iconSize / 4);
-  doc.line(centerX, centerY, centerX + iconSize / 3, centerY - iconSize / 3);
-  doc.line(centerX + iconSize / 3, centerY - iconSize / 3, centerX + iconSize / 2, centerY + iconSize / 4);
+  // Mountain shape
+  doc.setFillColor(170, 170, 175);
+  doc.triangle(
+    centerX - iconSize * 0.35, centerY + iconSize * 0.3,
+    centerX, centerY - iconSize * 0.1,
+    centerX + iconSize * 0.35, centerY + iconSize * 0.3,
+    'F'
+  );
 
   // Sun circle
-  doc.circle(centerX - iconSize / 3, centerY - iconSize / 4, iconSize / 8, 'S');
-
-  // Plus circle at bottom right
-  const plusX = x + w - 8;
-  const plusY = y + h - 8;
-  doc.setFillColor(255, 255, 255);
-  doc.circle(plusX, plusY, 5, 'FD');
-  doc.setLineWidth(1.5);
-  doc.line(plusX - 2.5, plusY, plusX + 2.5, plusY);
-  doc.line(plusX, plusY - 2.5, plusX, plusY + 2.5);
+  doc.setFillColor(230, 230, 235);
+  doc.circle(centerX + iconSize * 0.2, centerY - iconSize * 0.2, iconSize * 0.12, 'F');
 }
 
 /**
@@ -415,51 +585,258 @@ async function waDrawImage(
   }
 }
 
-function waDrawIcon(doc: jsPDF, type: string, x: number, y: number, size: number = 8): void {
-  doc.setDrawColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
-  doc.setFillColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
-  doc.setLineWidth(0.5);
+// ============ LOGO DRAWING ============
 
-  switch (type) {
-    case 'industry':
-      doc.rect(x, y + size * 0.3, size * 0.6, size * 0.7, 'S');
-      doc.rect(x + size * 0.7, y + size * 0.5, size * 0.3, size * 0.5, 'S');
-      doc.line(x + size * 0.15, y, x + size * 0.15, y + size * 0.3);
-      doc.line(x + size * 0.45, y + size * 0.1, x + size * 0.45, y + size * 0.3);
-      break;
-    case 'segment':
-      doc.circle(x + size / 2, y + size / 2, size / 3, 'F');
-      break;
-    case 'workshop':
-      doc.circle(x + size / 2, y + size / 2, size / 3, 'S');
-      break;
-    case 'worktype':
-      doc.line(x, y + size, x + size, y);
-      doc.circle(x + size * 0.8, y + size * 0.2, size * 0.15, 'S');
-      break;
-    case 'location':
-      doc.circle(x + size / 2, y + size * 0.35, size * 0.25, 'S');
-      doc.line(x + size * 0.25, y + size * 0.5, x + size / 2, y + size);
-      doc.line(x + size * 0.75, y + size * 0.5, x + size / 2, y + size);
-      break;
-    default:
-      doc.circle(x + size / 2, y + size / 2, size / 3, 'S');
+/**
+ * Draw the new WA logo (horizontal full logo)
+ */
+async function waDrawLogo(doc: jsPDF, x: number, y: number, width: number = 45): Promise<void> {
+  try {
+    const logoUrl = window?.location?.origin
+      ? `${window.location.origin}/wa-logo-full.png`
+      : '/wa-logo-full.png';
+
+    const base64 = await waFetchImageAsBase64(logoUrl);
+    if (base64) {
+      // Logo aspect ratio is approximately 2:1
+      const height = width * 0.515;
+      doc.addImage(base64, 'PNG', x, y, width, height);
+      return;
+    }
+  } catch (e) {
+    console.log('[PDF] Could not load logo, using fallback', e);
   }
+
+  // Fallback: Draw WA circle logo with text
+  waDrawLogoFallback(doc, x, y, width);
 }
 
-function waDrawConfidentialFooter(doc: jsPDF, options?: PDFExportOptions): void {
+function waDrawLogoFallback(doc: jsPDF, x: number, y: number, width: number = 45): void {
+  const circleSize = width * 0.35;
+  const centerX = x + circleSize / 2;
+  const centerY = y + circleSize / 2;
+
+  // Green circle
+  doc.setFillColor(34, 139, 34);
+  doc.circle(centerX, centerY, circleSize / 2, 'F');
+
+  // WA text inside circle
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(circleSize * 0.45);
+  doc.setFont('helvetica', 'bold');
+  doc.text('WA', centerX, centerY + 1, { align: 'center', baseline: 'middle' });
+
+  // "Welding Alloys" text
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Welding', x + circleSize + 3, y + circleSize * 0.35);
+  doc.text('Alloys', x + circleSize + 3, y + circleSize * 0.7);
+}
+
+// ============ SECTION CARD DRAWING ============
+
+/**
+ * Draw a modern card with shadow effect
+ */
+function waDrawCard(
+  doc: jsPDF,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  options?: {
+    fill?: { r: number; g: number; b: number };
+    border?: { r: number; g: number; b: number };
+    shadow?: boolean;
+    radius?: number;
+  }
+): void {
+  const fill = options?.fill || { r: 255, g: 255, b: 255 };
+  const border = options?.border || { r: 230, g: 230, b: 230 };
+  const radius = options?.radius ?? 3;
+
+  // Shadow effect
+  if (options?.shadow !== false) {
+    doc.setFillColor(240, 240, 240);
+    doc.roundedRect(x + 0.5, y + 0.5, w, h, radius, radius, 'F');
+  }
+
+  // Main card
+  doc.setFillColor(fill.r, fill.g, fill.b);
+  doc.setDrawColor(border.r, border.g, border.b);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(x, y, w, h, radius, radius, 'FD');
+}
+
+/**
+ * Draw section header with icon
+ */
+function waDrawSectionHeader(
+  doc: jsPDF,
+  title: string,
+  x: number,
+  y: number,
+  width: number,
+  sectionNum?: number
+): void {
+  if (sectionNum !== undefined) {
+    waDrawCircledNumber(doc, sectionNum, x + 5, y + 4, 4.5);
+  }
+
+  doc.setFontSize(11);
+  doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+  doc.setFont('helvetica', 'bold');
+  doc.text(title, x + (sectionNum !== undefined ? 14 : 0), y + 6);
+}
+
+// ============ VISUAL COMPARISON SECTION ============
+
+/**
+ * Draw visual comparison between before and after solutions
+ */
+function waDrawVisualComparison(
+  doc: jsPDF,
+  x: number,
+  y: number,
+  width: number,
+  data: {
+    previousLife?: string;
+    expectedLife?: string;
+    previousSolution?: string;
+    problemDescription?: string;
+    waSolution?: string;
+    waProduct?: string;
+    competitorName?: string;
+  }
+): number {
+  const halfWidth = (width - 15) / 2;
+  const cardHeight = 40; // Slightly taller for more content
+
+  // Title
+  doc.setFontSize(9);
+  doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
+  doc.setFont('helvetica', 'bold');
+  doc.text('SOLUTION COMPARISON', x, y + 4);
+  y += 8;
+
+  // BEFORE card (red tint)
+  waDrawCard(doc, x, y, halfWidth, cardHeight, {
+    fill: { r: 254, g: 242, b: 242 },
+    border: { r: 252, g: 165, b: 165 },
+  });
+
+  doc.setFillColor(COLORS.red.r, COLORS.red.g, COLORS.red.b);
+  doc.roundedRect(x, y, halfWidth, 7, 3, 3, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.text('BEFORE', x + halfWidth / 2, y + 5, { align: 'center' });
+
+  // Competitor name if available
+  let beforeTextY = y + 12;
+  if (data.competitorName) {
+    doc.setTextColor(COLORS.gray.r, COLORS.gray.g, COLORS.gray.b);
+    doc.setFontSize(6);
+    doc.setFont('helvetica', 'italic');
+    doc.text(`OEM: ${data.competitorName}`, x + 3, beforeTextY);
+    beforeTextY += 5;
+  }
+
+  // Previous solution text - use problemDescription as fallback
+  doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'normal');
+
+  const prevSolutionText = data.previousSolution || data.problemDescription || 'Not specified';
+  const beforeText = doc.splitTextToSize(prevSolutionText, halfWidth - 6).slice(0, 2);
+  doc.text(beforeText, x + 3, beforeTextY);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(COLORS.red.r, COLORS.red.g, COLORS.red.b);
+  doc.text(`Service Life: ${data.previousLife || 'N/A'}`, x + 3, y + cardHeight - 4);
+
+  // Arrow in middle
+  const arrowX = x + halfWidth + 7.5;
+  const arrowY = y + cardHeight / 2;
+  doc.setFillColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+  doc.triangle(
+    arrowX - 4, arrowY - 3,
+    arrowX - 4, arrowY + 3,
+    arrowX + 4, arrowY,
+    'F'
+  );
+
+  // AFTER card (green tint)
+  const afterX = x + halfWidth + 15;
+  waDrawCard(doc, afterX, y, halfWidth, cardHeight, {
+    fill: { r: 240, g: 253, b: 244 },
+    border: { r: 134, g: 239, b: 172 },
+  });
+
+  doc.setFillColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+  doc.roundedRect(afterX, y, halfWidth, 7, 3, 3, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.text('AFTER (WA SOLUTION)', afterX + halfWidth / 2, y + 5, { align: 'center' });
+
+  // WA Solution text
+  doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'normal');
+
+  const waSolutionText = data.waSolution || 'WA Solution';
+  const afterText = doc.splitTextToSize(waSolutionText, halfWidth - 6).slice(0, 2);
+  doc.text(afterText, afterX + 3, y + 12);
+
+  // Service life
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+  doc.text(`Service Life: ${data.expectedLife || 'Improved'}`, afterX + 3, y + cardHeight - 4);
+
+  // Product badge - centered in card
+  if (data.waProduct) {
+    doc.setFillColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+    const productText = data.waProduct;
+    doc.setFontSize(6);
+    const badgeWidth = doc.getTextWidth(productText) + 8;
+    const badgeX = afterX + (halfWidth - badgeWidth) / 2; // Center badge in card
+    doc.roundedRect(badgeX, y + cardHeight - 12, badgeWidth, 6, 2, 2, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.text(productText, afterX + halfWidth / 2, y + cardHeight - 8, { align: 'center' });
+  }
+
+  return y + cardHeight + 5;
+}
+
+// ============ FOOTER ============
+
+function waDrawConfidentialFooter(doc: jsPDF, pageNum: number, totalPages: number, options?: PDFExportOptions): void {
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
 
   const userName = options?.exportedByName || '[User Name]';
   const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
+  // Footer line
+  doc.setDrawColor(230, 230, 230);
+  doc.setLineWidth(0.5);
+  doc.line(10, pageHeight - 12, pageWidth - 10, pageHeight - 12);
+
   doc.setFontSize(7);
-  doc.setTextColor(COLORS.red.r, COLORS.red.g, COLORS.red.b);
+  doc.setTextColor(COLORS.gray.r, COLORS.gray.g, COLORS.gray.b);
   doc.setFont('helvetica', 'normal');
 
-  const footerText = `Internal use only. Confidential \u2013 Printed by ${userName} on ${dateStr}. Personal copy, external distribution prohibited.`;
-  doc.text(footerText, pageWidth / 2, pageHeight - 8, { align: 'center' });
+  // Left: Internal use
+  doc.text('Internal use only.', 10, pageHeight - 7);
+
+  // Center: Confidential notice
+  const footerText = `Confidential \u2013 Printed by ${userName} on ${dateStr}`;
+  doc.text(footerText, pageWidth / 2, pageHeight - 7, { align: 'center' });
+
+  // Right: Page number
+  doc.text(`Page ${pageNum} of ${totalPages}`, pageWidth - 10, pageHeight - 7, { align: 'right' });
 }
 
 // ============ PAGE 1: MAIN CASE STUDY ============
@@ -467,32 +844,35 @@ function waDrawConfidentialFooter(doc: jsPDF, options?: PDFExportOptions): void 
 async function waGeneratePage1(
   doc: jsPDF,
   data: CaseStudyPDFData,
-  imageUrls: string[],
-  options?: PDFExportOptions
+  options?: PDFExportOptions,
+  totalPages: number = 1
 ): Promise<void> {
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 10;
   let y = 8;
 
   // ===== HEADER =====
-  // White background header with green text
   doc.setFillColor(255, 255, 255);
-  doc.rect(0, 0, pageWidth, 18, 'F');
+  doc.rect(0, 0, pageWidth, 22, 'F');
 
-  doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
-  doc.setFontSize(16);
+  // Green accent bar at top
+  doc.setFillColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+  doc.rect(0, 0, pageWidth, 3, 'F');
+
+  doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
+  doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
-  doc.text('INDUSTRIAL CHALLENGE REPORT', margin, 12);
+  doc.text('INDUSTRIAL CHALLENGE REPORT', margin, 16);
 
-  // WA Logo on right - try to load real logo (positioned same as page 2)
-  await waDrawWALogoAsync(doc, pageWidth - 42, 5, 16);
+  // WA Logo on right
+  await waDrawLogo(doc, pageWidth - 55, 5, 45);
 
-  y = 22;
+  y = 26;
 
   // ===== TRANSLATION NOTICE =====
   if (data.originalLanguage && data.originalLanguage !== 'en') {
     doc.setFillColor(COLORS.yellow.r, COLORS.yellow.g, COLORS.yellow.b);
-    doc.rect(margin, y, pageWidth - margin * 2, 8, 'F');
+    doc.roundedRect(margin, y, pageWidth - margin * 2, 8, 2, 2, 'F');
     doc.setFontSize(7);
     doc.setTextColor(100, 80, 0);
     doc.text(
@@ -503,30 +883,22 @@ async function waGeneratePage1(
   }
 
   // ===== CASE TYPE TABS =====
-  // Highlight logic:
-  // - APPLICATION: highlight APPLICATION only (green)
-  // - TECH: highlight APPLICATION (green) and TECH (purple)
-  // - STAR with WPS: highlight APPLICATION (green), TECH (purple), and STAR (yellow)
-  // - STAR without WPS: highlight APPLICATION (green) and STAR (yellow) - skip TECH
   doc.setFontSize(9);
   const types = [
-    { label: 'Application Case study', type: 'APPLICATION', color: COLORS.waGreen },
-    { label: 'Tech Case study', type: 'TECH', color: COLORS.purple },
-    { label: 'Star case study', type: 'STAR', color: COLORS.starYellow },
+    { label: 'Application Case Study', type: 'APPLICATION', color: COLORS.waGreen },
+    { label: 'Tech Case Study', type: 'TECH', color: COLORS.purple },
+    { label: 'Star Case Study', type: 'STAR', color: COLORS.starYellow },
   ];
 
-  // Determine which types to highlight based on case type and WPS data
   const hasWpsData = data.wps?.process || data.wps?.weldingPosition || data.wps?.shieldingGas;
-  const highlightedTypes: string[] = ['APPLICATION']; // Always highlight APPLICATION
+  const highlightedTypes: string[] = ['APPLICATION'];
 
   if (data.type === 'TECH') {
     highlightedTypes.push('TECH');
   } else if (data.type === 'STAR') {
     if (hasWpsData) {
-      // STAR with WPS: highlight all three
       highlightedTypes.push('TECH', 'STAR');
     } else {
-      // STAR without WPS: skip TECH, highlight STAR
       highlightedTypes.push('STAR');
     }
   }
@@ -537,595 +909,759 @@ async function waGeneratePage1(
     const textWidth = doc.getTextWidth(label);
 
     if (isActive) {
-      // Use type-specific color for highlighting
       doc.setTextColor(color.r, color.g, color.b);
       doc.setFont('helvetica', 'bold');
       doc.setDrawColor(color.r, color.g, color.b);
-      doc.setLineWidth(1);
-      doc.line(tabX, y + 6, tabX + textWidth, y + 6);
+      doc.setLineWidth(1.5);
+      doc.line(tabX, y + 7, tabX + textWidth, y + 7);
     } else {
-      doc.setTextColor(150, 150, 150);
+      doc.setTextColor(180, 180, 180);
       doc.setFont('helvetica', 'normal');
     }
     doc.text(label, tabX, y + 4);
 
     if (idx < types.length - 1) {
-      tabX += textWidth + 5;
-      doc.setTextColor(150, 150, 150);
+      tabX += textWidth + 6;
+      doc.setTextColor(200, 200, 200);
       doc.text('|', tabX, y + 4);
       tabX += 8;
     }
   });
 
-  y += 12;
+  y += 14;
 
-  // ===== METADATA BOX =====
-  doc.setFillColor(250, 250, 250);
-  doc.setDrawColor(230, 230, 230);
-  doc.rect(margin, y, pageWidth - margin * 2, 14, 'FD');
+  // ===== METADATA CARD =====
+  waDrawCard(doc, margin, y, pageWidth - margin * 2, 18, {
+    fill: { r: 250, g: 250, b: 252 },
+  });
 
   doc.setFontSize(7);
-  doc.setTextColor(80, 80, 80);
+  doc.setTextColor(COLORS.gray.r, COLORS.gray.g, COLORS.gray.b);
   doc.setFont('helvetica', 'normal');
 
-  const metaCol1 = margin + 3;
-  const metaCol2 = margin + 25;
-  const metaCol3 = margin + 80;
-  const metaCol4 = margin + 105;
-
-  doc.text('Written by:', metaCol1, y + 5);
+  // Row 1
+  waDrawUserIcon(doc, margin + 3, y + 2, 6);
+  doc.text('Written by:', margin + 10, y + 6);
+  doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
   doc.setFont('helvetica', 'bold');
-  doc.text(data.contributor.name, metaCol2, y + 5);
+  doc.text(data.contributor.name, margin + 28, y + 6);
 
+  waDrawCalendarIcon(doc, margin + 85, y + 2, 6);
   doc.setFont('helvetica', 'normal');
-  doc.text('Date of approval:', metaCol3, y + 5);
+  doc.setTextColor(COLORS.gray.r, COLORS.gray.g, COLORS.gray.b);
+  doc.text('Approved:', margin + 92, y + 6);
+  doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
   doc.setFont('helvetica', 'bold');
   const approvalText = data.approvedAt
-    ? `${waFormatDate(data.approvedAt)}${data.approver ? ' - by ' + data.approver.name : ''}`
+    ? `${waFormatDate(data.approvedAt)}${data.approver ? ' by ' + data.approver.name : ''}`
     : 'Pending';
-  doc.text(approvalText, metaCol4, y + 5);
+  doc.text(approvalText, margin + 108, y + 6);
+
+  // Row 2
+  waDrawCalendarIcon(doc, margin + 3, y + 10, 6);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(COLORS.gray.r, COLORS.gray.g, COLORS.gray.b);
+  doc.text('Job Date:', margin + 10, y + 14);
+  doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
+  doc.setFont('helvetica', 'bold');
+  doc.text(waFormatDate(data.jobDate || data.createdAt) || 'N/A', margin + 28, y + 14);
 
   doc.setFont('helvetica', 'normal');
-  doc.text('Date of job:', metaCol1, y + 10);
+  doc.setTextColor(COLORS.gray.r, COLORS.gray.g, COLORS.gray.b);
+  doc.text('Revision:', margin + 92, y + 14);
+  doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
   doc.setFont('helvetica', 'bold');
-  doc.text(waFormatDate(data.jobDate || data.createdAt) || 'N/A', metaCol2, y + 10);
+  doc.text(data.revision || 'V1', margin + 108, y + 14);
 
-  doc.setFont('helvetica', 'normal');
-  doc.text('Revision N\u00B0:', metaCol3, y + 10);
-  doc.setFont('helvetica', 'bold');
-  doc.text(data.revision || 'V1', metaCol4, y + 10);
+  y += 22;
 
-  y += 18;
-
-  // ===== HORIZONTAL INFO ROW =====
-  doc.setDrawColor(230, 230, 230);
-  doc.line(margin, y, pageWidth - margin, y);
-  y += 3;
+  // ===== HORIZONTAL INFO ROW (Matching details page) =====
+  // Show: Industry, Component/Workpiece, Job Type, Work Type, Location
+  const jobTypeDisplay = data.jobType === 'OTHER' ? (data.jobTypeOther || 'Other') : (data.jobType || 'N/A');
 
   const infoItems = [
-    { icon: 'industry', label: data.industry.toUpperCase() },
-    { icon: 'segment', label: data.customerSegment || data.customerName.split(' ')[0].toUpperCase() },
-    { icon: 'workshop', label: data.subSegment || 'WORKSHOP' },
-    { icon: 'worktype', label: data.workType?.toUpperCase() || 'PREVENTIVE' },
-    { icon: 'location', label: data.country?.toUpperCase() || data.location.toUpperCase() },
+    { icon: 'building', label: 'Industry', value: data.industry || 'N/A' },
+    { icon: 'package', label: 'Component', value: data.componentWorkpiece || 'N/A' },
+    { icon: 'clipboard', label: 'Job Type', value: jobTypeDisplay },
+    { icon: 'wrench', label: 'Work Type', value: data.workType || 'N/A' },
+    { icon: 'mappin', label: 'Location', value: data.country || data.location || 'N/A' },
   ];
 
   const itemWidth = (pageWidth - margin * 2) / infoItems.length;
+
+  // Background strip
+  doc.setFillColor(250, 250, 252);
+  doc.rect(margin, y, pageWidth - margin * 2, 18, 'F');
+
   infoItems.forEach((item, idx) => {
     const itemX = margin + idx * itemWidth;
-    waDrawIcon(doc, item.icon, itemX + 2, y, 8);
+
+    // Draw icon based on type (using Lucide-style icons)
+    switch (item.icon) {
+      case 'building': waDrawBuildingIcon(doc, itemX + 2, y + 1, 8); break;
+      case 'package': waDrawPackageIcon(doc, itemX + 2, y + 1, 8); break;
+      case 'clipboard': waDrawClipboardIcon(doc, itemX + 2, y + 1, 8); break;
+      case 'wrench': waDrawWrenchIcon(doc, itemX + 2, y + 1, 8); break;
+      case 'mappin': waDrawMapPinIcon(doc, itemX + 2, y + 1, 8); break;
+    }
+
+    // Label
+    doc.setFontSize(6);
+    doc.setTextColor(COLORS.gray.r, COLORS.gray.g, COLORS.gray.b);
+    doc.setFont('helvetica', 'normal');
+    doc.text(item.label, itemX + 12, y + 5);
+
+    // Value
     doc.setFontSize(7);
-    doc.setTextColor(80, 80, 80);
+    doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
     doc.setFont('helvetica', 'bold');
-    doc.text(item.label, itemX + 12, y + 6);
+    const valueText = item.value.length > 14 ? item.value.substring(0, 14) + '...' : item.value;
+    doc.text(valueText, itemX + 12, y + 11);
   });
 
+  // Customer name below
   doc.setFontSize(8);
-  doc.setTextColor(100, 100, 100);
-  doc.setFont('helvetica', 'normal');
-  doc.text(data.customerName, margin + 14, y + 12);
+  doc.setTextColor(COLORS.gray.r, COLORS.gray.g, COLORS.gray.b);
+  doc.setFont('helvetica', 'italic');
+  doc.text(data.customerName, margin + 2, y + 17);
 
-  y += 18;
+  y += 22;
 
-  // ===== ① APPLICATION DETAILS =====
-  waDrawCircledNumber(doc, 1, margin + 4, y + 3, 4);
-  doc.setFontSize(10);
-  doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
-  doc.setFont('helvetica', 'bold');
-  doc.text('APPLICATION DETAILS', margin + 12, y + 5);
+  // ===== SECTION 1: APPLICATION DETAILS =====
+  waDrawSectionHeader(doc, 'APPLICATION DETAILS', margin, y, pageWidth - margin * 2, 1);
   y += 10;
 
-  // General Description box
-  doc.setFillColor(250, 250, 250);
-  doc.setDrawColor(230, 230, 230);
-  doc.rect(margin, y, pageWidth - margin * 2, 25, 'FD');
+  // General Description card
+  waDrawCard(doc, margin, y, pageWidth - margin * 2, 22);
 
   doc.setFontSize(8);
-  doc.setTextColor(0, 0, 0);
+  doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
   doc.setFont('helvetica', 'bold');
-  doc.text('* GENERAL DESCRIPTION *', margin + 3, y + 5);
+  doc.text('GENERAL DESCRIPTION', margin + 4, y + 5);
 
   doc.setFont('helvetica', 'normal');
+  doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
   doc.setFontSize(7);
-  const descLines = doc.splitTextToSize(data.problemDescription, pageWidth - margin * 2 - 6);
-  doc.text(descLines.slice(0, 4), margin + 3, y + 11);
+  const descLines = doc.splitTextToSize(data.problemDescription, pageWidth - margin * 2 - 8);
+  doc.text(descLines.slice(0, 3), margin + 4, y + 11);
 
-  y += 28;
+  y += 26;
 
   // ===== WEAR TYPES + PREVIOUS SOLUTION =====
   const wearColWidth = (pageWidth - margin * 2) * 0.45;
-  const prevColStart = margin + wearColWidth + 5;
+  const prevColStart = margin + wearColWidth + 8;
   const prevColWidth = pageWidth - margin - prevColStart;
 
+  // Wear types with progress bars
+  doc.setFontSize(8);
+  doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+  doc.setFont('helvetica', 'bold');
+  doc.text('WEAR TYPE ANALYSIS', margin, y + 4);
+  y += 8;
+
   const wearTypes = [
-    { name: 'Abrasion', filled: data.wearType.some(w => w.toLowerCase().includes('abrasion')) ? 5 : 0 },
-    { name: 'Impact', filled: data.wearType.some(w => w.toLowerCase().includes('impact')) ? 4 : 0 },
-    { name: 'Metal-metal', filled: data.wearType.some(w => w.toLowerCase().includes('metal')) ? 3 : 0 },
-    { name: 'Temperature', filled: data.wearType.some(w => w.toLowerCase().includes('temp')) ? 4 : 0 },
-    { name: 'Corrosion', filled: data.wearType.some(w => w.toLowerCase().includes('corrosion')) ? 5 : 0 },
-    { name: 'Other (*)', filled: data.wearType.some(w => !['abrasion', 'impact', 'metal', 'temp', 'corrosion'].some(t => w.toLowerCase().includes(t))) ? 2 : 0 },
+    { name: 'Abrasion', key: 'abrasion' },
+    { name: 'Impact', key: 'impact' },
+    { name: 'Metal-Metal', key: 'metal' },
+    { name: 'Temperature', key: 'temp' },
+    { name: 'Corrosion', key: 'corrosion' },
   ];
 
   doc.setFontSize(7);
   wearTypes.forEach((wt, idx) => {
-    const rowY = y + idx * 6;
-    doc.setTextColor(80, 80, 80);
+    const rowY = y + idx * 5.5;
+    const isActive = data.wearType.some(w => w.toLowerCase().includes(wt.key));
+    const severity = data.wearSeverities?.[wt.key.toUpperCase()] || (isActive ? 4 : 0);
+
+    doc.setTextColor(isActive ? COLORS.darkGray.r : COLORS.gray.r, isActive ? COLORS.darkGray.g : COLORS.gray.g, isActive ? COLORS.darkGray.b : COLORS.gray.b);
+    doc.setFont('helvetica', isActive ? 'bold' : 'normal');
     doc.text(wt.name, margin, rowY + 3);
-    waDrawProgressBar(doc, margin + 25, rowY, wearColWidth - 30, 4, 6, wt.filled);
+    waDrawProgressBar(doc, margin + 25, rowY, wearColWidth - 30, 4, 6, severity);
   });
 
-  // Previous Solution box
-  doc.setFillColor(250, 250, 250);
-  doc.setDrawColor(230, 230, 230);
-  doc.rect(prevColStart, y, prevColWidth, 30, 'FD');
+  // Previous Solution card
+  waDrawCard(doc, prevColStart, y - 8, prevColWidth, 36, {
+    fill: { r: 254, g: 252, b: 248 },
+    border: { r: 230, g: 220, b: 200 },
+  });
 
   doc.setFontSize(8);
-  doc.setTextColor(0, 0, 0);
+  doc.setTextColor(COLORS.orange.r, COLORS.orange.g, COLORS.orange.b);
   doc.setFont('helvetica', 'bold');
-  doc.text('* PREVIOUS SOLUTION *', prevColStart + 3, y + 5);
+  doc.text('PREVIOUS SOLUTION', prevColStart + 4, y - 4);
+
+  // Competitor/OEM name if available
+  if (data.competitorName) {
+    doc.setFontSize(7);
+    doc.setTextColor(COLORS.gray.r, COLORS.gray.g, COLORS.gray.b);
+    doc.setFont('helvetica', 'italic');
+    doc.text(`OEM: ${data.competitorName}`, prevColStart + 4, y + 2);
+  }
 
   doc.setFont('helvetica', 'normal');
+  doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
   doc.setFontSize(7);
-  if (data.previousSolution) {
-    const prevLines = doc.splitTextToSize(data.previousSolution, prevColWidth - 6);
-    doc.text(prevLines.slice(0, 2), prevColStart + 3, y + 11);
-  } else {
-    doc.text('Include previous service life and ideally', prevColStart + 3, y + 11);
-    doc.text('the name of the competitor who did it', prevColStart + 3, y + 15);
-  }
+
+  // Previous solution text - use problemDescription as fallback since form collects both in one field
+  const prevSolText = data.previousSolution || data.problemDescription || 'Not specified';
+  const prevLines = doc.splitTextToSize(prevSolText, prevColWidth - 8);
+  const prevTextY = data.competitorName ? y + 8 : y + 3;
+  doc.text(prevLines.slice(0, 2), prevColStart + 4, prevTextY);
 
   if (data.previousServiceLife) {
-    doc.setFontSize(7);
-    doc.text(`Previous service life = ${data.previousServiceLife}`, prevColStart + 10, y + 25);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(COLORS.red.r, COLORS.red.g, COLORS.red.b);
+    doc.text(`Service Life: ${data.previousServiceLife}`, prevColStart + 4, y + 22);
   }
 
-  y += 38;
+  y += 32;
 
-  // ===== ② SOLUTION PROVIDED =====
-  waDrawCircledNumber(doc, 2, margin + 4, y + 3, 4);
-  doc.setFontSize(10);
-  doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
-  doc.setFont('helvetica', 'bold');
-  doc.text('SOLUTION PROVIDED', margin + 12, y + 5);
+  // ===== SECTION 2: SOLUTION PROVIDED =====
+  waDrawSectionHeader(doc, 'SOLUTION PROVIDED', margin, y, pageWidth - margin * 2, 2);
   y += 10;
 
-  // Image row - use real images if available
-  const imgCount = 3;
-  const imgGap = 8;
-  const totalImgWidth = pageWidth - margin * 2;
-  const imgWidth = (totalImgWidth - (imgCount - 1) * imgGap) / imgCount;
-  const imgHeight = 28;
+  // Technical Details + WA Solution cards side by side
+  const cardWidth = (pageWidth - margin * 2 - 6) / 2;
 
-  for (let i = 0; i < imgCount; i++) {
-    const imgX = margin + i * (imgWidth + imgGap);
-    const imageUrl = imageUrls[i] || null;
-    await waDrawImage(doc, imageUrl, imgX, y, imgWidth, imgHeight);
-  }
+  // Technical Details card
+  waDrawCard(doc, margin, y, cardWidth, 24);
 
-  y += imgHeight + 5;
-
-  // Technical Details box
-  doc.setFillColor(250, 250, 250);
-  doc.setDrawColor(230, 230, 230);
-  doc.rect(margin, y, (pageWidth - margin * 2) * 0.48, 22, 'FD');
-
-  doc.setFontSize(7);
-  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(8);
+  doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
   doc.setFont('helvetica', 'bold');
-  doc.text('* TECHNICAL DETAILS *', margin + 3, y + 4);
+  doc.text('TECHNICAL DETAILS', margin + 4, y + 5);
 
   doc.setFont('helvetica', 'normal');
+  doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
+  doc.setFontSize(7);
+
   const techDetails = [
-    { label: 'Base metal', value: data.baseMetal || 'S235 low alloyed steel' },
-    { label: 'General dimension', value: data.generalDimensions || '' },
-    { label: 'Product(s) used', value: `${data.waProduct}${data.waProductDiameter ? ' ' + data.waProductDiameter : ''}` },
+    { label: 'Base Metal:', value: data.baseMetal || 'N/A' },
+    { label: 'Dimensions:', value: data.generalDimensions || 'N/A' },
+    { label: 'Product:', value: `${data.waProduct}${data.waProductDiameter ? ' ' + data.waProductDiameter : ''}` },
   ];
 
   techDetails.forEach((detail, idx) => {
-    doc.text(detail.label, margin + 3, y + 8 + idx * 4);
+    doc.setFont('helvetica', 'normal');
+    doc.text(detail.label, margin + 4, y + 10 + idx * 4.5);
+    doc.setFont('helvetica', 'bold');
     doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
-    doc.text(detail.value, margin + 35, y + 8 + idx * 4);
-    doc.setTextColor(0, 0, 0);
+    const valueText = detail.value.length > 25 ? detail.value.substring(0, 25) + '...' : detail.value;
+    doc.text(valueText, margin + 28, y + 10 + idx * 4.5);
+    doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
   });
 
-  // WA Solution box
-  const solBoxX = margin + (pageWidth - margin * 2) * 0.5;
-  const solBoxW = (pageWidth - margin * 2) * 0.48;
+  // WA Solution card
+  const solCardX = margin + cardWidth + 6;
+  waDrawCard(doc, solCardX, y, cardWidth, 24, {
+    fill: COLORS.lightGreen,
+    border: { r: 134, g: 239, b: 172 },
+  });
 
-  doc.setFillColor(250, 250, 250);
-  doc.rect(solBoxX, y, solBoxW, 22, 'FD');
-
-  doc.setFontSize(7);
+  doc.setFontSize(8);
+  doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
   doc.setFont('helvetica', 'bold');
-  doc.text('* WA SOLUTION PROVIDED *', solBoxX + 3, y + 4);
+  doc.text('WA SOLUTION', solCardX + 4, y + 5);
 
   doc.setFont('helvetica', 'normal');
-  const solLines = doc.splitTextToSize(data.waSolution, solBoxW - 6);
-  doc.text(solLines.slice(0, 3), solBoxX + 3, y + 9);
+  doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
+  doc.setFontSize(7);
+  const solLines = doc.splitTextToSize(data.waSolution, cardWidth - 8);
+  doc.text(solLines.slice(0, 3), solCardX + 4, y + 11);
 
   const duration = [
     data.jobDurationDays && `${data.jobDurationDays} days`,
     data.jobDurationHours && `${data.jobDurationHours}h`,
     data.jobDurationWeeks && `${data.jobDurationWeeks}w`,
-  ].filter(Boolean).join(' ') || 'xx days';
+  ].filter(Boolean).join(' ') || '';
 
-  doc.text(`Job duration: ${duration}`, solBoxX + 3, y + 20);
+  if (duration) {
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Duration: ${duration}`, solCardX + 4, y + 21);
+  }
 
-  y += 26;
+  y += 28;
 
-  // ===== ③ BUSINESS IMPACT =====
-  waDrawCircledNumber(doc, 3, margin + 4, y + 3, 4);
+  // ===== SECTION 3: BUSINESS IMPACT =====
+  waDrawSectionHeader(doc, 'BUSINESS IMPACT', margin, y, pageWidth - margin * 2, 3);
+  y += 10;
+
+  // Financial metrics row
+  const metricWidth = (pageWidth - margin * 2 - 12) / 3;
+
+  // Revenue card
+  waDrawCard(doc, margin, y, metricWidth, 16);
+  doc.setFontSize(6);
+  doc.setTextColor(COLORS.gray.r, COLORS.gray.g, COLORS.gray.b);
+  doc.text('Solution Value', margin + 4, y + 5);
   doc.setFontSize(10);
   doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
   doc.setFont('helvetica', 'bold');
-  doc.text('BUSINESS IMPACT', margin + 12, y + 5);
-  y += 10;
-
-  const currency = waGetCurrency(data.costCalculator?.currency);
-  doc.setFontSize(8);
-  doc.setTextColor(0, 0, 0);
-  doc.setFont('helvetica', 'normal');
-
-  doc.text('Solution value / revenue:', margin, y + 4);
-  doc.setFont('helvetica', 'bold');
   doc.text(
-    data.solutionValueRevenue ? `${currency}${data.solutionValueRevenue.toLocaleString()}` : `XXXX ${currency}`,
-    margin + 45, y + 4
+    data.solutionValueRevenue ? waFormatCurrency(data.solutionValueRevenue, data.costCalculator?.currency || data.revenueCurrency) : '-',
+    margin + 4, y + 12
   );
 
+  // Annual Revenue card
+  waDrawCard(doc, margin + metricWidth + 6, y, metricWidth, 16);
+  doc.setFontSize(6);
+  doc.setTextColor(COLORS.gray.r, COLORS.gray.g, COLORS.gray.b);
   doc.setFont('helvetica', 'normal');
-  doc.text('Annual potential revenue:', margin, y + 9);
-  doc.setFont('helvetica', 'bold');
-  doc.text(
-    data.annualPotentialRevenue ? `${currency}${data.annualPotentialRevenue.toLocaleString()}` : `XXXXX ${currency}`,
-    margin + 45, y + 9
-  );
-
-  // Technical Advantages box
-  const advBoxX = margin + (pageWidth - margin * 2) * 0.5;
-  const advBoxW = (pageWidth - margin * 2) * 0.48;
-
-  doc.setFillColor(250, 250, 250);
-  doc.setDrawColor(230, 230, 230);
-  doc.rect(advBoxX, y - 2, advBoxW, 22, 'FD');
-
-  doc.setFontSize(7);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(0, 0, 0);
-  doc.text('* TECHNICAL ADVANTAGES *', advBoxX + 3, y + 3);
-
-  doc.setFont('helvetica', 'normal');
-  if (data.technicalAdvantages) {
-    const advLines = doc.splitTextToSize(data.technicalAdvantages, advBoxW - 6);
-    doc.text(advLines.slice(0, 3), advBoxX + 3, y + 8);
-  } else {
-    doc.setFontSize(6);
-    doc.text('Describe the technical benefits of the WA solution compared to the previous', advBoxX + 3, y + 8);
-    doc.text('one. For example: longer service life, improved performance, reduced wear.', advBoxX + 3, y + 12);
-  }
-
-  y += 24;
-
-  // Expected service life
-  doc.setFillColor(COLORS.lightGreen.r, COLORS.lightGreen.g, COLORS.lightGreen.b);
-  doc.roundedRect(margin, y, 80, 8, 2, 2, 'F');
-
-  doc.setFontSize(7);
+  doc.text('Annual Potential', margin + metricWidth + 10, y + 5);
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
   doc.setFont('helvetica', 'bold');
   doc.text(
-    `Expected or new calculated service life = ${data.expectedServiceLife || 'xxx h'}`,
-    margin + 3, y + 5
+    data.annualPotentialRevenue ? waFormatCurrency(data.annualPotentialRevenue, data.costCalculator?.currency || data.revenueCurrency) : '-',
+    margin + metricWidth + 10, y + 12
   );
 
-  waDrawConfidentialFooter(doc, options);
+  // Service Life card
+  waDrawCard(doc, margin + (metricWidth + 6) * 2, y, metricWidth, 16, {
+    fill: COLORS.lightGreen,
+    border: { r: 134, g: 239, b: 172 },
+  });
+  doc.setFontSize(6);
+  doc.setTextColor(COLORS.gray.r, COLORS.gray.g, COLORS.gray.b);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Expected Service Life', margin + (metricWidth + 6) * 2 + 4, y + 5);
+  doc.setFontSize(10);
+  doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+  doc.setFont('helvetica', 'bold');
+  doc.text(data.expectedServiceLife || '-', margin + (metricWidth + 6) * 2 + 4, y + 12);
+
+  y += 20;
+
+  // Technical Advantages card
+  waDrawCard(doc, margin, y, pageWidth - margin * 2, 18);
+
+  doc.setFontSize(8);
+  doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+  doc.setFont('helvetica', 'bold');
+  doc.text('TECHNICAL ADVANTAGES', margin + 4, y + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
+  doc.setFontSize(7);
+  if (data.technicalAdvantages) {
+    const advLines = doc.splitTextToSize(data.technicalAdvantages, pageWidth - margin * 2 - 8);
+    doc.text(advLines.slice(0, 2), margin + 4, y + 11);
+  }
+
+  waDrawConfidentialFooter(doc, 1, totalPages, options);
 }
 
 // ============ PAGE 2: COST CALCULATOR + WPS ============
 
-async function waGeneratePage2(doc: jsPDF, data: CaseStudyPDFData, options?: PDFExportOptions): Promise<void> {
+async function waGeneratePage2(doc: jsPDF, data: CaseStudyPDFData, options?: PDFExportOptions, totalPages: number = 2): Promise<void> {
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 10;
-  let y = 10;
+  let y = 8;
 
-  // Use async logo loading
-  await waDrawWALogoAsync(doc, pageWidth - 42, 5, 16);
+  // Header
+  doc.setFillColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+  doc.rect(0, 0, pageWidth, 3, 'F');
 
-  // ===== ④ COST REDUCTION CALCULATOR (STAR only) =====
+  await waDrawLogo(doc, pageWidth - 55, 5, 45);
+
+  y = 22;
+
+  // ===== VISUAL COMPARISON =====
+  y = waDrawVisualComparison(doc, margin, y, pageWidth - margin * 2, {
+    previousLife: data.previousServiceLife,
+    expectedLife: data.expectedServiceLife,
+    previousSolution: data.previousSolution,
+    problemDescription: data.problemDescription,
+    waSolution: data.waSolution,
+    waProduct: data.waProduct,
+    competitorName: data.competitorName,
+  });
+
+  y += 5;
+
+  // ===== COST REDUCTION CALCULATOR (STAR only) =====
   if (data.type === 'STAR' && data.costCalculator) {
     const cc = data.costCalculator;
-    const currency = waGetCurrency(cc.currency);
 
-    // Calculate using new formula if we have the values
-    const A = cc.costOfPart || 0;      // Cost of Part
-    const E = cc.partsUsedPerYear || 0; // Parts per Year
-    const F = cc.maintenanceRepairCost || 0; // Maintenance
-    const G = cc.disassemblyCost || 0;       // Disassembly
-    const H = cc.downtimeCost || 0;          // Downtime
+    const A = cc.costOfPart || 0;
+    const E = cc.partsUsedPerYear || 0;
+    const F = cc.maintenanceRepairCost || 0;
+    const G = cc.disassemblyCost || 0;
+    const H = cc.downtimeCost || 0;
 
-    // Calculate annual costs using new formula
     const calculatedCostBefore = E > 0 ? waCalculateAnnualCost(A, E, F, G, H) : (cc.totalCostBefore || 0);
-
-    // For WA solution, we use the WA solution cost instead of old part cost
     const waCost = cc.costOfWaSolution || A;
     const calculatedCostAfter = E > 0 ? waCalculateAnnualCost(waCost, E, F * 0.5, G * 0.5, H * 0.5) : (cc.totalCostAfter || 0);
-
     const savings = calculatedCostBefore - calculatedCostAfter;
     const savingsPercent = calculatedCostBefore > 0
       ? Math.round((savings / calculatedCostBefore) * 100)
       : (cc.savingsPercentage || 0);
 
-    waDrawCircledNumber(doc, 4, margin + 4, y + 3, 4);
-    doc.setFontSize(11);
-    doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
-    doc.setFont('helvetica', 'bold');
-    doc.text('COST REDUCTION CALCULATOR', margin + 12, y + 5);
+    waDrawSectionHeader(doc, 'COST REDUCTION CALCULATOR', margin, y, pageWidth - margin * 2, 4);
     y += 12;
 
-    // INPUT Section
-    doc.setFillColor(250, 250, 250);
-    doc.setDrawColor(230, 230, 230);
-    doc.rect(margin, y, (pageWidth - margin * 2) * 0.65, 55, 'FD');
+    // Modern calculator layout
+    const inputWidth = (pageWidth - margin * 2) * 0.58;
+    const outputWidth = (pageWidth - margin * 2) * 0.38;
+    const calcHeight = 65;
 
+    // INPUT Section Card
+    waDrawCard(doc, margin, y, inputWidth, calcHeight, {
+      fill: { r: 250, g: 250, b: 255 },
+      border: { r: 200, g: 200, b: 220 },
+    });
+
+    doc.setFillColor(COLORS.blue.r, COLORS.blue.g, COLORS.blue.b);
+    doc.roundedRect(margin, y, inputWidth, 8, 3, 3, 'F');
+    doc.setTextColor(255, 255, 255);
     doc.setFontSize(8);
-    doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'bold');
-    doc.text('* INPUT *', margin + 3, y + 5);
+    doc.text('INPUT PARAMETERS', margin + inputWidth / 2, y + 5.5, { align: 'center' });
 
-    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
     doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
 
-    const inputY = y + 10;
-    const labelX = margin + 3;
-    const valueX = margin + 75;
+    const inputY = y + 12;
+    const labelX = margin + 4;
+    const valueX = margin + inputWidth - 35;
 
     const inputs = [
-      { label: 'Equipment/part name:', value: cc.equipmentName || data.componentWorkpiece },
-      { label: `A - Cost of the current (old) part (${currency})`, value: A ? `${currency}${waFormatNumber(A)}` : `XXXX ${currency}` },
-      { label: `Cost of the WA solution (${currency})`, value: waCost ? `${currency}${waFormatNumber(waCost)}` : `XXXX ${currency}` },
-      { label: 'Old solution lifetime', value: cc.oldSolutionLifetimeDays ? `${cc.oldSolutionLifetimeDays} days` : '(hours, days, weeks)' },
-      { label: 'WA solution lifetime', value: cc.waSolutionLifetimeDays ? `${cc.waSolutionLifetimeDays} days` : '(hours, days, weeks)' },
-      { label: 'E - Number of parts used per year', value: E ? `> ${E}` : '> 20' },
-      { label: `F - Maintenance/repair cost (${currency})`, value: F ? `> ${currency}${waFormatNumber(F)}` : '>' },
-      { label: `G - Disassembly/assembly cost (${currency})`, value: G ? `> ${currency}${waFormatNumber(G)}` : '>' },
-      { label: `H - Downtime cost (${currency})`, value: H ? `> ${currency}${waFormatNumber(H)}` : '>' },
+      { label: 'Equipment/Part', value: cc.equipmentName || data.componentWorkpiece || '-' },
+      { label: `Cost of Current Part`, value: A ? waFormatCurrency(A, cc.currency) : '-', highlight: true },
+      { label: `Cost of WA Solution`, value: waCost ? waFormatCurrency(waCost, cc.currency) : '-' },
+      { label: 'Old Solution Lifetime', value: cc.oldSolutionLifetimeDays ? `${cc.oldSolutionLifetimeDays} days` : '-' },
+      { label: 'WA Solution Lifetime', value: cc.waSolutionLifetimeDays ? `${cc.waSolutionLifetimeDays} days` : '-' },
+      { label: 'Parts Used Per Year (E)', value: E ? `${E}` : '-', highlight: true },
+      { label: 'Maintenance Cost (F)', value: F ? waFormatCurrency(F, cc.currency) : '-' },
+      { label: 'Disassembly Cost (G)', value: G ? waFormatCurrency(G, cc.currency) : '-' },
+      { label: 'Downtime Cost (H)', value: H ? waFormatCurrency(H, cc.currency) : '-' },
     ];
 
     inputs.forEach((input, idx) => {
-      doc.text(input.label, labelX, inputY + idx * 5);
-      doc.text(input.value, valueX, inputY + idx * 5);
+      const rowY = inputY + idx * 5.5;
+      if (input.highlight) {
+        doc.setFont('helvetica', 'bold');
+      } else {
+        doc.setFont('helvetica', 'normal');
+      }
+      doc.text(input.label, labelX, rowY + 3);
+      doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+      doc.text(input.value, valueX, rowY + 3, { align: 'right' });
+      doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
     });
 
-    // Formula explanation removed per user request
+    // OUTPUT Section Card
+    const outputX = margin + inputWidth + 8;
+    waDrawCard(doc, outputX, y, outputWidth, calcHeight, {
+      fill: { r: 240, g: 253, b: 244 },
+      border: { r: 134, g: 239, b: 172 },
+    });
 
-    // Savings percentage badge
-    if (savingsPercent > 0) {
-      doc.setFillColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
-      doc.circle(margin + 105, inputY + 17, 8, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`+${savingsPercent}%`, margin + 105, inputY + 18, { align: 'center' });
-    }
-
-    // OUTPUT Section
-    const outputX = margin + (pageWidth - margin * 2) * 0.67;
-    const outputW = (pageWidth - margin * 2) * 0.33;
-
-    doc.setFillColor(250, 250, 250);
-    doc.setDrawColor(230, 230, 230);
-    doc.rect(outputX, y, outputW, 35, 'FD');
-
+    doc.setFillColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+    doc.roundedRect(outputX, y, outputWidth, 8, 3, 3, 'F');
+    doc.setTextColor(255, 255, 255);
     doc.setFontSize(8);
-    doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'bold');
-    doc.text('* OUTPUT *', outputX + 3, y + 5);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6);
+    doc.text('RESULTS', outputX + outputWidth / 2, y + 5.5, { align: 'center' });
 
     const displayCostBefore = cc.totalCostBefore || calculatedCostBefore;
     const displayCostAfter = cc.totalCostAfter || calculatedCostAfter;
     const displaySavings = cc.annualSavings || savings;
     const displaySavingsPercent = cc.savingsPercentage || savingsPercent;
 
-    doc.text('Annual cost of current solution', outputX + 3, y + 11);
-    const costBeforeText = displayCostBefore ? `${currency}${waFormatNumber(Math.round(displayCostBefore))}` : `xxxx ${currency}`;
-    doc.text(costBeforeText, outputX + 3, y + 15);
+    // Current Cost
+    doc.setTextColor(COLORS.gray.r, COLORS.gray.g, COLORS.gray.b);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Annual Cost (Current)', outputX + 4, y + 15);
+    doc.setTextColor(COLORS.red.r, COLORS.red.g, COLORS.red.b);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text(displayCostBefore ? waFormatCurrency(Math.round(displayCostBefore), cc.currency) : '-', outputX + 4, y + 22);
 
-    doc.text('Annual cost with WA solution', outputX + 3, y + 20);
+    // WA Cost
+    doc.setTextColor(COLORS.gray.r, COLORS.gray.g, COLORS.gray.b);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Annual Cost (WA Solution)', outputX + 4, y + 30);
     doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
-    const costAfterText = displayCostAfter ? `${currency}${waFormatNumber(Math.round(displayCostAfter))}` : `xxx ${currency}`;
-    doc.text(costAfterText, outputX + 3, y + 24);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text(displayCostAfter ? waFormatCurrency(Math.round(displayCostAfter), cc.currency) : '-', outputX + 4, y + 37);
 
-    // Annual cost reduction box
+    // Savings box
     doc.setFillColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
-    doc.roundedRect(outputX + 3, y + 27, outputW - 6, 7, 1, 1, 'F');
+    doc.roundedRect(outputX + 4, y + 43, outputWidth - 8, 18, 3, 3, 'F');
 
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(7);
-    doc.setFont('helvetica', 'bold');
-    // Savings is already a positive value representing the amount saved
-    const savingsText = displaySavings
-      ? `${currency}${waFormatNumber(Math.round(displaySavings))} (${displaySavingsPercent}%)`
-      : `XXX (XX%)`;
-    doc.text(savingsText, outputX + outputW / 2, y + 31.5, { align: 'center' });
-
-    // EXTRA BENEFITS Section
-    doc.setFillColor(250, 250, 250);
-    doc.setDrawColor(230, 230, 230);
-    doc.rect(outputX, y + 36, outputW, 19, 'FD');
-
-    doc.setFontSize(7);
-    doc.setTextColor(0, 0, 0);
-    doc.setFont('helvetica', 'bold');
-    doc.text('* EXTRA BENEFITS *', outputX + 3, y + 41);
-
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6);
-    if (cc.extraBenefits) {
-      const benefitLines = doc.splitTextToSize(cc.extraBenefits, outputW - 6);
-      doc.text(benefitLines.slice(0, 2), outputX + 3, y + 46);
-    } else {
-      doc.text('e.g. fewer stoppages, reduced', outputX + 3, y + 46);
-      doc.text('stock levels, spare equipment', outputX + 3, y + 50);
+    doc.text('ANNUAL SAVINGS', outputX + outputWidth / 2, y + 49, { align: 'center' });
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    const savingsText = displaySavings ? waFormatCurrency(Math.round(displaySavings), cc.currency) : '-';
+    doc.text(savingsText, outputX + outputWidth / 2, y + 57, { align: 'center' });
+
+    // Savings percentage badge
+    if (displaySavingsPercent > 0) {
+      doc.setFillColor(COLORS.starYellow.r, COLORS.starYellow.g, COLORS.starYellow.b);
+      doc.circle(outputX + outputWidth - 12, y + 20, 10, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`+${displaySavingsPercent}%`, outputX + outputWidth - 12, y + 21, { align: 'center' });
     }
 
-    y += 58;
+    y += calcHeight + 8;
+
+    // Extra Benefits
+    if (cc.extraBenefits) {
+      waDrawCard(doc, margin, y, pageWidth - margin * 2, 14);
+      doc.setFontSize(7);
+      doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+      doc.setFont('helvetica', 'bold');
+      doc.text('ADDITIONAL BENEFITS', margin + 4, y + 5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
+      const benefitLines = doc.splitTextToSize(cc.extraBenefits, pageWidth - margin * 2 - 8);
+      doc.text(benefitLines.slice(0, 1), margin + 4, y + 11);
+      y += 18;
+    }
   }
 
-  // ===== ⑤ WELDING PROCEDURE SPECIFICATION =====
+  // ===== WELDING PROCEDURE SPECIFICATION =====
   if ((data.type === 'TECH' || data.type === 'STAR') && data.wps) {
     const sectionNum = data.type === 'STAR' ? 5 : 4;
+    const wps = data.wps;
 
-    waDrawCircledNumber(doc, sectionNum, margin + 4, y + 3, 4);
-    doc.setFontSize(11);
-    doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
-    doc.setFont('helvetica', 'bold');
-    doc.text('WELDING PROCEDURE SPECIFICATION', margin + 12, y + 5);
+    waDrawSectionHeader(doc, 'WELDING PROCEDURE SPECIFICATION', margin, y, pageWidth - margin * 2, sectionNum);
     y += 12;
 
-    const wps = data.wps;
+    // Elegant WPS card layout - 4 columns
+    const cardWidth = (pageWidth - margin * 2 - 9) / 4;
+    const cardHeight = 55;
+
+    // Card 1: Process Info
+    waDrawCard(doc, margin, y, cardWidth, cardHeight, {
+      fill: { r: 248, g: 250, b: 252 },
+    });
+    doc.setFillColor(COLORS.blue.r, COLORS.blue.g, COLORS.blue.b);
+    doc.roundedRect(margin, y, cardWidth, 7, 3, 3, 'F');
+    doc.setTextColor(255, 255, 255);
     doc.setFontSize(7);
-    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'bold');
+    doc.text('PROCESS', margin + cardWidth / 2, y + 5, { align: 'center' });
 
-    const col1X = margin;
-    const col2X = margin + 45;
-    const col3X = margin + 100;
-    const col4X = margin + 145;
-
-    const wpsData = [
-      [
-        { label: 'Number of layers:', value: wps.numberOfLayers || '3' },
-        { label: 'Process:', value: wps.process || 'FCAW-S' },
-        { label: 'Technique:', value: wps.technique || 'Automatic' },
-        { label: 'Welding position:', value: wps.weldingPosition || 'PA (flat)' },
-        { label: 'Torch position:', value: wps.torchPosition || 'Pull' },
-        { label: '', value: '' },
-        { label: 'Base metal:', value: wps.baseMetal || 'S235' },
-        { label: 'Thickness:', value: wps.thickness || '150mm' },
-        { label: 'Surface preparation:', value: wps.surfacePreparation || 'Grinding' },
-      ],
-      [
-        { label: 'Product name:', value: wps.productName || '', isGreen: true },
-        { label: 'Diameter:', value: wps.diameter || '2.8 mm' },
-        { label: '', value: '' },
-        { label: 'Shielding gas:', value: wps.shieldingGas || 'Not required' },
-        { label: 'Flow rate:', value: wps.flowRate || '\u2013' },
-        { label: 'Flux:', value: wps.flux || '\u2013' },
-        { label: '', value: '' },
-        { label: 'Stick-out:', value: wps.stickOut || '20\u201325 mm' },
-        { label: 'Type of current:', value: wps.currentType || 'DC' },
-        { label: 'Wire speed:', value: wps.wireSpeed || '2.5\u20135.0 m/min' },
-        { label: 'Intensity:', value: wps.intensity || '180\u2013280 A' },
-        { label: 'Voltage:', value: wps.voltage || '24\u201330 V' },
-        { label: 'Welding speed:', value: wps.weldingSpeed || '100\u2013250 mm/min' },
-        { label: '', value: '' },
-        { label: 'Oscillation width:', value: wps.oscillationWidth || '10\u201320 mm' },
-        { label: 'Oscillation speed:', value: wps.oscillationSpeed || '20\u201340 mm/min' },
-        { label: '', value: '' },
-        { label: 'Preheat temp:', value: wps.preheatTemperature || '150\u2013200 \u00B0C' },
-        { label: 'Interpass temp:', value: wps.interpassTemperature || '\u2264250 \u00B0C' },
-        { label: 'PWHT:', value: wps.pwht || 'Not required' },
-      ],
+    doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
+    doc.setFontSize(6.5);
+    const processData = [
+      { label: 'Layers', value: wps.numberOfLayers || '-' },
+      { label: 'Process', value: wps.process || '-' },
+      { label: 'Technique', value: wps.technique || '-' },
+      { label: 'Position', value: wps.weldingPosition || '-' },
+      { label: 'Torch', value: wps.torchPosition || '-' },
     ];
-
-    wpsData[0].forEach((item, idx) => {
-      if (item.label) {
-        doc.setFont('helvetica', 'normal');
-        doc.text(item.label, col1X, y + idx * 4.5);
-        doc.setFont('helvetica', 'bold');
-        doc.text(item.value, col2X, y + idx * 4.5);
-      }
+    processData.forEach((item, idx) => {
+      doc.setFont('helvetica', 'normal');
+      doc.text(item.label + ':', margin + 3, y + 13 + idx * 8);
+      doc.setFont('helvetica', 'bold');
+      doc.text(item.value, margin + 3, y + 17 + idx * 8);
     });
 
-    wpsData[1].forEach((item, idx) => {
-      if (item.label) {
-        doc.setFont('helvetica', 'normal');
-        doc.text(item.label, col3X, y + idx * 4.5);
-        doc.setFont('helvetica', 'bold');
-        if (item.label.includes('Product')) {
-          doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
-        }
-        doc.text(item.value, col4X, y + idx * 4.5);
-        doc.setTextColor(0, 0, 0);
-      }
+    // Card 2: Base Metal
+    const card2X = margin + cardWidth + 3;
+    waDrawCard(doc, card2X, y, cardWidth, cardHeight, {
+      fill: { r: 248, g: 250, b: 252 },
     });
+    doc.setFillColor(COLORS.orange.r, COLORS.orange.g, COLORS.orange.b);
+    doc.roundedRect(card2X, y, cardWidth, 7, 3, 3, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    doc.text('BASE METAL', card2X + cardWidth / 2, y + 5, { align: 'center' });
+
+    doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
+    doc.setFontSize(6.5);
+    const metalData = [
+      { label: 'Material', value: wps.baseMetal || '-' },
+      { label: 'Thickness', value: wps.thickness || '-' },
+      { label: 'Surface Prep', value: wps.surfacePreparation || '-' },
+    ];
+    metalData.forEach((item, idx) => {
+      doc.setFont('helvetica', 'normal');
+      doc.text(item.label + ':', card2X + 3, y + 13 + idx * 12);
+      doc.setFont('helvetica', 'bold');
+      doc.text(item.value, card2X + 3, y + 18 + idx * 12);
+    });
+
+    // Card 3: Product Info
+    const card3X = margin + (cardWidth + 3) * 2;
+    waDrawCard(doc, card3X, y, cardWidth, cardHeight, {
+      fill: { r: 240, g: 253, b: 244 },
+      border: { r: 134, g: 239, b: 172 },
+    });
+    doc.setFillColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+    doc.roundedRect(card3X, y, cardWidth, 7, 3, 3, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    doc.text('WA PRODUCT', card3X + cardWidth / 2, y + 5, { align: 'center' });
+
+    doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
+    doc.setFontSize(6.5);
+    const productData = [
+      { label: 'Product', value: wps.productName || data.waProduct || '-', green: true },
+      { label: 'Diameter', value: wps.diameter || '-' },
+      { label: 'Shielding', value: wps.shieldingGas || '-' },
+      { label: 'Flow Rate', value: wps.flowRate || '-' },
+      { label: 'Stick-out', value: wps.stickOut || '-' },
+    ];
+    productData.forEach((item, idx) => {
+      doc.setFont('helvetica', 'normal');
+      doc.text(item.label + ':', card3X + 3, y + 13 + idx * 8);
+      doc.setFont('helvetica', 'bold');
+      if (item.green) {
+        doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+      }
+      doc.text(item.value, card3X + 3, y + 17 + idx * 8);
+      doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
+    });
+
+    // Card 4: Parameters
+    const card4X = margin + (cardWidth + 3) * 3;
+    waDrawCard(doc, card4X, y, cardWidth, cardHeight, {
+      fill: { r: 248, g: 250, b: 252 },
+    });
+    doc.setFillColor(COLORS.purple.r, COLORS.purple.g, COLORS.purple.b);
+    doc.roundedRect(card4X, y, cardWidth, 7, 3, 3, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    doc.text('PARAMETERS', card4X + cardWidth / 2, y + 5, { align: 'center' });
+
+    doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
+    doc.setFontSize(6.5);
+    const paramData = [
+      { label: 'Current', value: wps.currentType || '-' },
+      { label: 'Intensity', value: wps.intensity || '-' },
+      { label: 'Voltage', value: wps.voltage || '-' },
+      { label: 'Wire Speed', value: wps.wireSpeed || '-' },
+      { label: 'Weld Speed', value: wps.weldingSpeed || '-' },
+    ];
+    paramData.forEach((item, idx) => {
+      doc.setFont('helvetica', 'normal');
+      doc.text(item.label + ':', card4X + 3, y + 13 + idx * 8);
+      doc.setFont('helvetica', 'bold');
+      doc.text(item.value, card4X + 3, y + 17 + idx * 8);
+    });
+
+    y += cardHeight + 8;
+
+    // Temperature & Heat Treatment row
+    if (wps.preheatTemperature || wps.interpassTemperature || wps.pwht) {
+      waDrawCard(doc, margin, y, pageWidth - margin * 2, 14);
+
+      doc.setFontSize(7);
+      doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+      doc.setFont('helvetica', 'bold');
+      doc.text('TEMPERATURE & HEAT TREATMENT', margin + 4, y + 5);
+
+      doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
+      doc.setFontSize(6.5);
+      const tempX = margin + 4;
+      const tempItems = [
+        `Preheat: ${wps.preheatTemperature || '-'}`,
+        `Interpass: ${wps.interpassTemperature || '-'}`,
+        `PWHT: ${wps.pwht || 'Not required'}`,
+      ];
+
+      doc.setFont('helvetica', 'normal');
+      tempItems.forEach((item, idx) => {
+        doc.text(item, tempX + idx * 60, y + 11);
+      });
+    }
   }
 
-  waDrawConfidentialFooter(doc, options);
+  waDrawConfidentialFooter(doc, 2, totalPages, options);
 }
 
-// ============ PAGE 3: IMAGES ============
+// ============ HD IMAGE ANNEXES (One per page) ============
 
-async function waGeneratePage3(
+async function waGenerateImageAnnexes(
   doc: jsPDF,
-  data: CaseStudyPDFData,
-  imageUrls: string[],
+  imageUrls: { url: string; caption?: string }[],
+  startPageNum: number,
+  totalPages: number,
   options?: PDFExportOptions
 ): Promise<void> {
   const pageWidth = doc.internal.pageSize.getWidth();
-  const margin = 10;
-  let y = 10;
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 15;
 
-  // Use async logo loading
-  await waDrawWALogoAsync(doc, pageWidth - 42, 5, 16);
+  // All images go to annexe (one HD image per page)
+  const annexImages = imageUrls;
 
-  waDrawCircledNumber(doc, data.type === 'STAR' ? 6 : 5, margin + 4, y + 3, 4);
-  doc.setFontSize(11);
-  doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
-  doc.setFont('helvetica', 'bold');
-  doc.text('CASE STUDY IMAGES', margin + 12, y + 5);
-  y += 15;
+  for (let i = 0; i < annexImages.length; i++) {
+    doc.addPage();
 
-  // Image grid (3x2)
-  const imgCols = 3;
-  const imgRows = 2;
-  const imgGap = 10;
-  const totalWidth = pageWidth - margin * 2;
-  const imgWidth = (totalWidth - (imgCols - 1) * imgGap) / imgCols;
-  const imgHeight = 55;
+    const image = annexImages[i];
+    const pageNum = startPageNum + i;
 
-  let imgIndex = 3; // Start from index 3 (first 3 shown on page 1)
+    // Header
+    doc.setFillColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
+    doc.rect(0, 0, pageWidth, 3, 'F');
 
-  for (let row = 0; row < imgRows; row++) {
-    for (let col = 0; col < imgCols; col++) {
-      const imgX = margin + col * (imgWidth + imgGap);
-      const imgY = y + row * (imgHeight + imgGap);
-      const imageUrl = imageUrls[imgIndex] || null;
-      await waDrawImage(doc, imageUrl, imgX, imgY, imgWidth, imgHeight);
-      imgIndex++;
+    await waDrawLogo(doc, pageWidth - 55, 8, 40);
+
+    doc.setFontSize(14);
+    doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`ANNEX ${i + 1} - IMAGE DOCUMENTATION`, margin, 18);
+
+    // Image area - HD full page
+    const imgY = 28;
+    const imgHeight = pageHeight - imgY - 35; // Leave room for footer and caption
+    const imgWidth = pageWidth - margin * 2;
+
+    // Draw image border
+    doc.setDrawColor(230, 230, 230);
+    doc.setLineWidth(1);
+    doc.roundedRect(margin, imgY, imgWidth, imgHeight, 4, 4, 'S');
+
+    // Draw the image
+    if (image.url) {
+      try {
+        const base64 = await waFetchImageAsBase64(image.url);
+        if (base64) {
+          const format = waGetImageFormat(base64);
+          // Fit image within the area while maintaining aspect ratio
+          doc.addImage(base64, format, margin + 2, imgY + 2, imgWidth - 4, imgHeight - 4);
+        } else {
+          waDrawImagePlaceholder(doc, margin, imgY, imgWidth, imgHeight);
+        }
+      } catch {
+        waDrawImagePlaceholder(doc, margin, imgY, imgWidth, imgHeight);
+      }
+    } else {
+      waDrawImagePlaceholder(doc, margin, imgY, imgWidth, imgHeight);
     }
-  }
 
-  waDrawConfidentialFooter(doc, options);
+    // Caption if available
+    if (image.caption) {
+      doc.setFontSize(9);
+      doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
+      doc.setFont('helvetica', 'italic');
+      const captionLines = doc.splitTextToSize(image.caption, imgWidth - 10);
+      doc.text(captionLines.slice(0, 2), margin + 5, imgY + imgHeight + 8);
+    }
+
+    waDrawConfidentialFooter(doc, pageNum, totalPages, options);
+  }
 }
 
 // ============ MAIN EXPORT FUNCTIONS ============
 
-/**
- * Generates PDF asynchronously (supports real image embedding)
- */
 export async function waGenerateCaseStudyPDFAsync(
   data: CaseStudyPDFData,
   options?: PDFExportOptions
@@ -1136,32 +1672,41 @@ export async function waGenerateCaseStudyPDFAsync(
     format: 'a4',
   });
 
-  // Normalize images to URL strings
   const imageUrls = waNormalizeImages(data.images);
 
-  // Page 1: Main Case Study (all types)
-  await waGeneratePage1(doc, data, imageUrls, options);
+  // Calculate total pages
+  let totalPages = 1; // Page 1 always
+
+  if (data.type === 'TECH' || data.type === 'STAR') {
+    if (data.costCalculator || data.wps) {
+      totalPages++; // Page 2: Calculator + WPS
+    }
+  }
+
+  // Add annex pages for all images (one HD image per page)
+  const annexImageCount = imageUrls.length;
+  totalPages += annexImageCount;
+
+  // Page 1: Main Case Study
+  await waGeneratePage1(doc, data, options, totalPages);
 
   // Page 2: Cost Calculator + WPS (TECH and STAR)
   if (data.type === 'TECH' || data.type === 'STAR') {
     if (data.costCalculator || data.wps) {
       doc.addPage();
-      await waGeneratePage2(doc, data, options);
+      await waGeneratePage2(doc, data, options, totalPages);
     }
   }
 
-  // Page 3: Images (TECH and STAR with more than 3 images)
-  if ((data.type === 'TECH' || data.type === 'STAR') && imageUrls.length > 3) {
-    doc.addPage();
-    await waGeneratePage3(doc, data, imageUrls, options);
+  // HD Image Annexes (one image per page) - all images go here
+  if (imageUrls.length > 0) {
+    const startPageNum = totalPages - imageUrls.length + 1;
+    await waGenerateImageAnnexes(doc, imageUrls, startPageNum, totalPages, options);
   }
 
   return doc;
 }
 
-/**
- * Synchronous PDF generation (falls back to placeholders for images)
- */
 export function generateCaseStudyPDF(data: CaseStudyPDFData, options?: PDFExportOptions): jsPDF {
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -1169,35 +1714,28 @@ export function generateCaseStudyPDF(data: CaseStudyPDFData, options?: PDFExport
     format: 'a4',
   });
 
-  // For sync version, we'll use placeholders
-  // The async version should be preferred for real images
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 10;
 
   // Simplified sync page 1
   doc.setFillColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
-  doc.rect(0, 0, pageWidth, 18, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(16);
+  doc.rect(0, 0, pageWidth, 3, 'F');
+  doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
+  doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
-  doc.text('INDUSTRIAL CHALLENGE REPORT', margin, 12);
-  waDrawWALogo(doc, pageWidth - 42, 20, 16);
+  doc.text('INDUSTRIAL CHALLENGE REPORT', margin, 20);
 
-  // Add note to use async version
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(10);
   doc.text('PDF generation in progress...', margin, 40);
   doc.text(`Case Study: ${data.customerName}`, margin, 50);
   doc.text(`Type: ${data.type}`, margin, 60);
 
-  waDrawConfidentialFooter(doc, options);
+  waDrawConfidentialFooter(doc, 1, 1, options);
 
   return doc;
 }
 
-/**
- * Downloads the PDF asynchronously with real images
- */
 export async function downloadCaseStudyPDF(
   data: CaseStudyPDFData,
   options?: PDFExportOptions
@@ -1208,7 +1746,6 @@ export async function downloadCaseStudyPDF(
     doc.save(fileName);
   } catch (error) {
     console.error('[PDF] Error generating PDF:', error);
-    // Fallback to sync version
     const doc = generateCaseStudyPDF(data, options);
     const fileName = `${data.customerName.replace(/[^a-zA-Z0-9]/g, '_')}_${data.type}_CaseStudy.pdf`;
     doc.save(fileName);

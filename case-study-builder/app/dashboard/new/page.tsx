@@ -17,6 +17,7 @@ import ChallengeQualifier, { type QualifierResult } from '@/components/case-stud
 import { waCreateCaseStudy, waGetCustomerIndustry } from '@/lib/actions/waCaseStudyActions';
 import { waSaveWeldingProcedure } from '@/lib/actions/waWpsActions';
 import { waSaveCostCalculation } from '@/lib/actions/waCostCalculatorActions';
+import { waUploadDocument } from '@/lib/actions/waDocumentUploadActions';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -561,6 +562,36 @@ export default function NewCaseStudyPage() {
     };
   };
 
+  // Helper to upload WPS documents to Cloudinary and get URLs
+  const waUploadWpsDocuments = async (documents: any[] | undefined): Promise<{ name: string; size?: number; type?: string; url: string }[]> => {
+    if (!documents || documents.length === 0) return [];
+
+    const uploadedDocs: { name: string; size?: number; type?: string; url: string }[] = [];
+
+    for (const doc of documents) {
+      // Skip if document already has a URL (already uploaded)
+      if (doc.url) {
+        uploadedDocs.push({ name: doc.name, size: doc.size, type: doc.type, url: doc.url });
+        continue;
+      }
+
+      // Upload if document has a File object
+      if (doc.file instanceof File) {
+        const formDataUpload = new FormData();
+        formDataUpload.append('file', doc.file);
+
+        const result = await waUploadDocument(formDataUpload);
+        if (result.success && result.url) {
+          uploadedDocs.push({ name: doc.name, size: doc.size, type: doc.type, url: result.url });
+        } else {
+          console.error('[WPS Upload] Failed to upload document:', doc.name, result.error);
+        }
+      }
+    }
+
+    return uploadedDocs;
+  };
+
   const handleSaveDraft = async () => {
     setIsSubmitting(true);
     try {
@@ -575,11 +606,15 @@ export default function NewCaseStudyPage() {
         // Check if any WPS field has data
         const hasAnyWpsData = Object.values(formData.wps).some(v => v !== undefined && v !== '' && v !== null);
         if (hasAnyWpsData) {
+          // Upload documents first to get URLs
+          const uploadedDocs = await waUploadWpsDocuments(formData.wps.documents);
+
           await waSaveWeldingProcedure({
             caseStudyId: result.id,
             waProductName: formData.wps.waProductName || '',
             weldingProcess: formData.wps.weldingProcess || '',
             ...formData.wps,
+            documents: uploadedDocs.length > 0 ? uploadedDocs : undefined,
           });
         }
       }
@@ -621,11 +656,15 @@ export default function NewCaseStudyPage() {
 
       // If TECH or STAR and WPS data exists, save WPS
       if (hasWPS && formData.wps && result.id) {
+        // Upload documents first to get URLs
+        const uploadedDocs = await waUploadWpsDocuments(formData.wps.documents);
+
         await waSaveWeldingProcedure({
           caseStudyId: result.id,
           waProductName: formData.wps.waProductName || '',
           weldingProcess: formData.wps.weldingProcess || '',
           ...formData.wps,
+          documents: uploadedDocs.length > 0 ? uploadedDocs : undefined,
         });
       }
 

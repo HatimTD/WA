@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { SaveButton } from '@/components/save-button';
 import { ShareButton } from '@/components/share-button';
 import CostCalculatorDisplay from '@/components/cost-calculator-display';
-import WearTypeProgressBar from '@/components/wear-type-progress-bar';
+import { WearTypeStarsDisplay } from '@/components/wear-type-progress-bar';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { auth } from '@/auth';
@@ -167,7 +167,13 @@ export default async function PublicCaseDetailPage({
     wearSeverities: caseStudy.wearSeverities as Record<string, number> | undefined,
     problemDescription: caseStudy.problemDescription,
     previousSolution: caseStudy.previousSolution || undefined,
-    previousServiceLife: caseStudy.previousServiceLife || undefined,
+    previousServiceLife: waFormatExpandedServiceLife({
+      hours: caseStudy.previousServiceLifeHours,
+      days: caseStudy.previousServiceLifeDays,
+      weeks: caseStudy.previousServiceLifeWeeks,
+      months: caseStudy.previousServiceLifeMonths,
+      years: caseStudy.previousServiceLifeYears,
+    }) || caseStudy.previousServiceLife || undefined,
     competitorName: caseStudy.competitorName || undefined,
     baseMetal: caseStudy.baseMetal || undefined,
     generalDimensions: caseStudy.generalDimensions || undefined,
@@ -175,7 +181,13 @@ export default async function PublicCaseDetailPage({
     waProduct: caseStudy.waProduct,
     waProductDiameter: caseStudy.waProductDiameter || undefined,
     technicalAdvantages: caseStudy.technicalAdvantages || undefined,
-    expectedServiceLife: caseStudy.expectedServiceLife || undefined,
+    expectedServiceLife: waFormatExpandedServiceLife({
+      hours: caseStudy.expectedServiceLifeHours,
+      days: caseStudy.expectedServiceLifeDays,
+      weeks: caseStudy.expectedServiceLifeWeeks,
+      months: caseStudy.expectedServiceLifeMonths,
+      years: caseStudy.expectedServiceLifeYears,
+    }) || caseStudy.expectedServiceLife || undefined,
     revenueCurrency: caseStudy.revenueCurrency || 'EUR',
     solutionValueRevenue: caseStudy.solutionValueRevenue ? Number(caseStudy.solutionValueRevenue) : undefined,
     annualPotentialRevenue: caseStudy.annualPotentialRevenue ? Number(caseStudy.annualPotentialRevenue) : undefined,
@@ -424,7 +436,7 @@ export default async function PublicCaseDetailPage({
                   <FileText className="h-5 w-5 text-wa-green-600 dark:text-primary mt-0.5" />
                   <div>
                     <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground mb-2">Wear Types</p>
-                    <WearTypeProgressBar
+                    <WearTypeStarsDisplay
                       wearTypes={caseStudy.wearType}
                       wearSeverities={caseStudy.wearSeverities as Record<string, number> | null}
                       wearTypeOthers={caseStudy.wearTypeOthers as { name: string; severity: number }[] | null}
@@ -936,17 +948,26 @@ export default async function PublicCaseDetailPage({
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground border-b dark:border-border pb-2">Supporting Documents</h3>
                   <div className="space-y-2">
-                    {(caseStudy.wps.documents as any[]).map((doc: any, index: number) => (
-                      <div key={index} className="flex items-center gap-2 p-2 bg-muted/50 dark:bg-muted/20 rounded-lg">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium text-gray-900 dark:text-foreground">{doc.name}</span>
-                        {doc.url && (
-                          <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-sm text-wa-green-600 dark:text-primary hover:underline ml-auto">
-                            View
-                          </a>
-                        )}
-                      </div>
-                    ))}
+                    {(caseStudy.wps.documents as any[]).map((doc: any, index: number) => {
+                      const isImage = doc.type?.startsWith('image/') || /\.(png|jpg|jpeg|gif|webp)$/i.test(doc.name);
+                      return (
+                        <div key={index} className="flex items-center gap-2 p-2 bg-muted/50 dark:bg-muted/20 rounded-lg">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium text-gray-900 dark:text-foreground">{doc.name}</span>
+                          {doc.url && (
+                            <a
+                              href={doc.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              download={doc.name}
+                              className="text-sm text-wa-green-600 dark:text-primary hover:underline ml-auto"
+                            >
+                              {isImage ? 'View' : 'Download'}
+                            </a>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

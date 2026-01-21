@@ -19,7 +19,7 @@ export const metadata = {
 /**
  * BRD Section 5 - Search & Filtering
  * Database must be searchable by: Tags, Industry, Component, OEM, Wear Type,
- * WA Product, Country, Customer, Revenue, and Contributor
+ * WA Product, Country, Customer, Revenue, Region, and Contributor
  */
 interface SearchParams {
   q?: string;
@@ -30,6 +30,7 @@ interface SearchParams {
   wearType?: string;
   waProduct?: string;
   country?: string;
+  region?: string; // Contributor's region filter
   contributor?: string;
   minRevenue?: string;
   maxRevenue?: string;
@@ -53,6 +54,7 @@ export default async function LibraryPage({
   const wearTypeFilters = wearTypeFilter ? wearTypeFilter.split(',').map(w => w.trim().toUpperCase()) : [];
   const waProductFilter = params.waProduct || '';
   const countryFilter = params.country || '';
+  const regionFilter = params.region || ''; // Contributor's region
   const contributorFilter = params.contributor || '';
   const minRevenue = params.minRevenue ? parseFloat(params.minRevenue) : null;
   const maxRevenue = params.maxRevenue ? parseFloat(params.maxRevenue) : null;
@@ -106,6 +108,13 @@ export default async function LibraryPage({
   // BRD: Country filter
   if (countryFilter) {
     where.country = { contains: countryFilter, mode: 'insensitive' };
+  }
+
+  // Region filter (contributor's region)
+  if (regionFilter) {
+    where.contributor = {
+      region: regionFilter,
+    };
   }
 
   // BRD: Contributor filter
@@ -269,6 +278,7 @@ export default async function LibraryPage({
                 componentFilter={componentFilter}
                 waProductFilter={waProductFilter}
                 countryFilter={countryFilter}
+                regionFilter={regionFilter}
                 wearTypeFilter={wearTypeFilter}
                 contributorFilter={contributorFilter}
                 minRevenue={minRevenue}

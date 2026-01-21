@@ -406,17 +406,29 @@ export default function WeldingProcedureForm({ caseStudyId, existingData }: Weld
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground border-b dark:border-border pb-2">Supporting Documents</h3>
               <div className="space-y-2">
-                {(existingData.documents as any[]).map((doc: any, index: number) => (
-                  <div key={index} className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">{doc.name}</span>
-                    {doc.url && (
-                      <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-sm text-wa-green-600 hover:underline">
-                        View
-                      </a>
-                    )}
-                  </div>
-                ))}
+                {(existingData.documents as any[]).map((doc: any, index: number) => {
+                  const isImage = doc.type?.startsWith('image/') || /\.(png|jpg|jpeg|gif|webp)$/i.test(doc.name);
+
+                  return (
+                    <div key={index} className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border border-border">
+                      <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                      <span className="text-sm font-medium flex-1 truncate">{doc.name}</span>
+                      {doc.url && (
+                        <div className="flex items-center gap-2">
+                          <a
+                            href={doc.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            download={doc.name}
+                            className="text-sm text-wa-green-600 hover:underline px-2 py-1 rounded hover:bg-wa-green-50"
+                          >
+                            {isImage ? 'View' : 'Download'}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
