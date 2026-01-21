@@ -1053,7 +1053,6 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
             <StepTwo
               formData={formData}
               updateFormData={updateFormData}
-              customerReadOnly={formData.customerSelected}
             />
           )}
           {STEPS[currentStep - 1]?.title === 'The Challenge' && (
