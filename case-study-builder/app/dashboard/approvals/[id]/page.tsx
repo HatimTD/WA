@@ -608,13 +608,13 @@ export default async function ApprovalReviewPage({ params, searchParams }: Props
             // Layers (new multi-layer structure)
             layers: (wpsData as any).layers || undefined,
             // Legacy fields for backward compatibility
-            waProductName: wpsData.waProductName,
+            waProductName: wpsData.waProductName || undefined,
             waProductDiameter: wpsData.waProductDiameter || undefined,
             shieldingGas: wpsData.shieldingGas || undefined,
             shieldingFlowRate: wpsData.shieldingFlowRate || undefined,
             flux: wpsData.flux || undefined,
             standardDesignation: wpsData.standardDesignation || undefined,
-            weldingProcess: wpsData.weldingProcess,
+            weldingProcess: wpsData.weldingProcess || undefined,
             currentType: wpsData.currentType || undefined,
             currentModeSynergy: wpsData.currentModeSynergy || undefined,
             wireFeedSpeed: wpsData.wireFeedSpeed || undefined,
