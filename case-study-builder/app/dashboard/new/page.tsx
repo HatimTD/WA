@@ -400,12 +400,20 @@ export default function NewCaseStudyPage() {
         if (formData.type === 'TECH' || formData.type === 'STAR') {
           if (!formData.wps?.baseMetalType) missing.push('Base Metal Type');
           if (!formData.wps?.surfacePreparation) missing.push('Surface Preparation');
-          if (!formData.wps?.waProductName) missing.push('WA Product Name');
-          if (!formData.wps?.shieldingGas) missing.push('Shielding Gas');
-          if (!formData.wps?.weldingProcess) missing.push('Welding Process');
-          if (!formData.wps?.weldingPosition) missing.push('Welding Position');
-          if (!formData.wps?.oscillationWidth && !formData.wps?.oscillationSpeed) missing.push('Oscillation (Width or Speed)');
-          if (!formData.wps?.preheatTemperature && !formData.wps?.interpassTemperature) missing.push('Temperature (Preheat or Interpass)');
+          // Check layers structure (new) or legacy fields for backward compatibility
+          const firstLayer = formData.wps?.layers?.[0];
+          if (!firstLayer?.waProductName && !formData.wps?.waProductName) missing.push('WA Product Name');
+          if (!firstLayer?.shieldingGas && !formData.wps?.shieldingGas) missing.push('Shielding Gas');
+          if (!firstLayer?.weldingProcess && !formData.wps?.weldingProcess) missing.push('Welding Process');
+          if (!firstLayer?.weldingPosition && !formData.wps?.weldingPosition) missing.push('Welding Position');
+          // Oscillation - check layers or legacy
+          const hasOscillation = firstLayer?.oscillationAmplitude || firstLayer?.oscillationPeriod ||
+                                 formData.wps?.oscillationWidth || formData.wps?.oscillationSpeed;
+          if (!hasOscillation) missing.push('Oscillation (Amplitude or Period)');
+          // Temperature - check new fields or legacy
+          const hasTemperature = formData.wps?.preheatingTemp || formData.wps?.interpassTemp ||
+                                 formData.wps?.preheatTemperature || formData.wps?.interpassTemperature;
+          if (!hasTemperature) missing.push('Temperature (Preheat or Interpass)');
           if (!formData.wps?.additionalNotes) missing.push('Additional WPS Notes');
         }
         break;
