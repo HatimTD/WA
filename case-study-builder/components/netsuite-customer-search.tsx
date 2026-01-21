@@ -223,7 +223,7 @@ export default function NetSuiteCustomerSearch({
                 <span className="font-medium text-foreground truncate">
                   {selectedCustomer.companyName}
                 </span>
-                {selectedCustomer.caseStudyCount > 0 && (
+                {(selectedCustomer.caseStudyCount ?? 0) > 0 && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 shrink-0">
                     <FileText className="h-3 w-3" />
                     {selectedCustomer.caseStudyCount} case{selectedCustomer.caseStudyCount !== 1 ? 's' : ''}
@@ -364,7 +364,7 @@ export default function NetSuiteCustomerSearch({
                           <span className="font-semibold text-foreground text-base">
                             {customer.companyName}
                           </span>
-                          {customer.caseStudyCount > 0 && (
+                          {(customer.caseStudyCount ?? 0) > 0 && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                               <FileText className="h-3 w-3" />
                               {customer.caseStudyCount} case{customer.caseStudyCount !== 1 ? 's' : ''}
