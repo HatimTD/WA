@@ -199,10 +199,12 @@ export default function StepWPS({ formData, updateFormData }: Props) {
   const [surfacePrepOther, setSurfacePrepOther] = useState('');
 
   // Auto-fill base metal from Solution step
+  // Always sync baseMetal to baseMetalType when baseMetal changes
   useEffect(() => {
-    if (formData.baseMetal && !formData.wps?.baseMetalType) {
+    if (formData.baseMetal && formData.wps?.baseMetalType !== formData.baseMetal) {
       updateFormData({ wps: { ...formData.wps, baseMetalType: formData.baseMetal } });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.baseMetal]);
 
   // Initialize layers on mount if empty

@@ -292,16 +292,18 @@ export default async function ApprovalReviewPage({ params, searchParams }: Props
               </div>
             )}
 
-            {(caseStudy.jobDurationHours || caseStudy.jobDurationDays || caseStudy.jobDurationWeeks) && (
+            {(caseStudy.jobDurationHours || caseStudy.jobDurationDays || caseStudy.jobDurationWeeks || (caseStudy as any).jobDurationMonths || (caseStudy as any).jobDurationYears) && (
               <div className="flex items-start gap-3">
                 <Calendar className="h-5 w-5 text-gray-400 dark:text-muted-foreground mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Job Duration</p>
                   <p className="text-base font-semibold dark:text-foreground">
                     {[
-                      caseStudy.jobDurationHours && `${caseStudy.jobDurationHours}h`,
-                      caseStudy.jobDurationDays && `${caseStudy.jobDurationDays}d`,
+                      (caseStudy as any).jobDurationYears && `${(caseStudy as any).jobDurationYears}y`,
+                      (caseStudy as any).jobDurationMonths && `${(caseStudy as any).jobDurationMonths}mo`,
                       caseStudy.jobDurationWeeks && `${caseStudy.jobDurationWeeks}w`,
+                      caseStudy.jobDurationDays && `${caseStudy.jobDurationDays}d`,
+                      caseStudy.jobDurationHours && `${caseStudy.jobDurationHours}h`,
                     ].filter(Boolean).join(' ')}
                   </p>
                 </div>
@@ -433,6 +435,8 @@ export default async function ApprovalReviewPage({ params, searchParams }: Props
               hours: caseStudy.jobDurationHours,
               days: caseStudy.jobDurationDays,
               weeks: caseStudy.jobDurationWeeks,
+              months: (caseStudy as any).jobDurationMonths,
+              years: (caseStudy as any).jobDurationYears,
             }) && (
               <div>
                 <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Job Duration</p>
@@ -441,6 +445,8 @@ export default async function ApprovalReviewPage({ params, searchParams }: Props
                     hours: caseStudy.jobDurationHours,
                     days: caseStudy.jobDurationDays,
                     weeks: caseStudy.jobDurationWeeks,
+                    months: (caseStudy as any).jobDurationMonths,
+                    years: (caseStudy as any).jobDurationYears,
                   })}
                 </p>
               </div>

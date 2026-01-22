@@ -250,6 +250,8 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
     jobDurationHours: caseStudy.jobDurationHours || undefined,
     jobDurationDays: caseStudy.jobDurationDays || undefined,
     jobDurationWeeks: caseStudy.jobDurationWeeks || undefined,
+    jobDurationMonths: (caseStudy as any).jobDurationMonths || undefined,
+    jobDurationYears: (caseStudy as any).jobDurationYears || undefined,
     contributor: {
       name: caseStudy.contributor.name || 'Unknown',
     },
@@ -742,6 +744,8 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
             hours: caseStudy.jobDurationHours,
             days: caseStudy.jobDurationDays,
             weeks: caseStudy.jobDurationWeeks,
+            months: (caseStudy as any).jobDurationMonths,
+            years: (caseStudy as any).jobDurationYears,
           }) && (
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Job Duration</p>
@@ -750,6 +754,8 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
                   hours: caseStudy.jobDurationHours,
                   days: caseStudy.jobDurationDays,
                   weeks: caseStudy.jobDurationWeeks,
+                  months: (caseStudy as any).jobDurationMonths,
+                  years: (caseStudy as any).jobDurationYears,
                 })}
               </p>
             </div>

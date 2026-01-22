@@ -326,14 +326,16 @@ export default function StepFour({ formData, updateFormData }: Props) {
             hours: parseInt(formData.jobDurationHours || '0') || 0,
             days: parseInt(formData.jobDurationDays || '0') || 0,
             weeks: parseInt(formData.jobDurationWeeks || '0') || 0,
-            months: 0,
-            years: 0,
+            months: parseInt(formData.jobDurationMonths || '0') || 0,
+            years: parseInt(formData.jobDurationYears || '0') || 0,
           }}
           onChange={(val: ServiceLifeValue) => {
             updateFormData({
               jobDurationHours: val.hours > 0 ? String(val.hours) : '',
               jobDurationDays: val.days > 0 ? String(val.days) : '',
               jobDurationWeeks: val.weeks > 0 ? String(val.weeks) : '',
+              jobDurationMonths: val.months > 0 ? String(val.months) : '',
+              jobDurationYears: val.years > 0 ? String(val.years) : '',
             });
           }}
         />
