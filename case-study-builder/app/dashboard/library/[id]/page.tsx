@@ -201,6 +201,8 @@ export default async function PublicCaseDetailPage({
     jobDurationHours: caseStudy.jobDurationHours || undefined,
     jobDurationDays: caseStudy.jobDurationDays || undefined,
     jobDurationWeeks: caseStudy.jobDurationWeeks || undefined,
+    jobDurationMonths: (caseStudy as any).jobDurationMonths || undefined,
+    jobDurationYears: (caseStudy as any).jobDurationYears || undefined,
     // People
     contributor: {
       name: caseStudy.contributor?.name || 'Unknown',
@@ -528,6 +530,8 @@ export default async function PublicCaseDetailPage({
                 hours: caseStudy.jobDurationHours,
                 days: caseStudy.jobDurationDays,
                 weeks: caseStudy.jobDurationWeeks,
+                months: (caseStudy as any).jobDurationMonths,
+                years: (caseStudy as any).jobDurationYears,
               }) && (
                 <div>
                   <p className="font-medium text-sm text-green-700 dark:text-green-300 mb-2">Job Duration</p>
@@ -536,6 +540,8 @@ export default async function PublicCaseDetailPage({
                       hours: caseStudy.jobDurationHours,
                       days: caseStudy.jobDurationDays,
                       weeks: caseStudy.jobDurationWeeks,
+                      months: (caseStudy as any).jobDurationMonths,
+                      years: (caseStudy as any).jobDurationYears,
                     })}
                   </p>
                 </div>

@@ -77,6 +77,8 @@ export type CaseStudyFormData = {
   jobDurationHours: string; // Duration in hours
   jobDurationDays: string; // Duration in days
   jobDurationWeeks: string; // Duration in weeks
+  jobDurationMonths: string; // Duration in months
+  jobDurationYears: string; // Duration in years
   unitSystem: 'METRIC' | 'IMPERIAL'; // Unit system for dimensions
 
   // Step 3: Problem Description
@@ -265,6 +267,8 @@ export default function NewCaseStudyPage() {
     jobDurationHours: '',
     jobDurationDays: '',
     jobDurationWeeks: '',
+    jobDurationMonths: '',
+    jobDurationYears: '',
     unitSystem: 'METRIC',
     problemDescription: '',
     previousSolution: '',
@@ -389,7 +393,9 @@ export default function NewCaseStudyPage() {
         // Job duration validation - at least one time unit must have a value
         const hasJobDuration = formData.jobDurationHours ||
           formData.jobDurationDays ||
-          formData.jobDurationWeeks;
+          formData.jobDurationWeeks ||
+          formData.jobDurationMonths ||
+          formData.jobDurationYears;
         if (!hasJobDuration) missing.push('Job Duration');
         if (!formData.technicalAdvantages) missing.push('Technical Advantages');
         if (!formData.images || formData.images.length < 2) missing.push('At least 2 images');

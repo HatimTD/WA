@@ -47,6 +47,8 @@ export interface CaseStudyPDFData {
   jobDurationHours?: string;
   jobDurationDays?: string;
   jobDurationWeeks?: string;
+  jobDurationMonths?: string;
+  jobDurationYears?: string;
   customerSegment?: string;
   subSegment?: string;
   contributor: { name: string; };
@@ -1170,9 +1172,11 @@ async function waGeneratePage1(
   doc.text(solLines.slice(0, 3), solCardX + 4, y + 11);
 
   const duration = [
-    data.jobDurationDays && `${data.jobDurationDays} days`,
-    data.jobDurationHours && `${data.jobDurationHours}h`,
+    data.jobDurationYears && `${data.jobDurationYears}y`,
+    data.jobDurationMonths && `${data.jobDurationMonths}mo`,
     data.jobDurationWeeks && `${data.jobDurationWeeks}w`,
+    data.jobDurationDays && `${data.jobDurationDays}d`,
+    data.jobDurationHours && `${data.jobDurationHours}h`,
   ].filter(Boolean).join(' ') || '';
 
   if (duration) {

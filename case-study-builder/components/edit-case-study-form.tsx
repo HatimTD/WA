@@ -239,6 +239,8 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
     jobDurationHours: (caseStudy as any).jobDurationHours || '',
     jobDurationDays: (caseStudy as any).jobDurationDays || '',
     jobDurationWeeks: (caseStudy as any).jobDurationWeeks || '',
+    jobDurationMonths: (caseStudy as any).jobDurationMonths || '',
+    jobDurationYears: (caseStudy as any).jobDurationYears || '',
     unitSystem: ((caseStudy as any).unitSystem as 'METRIC' | 'IMPERIAL') || 'METRIC',
     problemDescription: caseStudy.problemDescription,
     previousSolution: caseStudy.previousSolution || '',

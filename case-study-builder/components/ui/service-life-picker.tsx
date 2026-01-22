@@ -215,6 +215,7 @@ export function ServiceLifePicker({
   const [isOpen, setIsOpen] = useState(false);
   const [tempValue, setTempValue] = useState<Record<string, string>>(waToPickerValue(value));
   const [isMobile, setIsMobile] = useState(false);
+  const [pickerKey, setPickerKey] = useState(0);
 
   // Detect mobile
   useEffect(() => {
@@ -224,10 +225,17 @@ export function ServiceLifePicker({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Sync temp value when modal opens
+  // Sync temp value when modal opens or when value changes from outside
+  // This ensures the picker always starts with the correct current values
   useEffect(() => {
     if (isOpen) {
-      setTempValue(waToPickerValue(value));
+      // When modal opens, always reset to the current confirmed value
+      // This fixes the issue where previous tempValue state interferes
+      const freshValue = waToPickerValue(value);
+      setTempValue(freshValue);
+      // Force Picker component to remount by changing key
+      // This fixes react-mobile-picker internal state not syncing with value prop
+      setPickerKey(prev => prev + 1);
     }
   }, [isOpen, value]);
 
@@ -372,6 +380,7 @@ export function ServiceLifePicker({
                     <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 h-10 bg-wa-green-100 dark:bg-wa-green-900/30 rounded-lg pointer-events-none z-0" />
 
                     <Picker
+                      key={pickerKey}
                       value={tempValue}
                       onChange={setTempValue}
                       height={200}

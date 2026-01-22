@@ -583,10 +583,12 @@ model WaCaseStudy {
   jobType      String?
   jobTypeOther String?
 
-  // Job Duration (granular h/d/w)
-  jobDurationHours String?
-  jobDurationDays  String?
-  jobDurationWeeks String?
+  // Job Duration (granular h/d/w/m/y)
+  jobDurationHours  String?
+  jobDurationDays   String?
+  jobDurationWeeks  String?
+  jobDurationMonths String?
+  jobDurationYears  String?
 
   // Legacy Job Duration fields
   jobDuration       Decimal? @db.Decimal(10, 2)

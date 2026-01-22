@@ -31,6 +31,8 @@ type WaCreateCaseStudyInput = {
   jobDurationHours?: string;
   jobDurationDays?: string;
   jobDurationWeeks?: string;
+  jobDurationMonths?: string;
+  jobDurationYears?: string;
   problemDescription: string;
   previousSolution: string;
   previousServiceLife: string;
@@ -117,6 +119,8 @@ export async function waCreateCaseStudy(data: WaCreateCaseStudyInput) {
         jobDurationHours: data.jobDurationHours || null,
         jobDurationDays: data.jobDurationDays || null,
         jobDurationWeeks: data.jobDurationWeeks || null,
+        jobDurationMonths: data.jobDurationMonths || null,
+        jobDurationYears: data.jobDurationYears || null,
         problemDescription: data.problemDescription,
         previousSolution: data.previousSolution || null,
         previousServiceLife: data.previousServiceLife || null,
@@ -331,6 +335,8 @@ export async function waUpdateCaseStudy(id: string, data: any) {
     if (data.jobDurationHours === '') updateData.jobDurationHours = null;
     if (data.jobDurationDays === '') updateData.jobDurationDays = null;
     if (data.jobDurationWeeks === '') updateData.jobDurationWeeks = null;
+    if (data.jobDurationMonths === '') updateData.jobDurationMonths = null;
+    if (data.jobDurationYears === '') updateData.jobDurationYears = null;
 
     updateData.updatedAt = new Date();
 
