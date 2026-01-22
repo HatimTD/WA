@@ -4,7 +4,7 @@
  * Vercel Cron job endpoint for automatic NetSuite customer sync.
  * Implements BRD 5.9.3 - NetSuite Auto-Sync.
  *
- * Schedule: Daily at 2:00 AM UTC (configured in vercel.json)
+ * Schedule: Daily at 10:00 PM UTC / 11:00 PM Paris (CET) (configured in vercel.json)
  *
  * @module api/cron/netsuite-sync
  * @author WA Development Team
