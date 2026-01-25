@@ -48,8 +48,11 @@ type WaCreateCaseStudyInput = {
   oldJobDurationWeeks?: string;
   competitorName: string;
   waSolution: string;
-  waProduct: string;
-  waProductDiameter?: string; // Wire diameter (e.g., 1.6mm or 0.063in)
+  productCategory?: string; // CONSUMABLES, COMPOSITE_WEAR_PLATES, WEAR_PIPES_TUBES, OTHER
+  productCategoryOther?: string; // Custom category name when OTHER is selected
+  waProduct: string; // Only for CONSUMABLES
+  waProductDiameter?: string; // Only for CONSUMABLES (wire diameter e.g., 1.6mm or 0.063in)
+  productDescription?: string; // For non-CONSUMABLES categories
   technicalAdvantages: string;
   expectedServiceLife: string;
   // Granular expected service life (h/d/w/m/y)
@@ -136,8 +139,11 @@ export async function waCreateCaseStudy(data: WaCreateCaseStudyInput) {
         oldJobDurationWeeks: data.oldJobDurationWeeks || null,
         competitorName: data.competitorName || null,
         waSolution: data.waSolution,
+        productCategory: data.productCategory || null,
+        productCategoryOther: data.productCategoryOther || null,
         waProduct: data.waProduct,
         waProductDiameter: data.waProductDiameter || null,
+        productDescription: data.productDescription || null,
         technicalAdvantages: data.technicalAdvantages || null,
         expectedServiceLife: data.expectedServiceLife || null,
         // Granular expected service life
@@ -313,7 +319,10 @@ export async function waUpdateCaseStudy(id: string, data: any) {
     if (data.technicalAdvantages === '') updateData.technicalAdvantages = null;
     if (data.expectedServiceLife === '') updateData.expectedServiceLife = null;
     if (data.oem === '') updateData.oem = null;
+    if (data.productCategory === '') updateData.productCategory = null;
+    if (data.productCategoryOther === '') updateData.productCategoryOther = null;
     if (data.waProductDiameter === '') updateData.waProductDiameter = null;
+    if (data.productDescription === '') updateData.productDescription = null;
     // Granular service life fields
     if (data.previousServiceLifeHours === '') updateData.previousServiceLifeHours = null;
     if (data.previousServiceLifeDays === '') updateData.previousServiceLifeDays = null;

@@ -75,10 +75,21 @@ function waIsWpsComplete(wpsData: WaWeldingProcedure | null | undefined): boolea
     // Check required fields in first layer
     if (!firstLayer.waProductName || !firstLayer.waProductDiameter ||
         !firstLayer.weldingProcess || !firstLayer.weldingPosition ||
-        !firstLayer.torchAngle || !firstLayer.shieldingGas ||
+        !firstLayer.torchAngle ||
         !firstLayer.stickOut || !firstLayer.currentType ||
         !firstLayer.currentModeSynergy || !firstLayer.wireFeedSpeed ||
         !firstLayer.intensity || !firstLayer.voltage || !firstLayer.travelSpeed) {
+      return false;
+    }
+    // Shielding Gas is only required for FCAW, GTAW, or Other processes
+    const requiresShieldingGas = firstLayer.weldingProcess === 'FCAW' ||
+                                  firstLayer.weldingProcess === 'GTAW' ||
+                                  firstLayer.weldingProcess === 'Other';
+    if (requiresShieldingGas && !firstLayer.shieldingGas) {
+      return false;
+    }
+    // If Type of Current is "Other", currentTypeOther must be specified
+    if (firstLayer.currentType === 'Other' && !(firstLayer as any).currentTypeOther) {
       return false;
     }
     return true;
@@ -134,10 +145,33 @@ function waCalculateResumeStep(
 
   // Step 5: The Solution (base metal, dimensions, solution details, and images)
   const hasImages = caseStudy.images && (caseStudy.images as string[]).length >= 1;
+  const productCategory = (caseStudy as any).productCategory;
+
+  // Check basic required fields
   if (!waHasValue(caseStudy.baseMetal) || !waHasValue(caseStudy.generalDimensions) ||
-      !waHasValue(caseStudy.waSolution) || !waHasValue(caseStudy.waProduct) ||
-      !waHasValue(caseStudy.technicalAdvantages) || !hasImages) {
+      !waHasValue(caseStudy.waSolution) || !waHasValue(caseStudy.technicalAdvantages) || !hasImages) {
     return 5; // The Solution
+  }
+
+  // Check product category-specific fields
+  if (!productCategory) {
+    return 5; // Need to select product category
+  }
+
+  // Conditional validation based on product category
+  if (productCategory === 'CONSUMABLES') {
+    if (!waHasValue(caseStudy.waProduct) || !waHasValue((caseStudy as any).waProductDiameter)) {
+      return 5; // Need product and diameter for consumables
+    }
+  } else if (productCategory === 'OTHER') {
+    if (!waHasValue((caseStudy as any).productCategoryOther) || !waHasValue((caseStudy as any).productDescription)) {
+      return 5; // Need custom category name and description for OTHER
+    }
+  } else {
+    // For other categories (Composite wear plates, Wear pipes & Tubes)
+    if (!waHasValue((caseStudy as any).productDescription)) {
+      return 5; // Need product description
+    }
   }
 
   // Step 6: Welding Procedure (for TECH and STAR)
@@ -257,8 +291,11 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
     oldJobDurationWeeks: (caseStudy as any).oldJobDurationWeeks || '',
     competitorName: caseStudy.competitorName || '',
     waSolution: caseStudy.waSolution,
+    productCategory: (caseStudy as any).productCategory || '',
+    productCategoryOther: (caseStudy as any).productCategoryOther || '',
     waProduct: caseStudy.waProduct,
     waProductDiameter: (caseStudy as any).waProductDiameter || '',
+    productDescription: (caseStudy as any).productDescription || '',
     technicalAdvantages: caseStudy.technicalAdvantages || '',
     expectedServiceLife: caseStudy.expectedServiceLife || '',
     // Granular expected service life fields
@@ -421,8 +458,26 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
         // Base metal, dimensions moved here from Problem step
         if (!formData.baseMetal) missing.push('Base Metal');
         if (!formData.generalDimensions) missing.push('General Dimensions');
-        if (!formData.waSolution) missing.push('WA Solution');
-        if (!formData.waProduct) missing.push('WA Product');
+        if (!formData.waSolution) missing.push('WA Solution Description');
+
+        // Product Category validation
+        if (!formData.productCategory) missing.push('WA Product Category');
+
+        // Conditional product validation based on category
+        if (formData.productCategory === 'CONSUMABLES') {
+          // For consumables, require product search and diameter
+          if (!formData.waProduct) missing.push('WA Product Used');
+          if (!formData.waProductDiameter) missing.push('Diameter');
+        } else if (formData.productCategory === 'OTHER') {
+          // For OTHER, require custom category name and product description
+          if (!formData.productCategoryOther) missing.push('Specify Category');
+          if (!formData.productDescription) missing.push('Product Description');
+        } else if (formData.productCategory) {
+          // For other predefined categories (Composite wear plates, Wear pipes & Tubes)
+          // Only require product description
+          if (!formData.productDescription) missing.push('Product Description');
+        }
+
         if (!formData.technicalAdvantages) missing.push('Technical Advantages');
         if (!formData.images || formData.images.length < 1) missing.push('At least 1 image');
         break;
@@ -445,10 +500,20 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
             if (!firstLayer.weldingProcess) missing.push('Layer 1: Process');
             if (!firstLayer.weldingPosition) missing.push('Layer 1: Welding Position');
             if (!firstLayer.torchAngle) missing.push('Layer 1: Torch Position');
-            if (!firstLayer.shieldingGas) missing.push('Layer 1: Shielding Gas');
+            // Shielding Gas is only required for FCAW, GTAW, or Other processes
+            const requiresShieldingGas = firstLayer.weldingProcess === 'FCAW' ||
+                                          firstLayer.weldingProcess === 'GTAW' ||
+                                          firstLayer.weldingProcess === 'Other';
+            if (requiresShieldingGas && !firstLayer.shieldingGas) {
+              missing.push('Layer 1: Shielding Gas');
+            }
             // Check WA Parameters required fields
             if (!firstLayer.stickOut) missing.push('Layer 1: Stick-out');
             if (!firstLayer.currentType) missing.push('Layer 1: Type of Current');
+            // If Type of Current is "Other", require specification
+            if (firstLayer.currentType === 'Other' && !(firstLayer as any).currentTypeOther) {
+              missing.push('Layer 1: Specify Current Type');
+            }
             if (!firstLayer.currentModeSynergy) missing.push('Layer 1: Welding Mode');
             if (!firstLayer.wireFeedSpeed) missing.push('Layer 1: Wire Feed Speed');
             if (!firstLayer.intensity) missing.push('Layer 1: Intensity');

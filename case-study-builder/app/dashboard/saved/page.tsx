@@ -10,6 +10,7 @@ import { Bookmark, BookmarkX, ExternalLink, Loader2, Search, X } from 'lucide-re
 import Link from 'next/link';
 import { toast } from 'sonner';
 import LanguageIndicator from '@/components/language-indicator';
+import { waFormatJobType } from '@/lib/waUtils';
 
 interface SavedCase {
   id: string;
@@ -324,7 +325,7 @@ export default function SavedCasesPage() {
                   {saved.caseStudy.jobType && (
                     <p className="text-gray-600 dark:text-muted-foreground">
                       <span className="font-medium">Job Type:</span>{' '}
-                      {saved.caseStudy.jobType === 'OTHER' ? saved.caseStudy.jobTypeOther : saved.caseStudy.jobType}
+                      {waFormatJobType(saved.caseStudy.jobType, saved.caseStudy.jobTypeOther)}
                     </p>
                   )}
                 </div>

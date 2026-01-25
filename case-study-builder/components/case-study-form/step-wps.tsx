@@ -121,7 +121,7 @@ const SHIELDING_GAS_OPTIONS = [
   'Other'
 ];
 const FLUX_OPTIONS = ['WAF 325', 'WAF 415', 'WA ULTRAFLUX', 'Other'];
-const CURRENT_TYPE_OPTIONS = ['DC+', 'DC-'];
+const CURRENT_TYPE_OPTIONS = ['DC+', 'DC-', 'Other'];
 const WELDING_MODE_OPTIONS = ['Standard', 'Pulsed', 'Other'];
 
 // Flux to Standard Designation mapping
@@ -156,6 +156,7 @@ export interface WpsLayer {
   // WA Parameters
   stickOut?: string;
   currentType?: string;
+  currentTypeOther?: string;
   currentModeSynergy?: string;
   currentModeSynergyOther?: string;
   wireFeedSpeed?: string;
@@ -198,26 +199,36 @@ export default function StepWPS({ formData, updateFormData }: Props) {
   // Other field states
   const [surfacePrepOther, setSurfacePrepOther] = useState('');
 
-  // Auto-fill base metal from Solution step
-  // Always sync baseMetal to baseMetalType when baseMetal changes
+  // Initialize WPS on mount - auto-fill base metal and create empty layer if needed
+  useEffect(() => {
+    const updates: Partial<typeof formData.wps> = { ...formData.wps };
+    let needsUpdate = false;
+
+    // Auto-fill base metal from Solution step
+    if (formData.baseMetal && formData.wps?.baseMetalType !== formData.baseMetal) {
+      updates.baseMetalType = formData.baseMetal;
+      needsUpdate = true;
+    }
+
+    // Initialize layers if empty
+    if (!formData.wps?.layers || formData.wps.layers.length === 0) {
+      updates.layers = [waCreateEmptyLayer()];
+      needsUpdate = true;
+    }
+
+    if (needsUpdate) {
+      updateFormData({ wps: updates });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Keep baseMetal in sync when it changes (e.g., user goes back and updates it)
   useEffect(() => {
     if (formData.baseMetal && formData.wps?.baseMetalType !== formData.baseMetal) {
       updateFormData({ wps: { ...formData.wps, baseMetalType: formData.baseMetal } });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.baseMetal]);
-
-  // Initialize layers on mount if empty
-  useEffect(() => {
-    if (!formData.wps?.layers || formData.wps.layers.length === 0) {
-      updateFormData({
-        wps: {
-          ...formData.wps,
-          layers: [waCreateEmptyLayer()]
-        }
-      });
-    }
-  }, []);
 
   const waUpdateWps = (field: string, value: unknown) => {
     updateFormData({ wps: { ...formData.wps, [field]: value } });
@@ -282,6 +293,22 @@ export default function StepWPS({ formData, updateFormData }: Props) {
         </div>
       )}
 
+      {/* Add Layer Button - Prominent at top for better UX */}
+      <div className="flex items-center justify-between p-4 bg-wa-green-50 dark:bg-accent/30 border border-wa-green-200 dark:border-primary/50 rounded-lg">
+        <div>
+          <h3 className="font-semibold text-gray-900 dark:text-foreground">Welding Layers</h3>
+          <p className="text-sm text-muted-foreground">{layers.length} layer{layers.length !== 1 ? 's' : ''} configured</p>
+        </div>
+        <Button
+          type="button"
+          onClick={waAddLayer}
+          className="flex items-center gap-2 bg-wa-green-600 hover:bg-wa-green-700 text-white"
+        >
+          <Plus className="h-4 w-4" />
+          Add Layer
+        </Button>
+      </div>
+
       {/* Base Metal Section */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground">Base Metal Information</h3>
@@ -337,25 +364,13 @@ export default function StepWPS({ formData, updateFormData }: Props) {
         </div>
       </div>
 
-      {/* Welding Layers */}
+      {/* Welding Layers - List of layers (Add button is at top of form) */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground">Welding Layers</h3>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={waAddLayer}
-            className="flex items-center gap-1"
-          >
-            <Plus className="h-4 w-4" />
-            Add Layer
-          </Button>
-        </div>
-
         {layers.map((layer, index) => {
           const isSAWProcess = layer.weldingProcess === 'SAW' || layer.weldingProcess === 'SAW twin';
-          const requiresFlowRate = layer.shieldingGas && layer.shieldingGas !== 'Self shielded' && layer.shieldingGas !== '';
+          // Shielding Gas only shows for FCAW, GTAW, or Other processes
+          const requiresShieldingGas = layer.weldingProcess === 'FCAW' || layer.weldingProcess === 'GTAW' || layer.weldingProcess === 'Other';
+          const requiresFlowRate = requiresShieldingGas && layer.shieldingGas && layer.shieldingGas !== 'Self shielded' && layer.shieldingGas !== '';
           const isExpanded = expandedLayers[layer.id] !== false;
           const productSearch = activeProductSearch[layer.id] || layer.waProductName || '';
           const filteredProducts = waGetFilteredProducts(productSearch);
@@ -554,54 +569,56 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                         />
                       </div>
 
-                      {/* Shielding Gas */}
-                      <div className="space-y-2">
-                        <Label className="dark:text-foreground">
-                          Shielding Gas <span className="text-red-500 dark:text-red-400">*</span>
-                        </Label>
-                        <select
-                          value={layer.shieldingGas || ''}
-                          onChange={(e) => {
-                            const newValue = e.target.value;
-                            if (newValue === 'Self shielded') {
-                              // Clear flow rate when self shielded
-                              waUpdateLayerMultiple(layer.id, {
-                                shieldingGas: newValue,
-                                shieldingGasOther: '',
-                                shieldingFlowRate: ''
-                              });
-                            } else if (newValue !== 'Other') {
-                              waUpdateLayerMultiple(layer.id, {
-                                shieldingGas: newValue,
-                                shieldingGasOther: ''
-                              });
-                            } else {
-                              waUpdateLayer(layer.id, 'shieldingGas', newValue);
-                            }
-                          }}
-                          className="w-full h-10 px-3 rounded-md border border-border bg-input text-foreground"
-                          required
-                        >
-                          <option value="">Select shielding gas</option>
-                          {SHIELDING_GAS_OPTIONS.map(opt => (
-                            <option key={opt} value={opt}>{opt}</option>
-                          ))}
-                        </select>
-                        {layer.shieldingGas === 'Other' && (
-                          <Input
-                            value={layer.shieldingGasOther || ''}
-                            onChange={(e) => waUpdateLayer(layer.id, 'shieldingGasOther', e.target.value)}
-                            placeholder="Specify other gas"
-                            className="mt-2 dark:bg-input dark:border-border dark:text-foreground"
-                          />
-                        )}
-                      </div>
+                      {/* Shielding Gas - Only for FCAW, GTAW, or Other processes */}
+                      {requiresShieldingGas && (
+                        <div className="space-y-2">
+                          <Label className="dark:text-foreground">
+                            Shielding Gas <span className="text-red-500 dark:text-red-400">*</span>
+                          </Label>
+                          <select
+                            value={layer.shieldingGas || ''}
+                            onChange={(e) => {
+                              const newValue = e.target.value;
+                              if (newValue === 'Self shielded') {
+                                // Clear flow rate when self shielded
+                                waUpdateLayerMultiple(layer.id, {
+                                  shieldingGas: newValue,
+                                  shieldingGasOther: '',
+                                  shieldingFlowRate: ''
+                                });
+                              } else if (newValue !== 'Other') {
+                                waUpdateLayerMultiple(layer.id, {
+                                  shieldingGas: newValue,
+                                  shieldingGasOther: ''
+                                });
+                              } else {
+                                waUpdateLayer(layer.id, 'shieldingGas', newValue);
+                              }
+                            }}
+                            className="w-full h-10 px-3 rounded-md border border-border bg-input text-foreground"
+                            required
+                          >
+                            <option value="">Select shielding gas</option>
+                            {SHIELDING_GAS_OPTIONS.map(opt => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                          {layer.shieldingGas === 'Other' && (
+                            <Input
+                              value={layer.shieldingGasOther || ''}
+                              onChange={(e) => waUpdateLayer(layer.id, 'shieldingGasOther', e.target.value)}
+                              placeholder="Specify other gas"
+                              className="mt-2 dark:bg-input dark:border-border dark:text-foreground"
+                            />
+                          )}
+                        </div>
+                      )}
 
-                      {/* Flow Rate - Conditional */}
+                      {/* Flow Rate - Conditional (only when shielding gas is selected and not self-shielded) */}
                       {requiresFlowRate && (
                         <div className="space-y-2">
                           <Label className="dark:text-foreground">
-                            Flow Rate <span className="text-red-500 dark:text-red-400">*</span>
+                            Flow Rate (L/min) <span className="text-red-500 dark:text-red-400">*</span>
                           </Label>
                           <Input
                             value={layer.shieldingFlowRate || ''}
@@ -687,7 +704,7 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                         <Input
                           value={layer.stickOut || ''}
                           onChange={(e) => waUpdateLayer(layer.id, 'stickOut', e.target.value)}
-                          placeholder="e.g., 15"
+                          placeholder="e.g., 15 mm"
                           className="dark:bg-input dark:border-border dark:text-foreground"
                           required
                         />
@@ -699,7 +716,17 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                         </Label>
                         <select
                           value={layer.currentType || ''}
-                          onChange={(e) => waUpdateLayer(layer.id, 'currentType', e.target.value)}
+                          onChange={(e) => {
+                            const newValue = e.target.value;
+                            if (newValue !== 'Other') {
+                              waUpdateLayerMultiple(layer.id, {
+                                currentType: newValue,
+                                currentTypeOther: ''
+                              });
+                            } else {
+                              waUpdateLayer(layer.id, 'currentType', newValue);
+                            }
+                          }}
                           className="w-full h-10 px-3 rounded-md border border-border bg-input text-foreground"
                           required
                         >
@@ -708,6 +735,15 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                             <option key={opt} value={opt}>{opt}</option>
                           ))}
                         </select>
+                        {layer.currentType === 'Other' && (
+                          <Input
+                            value={layer.currentTypeOther || ''}
+                            onChange={(e) => waUpdateLayer(layer.id, 'currentTypeOther', e.target.value)}
+                            placeholder="Specify other current type (e.g., AC)"
+                            className="mt-2 dark:bg-input dark:border-border dark:text-foreground"
+                            required
+                          />
+                        )}
                       </div>
 
                       <div className="space-y-2">
@@ -743,7 +779,7 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                         <Input
                           value={layer.wireFeedSpeed || ''}
                           onChange={(e) => waUpdateLayer(layer.id, 'wireFeedSpeed', e.target.value)}
-                          placeholder="e.g., 7"
+                          placeholder="e.g., 7 m/min"
                           className="dark:bg-input dark:border-border dark:text-foreground"
                           required
                         />
@@ -756,7 +792,7 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                         <Input
                           value={layer.intensity || ''}
                           onChange={(e) => waUpdateLayer(layer.id, 'intensity', e.target.value)}
-                          placeholder="e.g., 200"
+                          placeholder="e.g., 200 A"
                           className="dark:bg-input dark:border-border dark:text-foreground"
                           required
                         />
@@ -769,7 +805,7 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                         <Input
                           value={layer.voltage || ''}
                           onChange={(e) => waUpdateLayer(layer.id, 'voltage', e.target.value)}
-                          placeholder="e.g., 26"
+                          placeholder="e.g., 26 V"
                           className="dark:bg-input dark:border-border dark:text-foreground"
                           required
                         />
@@ -782,7 +818,7 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                         <Input
                           value={layer.travelSpeed || ''}
                           onChange={(e) => waUpdateLayer(layer.id, 'travelSpeed', e.target.value)}
-                          placeholder="e.g., 30"
+                          placeholder="e.g., 30 cm/min"
                           className="dark:bg-input dark:border-border dark:text-foreground"
                           required
                         />
@@ -799,7 +835,7 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                         <Input
                           value={layer.oscillationAmplitude || ''}
                           onChange={(e) => waUpdateLayer(layer.id, 'oscillationAmplitude', e.target.value)}
-                          placeholder="e.g., 5"
+                          placeholder="e.g., 5 mm"
                           className="dark:bg-input dark:border-border dark:text-foreground"
                         />
                       </div>
@@ -809,7 +845,7 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                         <Input
                           value={layer.oscillationPeriod || ''}
                           onChange={(e) => waUpdateLayer(layer.id, 'oscillationPeriod', e.target.value)}
-                          placeholder="e.g., 1.5"
+                          placeholder="e.g., 1.5 s"
                           className="dark:bg-input dark:border-border dark:text-foreground"
                         />
                       </div>
@@ -819,7 +855,7 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                         <Input
                           value={layer.oscillationTempos || ''}
                           onChange={(e) => waUpdateLayer(layer.id, 'oscillationTempos', e.target.value)}
-                          placeholder="e.g., 0.5"
+                          placeholder="e.g., 0.5 s"
                           className="dark:bg-input dark:border-border dark:text-foreground"
                         />
                       </div>
@@ -830,6 +866,17 @@ export default function StepWPS({ formData, updateFormData }: Props) {
             </div>
           );
         })}
+
+        {/* Add Layer Button - Bottom of layers */}
+        <Button
+          type="button"
+          onClick={waAddLayer}
+          variant="outline"
+          className="w-full flex items-center justify-center gap-2 border-dashed border-2 hover:border-wa-green-500 hover:bg-wa-green-50 dark:hover:bg-accent/30"
+        >
+          <Plus className="h-4 w-4" />
+          Add Another Layer
+        </Button>
       </div>
 
       {/* Heating Procedure Section */}
@@ -842,7 +889,7 @@ export default function StepWPS({ formData, updateFormData }: Props) {
               id="preheatingTemp"
               value={formData.wps?.preheatingTemp || ''}
               onChange={(e) => waUpdateWps('preheatingTemp', e.target.value)}
-              placeholder="e.g., 150"
+              placeholder="e.g., 150 °C"
               className="dark:bg-input dark:border-border dark:text-foreground"
             />
           </div>
@@ -853,7 +900,7 @@ export default function StepWPS({ formData, updateFormData }: Props) {
               id="interpassTemp"
               value={formData.wps?.interpassTemp || ''}
               onChange={(e) => waUpdateWps('interpassTemp', e.target.value)}
-              placeholder="e.g., 200"
+              placeholder="e.g., 200 °C"
               className="dark:bg-input dark:border-border dark:text-foreground"
             />
           </div>
@@ -864,7 +911,7 @@ export default function StepWPS({ formData, updateFormData }: Props) {
               id="postheatingTemp"
               value={formData.wps?.postheatingTemp || ''}
               onChange={(e) => waUpdateWps('postheatingTemp', e.target.value)}
-              placeholder="e.g., 250"
+              placeholder="e.g., 250 °C"
               className="dark:bg-input dark:border-border dark:text-foreground"
             />
           </div>
@@ -896,7 +943,7 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                   id="pwhtHeatingRate"
                   value={formData.wps?.pwhtHeatingRate || ''}
                   onChange={(e) => waUpdateWps('pwhtHeatingRate', e.target.value)}
-                  placeholder="e.g., 100"
+                  placeholder="e.g., 100 °C/h"
                   className="dark:bg-input dark:border-border dark:text-foreground"
                 />
               </div>
@@ -918,7 +965,7 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                   id="pwhtCoolingRate"
                   value={formData.wps?.pwhtCoolingRate || ''}
                   onChange={(e) => waUpdateWps('pwhtCoolingRate', e.target.value)}
-                  placeholder="e.g., 50"
+                  placeholder="e.g., 50 °C/h"
                   className="dark:bg-input dark:border-border dark:text-foreground"
                 />
               </div>

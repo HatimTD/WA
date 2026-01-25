@@ -148,16 +148,20 @@ export default function WeldingProcedureForm({ caseStudyId, existingData }: Weld
                         <Label className="text-xs text-muted-foreground">Torch Position</Label>
                         <p className="font-medium dark:text-foreground">{waDisplayValue(layer.torchAngle)}</p>
                       </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Shielding Gas</Label>
-                        <p className="font-medium dark:text-foreground">
-                          {waDisplayValue(layer.shieldingGas)}
-                          {layer.shieldingGasOther && ` - ${layer.shieldingGasOther}`}
-                        </p>
-                      </div>
-                      {layer.shieldingFlowRate && (
+                      {/* Shielding Gas - Only show for FCAW, GTAW, or Other processes */}
+                      {(layer.weldingProcess === 'FCAW' || layer.weldingProcess === 'GTAW' || layer.weldingProcess === 'Other') && layer.shieldingGas && (
                         <div>
-                          <Label className="text-xs text-muted-foreground">Flow Rate</Label>
+                          <Label className="text-xs text-muted-foreground">Shielding Gas</Label>
+                          <p className="font-medium dark:text-foreground">
+                            {waDisplayValue(layer.shieldingGas)}
+                            {layer.shieldingGasOther && ` - ${layer.shieldingGasOther}`}
+                          </p>
+                        </div>
+                      )}
+                      {/* Flow Rate - Only show when shielding gas is selected and not self-shielded */}
+                      {layer.shieldingFlowRate && layer.shieldingGas && layer.shieldingGas !== 'Self shielded' && (
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Flow Rate (L/min)</Label>
                           <p className="font-medium dark:text-foreground">{layer.shieldingFlowRate}</p>
                         </div>
                       )}
@@ -189,7 +193,10 @@ export default function WeldingProcedureForm({ caseStudyId, existingData }: Weld
                       </div>
                       <div>
                         <Label className="text-xs text-muted-foreground">Type of Current</Label>
-                        <p className="font-medium dark:text-foreground">{waDisplayValue(layer.currentType)}</p>
+                        <p className="font-medium dark:text-foreground">
+                          {waDisplayValue(layer.currentType)}
+                          {layer.currentTypeOther && ` - ${layer.currentTypeOther}`}
+                        </p>
                       </div>
                       <div>
                         <Label className="text-xs text-muted-foreground">Welding Mode</Label>

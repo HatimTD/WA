@@ -24,6 +24,7 @@ export type WpsLayer = {
   // WA Parameters
   stickOut?: string;
   currentType?: string;
+  currentTypeOther?: string;
   currentModeSynergy?: string;
   currentModeSynergyOther?: string;
   wireFeedSpeed?: string;

@@ -7,6 +7,7 @@ import {
   type CaseStudyWithUser,
 } from '@/lib/utils/waDataObfuscation';
 import type { Role } from '@prisma/client';
+import { waFormatJobType, waGetProductDisplay } from './waUtils';
 
 export interface CaseStudyPDFData {
   id: string;
@@ -23,7 +24,11 @@ export interface CaseStudyPDFData {
   baseMetal?: string;
   generalDimensions?: string;
   waSolution: string;
+  productCategory?: string;
+  productCategoryOther?: string;
   waProduct: string;
+  waProductDiameter?: string;
+  productDescription?: string;
   technicalAdvantages?: string;
   expectedServiceLife?: string;
   solutionValueRevenue?: number;
@@ -345,7 +350,12 @@ export function generateCaseStudyPDF(caseStudy: CaseStudyPDFData, options?: PDFE
 
   const solutionData = [
     ['WA Solution', translatedContent.waSolution],
-    ['WA Product', caseStudy.waProduct],
+    ['WA Product', waGetProductDisplay({
+      productCategory: caseStudy.productCategory,
+      waProduct: caseStudy.waProduct,
+      waProductDiameter: caseStudy.waProductDiameter,
+      productDescription: caseStudy.productDescription,
+    })],
   ];
 
   if (caseStudy.expectedServiceLife) {
@@ -458,8 +468,11 @@ export interface ComparisonPDFData {
   wearTypeOthers?: Array<{ name: string; severity: number }> | null;
   problemDescription: string;
   waSolution: string;
+  productCategory?: string;
+  productCategoryOther?: string;
   waProduct: string;
   waProductDiameter?: string;
+  productDescription?: string;
   technicalAdvantages?: string;
   expectedServiceLife?: string;
   previousServiceLife?: string;
@@ -714,7 +727,7 @@ export function generateComparisonPDF(
   waAddComparisonRow('Component/Workpiece', validCases.map(c => c.componentWorkpiece));
   waAddComparisonRow('Work Type', validCases.map(c => c.workType));
   waAddComparisonRow('Job Type', validCases.map(c =>
-    c.jobType === 'Other' && c.jobTypeOther ? c.jobTypeOther : c.jobType || '—'
+    waFormatJobType(c.jobType, c.jobTypeOther) || '—'
   ));
   waAddComparisonRow('OEM', validCases.map(c => c.oem || '—'));
   waAddComparisonRow('Approved Date', validCases.map(c =>
@@ -798,8 +811,12 @@ export function generateComparisonPDF(
   yPos += 5;
   waAddSectionHeader('WELDING ALLOYS SOLUTION', WA_GREEN);
 
-  waAddComparisonRow('WA Product', validCases.map(c => c.waProduct), { bold: true });
-  waAddComparisonRow('Product Diameter', validCases.map(c => c.waProductDiameter || '—'));
+  waAddComparisonRow('WA Product', validCases.map(c => waGetProductDisplay({
+    productCategory: c.productCategory,
+    waProduct: c.waProduct,
+    waProductDiameter: c.waProductDiameter,
+    productDescription: c.productDescription,
+  })), { bold: true });
   waAddComparisonRow('Expected Service Life', validCases.map(c => c.expectedServiceLife || '—'), { highlighted: true, bold: true });
 
   // Job Duration

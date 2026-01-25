@@ -11,6 +11,7 @@ import type { Metadata } from 'next';
 import { CompletionIndicator } from '@/components/completion-indicator';
 import { waCalculateCompletionPercentage, waGetFieldBreakdown } from '@/lib/utils/waCaseQuality';
 import LanguageIndicator from '@/components/language-indicator';
+import { waGetProductDisplay } from '@/lib/waUtils';
 
 
 export const metadata: Metadata = {
@@ -164,7 +165,12 @@ export default async function MyCasesPage({
             {caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}
           </h3>
           <p className="text-sm text-gray-600 dark:text-muted-foreground mt-1">
-            {caseStudy.location} • {caseStudy.waProduct}
+            {caseStudy.location} • {waGetProductDisplay({
+              productCategory: (caseStudy as any).productCategory,
+              waProduct: caseStudy.waProduct,
+              waProductDiameter: (caseStudy as any).waProductDiameter,
+              productDescription: (caseStudy as any).productDescription,
+            })}
           </p>
           <div className="flex items-center gap-4 mt-2 flex-wrap">
             <p className="text-xs text-gray-500 dark:text-muted-foreground">

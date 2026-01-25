@@ -19,6 +19,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { WearTypeStarsDisplay } from '@/components/wear-type-progress-bar';
+import { waFormatJobType, waFormatProductCategory, waGetProductDisplay } from '@/lib/waUtils';
 
 // Helper to format expanded service life (hours, days, weeks, months, years)
 function waFormatExpandedServiceLife(data: {
@@ -188,7 +189,7 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
                   <div>
                     <p className="font-medium text-sm text-gray-600">Job Type</p>
                     <p className="text-gray-900">
-                      {caseStudy.jobType === 'OTHER' ? caseStudy.jobTypeOther || 'Other' : caseStudy.jobType}
+                      {waFormatJobType(caseStudy.jobType, caseStudy.jobTypeOther)}
                     </p>
                   </div>
                 </div>
@@ -273,16 +274,25 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <p className="font-medium text-sm text-green-700 mb-2">WA Product Used</p>
-                <p className="text-gray-900 text-lg font-semibold">{caseStudy.waProduct}</p>
-              </div>
-              {caseStudy.waProductDiameter && (
+              {(caseStudy as any).productCategory && (
                 <div>
-                  <p className="font-medium text-sm text-green-700 mb-2">Wire Diameter</p>
-                  <p className="text-gray-900 text-lg font-semibold">{caseStudy.waProductDiameter}</p>
+                  <p className="font-medium text-sm text-green-700 mb-2">Product Category</p>
+                  <p className="text-gray-900 text-lg font-semibold">
+                    {waFormatProductCategory((caseStudy as any).productCategory, (caseStudy as any).productCategoryOther)}
+                  </p>
                 </div>
               )}
+              <div>
+                <p className="font-medium text-sm text-green-700 mb-2">WA Product Used</p>
+                <p className="text-gray-900 text-lg font-semibold">
+                  {waGetProductDisplay({
+                    productCategory: (caseStudy as any).productCategory,
+                    waProduct: caseStudy.waProduct,
+                    waProductDiameter: caseStudy.waProductDiameter,
+                    productDescription: (caseStudy as any).productDescription,
+                  })}
+                </p>
+              </div>
             </div>
             <div>
               <p className="font-medium text-sm text-green-700 mb-2">Solution Description</p>

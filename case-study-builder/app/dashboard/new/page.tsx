@@ -97,8 +97,11 @@ export type CaseStudyFormData = {
 
   // Step 4: WA Solution
   waSolution: string;
-  waProduct: string;
-  waProductDiameter: string; // Wire diameter (e.g., 1.6mm or 0.063in)
+  productCategory: string; // CONSUMABLES, COMPOSITE_WEAR_PLATES, WEAR_PIPES_TUBES, OTHER
+  productCategoryOther: string; // Custom category name when OTHER is selected
+  waProduct: string; // Only for CONSUMABLES (product search)
+  waProductDiameter: string; // Only for CONSUMABLES (wire diameter e.g., 1.6mm or 0.063in)
+  productDescription: string; // For non-CONSUMABLES categories (manual text)
   technicalAdvantages: string;
   expectedServiceLife: string;
   expectedServiceLifeHours: string; // Expected service life in hours
@@ -283,8 +286,11 @@ export default function NewCaseStudyPage() {
     oldJobDurationWeeks: '',
     competitorName: '',
     waSolution: '',
+    productCategory: '',
+    productCategoryOther: '',
     waProduct: '',
     waProductDiameter: '',
+    productDescription: '',
     technicalAdvantages: '',
     expectedServiceLife: '',
     expectedServiceLifeHours: '',
@@ -388,8 +394,25 @@ export default function NewCaseStudyPage() {
         if (!formData.baseMetal) missing.push('Base Metal');
         if (!formData.generalDimensions) missing.push('General Dimensions');
         if (!formData.waSolution) missing.push('WA Solution Description');
-        if (!formData.waProduct) missing.push('WA Product Used');
-        if (!formData.waProductDiameter) missing.push('Diameter');
+
+        // Product Category validation
+        if (!formData.productCategory) missing.push('WA Product Category');
+
+        // Conditional product validation based on category
+        if (formData.productCategory === 'CONSUMABLES') {
+          // For consumables, require product search and diameter
+          if (!formData.waProduct) missing.push('WA Product Used');
+          if (!formData.waProductDiameter) missing.push('Diameter');
+        } else if (formData.productCategory === 'OTHER') {
+          // For OTHER, require custom category name and product description
+          if (!formData.productCategoryOther) missing.push('Specify Category');
+          if (!formData.productDescription) missing.push('Product Description');
+        } else if (formData.productCategory) {
+          // For other predefined categories (Composite wear plates, Wear pipes & Tubes)
+          // Only require product description
+          if (!formData.productDescription) missing.push('Product Description');
+        }
+
         // Job duration validation - at least one time unit must have a value
         const hasJobDuration = formData.jobDurationHours ||
           formData.jobDurationDays ||
@@ -409,7 +432,14 @@ export default function NewCaseStudyPage() {
           // Check layers structure (new) or legacy fields for backward compatibility
           const firstLayer = formData.wps?.layers?.[0];
           if (!firstLayer?.waProductName && !formData.wps?.waProductName) missing.push('WA Product Name');
-          if (!firstLayer?.shieldingGas && !formData.wps?.shieldingGas) missing.push('Shielding Gas');
+          // Shielding Gas is only required for FCAW, GTAW, or Other processes
+          const weldingProcess = firstLayer?.weldingProcess || formData.wps?.weldingProcess;
+          const requiresShieldingGas = weldingProcess === 'FCAW' ||
+                                        weldingProcess === 'GTAW' ||
+                                        weldingProcess === 'Other';
+          if (requiresShieldingGas && !firstLayer?.shieldingGas && !formData.wps?.shieldingGas) {
+            missing.push('Shielding Gas');
+          }
           if (!firstLayer?.weldingProcess && !formData.wps?.weldingProcess) missing.push('Welding Process');
           if (!firstLayer?.weldingPosition && !formData.wps?.weldingPosition) missing.push('Welding Position');
           // Oscillation - check layers or legacy
@@ -420,7 +450,7 @@ export default function NewCaseStudyPage() {
           const hasTemperature = formData.wps?.preheatingTemp || formData.wps?.interpassTemp ||
                                  formData.wps?.preheatTemperature || formData.wps?.interpassTemperature;
           if (!hasTemperature) missing.push('Temperature (Preheat or Interpass)');
-          if (!formData.wps?.additionalNotes) missing.push('Additional WPS Notes');
+          // Additional Notes is optional
         }
         break;
       case 'Cost Reduction Analysis':
@@ -441,9 +471,7 @@ export default function NewCaseStudyPage() {
           formData.costCalculator?.waLifetimeMonths ||
           formData.costCalculator?.waLifetimeYears;
         if (!hasWaLifetime) missing.push('WA Solution Lifetime');
-        if (!formData.costCalculator?.maintenanceCostPerEvent) missing.push('Maintenance Cost Per Event');
-        if (!formData.costCalculator?.disassemblyAssemblyCost) missing.push('Disassembly/Assembly Cost');
-        if (!formData.costCalculator?.downtimeCostPerEvent) missing.push('Downtime Cost Per Event');
+        // Event costs are optional (default to 0 if not provided)
         break;
       case 'Finalize':
         if (!formData.solutionValueRevenue) missing.push('Solution Value/Revenue');
