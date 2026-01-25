@@ -63,6 +63,12 @@ export async function GET(
             currency: true,
           },
         },
+        // Include WPS to check if filled (for STAR bonus point)
+        wps: {
+          select: {
+            weldingProcess: true,
+          },
+        },
       },
     });
 
@@ -71,11 +77,13 @@ export async function GET(
     }
 
     // Transform to flatten currency from costCalculator or revenueCurrency
-    const { costCalculator, ...rest } = caseStudy;
+    const { costCalculator, wps, ...rest } = caseStudy;
     const transformedCase = {
       ...rest,
       // Use costCalculator currency (STAR) if available, otherwise use revenueCurrency (APPLICATION), default to EUR
       currency: costCalculator?.currency || rest.revenueCurrency || rest.currency || 'EUR',
+      // Flag to indicate if WPS is filled (for STAR +4 bonus point display)
+      hasWps: !!wps?.weldingProcess,
     };
 
     return NextResponse.json(transformedCase);

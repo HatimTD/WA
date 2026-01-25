@@ -134,14 +134,15 @@ export default async function ApprovalReviewPage({ params, searchParams }: Props
     }
   };
 
-  const getTypePoints = (type: string) => {
+  const getTypePoints = (type: string, hasWps: boolean = false) => {
     switch (type) {
       case 'APPLICATION':
         return 1;
       case 'TECH':
         return 2;
       case 'STAR':
-        return 3;
+        // STAR with WPS filled = 4 points, without = 3 points
+        return hasWps ? 4 : 3;
       default:
         return 0;
     }
@@ -218,7 +219,7 @@ export default async function ApprovalReviewPage({ params, searchParams }: Props
             </p>
           </div>
           <Badge className={`${getTypeColor(caseStudy.type)} border text-lg px-4 py-2`}>
-            {caseStudy.type} (+{getTypePoints(caseStudy.type)} pts)
+            {caseStudy.type} (+{getTypePoints(caseStudy.type, !!wpsData?.weldingProcess)} pts)
           </Badge>
         </div>
       </div>

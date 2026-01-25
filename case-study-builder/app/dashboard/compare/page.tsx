@@ -90,6 +90,8 @@ type CaseStudySummary = {
   jobDurationWeeks: number | null;
   approvedAt: string | null;
   currency: string | null;
+  // WPS filled flag (for STAR +4 bonus point)
+  hasWps?: boolean;
 };
 
 // Helper to format expanded service life (hours, days, weeks, months, years)
@@ -328,11 +330,11 @@ export default function ComparePage() {
     }
   };
 
-  const getTypePoints = (type: string) => {
+  const getTypePoints = (type: string, hasWps: boolean = false) => {
     switch (type) {
       case 'APPLICATION': return 1;
       case 'TECH': return 2;
-      case 'STAR': return 3;
+      case 'STAR': return hasWps ? 4 : 3; // STAR with WPS = 4 pts, without = 3 pts
       default: return 0;
     }
   };
@@ -347,8 +349,8 @@ export default function ComparePage() {
 
       let score = 0;
 
-      // Type points (STAR=3, TECH=2, APPLICATION=1)
-      score += getTypePoints(caseStudy.type) * 100;
+      // Type points (STAR with WPS=4, STAR=3, TECH=2, APPLICATION=1)
+      score += getTypePoints(caseStudy.type, caseStudy.hasWps) * 100;
 
       // Financial metrics
       if (caseStudy.solutionValueRevenue) score += caseStudy.solutionValueRevenue / 1000;

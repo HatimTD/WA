@@ -364,14 +364,15 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
     }
   };
 
-  const getTypePoints = (type: string) => {
+  const getTypePoints = (type: string, hasWps: boolean = false) => {
     switch (type) {
       case 'APPLICATION':
         return 1;
       case 'TECH':
         return 2;
       case 'STAR':
-        return 3;
+        // STAR with WPS filled = 4 points, without = 3 points
+        return hasWps ? 4 : 3;
       default:
         return 0;
     }
@@ -451,7 +452,7 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
           </div>
           <div className="flex flex-col gap-2">
             <Badge className={`${getTypeColor(caseStudy.type)} border dark:border-border`}>
-              {caseStudy.type} (+{getTypePoints(caseStudy.type)} pts)
+              {caseStudy.type} (+{getTypePoints(caseStudy.type, !!existingWPS?.weldingProcess)} pts)
             </Badge>
             <Badge variant="outline" className={`${getStatusColor(caseStudy.status)} dark:border-border`}>
               <span className="flex items-center gap-1">
