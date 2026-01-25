@@ -446,10 +446,7 @@ export default function NewCaseStudyPage() {
           const hasOscillation = firstLayer?.oscillationAmplitude || firstLayer?.oscillationPeriod ||
                                  formData.wps?.oscillationWidth || formData.wps?.oscillationSpeed;
           if (!hasOscillation) missing.push('Oscillation (Amplitude or Period)');
-          // Temperature - check new fields or legacy
-          const hasTemperature = formData.wps?.preheatingTemp || formData.wps?.interpassTemp ||
-                                 formData.wps?.preheatTemperature || formData.wps?.interpassTemperature;
-          if (!hasTemperature) missing.push('Temperature (Preheat or Interpass)');
+          // Temperature fields (Preheat, Interpass, Postheat) are all optional
           // Additional Notes is optional
         }
         break;

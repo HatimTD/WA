@@ -195,7 +195,7 @@ export function waGetMissingForNextTier(
       if (!wps.baseMetalType) missing.push('Base Metal Type');
       if (!wps.weldingProcess) missing.push('Welding Process');
       if (!wps.weldingPosition) missing.push('Welding Position');
-      if (!wps.preheatTemperature && !wps.interpassTemperature) missing.push('Temperature (preheat or interpass)');
+      // Temperature fields (Preheat, Interpass, Postheat) are optional
     }
   } else if (currentTier === 'TECH') {
     // Check what's missing for STAR tier (Cost Calculator)
