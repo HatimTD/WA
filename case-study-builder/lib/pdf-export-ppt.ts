@@ -10,6 +10,7 @@
  */
 
 import jsPDF from 'jspdf';
+import { waFormatJobType, waGetProductDisplay } from './waUtils';
 
 // ============ TYPES ============
 
@@ -33,8 +34,11 @@ export interface CaseStudyPDFData {
   baseMetal?: string;
   generalDimensions?: string;
   waSolution: string;
+  productCategory?: string;
+  productCategoryOther?: string;
   waProduct: string;
   waProductDiameter?: string;
+  productDescription?: string;
   technicalAdvantages?: string;
   expectedServiceLife?: string;
   solutionValueRevenue?: number;
@@ -708,7 +712,10 @@ function waDrawVisualComparison(
     previousSolution?: string;
     problemDescription?: string;
     waSolution?: string;
+    productCategory?: string;
     waProduct?: string;
+    waProductDiameter?: string;
+    productDescription?: string;
     competitorName?: string;
   }
 ): number {
@@ -798,9 +805,15 @@ function waDrawVisualComparison(
   doc.text(`Service Life: ${data.expectedLife || 'Improved'}`, afterX + 3, y + cardHeight - 4);
 
   // Product badge - centered in card
-  if (data.waProduct) {
+  const productDisplay = waGetProductDisplay({
+    productCategory: data.productCategory,
+    waProduct: data.waProduct,
+    waProductDiameter: data.waProductDiameter,
+    productDescription: data.productDescription,
+  });
+  if (productDisplay) {
     doc.setFillColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
-    const productText = data.waProduct;
+    const productText = productDisplay;
     doc.setFontSize(6);
     const badgeWidth = doc.getTextWidth(productText) + 8;
     const badgeX = afterX + (halfWidth - badgeWidth) / 2; // Center badge in card
@@ -979,7 +992,7 @@ async function waGeneratePage1(
 
   // ===== HORIZONTAL INFO ROW (Matching details page) =====
   // Show: Industry, Component/Workpiece, Job Type, Work Type, Location
-  const jobTypeDisplay = data.jobType === 'OTHER' ? (data.jobTypeOther || 'Other') : (data.jobType || 'N/A');
+  const jobTypeDisplay = waFormatJobType(data.jobType, data.jobTypeOther) || 'N/A';
 
   const infoItems = [
     { icon: 'building', label: 'Industry', value: data.industry || 'N/A' },
@@ -1140,7 +1153,12 @@ async function waGeneratePage1(
   const techDetails = [
     { label: 'Base Metal:', value: data.baseMetal || 'N/A' },
     { label: 'Dimensions:', value: data.generalDimensions || 'N/A' },
-    { label: 'Product:', value: `${data.waProduct}${data.waProductDiameter ? ' ' + data.waProductDiameter : ''}` },
+    { label: 'Product:', value: waGetProductDisplay({
+      productCategory: data.productCategory,
+      waProduct: data.waProduct,
+      waProductDiameter: data.waProductDiameter,
+      productDescription: data.productDescription,
+    }) || 'N/A' },
   ];
 
   techDetails.forEach((detail, idx) => {
@@ -1277,7 +1295,10 @@ async function waGeneratePage2(doc: jsPDF, data: CaseStudyPDFData, options?: PDF
     previousSolution: data.previousSolution,
     problemDescription: data.problemDescription,
     waSolution: data.waSolution,
+    productCategory: data.productCategory,
     waProduct: data.waProduct,
+    waProductDiameter: data.waProductDiameter,
+    productDescription: data.productDescription,
     competitorName: data.competitorName,
   });
 
@@ -1515,7 +1536,12 @@ async function waGeneratePage2(doc: jsPDF, data: CaseStudyPDFData, options?: PDF
     doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
     doc.setFontSize(6.5);
     const productData = [
-      { label: 'Product', value: wps.productName || data.waProduct || '-', green: true },
+      { label: 'Product', value: wps.productName || waGetProductDisplay({
+        productCategory: data.productCategory,
+        waProduct: data.waProduct,
+        waProductDiameter: data.waProductDiameter,
+        productDescription: data.productDescription,
+      }) || '-', green: true },
       { label: 'Diameter', value: wps.diameter || '-' },
       { label: 'Shielding', value: wps.shieldingGas || '-' },
       { label: 'Flow Rate', value: wps.flowRate || '-' },

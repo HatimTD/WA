@@ -40,6 +40,7 @@ import { waCalculateCompletionPercentage, waGetFieldBreakdown } from '@/lib/util
 import QualityScoreBadge from '@/components/quality-score-badge';
 import type { CaseStudyWithRelations } from '@/lib/utils/waQualityScore';
 import LanguageIndicator from '@/components/language-indicator';
+import { waFormatJobType, waFormatProductCategory, waGetProductDisplay } from '@/lib/waUtils';
 import TranslationPanel from '@/components/translation-panel';
 import { WearTypeStarsDisplay } from '@/components/wear-type-progress-bar';
 
@@ -227,8 +228,11 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
     baseMetal: caseStudy.baseMetal || undefined,
     generalDimensions: caseStudy.generalDimensions || undefined,
     waSolution: caseStudy.waSolution,
+    productCategory: (caseStudy as any).productCategory || undefined,
+    productCategoryOther: (caseStudy as any).productCategoryOther || undefined,
     waProduct: caseStudy.waProduct,
     waProductDiameter: caseStudy.waProductDiameter || undefined,
+    productDescription: (caseStudy as any).productDescription || undefined,
     technicalAdvantages: caseStudy.technicalAdvantages || undefined,
     expectedServiceLife: waFormatExpandedServiceLife({
       hours: caseStudy.expectedServiceLifeHours,
@@ -620,7 +624,7 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Job Type</p>
                   <p className="text-base font-semibold dark:text-foreground">
-                    {caseStudy.jobType === 'OTHER' ? caseStudy.jobTypeOther || 'Other' : caseStudy.jobType}
+                    {waFormatJobType(caseStudy.jobType, caseStudy.jobTypeOther)}
                   </p>
                 </div>
               </div>
@@ -669,7 +673,9 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
 
           {caseStudy.generalDimensions && (
             <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">General Dimensions</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">
+                General Dimensions ({(caseStudy as any).unitSystem === 'IMPERIAL' ? 'inches' : 'mm'})
+              </p>
               <p className="text-base dark:text-foreground">{caseStudy.generalDimensions}</p>
             </div>
           )}
@@ -735,9 +741,25 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
             <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{displayContent.waSolution}</p>
           </div>
 
+          {(caseStudy as any).productCategory && (
+            <div className="pt-4 border-t dark:border-border">
+              <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Product Category</p>
+              <p className="text-base font-semibold dark:text-foreground">
+                {waFormatProductCategory((caseStudy as any).productCategory, (caseStudy as any).productCategoryOther)}
+              </p>
+            </div>
+          )}
+
           <div className="pt-4 border-t dark:border-border">
             <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">WA Product Used</p>
-            <p className="text-lg font-semibold text-wa-green-600 dark:text-primary">{caseStudy.waProduct}</p>
+            <p className="text-lg font-semibold text-wa-green-600 dark:text-primary">
+              {waGetProductDisplay({
+                productCategory: (caseStudy as any).productCategory,
+                waProduct: caseStudy.waProduct,
+                waProductDiameter: caseStudy.waProductDiameter,
+                productDescription: (caseStudy as any).productDescription,
+              })}
+            </p>
           </div>
 
           {waFormatExpandedServiceLife({

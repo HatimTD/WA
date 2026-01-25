@@ -27,6 +27,7 @@ import {
   Layers,
 } from 'lucide-react';
 import type { WpsLayer } from '@/lib/actions/waWpsActions';
+import { waFormatJobType, waFormatProductCategory, waGetProductDisplay } from '@/lib/waUtils';
 
 // Dynamic import for PDF export
 const PDFExportButton = dynamic(() => import('@/components/pdf-export-button'), {
@@ -178,8 +179,11 @@ export default async function PublicCaseDetailPage({
     baseMetal: caseStudy.baseMetal || undefined,
     generalDimensions: caseStudy.generalDimensions || undefined,
     waSolution: caseStudy.waSolution,
+    productCategory: (caseStudy as any).productCategory || undefined,
+    productCategoryOther: (caseStudy as any).productCategoryOther || undefined,
     waProduct: caseStudy.waProduct,
     waProductDiameter: caseStudy.waProductDiameter || undefined,
+    productDescription: (caseStudy as any).productDescription || undefined,
     technicalAdvantages: caseStudy.technicalAdvantages || undefined,
     expectedServiceLife: waFormatExpandedServiceLife({
       hours: caseStudy.expectedServiceLifeHours,
@@ -419,7 +423,7 @@ export default async function PublicCaseDetailPage({
                   <div>
                     <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground">Job Type</p>
                     <p className="text-gray-900 dark:text-foreground">
-                      {caseStudy.jobType === 'OTHER' ? caseStudy.jobTypeOther || 'Other' : caseStudy.jobType}
+                      {waFormatJobType(caseStudy.jobType, caseStudy.jobTypeOther)}
                     </p>
                   </div>
                 </div>
@@ -516,16 +520,25 @@ export default async function PublicCaseDetailPage({
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <p className="font-medium text-sm text-green-700 dark:text-green-300 mb-2">WA Product Used</p>
-                <p className="text-gray-900 dark:text-foreground text-lg font-semibold">{caseStudy.waProduct}</p>
-              </div>
-              {caseStudy.waProductDiameter && (
+              {(caseStudy as any).productCategory && (
                 <div>
-                  <p className="font-medium text-sm text-green-700 dark:text-green-300 mb-2">Wire Diameter</p>
-                  <p className="text-gray-900 dark:text-foreground text-lg font-semibold">{caseStudy.waProductDiameter}</p>
+                  <p className="font-medium text-sm text-green-700 dark:text-green-300 mb-2">Product Category</p>
+                  <p className="text-gray-900 dark:text-foreground text-lg font-semibold">
+                    {waFormatProductCategory((caseStudy as any).productCategory, (caseStudy as any).productCategoryOther)}
+                  </p>
                 </div>
               )}
+              <div>
+                <p className="font-medium text-sm text-green-700 dark:text-green-300 mb-2">WA Product Used</p>
+                <p className="text-gray-900 dark:text-foreground text-lg font-semibold">
+                  {waGetProductDisplay({
+                    productCategory: (caseStudy as any).productCategory,
+                    waProduct: caseStudy.waProduct,
+                    waProductDiameter: caseStudy.waProductDiameter,
+                    productDescription: (caseStudy as any).productDescription,
+                  })}
+                </p>
+              </div>
               {waFormatExpandedServiceLife({
                 hours: caseStudy.jobDurationHours,
                 days: caseStudy.jobDurationDays,
@@ -740,16 +753,20 @@ export default async function PublicCaseDetailPage({
                             <p className="text-xs text-gray-500 dark:text-muted-foreground">Torch Position</p>
                             <p className="font-medium text-gray-900 dark:text-foreground">{waDisplayValue(layer.torchAngle)}</p>
                           </div>
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-muted-foreground">Shielding Gas</p>
-                            <p className="font-medium text-gray-900 dark:text-foreground">
-                              {waDisplayValue(layer.shieldingGas)}
-                              {layer.shieldingGasOther && ` - ${layer.shieldingGasOther}`}
-                            </p>
-                          </div>
-                          {layer.shieldingFlowRate && (
+                          {/* Shielding Gas - Only show for FCAW, GTAW, or Other processes */}
+                          {(layer.weldingProcess === 'FCAW' || layer.weldingProcess === 'GTAW' || layer.weldingProcess === 'Other') && layer.shieldingGas && (
                             <div>
-                              <p className="text-xs text-gray-500 dark:text-muted-foreground">Flow Rate</p>
+                              <p className="text-xs text-gray-500 dark:text-muted-foreground">Shielding Gas</p>
+                              <p className="font-medium text-gray-900 dark:text-foreground">
+                                {waDisplayValue(layer.shieldingGas)}
+                                {layer.shieldingGasOther && ` - ${layer.shieldingGasOther}`}
+                              </p>
+                            </div>
+                          )}
+                          {/* Flow Rate - Only show when shielding gas is selected and not self-shielded */}
+                          {layer.shieldingFlowRate && layer.shieldingGas && layer.shieldingGas !== 'Self shielded' && (
+                            <div>
+                              <p className="text-xs text-gray-500 dark:text-muted-foreground">Flow Rate (L/min)</p>
                               <p className="font-medium text-gray-900 dark:text-foreground">{layer.shieldingFlowRate}</p>
                             </div>
                           )}
@@ -775,7 +792,10 @@ export default async function PublicCaseDetailPage({
                           </div>
                           <div>
                             <p className="text-xs text-gray-500 dark:text-muted-foreground">Type of Current</p>
-                            <p className="font-medium text-gray-900 dark:text-foreground">{waDisplayValue(layer.currentType)}</p>
+                            <p className="font-medium text-gray-900 dark:text-foreground">
+                              {waDisplayValue(layer.currentType)}
+                              {layer.currentTypeOther && ` - ${layer.currentTypeOther}`}
+                            </p>
                           </div>
                           <div>
                             <p className="text-xs text-gray-500 dark:text-muted-foreground">Welding Mode</p>

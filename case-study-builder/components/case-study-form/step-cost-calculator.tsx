@@ -117,20 +117,20 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
       cc?.waLifetimeMonths, cc?.waLifetimeYears
     );
 
-    // Check required fields - use new mixed unit fields
+    // Check required fields - use new mixed unit fields (event costs are optional, default to 0)
     if (!cc?.costOfPart || !cc?.costOfWaSolution || oldLifetimeTotal === 0 || waLifetimeTotal === 0 ||
-        !cc?.partsUsedPerYear || !cc?.maintenanceCostPerEvent || !cc?.disassemblyAssemblyCost || !cc?.downtimeCostPerEvent) {
+        !cc?.partsUsedPerYear) {
       return null;
     }
 
-    const A = parseFloat(cc.costOfPart) || 0;           // Cost of old solution/part
-    const B = parseFloat(cc.costOfWaSolution) || 0;    // Cost of WA solution
-    const C = oldLifetimeTotal || 1;                    // Old solution lifetime (in hours)
-    const D = waLifetimeTotal || 1;                     // WA solution lifetime (in hours)
-    const E = parseFloat(cc.partsUsedPerYear) || 0;    // Parts used per year
-    const F = parseFloat(cc.maintenanceCostPerEvent) || 0;  // Maintenance cost per event
-    const G = parseFloat(cc.disassemblyAssemblyCost) || 0;  // Disassembly/assembly cost per event
-    const H = parseFloat(cc.downtimeCostPerEvent) || 0;     // Downtime cost per event
+    const A = parseFloat(cc.costOfPart || '') || 0;           // Cost of old solution/part
+    const B = parseFloat(cc.costOfWaSolution || '') || 0;    // Cost of WA solution
+    const C = oldLifetimeTotal || 1;                          // Old solution lifetime (in hours)
+    const D = waLifetimeTotal || 1;                           // WA solution lifetime (in hours)
+    const E = parseFloat(cc.partsUsedPerYear || '') || 0;    // Parts used per year
+    const F = parseFloat(cc.maintenanceCostPerEvent || '') || 0;  // Maintenance cost per event
+    const G = parseFloat(cc.disassemblyAssemblyCost || '') || 0;  // Disassembly/assembly cost per event
+    const H = parseFloat(cc.downtimeCostPerEvent || '') || 0;     // Downtime cost per event
 
     // Calculate lifetime improvement factor
     const lifetimeRatio = D / C; // How many times longer WA solution lasts
@@ -201,12 +201,56 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
   const costWidths = waGetCostComparisonWidths();
   const lifetimeWidths = waGetLifetimeComparisonWidths();
 
+  // Helper to convert hours to weeks for display
+  const waConvertHoursToWeeks = (hours: number): number => {
+    return hours / 168; // 168 hours = 1 week
+  };
+
+  // Check if we have lifetime data for visual comparison (independent of full savings calc)
+  const waHasLifetimeData = () => {
+    const cc = formData.costCalculator;
+    const oldLifetimeTotal = waConvertToTotalHours(
+      cc?.oldLifetimeHours, cc?.oldLifetimeDays, cc?.oldLifetimeWeeks,
+      cc?.oldLifetimeMonths, cc?.oldLifetimeYears
+    );
+    const waLifetimeTotal = waConvertToTotalHours(
+      cc?.waLifetimeHours, cc?.waLifetimeDays, cc?.waLifetimeWeeks,
+      cc?.waLifetimeMonths, cc?.waLifetimeYears
+    );
+    return oldLifetimeTotal > 0 && waLifetimeTotal > 0;
+  };
+
+  // Get lifetime comparison data for visual (independent of full savings)
+  const waGetLifetimeVisualData = () => {
+    const cc = formData.costCalculator;
+    const oldLifetimeTotal = waConvertToTotalHours(
+      cc?.oldLifetimeHours, cc?.oldLifetimeDays, cc?.oldLifetimeWeeks,
+      cc?.oldLifetimeMonths, cc?.oldLifetimeYears
+    );
+    const waLifetimeTotal = waConvertToTotalHours(
+      cc?.waLifetimeHours, cc?.waLifetimeDays, cc?.waLifetimeWeeks,
+      cc?.waLifetimeMonths, cc?.waLifetimeYears
+    );
+    const maxLife = Math.max(oldLifetimeTotal, waLifetimeTotal);
+    const lifetimeRatio = oldLifetimeTotal > 0 ? waLifetimeTotal / oldLifetimeTotal : 0;
+
+    return {
+      oldLifetimeWeeks: waConvertHoursToWeeks(oldLifetimeTotal),
+      waLifetimeWeeks: waConvertHoursToWeeks(waLifetimeTotal),
+      oldWidth: maxLife > 0 ? Math.round((oldLifetimeTotal / maxLife) * 100) : 50,
+      waWidth: maxLife > 0 ? Math.round((waLifetimeTotal / maxLife) * 100) : 50,
+      lifetimeRatio: lifetimeRatio.toFixed(1),
+    };
+  };
+
+  const hasLifetimeData = waHasLifetimeData();
+  const lifetimeVisual = waGetLifetimeVisualData();
 
   return (
     <div className="space-y-6">
       <div className="bg-wa-green-50 border border-wa-green-200 rounded-lg p-4 dark:bg-accent dark:border-primary">
         <p className="text-sm text-wa-green-800 dark:text-muted-foreground">
-          <span className="font-semibold dark:text-foreground">Star Case Requirement:</span> The Cost Calculator helps demonstrate the financial value of the WA solution. All fields are required.
+          <span className="font-semibold dark:text-foreground">Star Case Requirement:</span> The Cost Calculator helps demonstrate the financial value of the WA solution. Event costs are optional.
         </p>
       </div>
 
@@ -373,8 +417,8 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
             </p>
           </div>
 
-          {/* Visual Lifetime Comparison */}
-          {savings && (
+          {/* Visual Lifetime Comparison - Shows when lifetime data is entered (independent of other fields) */}
+          {hasLifetimeData && (
             <div className="mt-4 p-4 bg-muted/30 rounded-lg space-y-3">
               <p className="text-sm font-semibold text-foreground">Lifetime Comparison</p>
               <div className="space-y-2">
@@ -383,10 +427,10 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
                   <div className="flex-1 h-6 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gray-500 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
-                      style={{ width: `${lifetimeWidths.oldWidth}%` }}
+                      style={{ width: `${lifetimeVisual.oldWidth}%` }}
                     >
                       <span className="text-xs text-white font-medium">
-                        {savings.oldLifetimeTotal.toLocaleString()}h
+                        {lifetimeVisual.oldLifetimeWeeks.toFixed(1)} weeks
                       </span>
                     </div>
                   </div>
@@ -396,24 +440,24 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
                   <div className="flex-1 h-6 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-wa-green-500 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
-                      style={{ width: `${lifetimeWidths.waWidth}%` }}
+                      style={{ width: `${lifetimeVisual.waWidth}%` }}
                     >
                       <span className="text-xs text-white font-medium">
-                        {savings.waLifetimeTotal.toLocaleString()}h
+                        {lifetimeVisual.waLifetimeWeeks.toFixed(1)} weeks
                       </span>
                     </div>
                   </div>
                 </div>
               </div>
               <p className="text-xs text-wa-green-700 dark:text-wa-green-400 font-semibold">
-                WA solution lasts {savings.lifetimeRatio}x longer!
+                WA solution lasts {lifetimeVisual.lifetimeRatio}x longer!
               </p>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Event Costs (Per Replacement) */}
+      {/* Event Costs (Per Replacement) - Optional */}
       <Card role="article" className="dark:bg-card dark:border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg dark:text-foreground">
@@ -421,14 +465,14 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
             Event Costs (Per Replacement)
           </CardTitle>
           <CardDescription className="dark:text-muted-foreground">
-            Costs incurred each time a part needs to be replaced
+            Optional: Costs incurred each time a part needs to be replaced (enter 0 if not applicable)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="maintenanceCostPerEvent" className="dark:text-foreground">
-                Maintenance Cost (F) <span className="text-red-500 dark:text-red-400">*</span>
+                Maintenance Cost (F)
               </Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">{currencySymbol}</span>
@@ -437,9 +481,8 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
                   type="number"
                   value={formData.costCalculator?.maintenanceCostPerEvent || ''}
                   onChange={(e) => waUpdateCostCalculator('maintenanceCostPerEvent', e.target.value)}
-                  placeholder="Maintenance/repair labor cost per replacement event."
+                  placeholder="0"
                   className="pl-9 dark:bg-input dark:border-border dark:text-foreground"
-                  required
                 />
               </div>
               <p className="text-xs text-muted-foreground">
@@ -449,7 +492,7 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
 
             <div className="space-y-2">
               <Label htmlFor="disassemblyAssemblyCost" className="dark:text-foreground">
-                Disassembly/Assembly (G) <span className="text-red-500 dark:text-red-400">*</span>
+                Disassembly/Assembly (G)
               </Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">{currencySymbol}</span>
@@ -458,9 +501,8 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
                   type="number"
                   value={formData.costCalculator?.disassemblyAssemblyCost || ''}
                   onChange={(e) => waUpdateCostCalculator('disassemblyAssemblyCost', e.target.value)}
-                  placeholder="Labor cost to remove and reinstall per event."
+                  placeholder="0"
                   className="pl-9 dark:bg-input dark:border-border dark:text-foreground"
-                  required
                 />
               </div>
               <p className="text-xs text-muted-foreground">
@@ -470,7 +512,7 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
 
             <div className="space-y-2">
               <Label htmlFor="downtimeCostPerEvent" className="dark:text-foreground">
-                Downtime Cost (H) <span className="text-red-500 dark:text-red-400">*</span>
+                Downtime Cost (H)
               </Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">{currencySymbol}</span>
@@ -479,9 +521,8 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
                   type="number"
                   value={formData.costCalculator?.downtimeCostPerEvent || ''}
                   onChange={(e) => waUpdateCostCalculator('downtimeCostPerEvent', e.target.value)}
-                  placeholder="Lost production cost per replacement event."
+                  placeholder="0"
                   className="pl-9 dark:bg-input dark:border-border dark:text-foreground"
-                  required
                 />
               </div>
               <p className="text-xs text-muted-foreground">

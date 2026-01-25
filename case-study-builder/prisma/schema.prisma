@@ -464,7 +464,10 @@ model WaCaseStudy {
 
   // WA Solution
   waSolution             String
-  waProduct              String
+  productCategory        String?  // CONSUMABLES, COMPOSITE_WEAR_PLATES, WEAR_PIPES_TUBES, OTHER
+  productCategoryOther   String?  // Custom category name when OTHER is selected
+  waProduct              String   // Only for CONSUMABLES (product search)
+  productDescription     String?  // For non-CONSUMABLES categories (manual text)
   technicalAdvantages    String?  @db.Text
   expectedServiceLife    String?
   revenueCurrency        String   @default("EUR")

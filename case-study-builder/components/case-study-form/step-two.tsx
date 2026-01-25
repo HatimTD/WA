@@ -156,8 +156,8 @@ export default function StepTwo({ formData, updateFormData }: Props) {
             </SelectTrigger>
             <SelectContent className="dark:bg-popover dark:border-border">
               <SelectItem value="PREVENTIVE">Preventive</SelectItem>
-              <SelectItem value="CORRECTIVE">Corrective</SelectItem>
-              <SelectItem value="IMPROVEMENT">Improvement</SelectItem>
+              <SelectItem value="CORRECTIVE">Repair</SelectItem>
+              <SelectItem value="IMPROVEMENT">New</SelectItem>
               <SelectItem value="OTHER">Other (specify)</SelectItem>
             </SelectContent>
           </Select>

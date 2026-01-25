@@ -35,6 +35,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { downloadComparisonPDF, type ComparisonPDFData } from '@/lib/pdf-export';
 import { WearTypeStarsDisplay } from '@/components/wear-type-progress-bar';
+import { waFormatJobType } from '@/lib/waUtils';
 
 type WearTypeOther = {
   name: string;
@@ -824,7 +825,7 @@ export default function ComparePage() {
                 />
                 <ComparisonCard
                   label="Job Type"
-                  values={selectedCases.map(c => c?.jobType === 'OTHER' ? c?.jobTypeOther : c?.jobType)}
+                  values={selectedCases.map(c => waFormatJobType(c?.jobType, c?.jobTypeOther))}
                   icon={Wrench}
                   fieldKey="jobType"
                 />

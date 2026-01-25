@@ -7,6 +7,7 @@ import {
   type CaseStudyWithUser,
 } from '@/lib/utils/waDataObfuscation';
 import type { Role } from '@prisma/client';
+import { waFormatJobType, waGetProductDisplay } from './waUtils';
 
 // WA Brand Colors (from PowerPoint theme)
 const COLORS = {
@@ -51,8 +52,11 @@ export interface CaseStudyPDFDataV2 {
   baseMetal?: string;
   generalDimensions?: string;
   waSolution: string;
+  productCategory?: string;
+  productCategoryOther?: string;
   waProduct: string;
   waProductDiameter?: string;
+  productDescription?: string;
   technicalAdvantages?: string;
   expectedServiceLife?: string;
   solutionValueRevenue?: number;
@@ -466,8 +470,13 @@ export function generateCaseStudyPDFV2(
   const techDetails = [
     ['Base metal', caseStudy.baseMetal],
     ['General dimensions', caseStudy.generalDimensions],
-    ['Product(s) used', `${caseStudy.waProduct}${caseStudy.waProductDiameter ? ' ' + caseStudy.waProductDiameter : ''}`],
-    ['Job Type', caseStudy.jobType === 'OTHER' ? caseStudy.jobTypeOther : caseStudy.jobType],
+    ['Product(s) used', waGetProductDisplay({
+      productCategory: caseStudy.productCategory,
+      waProduct: caseStudy.waProduct,
+      waProductDiameter: caseStudy.waProductDiameter,
+      productDescription: caseStudy.productDescription,
+    })],
+    ['Job Type', waFormatJobType(caseStudy.jobType, caseStudy.jobTypeOther)],
     ['OEM', caseStudy.oem],
   ].filter(([, val]) => val);
 

@@ -7,6 +7,7 @@ import { ExternalLink, User, CheckCircle2 } from 'lucide-react';
 import { LibraryFilters } from '@/components/library-filters';
 import { SaveButton } from '@/components/save-button';
 import LanguageIndicator from '@/components/language-indicator';
+import { waGetProductDisplay } from '@/lib/waUtils';
 
 // Fallback wear types if master data not available
 const FALLBACK_WEAR_TYPES = ['ABRASION', 'IMPACT', 'CORROSION', 'TEMPERATURE', 'COMBINATION'];
@@ -148,6 +149,10 @@ export default async function LibraryPage({
         componentWorkpiece: true,
         type: true,
         waProduct: true,
+        productCategory: true,
+        productCategoryOther: true,
+        waProductDiameter: true,
+        productDescription: true,
         wearType: true,
         problemDescription: true,
         approvedAt: true,
@@ -393,7 +398,14 @@ export default async function LibraryPage({
                       </div>
                       <div className="bg-gray-50 dark:bg-gray-800/50 rounded-md p-2">
                         <p className="text-gray-500 dark:text-gray-400 mb-0.5">WA Product</p>
-                        <p className="font-medium text-gray-900 dark:text-foreground truncate">{caseStudy.waProduct}</p>
+                        <p className="font-medium text-gray-900 dark:text-foreground truncate">
+                          {waGetProductDisplay({
+                            productCategory: (caseStudy as any).productCategory,
+                            waProduct: caseStudy.waProduct,
+                            waProductDiameter: (caseStudy as any).waProductDiameter,
+                            productDescription: (caseStudy as any).productDescription,
+                          })}
+                        </p>
                       </div>
                     </div>
 

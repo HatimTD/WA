@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CaseStudyFormData } from '@/app/dashboard/new/page';
 import dynamic from 'next/dynamic';
 import { Mic, Sparkles, Camera, FileText } from 'lucide-react';
@@ -170,7 +171,7 @@ export default function StepFour({ formData, updateFormData }: Props) {
       {/* General Dimensions + Unit System on same line */}
       <div className="space-y-2">
         <Label htmlFor="generalDimensions" className="dark:text-foreground">
-          General dimensions (in mm/inches) <span className="text-red-500 dark:text-red-400">*</span>
+          General dimensions ({formData.unitSystem === 'IMPERIAL' ? 'inches' : 'mm'}) <span className="text-red-500 dark:text-red-400">*</span>
         </Label>
         <div className="flex gap-3 items-center">
           <Input
@@ -239,79 +240,169 @@ export default function StepFour({ formData, updateFormData }: Props) {
         </p>
       </div>
 
-      {/* WA Product - Autocomplete search */}
-      <div className="grid md:grid-cols-2 gap-4">
-        <div className="space-y-2 relative">
-          <Label htmlFor="waProduct" className="dark:text-foreground">
-            WA Product Used <span className="text-red-500 dark:text-red-400">*</span>
+      {/* Product Category - New Dropdown */}
+      <div className="space-y-2">
+        <Label htmlFor="productCategory" className="dark:text-foreground">
+          WA Product Category <span className="text-red-500 dark:text-red-400">*</span>
+        </Label>
+        <Select
+          value={formData.productCategory}
+          onValueChange={(value) => {
+            updateFormData({ productCategory: value });
+            // Clear other fields when changing category
+            if (value !== 'CONSUMABLES') {
+              updateFormData({ waProduct: '', waProductDiameter: '' });
+            }
+            if (value !== 'OTHER') {
+              updateFormData({ productCategoryOther: '' });
+            }
+            if (value === 'CONSUMABLES') {
+              updateFormData({ productDescription: '' });
+            }
+          }}
+        >
+          <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
+            <SelectValue placeholder="Select product category" />
+          </SelectTrigger>
+          <SelectContent className="dark:bg-popover dark:border-border">
+            <SelectItem value="CONSUMABLES">Consumables</SelectItem>
+            <SelectItem value="COMPOSITE_WEAR_PLATES">Composite wear plates</SelectItem>
+            <SelectItem value="WEAR_PIPES_TUBES">Wear pipes & Tubes</SelectItem>
+            <SelectItem value="OTHER">Other (specify)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Conditional Fields Based on Product Category */}
+      {formData.productCategory === 'CONSUMABLES' ? (
+        /* Show Product Search + Diameter for Consumables */
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="space-y-2 relative">
+            <Label htmlFor="waProduct" className="dark:text-foreground">
+              WA Product Used <span className="text-red-500 dark:text-red-400">*</span>
+            </Label>
+            <Input
+              ref={productInputRef}
+              id="waProduct"
+              value={productSearch}
+              onChange={(e) => {
+                setProductSearch(e.target.value);
+                updateFormData({ waProduct: e.target.value });
+                setShowProductSuggestions(true);
+              }}
+              onFocus={() => setShowProductSuggestions(true)}
+              placeholder="Type to search products..."
+              className="dark:bg-input dark:border-border dark:text-foreground"
+              autoComplete="off"
+              required
+            />
+            {/* Autocomplete dropdown */}
+            {showProductSuggestions && filteredProducts.length > 0 && (
+              <div
+                ref={productDropdownRef}
+                className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto"
+              >
+                {filteredProducts.map((product, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    className="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors border-b border-border last:border-b-0"
+                    onClick={() => {
+                      setProductSearch(product);
+                      updateFormData({ waProduct: product });
+                      setShowProductSuggestions(false);
+                    }}
+                  >
+                    {product}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Diameter - Dropdown with mm values (x.x format), auto-converts to inches */}
+          <div className="space-y-2">
+            <Label htmlFor="waProductDiameter" className="dark:text-foreground">
+              Diameter <span className="text-red-500 dark:text-red-400">*</span>
+            </Label>
+            <select
+              id="waProductDiameter"
+              value={formData.waProductDiameter || ''}
+              onChange={(e) => updateFormData({ waProductDiameter: e.target.value })}
+              className="w-full h-10 px-3 rounded-md border border-border bg-input text-foreground dark:bg-input dark:border-border dark:text-foreground"
+              required
+            >
+              <option value="">Select diameter</option>
+              {[1.0, 1.2, 1.3, 1.6, 2.0, 2.2, 2.4, 2.8, 3.2, 4.0, 5.0, 6.0, 8.0, 12.0].map((mm) => {
+                const mmFormatted = mm.toFixed(1); // Always x.x format
+                const inches = (mm / 25.4).toFixed(3);
+                const displayValue = formData.unitSystem === 'IMPERIAL'
+                  ? `${inches} in`
+                  : `${mmFormatted} mm`;
+                return (
+                  <option key={mm} value={mmFormatted}>
+                    {displayValue}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+        </div>
+      ) : formData.productCategory === 'OTHER' ? (
+        /* Show TWO inputs for OTHER category */
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="productCategoryOther" className="dark:text-foreground">
+              Specify Category <span className="text-red-500 dark:text-red-400">*</span>
+            </Label>
+            <Input
+              id="productCategoryOther"
+              value={formData.productCategoryOther}
+              onChange={(e) => updateFormData({ productCategoryOther: e.target.value })}
+              placeholder="e.g., Custom wear plates, Special coatings"
+              className="dark:bg-input dark:border-border dark:text-foreground"
+              required
+            />
+            <p className="text-xs text-muted-foreground">
+              Name the product category
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="productDescription" className="dark:text-foreground">
+              Product Description <span className="text-red-500 dark:text-red-400">*</span>
+            </Label>
+            <Input
+              id="productDescription"
+              value={formData.productDescription}
+              onChange={(e) => updateFormData({ productDescription: e.target.value })}
+              placeholder="e.g., HARDPLATE 5+3 mm"
+              className="dark:bg-input dark:border-border dark:text-foreground"
+              required
+            />
+            <p className="text-xs text-muted-foreground">
+              Describe the product specification
+            </p>
+          </div>
+        </div>
+      ) : formData.productCategory ? (
+        /* Show Text Field for Other Categories (Composite wear plates, Wear pipes & Tubes) */
+        <div className="space-y-2">
+          <Label htmlFor="productDescription" className="dark:text-foreground">
+            Product Description <span className="text-red-500 dark:text-red-400">*</span>
           </Label>
           <Input
-            ref={productInputRef}
-            id="waProduct"
-            value={productSearch}
-            onChange={(e) => {
-              setProductSearch(e.target.value);
-              updateFormData({ waProduct: e.target.value });
-              setShowProductSuggestions(true);
-            }}
-            onFocus={() => setShowProductSuggestions(true)}
-            placeholder="Type to search products..."
+            id="productDescription"
+            value={formData.productDescription}
+            onChange={(e) => updateFormData({ productDescription: e.target.value })}
+            placeholder="e.g., HARDPLATE 5+3 mm"
             className="dark:bg-input dark:border-border dark:text-foreground"
-            autoComplete="off"
             required
           />
-          {/* Autocomplete dropdown */}
-          {showProductSuggestions && filteredProducts.length > 0 && (
-            <div
-              ref={productDropdownRef}
-              className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto"
-            >
-              {filteredProducts.map((product, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  className="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors border-b border-border last:border-b-0"
-                  onClick={() => {
-                    setProductSearch(product);
-                    updateFormData({ waProduct: product });
-                    setShowProductSuggestions(false);
-                  }}
-                >
-                  {product}
-                </button>
-              ))}
-            </div>
-          )}
+          <p className="text-xs text-muted-foreground">
+            Describe the product specification (e.g., dimensions, grade)
+          </p>
         </div>
-
-        {/* Diameter - Dropdown with mm values (x.x format), auto-converts to inches */}
-        <div className="space-y-2">
-          <Label htmlFor="waProductDiameter" className="dark:text-foreground">
-            Diameter <span className="text-red-500 dark:text-red-400">*</span>
-          </Label>
-          <select
-            id="waProductDiameter"
-            value={formData.waProductDiameter || ''}
-            onChange={(e) => updateFormData({ waProductDiameter: e.target.value })}
-            className="w-full h-10 px-3 rounded-md border border-border bg-input text-foreground dark:bg-input dark:border-border dark:text-foreground"
-            required
-          >
-            <option value="">Select diameter</option>
-            {[1.0, 1.2, 1.3, 1.6, 2.0, 2.2, 2.4, 2.8, 3.2, 4.0, 5.0, 6.0, 8.0, 12.0].map((mm) => {
-              const mmFormatted = mm.toFixed(1); // Always x.x format
-              const inches = (mm / 25.4).toFixed(3);
-              const displayValue = formData.unitSystem === 'IMPERIAL'
-                ? `${inches} in`
-                : `${mmFormatted} mm`;
-              return (
-                <option key={mm} value={mmFormatted}>
-                  {displayValue}
-                </option>
-              );
-            })}
-          </select>
-        </div>
-      </div>
+      ) : null}
 
       {/* Job Duration - mobile-friendly picker */}
       <div className="space-y-2">

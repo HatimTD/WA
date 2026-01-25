@@ -206,7 +206,8 @@ class NetSuiteClient {
           phone: c.phone || '',
           billcity: c.billcity || '',
           billcountrycode: c.billcountrycode || '',
-          category: c.category || '',
+          // Try custom WA industry field first, fall back to standard category
+          category: c.custentity_wa_industry || c.waIndustryId || c.category || '',
           address: c.address || '',
         }));
 
@@ -248,7 +249,7 @@ class NetSuiteClient {
           })
           .slice(0, 10); // Return max 10 results
         console.log(`[NetSuite] Found ${filteredCustomers.length} matching customers`);
-      // Debug: Log first customer's city data
+      // Debug: Log first customer's data and available fields
       if (filteredCustomers.length > 0) {
         const first = filteredCustomers[0];
         console.log(`[NetSuite] Sample customer data:`, {
@@ -256,6 +257,15 @@ class NetSuiteClient {
           billcity: first.billcity,
           billcountrycode: first.billcountrycode,
           category: first.category
+        });
+      }
+      // Debug: Log what industry fields are available in raw data (first fetch only)
+      if (data && data.length > 0) {
+        const sampleRaw = data[0];
+        console.log(`[NetSuite] Available industry fields in raw data:`, {
+          category: sampleRaw.category || 'NOT FOUND',
+          custentity_wa_industry: sampleRaw.custentity_wa_industry || 'NOT FOUND',
+          waIndustryId: sampleRaw.waIndustryId || 'NOT FOUND',
         });
       }
       }
@@ -309,7 +319,8 @@ class NetSuiteClient {
           address: response.billAddr?.addr1 || '',
           city: response.billAddr?.city || '',
           country: response.billAddr?.country || '',
-          industry: response.category?.name || '',
+          // Try custom WA industry field first, fall back to standard category
+          industry: response.custentity_wa_industry || response.waIndustryId || response.category?.name || '',
         };
       }
 
@@ -684,7 +695,8 @@ class NetSuiteClient {
               phone: c.phone || '',
               billcity: c.billcity || '',
               billcountrycode: c.billcountrycode || '',
-              category: c.category || '',
+              // Try custom WA industry field first, fall back to standard category
+              category: c.custentity_wa_industry || c.waIndustryId || c.category || '',
               address: c.address || '',
             }));
 
