@@ -249,7 +249,7 @@ class NetSuiteClient {
           })
           .slice(0, 10); // Return max 10 results
         console.log(`[NetSuite] Found ${filteredCustomers.length} matching customers`);
-      // Debug: Log first customer's data and available fields
+      // Debug: Log first customer's data
       if (filteredCustomers.length > 0) {
         const first = filteredCustomers[0];
         console.log(`[NetSuite] Sample customer data:`, {
@@ -257,15 +257,6 @@ class NetSuiteClient {
           billcity: first.billcity,
           billcountrycode: first.billcountrycode,
           category: first.category
-        });
-      }
-      // Debug: Log what industry fields are available in raw data (first fetch only)
-      if (data && data.length > 0) {
-        const sampleRaw = data[0];
-        console.log(`[NetSuite] Available industry fields in raw data:`, {
-          category: sampleRaw.category || 'NOT FOUND',
-          custentity_wa_industry: sampleRaw.custentity_wa_industry || 'NOT FOUND',
-          waIndustryId: sampleRaw.waIndustryId || 'NOT FOUND',
         });
       }
       }
