@@ -206,8 +206,12 @@ class NetSuiteClient {
           phone: c.phone || '',
           billcity: c.billcity || '',
           billcountrycode: c.billcountrycode || '',
-          // Try custom WA industry field first, fall back to standard category
-          category: c.custentity_wa_industry || c.waIndustryId || c.category || '',
+          // Per API docs: Use custentity_wag_industryclass_primename for industry name
+          category: c.custentity_wag_industryclass_primename || c.categoryname || c.category || '',
+          categoryname: c.categoryname || '',
+          industryid: c.custentity_wag_industryclass_prime || '',
+          subsidiaryname: c.subsidiarynohierarchyname || c.subsidiary || '',
+          currencyname: c.currencyname || '',
           address: c.address || '',
         }));
 
@@ -310,8 +314,8 @@ class NetSuiteClient {
           address: response.billAddr?.addr1 || '',
           city: response.billAddr?.city || '',
           country: response.billAddr?.country || '',
-          // Try custom WA industry field first, fall back to standard category
-          industry: response.custentity_wa_industry || response.waIndustryId || response.category?.name || '',
+          // Per API docs: Use custentity_wag_industryclass_primename for industry name
+          industry: response.custentity_wag_industryclass_primename || response.categoryname || response.category?.name || '',
         };
       }
 
@@ -686,8 +690,12 @@ class NetSuiteClient {
               phone: c.phone || '',
               billcity: c.billcity || '',
               billcountrycode: c.billcountrycode || '',
-              // Try custom WA industry field first, fall back to standard category
-              category: c.custentity_wa_industry || c.waIndustryId || c.category || '',
+              // Per API docs: Use custentity_wag_industryclass_primename for industry name
+              category: c.custentity_wag_industryclass_primename || c.categoryname || c.category || '',
+              categoryname: c.categoryname || '',
+              industryid: c.custentity_wag_industryclass_prime || '',
+              subsidiaryname: c.subsidiarynohierarchyname || c.subsidiary || '',
+              currencyname: c.currencyname || '',
               address: c.address || '',
             }));
 

@@ -487,6 +487,11 @@ export default function NewCaseStudyPage() {
     const missingFields = getMissingFields(currentStep);
     if (missingFields.length === 0) {
       setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
+      // Scroll to top for better UX (scroll the main content area, not window)
+      const mainElement = document.querySelector('main.overflow-y-auto');
+      if (mainElement) {
+        mainElement.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     } else {
       // Show specific missing fields in toast
       const fieldList = missingFields.slice(0, 3).join(', ');
@@ -497,12 +502,22 @@ export default function NewCaseStudyPage() {
 
   const handlePrevious = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
+    // Scroll to top for better UX (scroll the main content area, not window)
+    const mainElement = document.querySelector('main.overflow-y-auto');
+    if (mainElement) {
+      mainElement.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleSkipWPS = () => {
     // Skip WPS step without validation (for STAR cases)
     // This means no bonus point (+0 instead of +1)
     setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
+    // Scroll to top for better UX (scroll the main content area, not window)
+    const mainElement = document.querySelector('main.overflow-y-auto');
+    if (mainElement) {
+      mainElement.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   /**
@@ -747,11 +762,21 @@ export default function NewCaseStudyPage() {
                   if (step.number < currentStep) {
                     // Navigate back to any previous step
                     setCurrentStep(step.number);
+                    // Scroll to top for better UX (scroll the main content area, not window)
+                    const mainElement = document.querySelector('main.overflow-y-auto');
+                    if (mainElement) {
+                      mainElement.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
                   } else if (step.number > currentStep) {
                     // For forward navigation, validate current step first
                     const missingFields = getMissingFields(currentStep);
                     if (missingFields.length === 0) {
                       setCurrentStep(step.number);
+                      // Scroll to top for better UX (scroll the main content area, not window)
+                      const mainElement = document.querySelector('main.overflow-y-auto');
+                      if (mainElement) {
+                        mainElement.scrollTo({ top: 0, behavior: 'smooth' });
+                      }
                     } else {
                       const fieldList = missingFields.slice(0, 3).join(', ');
                       const moreCount = missingFields.length > 3 ? ` and ${missingFields.length - 3} more` : '';
