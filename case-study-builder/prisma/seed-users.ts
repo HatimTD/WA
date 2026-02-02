@@ -12,8 +12,8 @@ import { PrismaClient, Role } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// Password hash for "TestPassword123" - generated with bcrypt
-const PASSWORD_HASH = '$2a$10$AQQMr960CwaBOWrSNhf1deVOBnZVA/njJMYTrj1F9KCga7QxzrvcK';
+// Password hash for "TestPassword123" - generated with bcrypt.hash('TestPassword123', 10)
+const PASSWORD_HASH = '$2a$10$WdrAgM6sLCKfWI/GwCJxZOXCwmRsCyDmo.NYdCB0Y3QP/9Sgvt0AK';
 
 const USERS_TO_CREATE = [
   // Contributors
