@@ -422,14 +422,14 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
         <div className="border dark:border-border rounded-lg overflow-x-auto">
           <Table className="min-w-[800px]">
             <TableHeader className="dark:bg-card">
-              <TableRow className="dark:border-border">
-                <TableHead className="dark:text-foreground">User</TableHead>
-                <TableHead className="dark:text-foreground">Role</TableHead>
-                <TableHead className="dark:text-foreground">Region</TableHead>
-                <TableHead className="text-right dark:text-foreground">Points</TableHead>
-                <TableHead className="text-right dark:text-foreground">Cases</TableHead>
-                <TableHead className="dark:text-foreground">Joined</TableHead>
-                <TableHead className="text-right dark:text-foreground">Actions</TableHead>
+              <TableRow className="dark:border-border hover:bg-transparent dark:hover:bg-transparent">
+                <TableHead className="dark:text-foreground hover:bg-gray-50 dark:hover:bg-muted/50">User</TableHead>
+                <TableHead className="dark:text-foreground hover:bg-gray-50 dark:hover:bg-muted/50">Role</TableHead>
+                <TableHead className="dark:text-foreground hover:bg-gray-50 dark:hover:bg-muted/50">Region</TableHead>
+                <TableHead className="text-right dark:text-foreground hover:bg-gray-50 dark:hover:bg-muted/50">Points</TableHead>
+                <TableHead className="text-right dark:text-foreground hover:bg-gray-50 dark:hover:bg-muted/50">Cases</TableHead>
+                <TableHead className="dark:text-foreground hover:bg-gray-50 dark:hover:bg-muted/50">Joined</TableHead>
+                <TableHead className="text-right dark:text-foreground hover:bg-gray-50 dark:hover:bg-muted/50">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
