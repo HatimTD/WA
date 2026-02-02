@@ -301,8 +301,8 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
 
       if (result.success) {
         // Update local state with new subsidiaries
-        const updatedSubsidiaries = result.subsidiaries || [];
-        const updatedRegions = [...new Set(updatedSubsidiaries.map((s: any) => s.region))];
+        const updatedSubsidiaries: Array<{ id: string; name: string; region: string; source: string }> = result.subsidiaries || [];
+        const updatedRegions: string[] = Array.from(new Set(updatedSubsidiaries.map(s => s.region)));
 
         console.log('[handleSubsidiariesChange] Updating state with:', { updatedSubsidiaries, updatedRegions });
 

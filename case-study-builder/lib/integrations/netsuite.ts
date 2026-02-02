@@ -37,7 +37,7 @@ export interface NetSuiteEmployee {
   location?: string;
 }
 
-class NetSuiteClient {
+export class NetSuiteClient {
   private config: NetSuiteConfig;
   private baseUrl: string;
 

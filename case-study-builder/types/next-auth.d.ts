@@ -8,6 +8,8 @@ declare module 'next-auth' {
       role: Role;
       region?: string;
       totalPoints?: number;
+      subsidiaries?: Array<{ id: string; name: string; region: string }>;
+      regions?: string[];
     } & DefaultSession['user'];
   }
 
@@ -15,6 +17,8 @@ declare module 'next-auth' {
     role: Role;
     region?: string;
     totalPoints?: number;
+    subsidiaries?: Array<{ id: string; name: string; region: string }>;
+    regions?: string[];
   }
 }
 
@@ -23,5 +27,7 @@ declare module 'next-auth/jwt' {
     role: Role;
     region?: string;
     totalPoints?: number;
+    subsidiaries?: Array<{ id: string; name: string; region: string }>;
+    regions?: string[];
   }
 }
