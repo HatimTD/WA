@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Download, Loader2 } from 'lucide-react';
-import { downloadCaseStudyPDF, type CaseStudyPDFData, type PDFExportOptions } from '@/lib/pdf-export-ppt';
+import { downloadCaseStudyPDF, type CaseStudyPDFData, type PDFExportOptions } from '@/lib/export_pdf_design3';
 import { toast } from 'sonner';
 
 // BRD 5.4.3 - Props with user info for personalized watermark
@@ -31,7 +31,7 @@ export default function PDFExportButton({
   const handleExport = async () => {
     try {
       setIsGenerating(true);
-      console.log('[PDFExport] Generating PPT-style PDF for case study:', caseStudy.id, 'Type:', caseStudy.type);
+      console.log('[PDFExport] Generating professional PDF (Design v3) for case study:', caseStudy.id, 'Type:', caseStudy.type);
 
       // BRD 5.4.3 - Generate PDF with personalized watermark
       const pdfOptions: PDFExportOptions = {
