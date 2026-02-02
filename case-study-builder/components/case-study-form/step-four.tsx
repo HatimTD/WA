@@ -320,10 +320,10 @@ export default function StepFour({ formData, updateFormData }: Props) {
             )}
           </div>
 
-          {/* Diameter - Dropdown with mm values (x.x format), auto-converts to inches */}
+          {/* Diameter - Always in mm regardless of unit system */}
           <div className="space-y-2">
             <Label htmlFor="waProductDiameter" className="dark:text-foreground">
-              Diameter <span className="text-red-500 dark:text-red-400">*</span>
+              Diameter (mm) <span className="text-red-500 dark:text-red-400">*</span>
             </Label>
             <select
               id="waProductDiameter"
@@ -335,10 +335,7 @@ export default function StepFour({ formData, updateFormData }: Props) {
               <option value="">Select diameter</option>
               {[1.0, 1.2, 1.3, 1.6, 2.0, 2.2, 2.4, 2.8, 3.2, 4.0, 5.0, 6.0, 8.0, 12.0].map((mm) => {
                 const mmFormatted = mm.toFixed(1); // Always x.x format
-                const inches = (mm / 25.4).toFixed(3);
-                const displayValue = formData.unitSystem === 'IMPERIAL'
-                  ? `${inches} in`
-                  : `${mmFormatted} mm`;
+                const displayValue = `${mmFormatted} mm`; // Always display in mm
                 return (
                   <option key={mm} value={mmFormatted}>
                     {displayValue}
