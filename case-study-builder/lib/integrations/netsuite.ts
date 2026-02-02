@@ -21,6 +21,21 @@ export interface NetSuiteCustomer {
   industry: string;
 }
 
+export interface NetSuiteEmployee {
+  id: string;                      // netsuiteInternalId
+  internalId: string;              // Same as id
+  email: string | null;            // For Google OAuth matching
+  firstname: string | null;
+  middlename: string | null;
+  lastname: string | null;
+  phone: string | null;
+  // Subsidiary assignment (CRITICAL for multi-subsidiary support)
+  subsidiarynohierarchy?: string;  // Subsidiary ID
+  subsidiarynohierarchyname?: string; // Subsidiary name
+  department?: string;
+  location?: string;
+}
+
 class NetSuiteClient {
   private config: NetSuiteConfig;
   private baseUrl: string;
@@ -781,17 +796,228 @@ class NetSuiteClient {
   }
 
   /**
+   * Search NetSuite employees (waType=user)
+   * NOTE: Currently returns 0 results due to RESTlet bug (currency field issue)
+   * Bug location: WAICAIntegration.RL.js:150 - remove currency field from employee search
+   * This method is ready for when the bug is fixed
+   */
+  async searchEmployees(): Promise<NetSuiteEmployee[]> {
+    try {
+      console.log('[NetSuite] Fetching ALL employees from RESTlet...');
+
+      // Try Redis cache first (chunked to handle Upstash 10MB limit)
+      const cacheKey = 'netsuite:employees';
+      let allEmployees: any[] | null = await redisCache.getChunked<any>(cacheKey);
+
+      if (!allEmployees) {
+        // Fetch from RESTlet API
+        const restletUrl = process.env.NETSUITE_RESTLET_URL;
+
+        if (!restletUrl) {
+          throw new Error('NETSUITE_RESTLET_URL not configured');
+        }
+
+        // Build URL for getting all employees (waType=user)
+        const url = `${restletUrl}&waType=user`;
+        const authHeader = this.generateOAuthHeader('GET', url);
+
+        console.log('[NetSuite] Fetching employees from RESTlet...');
+        const startTime = Date.now();
+
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Authorization': authHeader,
+            'Content-Type': 'application/json',
+          },
+          signal: AbortSignal.timeout(120000), // 120 seconds
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`NetSuite RESTlet error: ${response.status} ${response.statusText} - ${errorText}`);
+        }
+
+        const data = await response.json();
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+
+        // Check for error response (bug in RESTlet)
+        if (data.status === 'error') {
+          console.error(`[NetSuite] Employee fetch error: ${data.details}`);
+          console.log('[NetSuite] This is likely the currency field bug in WAICAIntegration.RL.js');
+          return []; // Return empty array until bug is fixed
+        }
+
+        console.log(`[NetSuite] Fetched ${Array.isArray(data) ? data.length : 0} employees in ${elapsed}s`);
+
+        if (!Array.isArray(data)) {
+          console.error('[NetSuite] Unexpected response format from RESTlet:', data);
+          return [];
+        }
+
+        // Store essential employee fields
+        const essentialData = data.map((emp: any) => ({
+          internalid: emp.internalid,
+          email: emp.email || null,
+          firstname: emp.firstname || null,
+          middlename: emp.middlename || null,
+          lastname: emp.lastname || null,
+          phone: emp.phone || null,
+          // Subsidiary fields (CRITICAL)
+          subsidiarynohierarchy: emp.subsidiarynohierarchy || null,
+          subsidiarynohierarchyname: emp.subsidiarynohierarchyname || null,
+          department: emp.department || null,
+          location: emp.location || null,
+        }));
+
+        // Cache using chunked storage for 1 week (604800 seconds)
+        const cacheSuccess = await redisCache.setChunked(cacheKey, essentialData, 604800);
+        if (cacheSuccess) {
+          console.log(`[NetSuite] Cached ${essentialData.length} employees (chunked) in Redis`);
+        }
+
+        allEmployees = essentialData;
+      } else {
+        console.log(`[NetSuite] Retrieved ${allEmployees.length} employees from cache`);
+      }
+
+      // Transform to NetSuiteEmployee format
+      return allEmployees.map((emp: any) => ({
+        id: emp.internalid,
+        internalId: emp.internalid,
+        email: emp.email,
+        firstname: emp.firstname,
+        middlename: emp.middlename,
+        lastname: emp.lastname,
+        phone: emp.phone,
+        subsidiarynohierarchy: emp.subsidiarynohierarchy,
+        subsidiarynohierarchyname: emp.subsidiarynohierarchyname,
+        department: emp.department,
+        location: emp.location,
+      }));
+
+    } catch (error) {
+      console.error('[NetSuite] Employee search error:', error);
+      return []; // Return empty array on error (graceful degradation)
+    }
+  }
+
+  /**
+   * Get employee by email (for login matching)
+   * Searches through all employees and finds match by email
+   */
+  async getEmployeeByEmail(email: string): Promise<NetSuiteEmployee | null> {
+    try {
+      if (!email) {
+        return null;
+      }
+
+      const normalizedEmail = email.toLowerCase().trim();
+      console.log(`[NetSuite] Looking up employee by email: ${normalizedEmail}`);
+
+      // Get all employees (from cache if available)
+      const allEmployees = await this.searchEmployees();
+
+      // Find employee with matching email
+      const employee = allEmployees.find(
+        emp => emp.email?.toLowerCase().trim() === normalizedEmail
+      );
+
+      if (employee) {
+        console.log(`[NetSuite] Found employee: ${employee.firstname} ${employee.lastname} (${employee.internalId})`);
+      } else {
+        console.log(`[NetSuite] No employee found for email: ${normalizedEmail}`);
+      }
+
+      return employee || null;
+    } catch (error) {
+      console.error('[NetSuite] Get employee by email error:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get employee by NetSuite internal ID (waType=user&waId={id})
+   */
+  async getEmployeeById(id: string): Promise<NetSuiteEmployee | null> {
+    try {
+      const restletUrl = process.env.NETSUITE_RESTLET_URL;
+
+      if (!restletUrl) {
+        throw new Error('NETSUITE_RESTLET_URL not configured');
+      }
+
+      // Build URL for specific employee
+      const url = `${restletUrl}&waType=user&waId=${id}`;
+      const authHeader = this.generateOAuthHeader('GET', url);
+
+      console.log(`[NetSuite] Fetching employee ${id} from RESTlet...`);
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': authHeader,
+          'Content-Type': 'application/json',
+        },
+        signal: AbortSignal.timeout(30000), // 30 seconds
+      });
+
+      if (!response.ok) {
+        throw new Error(`NetSuite RESTlet error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      // Check for error response
+      if (data.status === 'error') {
+        console.error(`[NetSuite] Employee fetch error: ${data.details}`);
+        return null;
+      }
+
+      // Response is array with single employee
+      const emp = Array.isArray(data) ? data[0] : data;
+
+      if (!emp || !emp.internalid) {
+        console.log(`[NetSuite] Employee ${id} not found`);
+        return null;
+      }
+
+      console.log(`[NetSuite] Found employee ${id}: ${emp.firstname} ${emp.lastname}`);
+
+      return {
+        id: emp.internalid,
+        internalId: emp.internalid,
+        email: emp.email || null,
+        firstname: emp.firstname || null,
+        middlename: emp.middlename || null,
+        lastname: emp.lastname || null,
+        phone: emp.phone || null,
+        subsidiarynohierarchy: emp.subsidiarynohierarchy || null,
+        subsidiarynohierarchyname: emp.subsidiarynohierarchyname || null,
+        department: emp.department || null,
+        location: emp.location || null,
+      };
+
+    } catch (error) {
+      console.error('[NetSuite] Get employee by ID error:', error);
+      return null;
+    }
+  }
+
+  /**
    * Get cache status for monitoring
    */
   async getCacheStatus(): Promise<{
     customers: { cached: boolean; count: number };
     items: { cached: boolean; count: number };
+    employees: { cached: boolean; count: number };
     redis: { connected: boolean; type: 'redis' | 'memory' };
   }> {
-    // Check chunked cache metadata for customers and items
-    const [customersMeta, itemsMeta, redisStatus] = await Promise.all([
+    // Check chunked cache metadata for customers, items, and employees
+    const [customersMeta, itemsMeta, employeesMeta, redisStatus] = await Promise.all([
       redisCache.get<{ chunkCount: number; totalItems: number }>('netsuite:customers:meta'),
       redisCache.get<{ chunkCount: number; totalItems: number }>('netsuite:items:meta'),
+      redisCache.get<{ chunkCount: number; totalItems: number }>('netsuite:employees:meta'),
       redisCache.getStatus()
     ]);
 
@@ -804,6 +1030,10 @@ class NetSuiteClient {
         cached: itemsMeta !== null,
         count: itemsMeta?.totalItems || 0,
       },
+      employees: {
+        cached: employeesMeta !== null,
+        count: employeesMeta?.totalItems || 0,
+      },
       redis: {
         connected: redisStatus.connected,
         type: redisStatus.type,
@@ -815,10 +1045,11 @@ class NetSuiteClient {
    * Manually clear cache (for admin/testing purposes)
    */
   async clearCache(): Promise<void> {
-    // Clear chunked data for customers and items
+    // Clear chunked data for customers, items, and employees
     await Promise.all([
       redisCache.delChunked('netsuite:customers'),
       redisCache.delChunked('netsuite:items'),
+      redisCache.delChunked('netsuite:employees'),
     ]);
     console.log('[NetSuite] Cache cleared');
   }

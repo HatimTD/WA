@@ -17,7 +17,7 @@
  */
 
 import prisma from '@/lib/prisma';
-import { netsuiteClient, NetSuiteCustomer } from './netsuite';
+import { netsuiteClient, NetSuiteCustomer, NetSuiteEmployee } from './netsuite';
 
 /**
  * Sync result interface
@@ -296,6 +296,114 @@ export async function getSyncStats() {
       : null,
     recentJobs,
   };
+}
+
+/**
+ * Sync NetSuite employees to WaNetsuiteEmployee table
+ * Called by cron job (11pm Paris time) to keep employee data fresh
+ * Used for auto-population of user data on login
+ */
+export async function waSyncNetSuiteEmployees(): Promise<{
+  success: boolean;
+  totalEmployees: number;
+  newEmployees: number;
+  updatedEmployees: number;
+  error?: string;
+}> {
+  const startTime = Date.now();
+  let totalEmployees = 0;
+  let newEmployees = 0;
+  let updatedEmployees = 0;
+
+  try {
+    console.log('[NetSuite Employee Sync] Starting employee sync...');
+
+    // Fetch all employees from NetSuite (uses Redis cache if available)
+    const employees = await netsuiteClient.searchEmployees();
+    totalEmployees = employees.length;
+
+    console.log(`[NetSuite Employee Sync] Fetched ${totalEmployees} employees`);
+
+    if (totalEmployees === 0) {
+      console.log('[NetSuite Employee Sync] No employees returned (likely RESTlet bug)');
+      return {
+        success: false,
+        totalEmployees: 0,
+        newEmployees: 0,
+        updatedEmployees: 0,
+        error: 'No employees returned from NetSuite (RESTlet bug)',
+      };
+    }
+
+    // Upsert each employee to database
+    for (const employee of employees) {
+      try {
+        const existing = await prisma.waNetsuiteEmployee.findUnique({
+          where: { netsuiteInternalId: employee.internalId },
+        });
+
+        if (!existing) {
+          // Create new employee record
+          await prisma.waNetsuiteEmployee.create({
+            data: {
+              netsuiteInternalId: employee.internalId,
+              email: employee.email,
+              firstname: employee.firstname,
+              middlename: employee.middlename,
+              lastname: employee.lastname,
+              phone: employee.phone,
+              subsidiarynohierarchy: employee.subsidiarynohierarchy,
+              subsidiarynohierarchyname: employee.subsidiarynohierarchyname,
+              department: employee.department,
+              location: employee.location,
+            },
+          });
+          newEmployees++;
+        } else {
+          // Update existing employee
+          await prisma.waNetsuiteEmployee.update({
+            where: { netsuiteInternalId: employee.internalId },
+            data: {
+              email: employee.email,
+              firstname: employee.firstname,
+              middlename: employee.middlename,
+              lastname: employee.lastname,
+              phone: employee.phone,
+              subsidiarynohierarchy: employee.subsidiarynohierarchy,
+              subsidiarynohierarchyname: employee.subsidiarynohierarchyname,
+              department: employee.department,
+              location: employee.location,
+            },
+          });
+          updatedEmployees++;
+        }
+      } catch (error) {
+        console.error(`[NetSuite Employee Sync] Error upserting employee ${employee.internalId}:`, error);
+      }
+    }
+
+    const duration = Date.now() - startTime;
+    console.log(`[NetSuite Employee Sync] Completed in ${duration}ms - ${newEmployees} new, ${updatedEmployees} updated`);
+
+    return {
+      success: true,
+      totalEmployees,
+      newEmployees,
+      updatedEmployees,
+    };
+
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[NetSuite Employee Sync] Sync failed:', errorMessage);
+
+    return {
+      success: false,
+      totalEmployees,
+      newEmployees,
+      updatedEmployees,
+      error: errorMessage,
+    };
+  }
 }
 
 /**
