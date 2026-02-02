@@ -442,10 +442,7 @@ export default function NewCaseStudyPage() {
           }
           if (!firstLayer?.weldingProcess && !formData.wps?.weldingProcess) missing.push('Welding Process');
           if (!firstLayer?.weldingPosition && !formData.wps?.weldingPosition) missing.push('Welding Position');
-          // Oscillation - check layers or legacy
-          const hasOscillation = firstLayer?.oscillationAmplitude || firstLayer?.oscillationPeriod ||
-                                 formData.wps?.oscillationWidth || formData.wps?.oscillationSpeed;
-          if (!hasOscillation) missing.push('Oscillation (Amplitude or Period)');
+          // Oscillation fields (Amplitude, Period, Tempos) are all optional
           // Temperature fields (Preheat, Interpass, Postheat) are all optional
           // Additional Notes is optional
         }
