@@ -57,6 +57,33 @@ export default function NetSuiteCustomerSearch({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
+  // Subsidiary filtering for CONTRIBUTOR users
+  const [userSubsidiaries, setUserSubsidiaries] = useState<{
+    shouldFilter: boolean;
+    subsidiaryIds: string[];
+  } | null>(null);
+
+  // Fetch user's subsidiaries on mount for filtering
+  useEffect(() => {
+    async function fetchUserSubsidiaries() {
+      try {
+        const response = await fetch('/api/user/subsidiaries');
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          setUserSubsidiaries({
+            shouldFilter: result.data.shouldFilter,
+            subsidiaryIds: result.data.subsidiaryIds,
+          });
+        }
+      } catch (error) {
+        console.error('[Customer Search] Failed to fetch user subsidiaries:', error);
+      }
+    }
+
+    fetchUserSubsidiaries();
+  }, []);
+
   // Sync internal state with value prop (for when parent resets value)
   useEffect(() => {
     if (!value && selectedCustomer) {
@@ -86,6 +113,13 @@ export default function NetSuiteCustomerSearch({
     setIsLoading(true);
     debounceTimerRef.current = setTimeout(async () => {
       try {
+        // Wait for user subsidiaries to load before filtering
+        if (userSubsidiaries === null) {
+          console.log('[Customer Search] Waiting for user subsidiaries to load...');
+          setIsLoading(false);
+          return;
+        }
+
         let filteredCustomers: CustomerWithOptionalCases[] = [];
 
         // Try hybrid cache approach first
@@ -94,10 +128,30 @@ export default function NetSuiteCustomerSearch({
           const cacheKey = 'netsuite:customers:all';
           let allCustomers = await indexedDBCache.get<CustomerWithOptionalCases[]>(cacheKey);
 
+          // Check if cached data is stale (missing subsidiarynohierarchy field)
+          if (allCustomers && allCustomers.length > 0) {
+            // Check a larger sample to be more confident about data quality
+            const sampleSize = Math.min(50, allCustomers.length);
+            const sample = allCustomers.slice(0, sampleSize);
+            const withSubsidiary = sample.filter(c => c.subsidiarynohierarchy && c.subsidiarynohierarchy !== '').length;
+            const percentageWithData = (withSubsidiary / sampleSize) * 100;
+
+            // If less than 80% have subsidiary data, consider it stale
+            if (percentageWithData < 80) {
+              console.log('[Hybrid Cache] ⚠️ STALE CACHE DETECTED - Low subsidiary data quality');
+              console.log(`[Hybrid Cache] Only ${percentageWithData.toFixed(1)}% have subsidiary data`);
+              console.log('[Hybrid Cache] Clearing old cache and refetching from server...');
+              await indexedDBCache.del(cacheKey);
+              allCustomers = null; // Force refetch
+            } else {
+              console.log(`[Hybrid Cache] IndexedDB HIT - ${allCustomers.length} customers (${percentageWithData.toFixed(1)}% have subsidiary data)`);
+            }
+          }
+
           if (!allCustomers || allCustomers.length === 0) {
-            // 2. Not in IndexedDB or stale empty cache, fetch from server
+            // 2. Not in IndexedDB or stale cache, fetch from server
             if (allCustomers && allCustomers.length === 0) {
-              console.log('[Hybrid Cache] IndexedDB has stale/empty data, clearing and refetching...');
+              console.log('[Hybrid Cache] IndexedDB has empty data, clearing and refetching...');
               await indexedDBCache.del(cacheKey);
             } else {
               console.log('[Hybrid Cache] IndexedDB MISS, fetching from server...');
@@ -109,26 +163,41 @@ export default function NetSuiteCustomerSearch({
               allCustomers = result.customers;
               // 3. Cache in IndexedDB for 1 week
               await indexedDBCache.set(cacheKey, allCustomers, 604800000);
-              console.log(`[Hybrid Cache] Cached ${allCustomers.length} customers in IndexedDB`);
+              console.log(`[Hybrid Cache] Cached ${allCustomers.length} customers in IndexedDB (with subsidiary data)`);
             }
-          } else {
-            console.log(`[Hybrid Cache] IndexedDB HIT - ${allCustomers.length} customers`);
           }
 
-          // 4. Filter customers client-side based on search query
+          // 4. Filter customers client-side based on search query AND subsidiaries
           if (allCustomers && allCustomers.length > 0) {
             const lowerQuery = searchQuery.toLowerCase();
+
             filteredCustomers = allCustomers
               .filter((customer) => {
+                // Search query filter
                 const companyName = (customer.companyName || '').toLowerCase();
                 const entityId = (customer.entityId || '').toLowerCase();
                 const city = (customer.city || '').toLowerCase();
                 const industry = (customer.industry || '').toLowerCase();
 
-                return companyName.includes(lowerQuery) ||
-                       entityId.includes(lowerQuery) ||
-                       city.includes(lowerQuery) ||
-                       industry.includes(lowerQuery);
+                const matchesQuery = companyName.includes(lowerQuery) ||
+                                    entityId.includes(lowerQuery) ||
+                                    city.includes(lowerQuery) ||
+                                    industry.includes(lowerQuery);
+
+                if (!matchesQuery) return false;
+
+                // Subsidiary filter (CONTRIBUTOR only)
+                if (userSubsidiaries?.shouldFilter) {
+                  // If customer has no subsidiary field, exclude them
+                  if (!customer.subsidiarynohierarchy) {
+                    return false;
+                  }
+
+                  // Check if customer's subsidiary matches any of user's subsidiaries
+                  return userSubsidiaries.subsidiaryIds.includes(customer.subsidiarynohierarchy);
+                }
+
+                return true;
               })
               .slice(0, 10);
           }
@@ -161,7 +230,7 @@ export default function NetSuiteCustomerSearch({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [searchQuery]);
+  }, [searchQuery, userSubsidiaries]); // Re-run when subsidiaries load
 
   const handleCustomerSelect = (customer: CustomerWithOptionalCases) => {
     setSelectedCustomer(customer);

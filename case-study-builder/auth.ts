@@ -7,6 +7,7 @@ import prisma from '@/lib/prisma';
 import type { Role } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import type { Provider } from 'next-auth/providers';
+import { waAutoAssignSubsidiaryFromNetSuite } from '@/lib/actions/waUserSubsidiaryActions';
 
 const providers: Provider[] = [
   Google({
@@ -149,6 +150,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token.name && session.user) {
         session.user.name = token.name as string;
       }
+      // Add subsidiaries and regions to session
+      if (token.subsidiaries && session.user) {
+        session.user.subsidiaries = token.subsidiaries as Array<{ id: string; name: string; region: string }>;
+      }
+      if (token.regions && session.user) {
+        session.user.regions = token.regions as string[];
+      }
       return session;
     },
     async jwt({ token, user, trigger, session }) {
@@ -163,6 +171,93 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           token.totalPoints = dbUser.totalPoints;
           // Ensure name is stored in token
           token.name = dbUser.name || user.name;
+
+          // NetSuite Employee Auto-Sync: Check if email exists in NetSuite employees
+          if (dbUser.email) {
+            try {
+              const nsEmployee = await prisma.waNetsuiteEmployee.findUnique({
+                where: { email: dbUser.email.toLowerCase().trim() },
+                select: {
+                  netsuiteInternalId: true,
+                  firstname: true,
+                  middlename: true,
+                  lastname: true,
+                  subsidiarynohierarchy: true,
+                },
+              });
+
+              if (nsEmployee) {
+                // Update user's ssoUid if not set (NetSuite employee ID)
+                if (!dbUser.ssoUid && nsEmployee.netsuiteInternalId) {
+                  await prisma.user.update({
+                    where: { id: dbUser.id },
+                    data: { ssoUid: nsEmployee.netsuiteInternalId },
+                  });
+                }
+
+                // Update user's name from NetSuite if not set
+                if (!dbUser.name && nsEmployee.firstname) {
+                  const fullName = [
+                    nsEmployee.firstname,
+                    nsEmployee.middlename,
+                    nsEmployee.lastname,
+                  ]
+                    .filter(Boolean)
+                    .join(' ');
+
+                  await prisma.user.update({
+                    where: { id: dbUser.id },
+                    data: { name: fullName },
+                  });
+
+                  token.name = fullName;
+                }
+
+                // Auto-assign subsidiary from NetSuite (only if exists)
+                if (nsEmployee.netsuiteInternalId && nsEmployee.subsidiarynohierarchy) {
+                  await waAutoAssignSubsidiaryFromNetSuite(
+                    dbUser.id,
+                    nsEmployee.netsuiteInternalId
+                  );
+                }
+              }
+            } catch (error) {
+              console.error('[Auth] NetSuite employee auto-sync error:', error);
+              // Continue without failing the login
+            }
+          }
+
+          // Fetch user's subsidiaries and compute regions
+          try {
+            const userSubsidiaries = await prisma.waUserSubsidiary.findMany({
+              where: { userId: dbUser.id },
+              select: {
+                subsidiary: {
+                  select: {
+                    id: true,
+                    name: true,
+                    region: true,
+                  },
+                },
+              },
+            });
+
+            const subsidiaries = userSubsidiaries.map((us) => ({
+              id: us.subsidiary.id,
+              name: us.subsidiary.name,
+              region: us.subsidiary.region,
+            }));
+
+            const regions = [...new Set(subsidiaries.map((s) => s.region))];
+
+            // Add to token
+            token.subsidiaries = subsidiaries;
+            token.regions = regions;
+          } catch (error) {
+            console.error('[Auth] Error fetching subsidiaries:', error);
+            token.subsidiaries = [];
+            token.regions = [];
+          }
         }
       }
 

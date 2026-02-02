@@ -19,6 +19,7 @@ export interface NetSuiteCustomer {
   city: string;
   country: string;
   industry: string;
+  subsidiarynohierarchy?: string;  // Subsidiary ID for filtering (CRITICAL for multi-subsidiary support)
 }
 
 export interface NetSuiteEmployee {
@@ -225,6 +226,7 @@ class NetSuiteClient {
           category: c.custentity_wag_industryclass_primename || c.categoryname || c.category || '',
           categoryname: c.categoryname || '',
           industryid: c.custentity_wag_industryclass_prime || '',
+          subsidiarynohierarchy: c.subsidiarynohierarchy || '', // CRITICAL: Subsidiary ID for filtering
           subsidiaryname: c.subsidiarynohierarchyname || c.subsidiary || '',
           currencyname: c.currencyname || '',
           address: c.address || '',
@@ -300,6 +302,7 @@ class NetSuiteClient {
           city: item.billcity || '',
           country: item.billcountrycode || '',
           industry: item.category || '',
+          subsidiarynohierarchy: item.subsidiarynohierarchy || '', // For filtering by subsidiary
         };
       });
 

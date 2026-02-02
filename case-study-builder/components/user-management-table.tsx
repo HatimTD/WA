@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +35,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Search, UserCog, Trash2, Shield, Award, Monitor, Megaphone, Eye, ChevronDown, Check, Loader2, UserPlus } from 'lucide-react';
+import { Search, UserCog, Trash2, Shield, Award, Monitor, Megaphone, Eye, ChevronDown, Check, Loader2, UserPlus, Building, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 
 // All roles defined in Prisma schema
@@ -59,6 +59,8 @@ type User = {
   role: string;
   roles?: string[]; // Multiple roles
   region: string | null;
+  subsidiaries?: Array<{ id: string; name: string; region: string; source: string }>; // Multiple subsidiaries
+  regions?: string[]; // Computed from subsidiaries
   totalPoints: number;
   caseCount: number;
   createdAt: string;
@@ -84,6 +86,20 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
+  const [allSubsidiaries, setAllSubsidiaries] = useState<Array<{ id: string; name: string; region: string }>>([]);
+  const [subsidiariesByRegion, setSubsidiariesByRegion] = useState<Record<string, Array<{ id: string; name: string }>>>({});
+
+  // Ref to track latest subsidiaries (updated immediately, before React re-renders)
+  const latestSubsidiariesRef = useRef<Map<string, Array<{ id: string; name: string; region: string; source: string }>>>(new Map());
+
+  // Initialize ref with current users' subsidiaries
+  useEffect(() => {
+    users.forEach(user => {
+      if (user.subsidiaries) {
+        latestSubsidiariesRef.current.set(user.id, user.subsidiaries);
+      }
+    });
+  }, [users]);
 
   // Create user dialog state
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -233,6 +249,131 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
     } finally {
       setIsCreating(false);
     }
+  };
+
+  // Fetch all subsidiaries on component mount
+  useEffect(() => {
+    async function fetchSubsidiaries() {
+      try {
+        const response = await fetch('/api/admin/subsidiaries');
+        const result = await response.json();
+
+        if (result.success) {
+          setAllSubsidiaries(result.subsidiaries || []);
+          setSubsidiariesByRegion(result.byRegion || {});
+        }
+      } catch (error) {
+        console.error('[UserManagement] Failed to fetch subsidiaries:', error);
+      }
+    }
+
+    fetchSubsidiaries();
+  }, []);
+
+  // Get user's current subsidiaries (from subsidiaries array or empty)
+  const waGetUserSubsidiaries = (user: User): Array<{ id: string; name: string; region: string; source: string }> => {
+    return user.subsidiaries || [];
+  };
+
+  // Get user's computed regions (from subsidiaries)
+  const waGetUserRegions = (user: User): string[] => {
+    if (user.regions && user.regions.length > 0) {
+      return user.regions;
+    }
+    // Compute from subsidiaries
+    const subsidiaries = waGetUserSubsidiaries(user);
+    const regions = [...new Set(subsidiaries.map(s => s.region))];
+    return regions;
+  };
+
+  const handleSubsidiariesChange = async (userId: string, newSubsidiaryIds: string[]) => {
+    console.log('[handleSubsidiariesChange] Starting update:', { userId, newSubsidiaryIds });
+    setIsUpdating(userId);
+    try {
+      const response = await fetch('/api/admin/update-user-subsidiaries', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, subsidiaryIds: newSubsidiaryIds }),
+      });
+
+      const result = await response.json();
+      console.log('[handleSubsidiariesChange] API response:', result);
+
+      if (result.success) {
+        // Update local state with new subsidiaries
+        const updatedSubsidiaries = result.subsidiaries || [];
+        const updatedRegions = [...new Set(updatedSubsidiaries.map((s: any) => s.region))];
+
+        console.log('[handleSubsidiariesChange] Updating state with:', { updatedSubsidiaries, updatedRegions });
+
+        // Update ref IMMEDIATELY (before React re-renders)
+        latestSubsidiariesRef.current.set(userId, updatedSubsidiaries);
+        console.log('[handleSubsidiariesChange] Ref updated. Ref now contains:', {
+          userId,
+          refSubsidiaries: latestSubsidiariesRef.current.get(userId),
+          allRefEntries: Array.from(latestSubsidiariesRef.current.entries())
+        });
+
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.id === userId
+              ? { ...u, subsidiaries: updatedSubsidiaries, regions: updatedRegions }
+              : u
+          )
+        );
+
+        const subsidiaryNames = updatedSubsidiaries.map((s: any) => s.name).join(', ') || 'None';
+        toast.success(`User subsidiaries updated: ${subsidiaryNames}`);
+      } else {
+        toast.error(result.error || 'Failed to update subsidiaries');
+      }
+    } catch (error) {
+      console.error('[UserManagement] Subsidiary update error:', error);
+      toast.error('An error occurred');
+    } finally {
+      // Small delay to allow React state to update before allowing next click
+      setTimeout(() => {
+        setIsUpdating(null);
+      }, 100);
+    }
+  };
+
+  const waToggleSubsidiary = (userId: string, subsidiaryId: string) => {
+    // Prevent rapid clicks while update is in progress
+    if (isUpdating === userId) {
+      console.log('[waToggleSubsidiary] Update already in progress, ignoring click');
+      return;
+    }
+
+    // Get FRESH state from ref (updated immediately, not waiting for React re-render)
+    const currentSubsidiaries = latestSubsidiariesRef.current.get(userId) || [];
+    console.log('[waToggleSubsidiary] Reading from ref:', {
+      userId,
+      currentSubsidiaries,
+      refSize: latestSubsidiariesRef.current.size,
+      hasUserId: latestSubsidiariesRef.current.has(userId)
+    });
+
+    // Only toggle MANUAL subsidiaries (cannot toggle NETSUITE-sourced)
+    const manualSubsidiaries = currentSubsidiaries.filter(s => s.source === 'MANUAL');
+
+    const isSelected = manualSubsidiaries.some(s => s.id === subsidiaryId);
+    const newManualSubsidiaries = isSelected
+      ? manualSubsidiaries.filter(s => s.id !== subsidiaryId)
+      : [...manualSubsidiaries, { id: subsidiaryId, name: '', region: '', source: 'MANUAL' }];
+
+    // Send only MANUAL subsidiary IDs to API
+    const newSubsidiaryIds = newManualSubsidiaries.map(s => s.id);
+
+    console.log('[waToggleSubsidiary] Toggling subsidiary:', {
+      userId,
+      subsidiaryId,
+      currentManual: manualSubsidiaries.map(s => s.id),
+      newManual: newSubsidiaryIds,
+      isSelected
+    });
+
+    handleSubsidiariesChange(userId, newSubsidiaryIds);
   };
 
   return (
@@ -420,12 +561,13 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
 
         {/* Users Table */}
         <div className="border dark:border-border rounded-lg overflow-x-auto">
-          <Table className="min-w-[800px]">
+          <Table className="min-w-[1200px]">
             <TableHeader className="dark:bg-card">
               <TableRow className="dark:border-border hover:bg-transparent dark:hover:bg-transparent">
                 <TableHead className="dark:text-foreground hover:bg-gray-50 dark:hover:bg-muted/50">User</TableHead>
                 <TableHead className="dark:text-foreground hover:bg-gray-50 dark:hover:bg-muted/50">Role</TableHead>
-                <TableHead className="dark:text-foreground hover:bg-gray-50 dark:hover:bg-muted/50">Region</TableHead>
+                <TableHead className="dark:text-foreground hover:bg-gray-50 dark:hover:bg-muted/50">Subsidiaries</TableHead>
+                <TableHead className="dark:text-foreground hover:bg-gray-50 dark:hover:bg-muted/50">Regions</TableHead>
                 <TableHead className="text-right dark:text-foreground hover:bg-gray-50 dark:hover:bg-muted/50">Points</TableHead>
                 <TableHead className="text-right dark:text-foreground hover:bg-gray-50 dark:hover:bg-muted/50">Cases</TableHead>
                 <TableHead className="dark:text-foreground hover:bg-gray-50 dark:hover:bg-muted/50">Joined</TableHead>
@@ -435,7 +577,7 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
             <TableBody>
               {filteredUsers.length === 0 ? (
                 <TableRow className="dark:border-border">
-                  <TableCell colSpan={7} className="text-center text-gray-500 dark:text-muted-foreground py-8">
+                  <TableCell colSpan={8} className="text-center text-gray-500 dark:text-muted-foreground py-8">
                     No users found
                   </TableCell>
                 </TableRow>
@@ -514,11 +656,145 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
                       </Popover>
                     </TableCell>
 
-                    {/* Region */}
+                    {/* Multi-Subsidiary Selector */}
                     <TableCell>
-                      <span className="text-sm text-gray-600 dark:text-muted-foreground">
-                        {user.region || 'Not set'}
-                      </span>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-auto min-w-[180px] justify-between dark:bg-input dark:border-border dark:text-foreground"
+                            disabled={isUpdating === user.id}
+                          >
+                            <div className="flex flex-wrap gap-1">
+                              {waGetUserSubsidiaries(user).length === 0 ? (
+                                <span className="text-sm text-muted-foreground">No subsidiaries</span>
+                              ) : (
+                                <>
+                                  {waGetUserSubsidiaries(user).slice(0, 2).map((subsidiary) => (
+                                    <span
+                                      key={subsidiary.id}
+                                      className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-xs rounded ${
+                                        subsidiary.source === 'NETSUITE'
+                                          ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                                          : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                                      }`}
+                                    >
+                                      <Building className="h-3 w-3" />
+                                      {subsidiary.name.split(' ')[0]}
+                                      {subsidiary.source === 'NETSUITE' && <span className="text-[10px]">✓</span>}
+                                    </span>
+                                  ))}
+                                  {waGetUserSubsidiaries(user).length > 2 && (
+                                    <span className="text-xs text-muted-foreground">
+                                      +{waGetUserSubsidiaries(user).length - 2}
+                                    </span>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                            {isUpdating === user.id ? (
+                              <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          key={`subsidiaries-${user.id}-${waGetUserSubsidiaries(user).map(s => s.id).join(',')}`}
+                          className="w-80 p-2 dark:bg-popover dark:border-border max-h-96 overflow-y-auto"
+                          align="start"
+                        >
+                          <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground mb-2 px-2">
+                              Select multiple subsidiaries:
+                            </p>
+                            {/* Group by region */}
+                            {(() => {
+                              // Get user subsidiaries once for all subsidiaries in popover
+                              const userSubsidiaries = waGetUserSubsidiaries(user);
+
+                              return Object.keys(subsidiariesByRegion).sort().map((region) => (
+                                <div key={region} className="mb-3">
+                                  <div className="px-2 py-1 text-xs font-semibold text-muted-foreground bg-muted/50 rounded mb-1">
+                                    <Globe className="h-3 w-3 inline mr-1" />
+                                    {region}
+                                  </div>
+                                  {subsidiariesByRegion[region].map((subsidiary) => {
+                                    const existing = userSubsidiaries.find(s => s.id === subsidiary.id);
+                                    const isSelected = !!existing;
+                                    const isNetSuite = existing?.source === 'NETSUITE';
+
+                                    return (
+                                      <button
+                                        key={subsidiary.id}
+                                        onClick={() => {
+                                          if (!isNetSuite) {
+                                            waToggleSubsidiary(user.id, subsidiary.id);
+                                          }
+                                        }}
+                                      disabled={isUpdating === user.id || isNetSuite}
+                                      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left ${
+                                        isSelected ? 'bg-accent' : ''
+                                      } ${
+                                        isNetSuite
+                                          ? 'opacity-70 cursor-not-allowed'
+                                          : 'hover:bg-accent'
+                                      }`}
+                                      title={isNetSuite ? 'Synced from NetSuite (cannot be removed)' : ''}
+                                    >
+                                      <div
+                                        className={`w-4 h-4 border rounded flex items-center justify-center ${
+                                          isSelected
+                                            ? 'bg-primary border-primary'
+                                            : 'border-input'
+                                        }`}
+                                      >
+                                        {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
+                                      </div>
+                                      <div className="flex items-center gap-1.5 flex-1">
+                                        <Building className="h-3 w-3 text-muted-foreground" />
+                                        <span className="text-sm">{subsidiary.name}</span>
+                                      </div>
+                                      {isNetSuite && (
+                                        <span className="text-[10px] text-blue-600 dark:text-blue-400 font-medium">
+                                          NS
+                                        </span>
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                              ))
+                            })()}
+                            {Object.keys(subsidiariesByRegion).length === 0 && (
+                              <p className="text-xs text-muted-foreground text-center py-4">
+                                No subsidiaries available
+                              </p>
+                            )}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </TableCell>
+
+                    {/* Regions (Computed from Subsidiaries) */}
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {waGetUserRegions(user).length === 0 ? (
+                          <span className="text-sm text-gray-600 dark:text-muted-foreground">
+                            Not set
+                          </span>
+                        ) : (
+                          waGetUserRegions(user).map((region) => (
+                            <span
+                              key={region}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded bg-wa-green-100 dark:bg-primary/20 text-wa-green-700 dark:text-primary"
+                            >
+                              <Globe className="h-3 w-3" />
+                              {region}
+                            </span>
+                          ))
+                        )}
+                      </div>
                     </TableCell>
 
                     {/* Points */}

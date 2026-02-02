@@ -20,7 +20,7 @@ export default async function UserManagementPage() {
     redirect('/dashboard');
   }
 
-  // Fetch all users with their statistics and multiple roles
+  // Fetch all users with their statistics, multiple roles, and subsidiaries
   const users = await prisma.user.findMany({
     select: {
       id: true,
@@ -35,6 +35,22 @@ export default async function UserManagementPage() {
           role: true,
         },
       },
+      userSubsidiaries: {
+        select: {
+          source: true,
+          assignedAt: true,
+          subsidiary: {
+            select: {
+              id: true,
+              name: true,
+              region: true,
+            },
+          },
+        },
+        orderBy: {
+          source: 'asc', // MANUAL first, then NETSUITE
+        },
+      },
       _count: {
         select: {
           caseStudies: true,
@@ -47,17 +63,32 @@ export default async function UserManagementPage() {
   });
 
   // Transform data for client component
-  const usersData = users.map((u) => ({
-    id: u.id,
-    name: u.name,
-    email: u.email,
-    role: u.role,
-    roles: u.userRoles.length > 0 ? u.userRoles.map(ur => ur.role) : [u.role], // Use userRoles if available
-    region: u.region,
-    totalPoints: u.totalPoints,
-    caseCount: u._count.caseStudies,
-    createdAt: u.createdAt.toISOString(),
-  }));
+  const usersData = users.map((u) => {
+    // Map subsidiaries
+    const subsidiaries = u.userSubsidiaries.map((us) => ({
+      id: us.subsidiary.id,
+      name: us.subsidiary.name,
+      region: us.subsidiary.region,
+      source: us.source,
+    }));
+
+    // Compute unique regions from subsidiaries
+    const regions = [...new Set(subsidiaries.map((s) => s.region))];
+
+    return {
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      role: u.role,
+      roles: u.userRoles.length > 0 ? u.userRoles.map((ur) => ur.role) : [u.role], // Use userRoles if available
+      region: u.region,
+      subsidiaries, // Add subsidiaries
+      regions, // Add computed regions
+      totalPoints: u.totalPoints,
+      caseCount: u._count.caseStudies,
+      createdAt: u.createdAt.toISOString(),
+    };
+  });
 
   return (
     <div className="space-y-6">
