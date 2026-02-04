@@ -287,3 +287,10 @@ Users can clear their IndexedDB cache via:
 1. Check if IndexedDB cache exists (should be instant after first load)
 2. Clear stale cache to force fresh fetch
 3. Redis cache may have expired (1 week TTL)
+
+
+  The subsidiarynohierarchy from NetSuite maps to integrationId in the WaSubsidiary table. On Google login:
+  1. Find employee by email in WaNetsuiteEmployee
+  2. Get their subsidiarynohierarchy (e.g., "26")
+  3. Find WaSubsidiary where integrationId = "26"
+  4. Create UserSubsidiary assignment with source = "NETSUITE"

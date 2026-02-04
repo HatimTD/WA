@@ -200,6 +200,16 @@ export default function NetSuiteCustomerSearch({
                 return true;
               })
               .slice(0, 10);
+
+            // DIAGNOSTIC: Show what passed the filter
+            if (userSubsidiaries?.shouldFilter && filteredCustomers.length > 0) {
+              console.log(`[Filter DEBUG] === CUSTOMERS THAT PASSED FILTER (${filteredCustomers.length} total) ===`);
+              filteredCustomers.forEach((c, i) => {
+                console.log(`  ${i + 1}. "${c.companyName}" | Subsidiary: "${c.subsidiarynohierarchy}" | Country: ${c.country}`);
+              });
+              console.log('[Filter DEBUG] Your subsidiary IDs:', userSubsidiaries.subsidiaryIds);
+              console.log('[Filter DEBUG] shouldFilter:', userSubsidiaries.shouldFilter);
+            }
           }
         } catch (cacheError) {
           console.warn('[Hybrid Cache] Failed:', cacheError);

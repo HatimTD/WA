@@ -18,7 +18,7 @@ export async function register() {
       console.error('[Server] Background cache preload failed:', error);
     });
 
-    console.log('[Server] Background cache preload started');
+    console.log('[Server] Background cache preload started (customers + items + employees)');
     console.log('[Server] Server is ready to accept requests');
   }
 }

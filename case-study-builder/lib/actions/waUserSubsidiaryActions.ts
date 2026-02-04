@@ -44,18 +44,38 @@ export async function waUpdateUserSubsidiaries(
 
     // Check authentication
     if (!session?.user?.id) {
+      console.log('[waUpdateUserSubsidiaries] No session - Unauthorized');
       return { success: false, error: 'Unauthorized' };
     }
 
-    // Check if user is ADMIN
+    // Check if user is ADMIN (supports both single role and multi-role)
     const adminUser = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { role: true },
+      select: {
+        role: true,
+        userRoles: { select: { role: true } },
+      },
     });
 
-    if (!adminUser || adminUser.role !== 'ADMIN') {
+    // Check primary role OR any role in userRoles array
+    const hasAdminRole =
+      adminUser?.role === 'ADMIN' ||
+      adminUser?.userRoles?.some((ur) => ur.role === 'ADMIN');
+
+    if (!adminUser || !hasAdminRole) {
+      console.log('[waUpdateUserSubsidiaries] Not ADMIN:', {
+        userId: session.user.id,
+        role: adminUser?.role,
+        userRoles: adminUser?.userRoles?.map((ur) => ur.role),
+      });
       return { success: false, error: 'Forbidden - ADMIN role required' };
     }
+
+    console.log('[waUpdateUserSubsidiaries] Auth passed:', {
+      adminUserId: session.user.id,
+      targetUserId: userId,
+      subsidiaryIds,
+    });
 
     // Validate inputs
     if (!userId || typeof userId !== 'string') {
@@ -105,17 +125,19 @@ export async function waUpdateUserSubsidiaries(
     }
 
     // Update in a transaction
+    console.log('[waUpdateUserSubsidiaries] Starting transaction...');
     await prisma.$transaction(async (tx) => {
       // Delete only MANUAL assignments (keep NetSuite-sourced)
-      await tx.waUserSubsidiary.deleteMany({
+      const deleted = await tx.waUserSubsidiary.deleteMany({
         where: {
           userId,
           source: 'MANUAL',
         },
       });
+      console.log('[waUpdateUserSubsidiaries] Deleted MANUAL assignments:', deleted.count);
 
       // Create new MANUAL assignments
-      await tx.waUserSubsidiary.createMany({
+      const created = await tx.waUserSubsidiary.createMany({
         data: subsidiaryIds.map((subsidiaryId) => ({
           userId,
           subsidiaryId,
@@ -123,7 +145,9 @@ export async function waUpdateUserSubsidiaries(
           assignedBy: session.user!.id,
         })),
       });
+      console.log('[waUpdateUserSubsidiaries] Created MANUAL assignments:', created.count);
     });
+    console.log('[waUpdateUserSubsidiaries] Transaction completed successfully');
 
     // Fetch ALL subsidiaries (MANUAL + NETSUITE) to return complete list
     const allUserSubsidiaries = await prisma.waUserSubsidiary.findMany({

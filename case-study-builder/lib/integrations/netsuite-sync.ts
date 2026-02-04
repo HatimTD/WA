@@ -338,16 +338,23 @@ export async function waSyncNetSuiteEmployees(): Promise<{
     // Upsert each employee to database
     for (const employee of employees) {
       try {
+        // Use email as unique identifier (NetSuite RESTlet doesn't return internalId for bulk employee fetch)
+        const email = (employee.email || '').toLowerCase().trim();
+        if (!email || email.length < 3) {
+          console.log(`[NetSuite Employee Sync] Skipping employee without valid email: ${employee.firstname} ${employee.lastname}`);
+          continue;
+        }
+
         const existing = await prisma.waNetsuiteEmployee.findUnique({
-          where: { netsuiteInternalId: employee.internalId },
+          where: { email: email },
         });
 
         if (!existing) {
           // Create new employee record
           await prisma.waNetsuiteEmployee.create({
             data: {
-              netsuiteInternalId: employee.internalId,
-              email: employee.email,
+              netsuiteInternalId: email, // Use email as fallback since internalId not provided
+              email: email,
               firstname: employee.firstname,
               middlename: employee.middlename,
               lastname: employee.lastname,
@@ -362,9 +369,8 @@ export async function waSyncNetSuiteEmployees(): Promise<{
         } else {
           // Update existing employee
           await prisma.waNetsuiteEmployee.update({
-            where: { netsuiteInternalId: employee.internalId },
+            where: { email: email },
             data: {
-              email: employee.email,
               firstname: employee.firstname,
               middlename: employee.middlename,
               lastname: employee.lastname,
@@ -378,7 +384,7 @@ export async function waSyncNetSuiteEmployees(): Promise<{
           updatedEmployees++;
         }
       } catch (error) {
-        console.error(`[NetSuite Employee Sync] Error upserting employee ${employee.internalId}:`, error);
+        console.error(`[NetSuite Employee Sync] Error upserting employee ${employee.email}:`, error);
       }
     }
 
@@ -401,6 +407,47 @@ export async function waSyncNetSuiteEmployees(): Promise<{
       totalEmployees,
       newEmployees,
       updatedEmployees,
+      error: errorMessage,
+    };
+  }
+}
+
+/**
+ * Sync NetSuite items to Redis cache
+ * Called by cron job (11pm Paris time) to refresh items cache
+ */
+export async function waSyncNetSuiteItems(): Promise<{
+  success: boolean;
+  totalItems: number;
+  error?: string;
+}> {
+  const startTime = Date.now();
+
+  try {
+    console.log('[NetSuite Items Sync] Starting items sync...');
+
+    // Clear existing items cache first
+    await netsuiteClient.clearCache();
+
+    // Fetch fresh items by triggering a search (which will repopulate the cache)
+    const items = await netsuiteClient.searchItems('');
+    const totalItems = items.length;
+
+    const duration = Date.now() - startTime;
+    console.log(`[NetSuite Items Sync] Completed in ${duration}ms - ${totalItems} items cached`);
+
+    return {
+      success: true,
+      totalItems,
+    };
+
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[NetSuite Items Sync] Sync failed:', errorMessage);
+
+    return {
+      success: false,
+      totalItems: 0,
       error: errorMessage,
     };
   }
