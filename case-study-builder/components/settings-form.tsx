@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { User, Settings, Download, Bell, Shield, Camera, Eye, Monitor, Megaphone } from 'lucide-react';
+import { User, Settings, Download, Bell, Shield, Camera, Eye, Monitor, Megaphone, Building, Globe, BadgeCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { WA_REGIONS } from '@/lib/constants/waRegions';
 
@@ -37,16 +37,47 @@ type UserData = {
   totalPoints: number;
 };
 
+type Subsidiary = {
+  id: string;
+  name: string;
+  region: string;
+  source: string;
+  assignedAt: string;
+};
+
+type NetSuiteEmployee = {
+  netsuiteInternalId: string;
+  email: string | null;
+  firstname: string | null;
+  middlename: string | null;
+  lastname: string | null;
+  phone: string | null;
+  subsidiarynohierarchy: string | null;
+  subsidiarynohierarchyname: string | null;
+  department: string | null;
+  location: string | null;
+  syncedAt: Date;
+};
+
 type Props = {
   user: UserData;
   assignedRoles?: string[];
+  subsidiaries?: Subsidiary[];
+  regions?: string[];
+  netsuiteEmployee?: NetSuiteEmployee | null;
 };
 
-export default function SettingsForm({ user, assignedRoles = [] }: Props) {
+export default function SettingsForm({
+  user,
+  assignedRoles = [],
+  subsidiaries = [],
+  regions = [],
+  netsuiteEmployee = null,
+}: Props) {
   const router = useRouter();
   const { theme: currentTheme, setTheme: setNextTheme } = useTheme();
   const [name, setName] = useState(user.name || '');
-  const [region, setRegion] = useState(user.region || '');
+  // Region removed - now computed from subsidiaries
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isSwitchingRole, setIsSwitchingRole] = useState(false);
@@ -124,7 +155,7 @@ export default function SettingsForm({ user, assignedRoles = [] }: Props) {
       const response = await fetch('/api/user/update-profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, region }),
+        body: JSON.stringify({ name }), // Region removed - now computed from subsidiaries
       });
 
       const result = await response.json();
@@ -473,19 +504,7 @@ export default function SettingsForm({ user, assignedRoles = [] }: Props) {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="region" className="dark:text-foreground">Region</Label>
-            <Select value={region} onValueChange={setRegion}>
-              <SelectTrigger id="region" className="dark:bg-input dark:border-border dark:text-foreground">
-                <SelectValue placeholder="Select your region" />
-              </SelectTrigger>
-              <SelectContent className="dark:bg-popover dark:border-border">
-                {WA_REGIONS.map((r) => (
-                  <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Region field removed - now computed from subsidiaries (see Organization Information section below) */}
 
           <div className="space-y-2">
             <Label className="dark:text-foreground">Role</Label>
@@ -522,6 +541,153 @@ export default function SettingsForm({ user, assignedRoles = [] }: Props) {
               {isSaving ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Organization Information */}
+      <Card className="dark:bg-card dark:border-border">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 dark:text-foreground">
+            <Building className="h-5 w-5 text-wa-green-600 dark:text-primary" />
+            Organization Information
+          </CardTitle>
+          <CardDescription className="dark:text-muted-foreground">
+            Your subsidiary and region assignments
+            {netsuiteEmployee && (
+              <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                <BadgeCheck className="h-3 w-3" />
+                Synced from NetSuite
+              </span>
+            )}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Full Name (from NetSuite if synced) */}
+          {netsuiteEmployee && (
+            <div className="space-y-2">
+              <Label className="dark:text-foreground">Full Name (NetSuite)</Label>
+              <div className="px-3 py-2 bg-blue-50 dark:bg-blue-900/10 text-blue-900 dark:text-blue-300 rounded-md text-sm font-medium border border-blue-200 dark:border-blue-700">
+                {[
+                  netsuiteEmployee.firstname,
+                  netsuiteEmployee.middlename,
+                  netsuiteEmployee.lastname,
+                ]
+                  .filter(Boolean)
+                  .join(' ') || 'Not available'}
+              </div>
+              <p className="text-xs text-gray-500 dark:text-muted-foreground">
+                This name is synced from your NetSuite employee record
+              </p>
+            </div>
+          )}
+
+          {/* Department and Location (from NetSuite) */}
+          {netsuiteEmployee && (netsuiteEmployee.department || netsuiteEmployee.location) && (
+            <div className="grid grid-cols-2 gap-4">
+              {netsuiteEmployee.department && (
+                <div className="space-y-2">
+                  <Label className="dark:text-foreground">Department</Label>
+                  <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md text-sm border border-gray-200 dark:border-gray-700">
+                    {netsuiteEmployee.department}
+                  </div>
+                </div>
+              )}
+              {netsuiteEmployee.location && (
+                <div className="space-y-2">
+                  <Label className="dark:text-foreground">Location</Label>
+                  <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md text-sm border border-gray-200 dark:border-gray-700">
+                    {netsuiteEmployee.location}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Assigned Subsidiaries */}
+          <div className="space-y-2">
+            <Label className="dark:text-foreground">Assigned Subsidiaries</Label>
+            {subsidiaries.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-muted-foreground">
+                No subsidiaries assigned. Contact an administrator.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {subsidiaries.map((subsidiary) => (
+                  <div
+                    key={subsidiary.id}
+                    className={`flex items-center justify-between px-3 py-2 rounded-md text-sm border ${
+                      subsidiary.source === 'NETSUITE'
+                        ? 'bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-700 text-blue-900 dark:text-blue-300'
+                        : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Building className="h-4 w-4" />
+                      <div>
+                        <div className="font-medium">{subsidiary.name}</div>
+                        <div className="text-xs opacity-70 flex items-center gap-1">
+                          <Globe className="h-3 w-3" />
+                          {subsidiary.region}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {subsidiary.source === 'NETSUITE' ? (
+                        <span className="text-xs px-2 py-0.5 rounded bg-blue-200 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 font-medium">
+                          Synced from NetSuite
+                        </span>
+                      ) : (
+                        <span className="text-xs px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium">
+                          Manually Assigned
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="text-xs text-gray-500 dark:text-muted-foreground">
+              Your subsidiaries are managed by administrators. NetSuite-synced assignments cannot be removed.
+            </p>
+          </div>
+
+          {/* Computed Regions */}
+          <div className="space-y-2">
+            <Label className="dark:text-foreground">Regions</Label>
+            {regions.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-muted-foreground">
+                No regions (based on subsidiaries)
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {regions.map((region) => (
+                  <span
+                    key={region}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-md bg-wa-green-100 dark:bg-primary/20 text-wa-green-700 dark:text-primary border border-wa-green-200 dark:border-primary font-medium"
+                  >
+                    <Globe className="h-3 w-3" />
+                    {region}
+                  </span>
+                ))}
+              </div>
+            )}
+            <p className="text-xs text-gray-500 dark:text-muted-foreground">
+              Your regions are automatically computed from your assigned subsidiaries
+            </p>
+          </div>
+
+          {/* Last Sync Timestamp */}
+          {netsuiteEmployee && (
+            <div className="pt-4 border-t dark:border-border">
+              <p className="text-xs text-gray-500 dark:text-muted-foreground">
+                Last synced from NetSuite:{' '}
+                <span className="font-medium text-gray-700 dark:text-gray-300">
+                  {new Date(netsuiteEmployee.syncedAt).toLocaleDateString()} at{' '}
+                  {new Date(netsuiteEmployee.syncedAt).toLocaleTimeString()}
+                </span>
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

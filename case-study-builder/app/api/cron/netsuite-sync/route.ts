@@ -1,19 +1,24 @@
 /**
  * NetSuite Auto-Sync Cron API
  *
- * Vercel Cron job endpoint for automatic NetSuite customer sync.
+ * Vercel Cron job endpoint for automatic NetSuite data sync.
  * Implements BRD 5.9.3 - NetSuite Auto-Sync.
  *
  * Schedule: Daily at 10:00 PM UTC / 11:00 PM Paris (CET) (configured in vercel.json)
  *
+ * Syncs:
+ * - Customers: To Redis cache for fast search (~37k records)
+ * - Employees: To WaNetsuiteEmployee table for user auto-population on login (~400 records)
+ * - Items: To Redis cache for product search (~70k records)
+ *
  * @module api/cron/netsuite-sync
  * @author WA Development Team
- * @version 1.0.0
+ * @version 1.2.0
  * @since 2025-12-13
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { runNetSuiteSync, getSyncStats } from '@/lib/integrations/netsuite-sync';
+import { runNetSuiteSync, getSyncStats, waSyncNetSuiteEmployees, waSyncNetSuiteItems } from '@/lib/integrations/netsuite-sync';
 
 /**
  * Verify the request is from Vercel Cron
@@ -62,14 +67,47 @@ export async function POST(request: NextRequest) {
       console.log('[NetSuite Cron] NetSuite not configured, running with mock data');
     }
 
-    // Run the sync
-    const result = await runNetSuiteSync();
+    // Run customer sync
+    console.log('[NetSuite Cron] Starting customer sync...');
+    const customerResult = await runNetSuiteSync();
+    console.log('[NetSuite Cron] Customer sync completed:', customerResult);
 
-    console.log('[NetSuite Cron] Sync completed:', result);
+    // Run employee sync (for auto-population on login)
+    console.log('[NetSuite Cron] Starting employee sync...');
+    const employeeResult = await waSyncNetSuiteEmployees();
+    console.log('[NetSuite Cron] Employee sync completed:', employeeResult);
+
+    // Run items sync (refresh Redis cache)
+    console.log('[NetSuite Cron] Starting items sync...');
+    const itemsResult = await waSyncNetSuiteItems();
+    console.log('[NetSuite Cron] Items sync completed:', itemsResult);
+
+    // Combine results
+    const overallSuccess = customerResult.success && employeeResult.success && itemsResult.success;
 
     return NextResponse.json({
-      ...result,
-      message: result.success ? 'Sync completed successfully' : 'Sync completed with errors',
+      success: overallSuccess,
+      message: overallSuccess ? 'All syncs completed successfully' : 'Some syncs completed with errors',
+      customers: {
+        success: customerResult.success,
+        totalRecords: customerResult.totalRecords,
+        newRecords: customerResult.newRecords,
+        updatedRecords: customerResult.updatedRecords,
+        failedRecords: customerResult.failedRecords,
+        error: customerResult.error,
+      },
+      employees: {
+        success: employeeResult.success,
+        totalEmployees: employeeResult.totalEmployees,
+        newEmployees: employeeResult.newEmployees,
+        updatedEmployees: employeeResult.updatedEmployees,
+        error: employeeResult.error,
+      },
+      items: {
+        success: itemsResult.success,
+        totalItems: itemsResult.totalItems,
+        error: itemsResult.error,
+      },
     });
   } catch (error) {
     console.error('[NetSuite Cron] Sync failed:', error);

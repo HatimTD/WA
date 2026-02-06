@@ -117,6 +117,7 @@ export async function waApproveCaseStudy(caseStudyId: string) {
     revalidatePath('/dashboard/approvals');
     revalidatePath('/dashboard/my-cases');
     revalidatePath(`/dashboard/cases/${caseStudyId}`);
+    revalidatePath('/dashboard'); // Refresh home page activity feed
 
     logger.audit('CASE_APPROVED', session.user.id, caseStudyId, {
       type: caseStudy.type,
@@ -207,6 +208,7 @@ export async function waRejectCaseStudy(caseStudyId: string, reason: string) {
     revalidatePath('/dashboard/approvals');
     revalidatePath('/dashboard/my-cases');
     revalidatePath(`/dashboard/cases/${caseStudyId}`);
+    revalidatePath('/dashboard'); // Refresh home page activity feed
 
     logger.audit('CASE_REJECTED', session.user.id, caseStudyId, {
       contributorId: caseStudy.contributorId,
