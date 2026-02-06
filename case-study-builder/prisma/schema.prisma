@@ -301,11 +301,16 @@ model WaMasterList {
 
 model WaSubsidiary {
   id            String  @id @default(cuid())
-  integrationId String  @unique // External ERP code
-  name          String // Legal name
+  integrationId String  @unique // External ERP code (NetSuite internalid)
+  name          String // Legal name (per API doc: namenohierarchy)
   region        String // EMEA, APAC, Americas, etc.
   currencyCode  String  @db.Char(3) // ISO currency code
   isActive      Boolean @default(true)
+  // NetSuite API doc v2 fields
+  country       String? // Country ISO code (e.g., "SG")
+  countryname   String? // Country full name (e.g., "Singapore")
+  reportingRegionId   String? // custrecord_wag_reportingregion ID
+  reportingRegionName String? // custrecord_wag_reportingregionname (e.g., "Group")
 
   // Relations
   users            User[]
@@ -318,6 +323,7 @@ model WaSubsidiary {
 
   @@index([region])
   @@index([isActive])
+  @@index([country])
   @@map("Subsidiary")
 }
 
@@ -454,8 +460,14 @@ model WaNetsuiteEmployee {
   // Subsidiary fields (critical for auto-assignment)
   subsidiarynohierarchy        String? // Subsidiary ID
   subsidiarynohierarchyname    String? // Subsidiary name
-  department                   String?
-  location                     String?
+  // Department fields (per NetSuite API doc v2)
+  departmentnohierarchy        String? // Department ID (e.g., "137")
+  departmentnohierarchyname    String? // Department name (e.g., "Admin : General")
+  department                   String? // Alias for departmentnohierarchyname (backward compat)
+  // Location fields (per NetSuite API doc v2)
+  locationnohierarchy          String? // Location ID
+  locationnohierarchyname      String? // Location name
+  location                     String? // Alias for locationnohierarchyname (backward compat)
   // Sync metadata
   syncedAt                     DateTime  @default(now())
   lastModified                 DateTime  @updatedAt

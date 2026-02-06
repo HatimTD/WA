@@ -17,7 +17,7 @@
  */
 
 import prisma from '@/lib/prisma';
-import { netsuiteClient, NetSuiteCustomer, NetSuiteEmployee } from './netsuite';
+import { netsuiteClient, NetSuiteCustomer, NetSuiteEmployee, NetSuiteSubsidiary } from './netsuite';
 
 /**
  * Sync result interface
@@ -361,8 +361,13 @@ export async function waSyncNetSuiteEmployees(): Promise<{
               phone: employee.phone,
               subsidiarynohierarchy: employee.subsidiarynohierarchy,
               subsidiarynohierarchyname: employee.subsidiarynohierarchyname,
-              department: employee.department,
-              location: employee.location,
+              // Per API doc: department/location use nohierarchy field names
+              departmentnohierarchy: employee.departmentnohierarchy,
+              departmentnohierarchyname: employee.departmentnohierarchyname,
+              department: employee.departmentnohierarchyname, // Alias for backward compat
+              locationnohierarchy: employee.locationnohierarchy,
+              locationnohierarchyname: employee.locationnohierarchyname,
+              location: employee.locationnohierarchyname, // Alias for backward compat
             },
           });
           newEmployees++;
@@ -377,8 +382,12 @@ export async function waSyncNetSuiteEmployees(): Promise<{
               phone: employee.phone,
               subsidiarynohierarchy: employee.subsidiarynohierarchy,
               subsidiarynohierarchyname: employee.subsidiarynohierarchyname,
-              department: employee.department,
-              location: employee.location,
+              departmentnohierarchy: employee.departmentnohierarchy,
+              departmentnohierarchyname: employee.departmentnohierarchyname,
+              department: employee.departmentnohierarchyname,
+              locationnohierarchy: employee.locationnohierarchy,
+              locationnohierarchyname: employee.locationnohierarchyname,
+              location: employee.locationnohierarchyname,
             },
           });
           updatedEmployees++;
@@ -451,6 +460,124 @@ export async function waSyncNetSuiteItems(): Promise<{
       error: errorMessage,
     };
   }
+}
+
+/**
+ * Sync NetSuite subsidiaries to WaSubsidiary table
+ * Per API doc v2: fetches waType=subsidiary with country, currency, reporting region
+ * Called by cron job to keep subsidiary data fresh
+ */
+export async function waSyncNetSuiteSubsidiaries(): Promise<{
+  success: boolean;
+  totalSubsidiaries: number;
+  newSubsidiaries: number;
+  updatedSubsidiaries: number;
+  error?: string;
+}> {
+  const startTime = Date.now();
+  let totalSubsidiaries = 0;
+  let newSubsidiaries = 0;
+  let updatedSubsidiaries = 0;
+
+  try {
+    console.log('[NetSuite Subsidiary Sync] Starting subsidiary sync...');
+
+    const subsidiaries = await netsuiteClient.searchSubsidiaries();
+    totalSubsidiaries = subsidiaries.length;
+
+    console.log(`[NetSuite Subsidiary Sync] Fetched ${totalSubsidiaries} subsidiaries`);
+
+    if (totalSubsidiaries === 0) {
+      return {
+        success: false,
+        totalSubsidiaries: 0,
+        newSubsidiaries: 0,
+        updatedSubsidiaries: 0,
+        error: 'No subsidiaries returned from NetSuite',
+      };
+    }
+
+    for (const sub of subsidiaries) {
+      try {
+        const existing = await prisma.waSubsidiary.findUnique({
+          where: { integrationId: sub.internalid },
+        });
+
+        // Derive region from reportingRegionName or default to 'Unknown'
+        const region = sub.reportingRegionName || 'Unknown';
+        // Derive currency code from currencyname (first 3 chars) or fallback
+        const currencyCode = waDeriveCurrencyCode(sub.currencyname);
+
+        if (!existing) {
+          await prisma.waSubsidiary.create({
+            data: {
+              integrationId: sub.internalid,
+              name: sub.namenohierarchy || sub.name,
+              region: region,
+              currencyCode: currencyCode,
+              country: sub.country || null,
+              countryname: sub.countryname || null,
+              reportingRegionId: sub.reportingRegionId || null,
+              reportingRegionName: sub.reportingRegionName || null,
+              isActive: true,
+            },
+          });
+          newSubsidiaries++;
+        } else {
+          await prisma.waSubsidiary.update({
+            where: { integrationId: sub.internalid },
+            data: {
+              name: sub.namenohierarchy || sub.name,
+              region: region,
+              currencyCode: currencyCode,
+              country: sub.country || null,
+              countryname: sub.countryname || null,
+              reportingRegionId: sub.reportingRegionId || null,
+              reportingRegionName: sub.reportingRegionName || null,
+            },
+          });
+          updatedSubsidiaries++;
+        }
+      } catch (error) {
+        console.error(`[NetSuite Subsidiary Sync] Error upserting subsidiary ${sub.internalid}:`, error);
+      }
+    }
+
+    const duration = Date.now() - startTime;
+    console.log(`[NetSuite Subsidiary Sync] Completed in ${duration}ms - ${newSubsidiaries} new, ${updatedSubsidiaries} updated`);
+
+    return {
+      success: true,
+      totalSubsidiaries,
+      newSubsidiaries,
+      updatedSubsidiaries,
+    };
+
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[NetSuite Subsidiary Sync] Sync failed:', errorMessage);
+
+    return {
+      success: false,
+      totalSubsidiaries,
+      newSubsidiaries,
+      updatedSubsidiaries,
+      error: errorMessage,
+    };
+  }
+}
+
+/**
+ * Derive ISO 4217 currency code from NetSuite currency name
+ */
+function waDeriveCurrencyCode(currencyname: string): string {
+  const map: Record<string, string> = {
+    'EUR': 'EUR', 'USD': 'USD', 'GBP': 'GBP', 'SGD': 'SGD',
+    'AUD': 'AUD', 'CNY': 'CNY', 'INR': 'INR', 'JPY': 'JPY',
+    'CAD': 'CAD', 'BRL': 'BRL', 'ZAR': 'ZAR', 'SAR': 'SAR',
+  };
+  const upper = (currencyname || '').toUpperCase().trim();
+  return map[upper] || upper.substring(0, 3) || 'USD';
 }
 
 /**

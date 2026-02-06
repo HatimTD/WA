@@ -23,6 +23,8 @@ export interface NetSuiteCustomer {
   subsidiarynohierarchy?: string;  // Subsidiary ID (NetSuite raw field)
   subsidiaryId?: string;           // Alias for subsidiarynohierarchy
   subsidiary?: string;             // Subsidiary name (alias for subsidiarynohierarchyname)
+  // WA country ID (per API doc v2: custentity_wa_country_customer)
+  waCountryId?: string;            // WA internal country reference ID
 }
 
 export interface NetSuiteEmployee {
@@ -39,8 +41,26 @@ export interface NetSuiteEmployee {
   // Friendly aliases for better mapping
   subsidiaryId?: string;           // Alias for subsidiarynohierarchy
   subsidiary?: string;             // Alias for subsidiarynohierarchyname
-  department?: string;
-  location?: string;
+  // Department fields (per API doc: departmentnohierarchy + departmentnohierarchyname)
+  departmentnohierarchy?: string;      // Department ID
+  departmentnohierarchyname?: string;  // Department name (e.g., "Admin : General")
+  department?: string;                 // Alias for departmentnohierarchyname
+  // Location fields (per API doc: locationnohierarchy + locationnohierarchyname)
+  locationnohierarchy?: string;        // Location ID
+  locationnohierarchyname?: string;    // Location name
+  location?: string;                   // Alias for locationnohierarchyname
+}
+
+export interface NetSuiteSubsidiary {
+  internalid: string;                    // NetSuite subsidiary internal ID
+  name: string;                          // Subsidiary legal name
+  namenohierarchy: string;               // Same name without hierarchy prefix
+  currency: string;                      // Currency ID
+  currencyname: string;                  // Currency name (e.g., "EUR")
+  country: string;                       // Country ISO code (e.g., "SG")
+  countryname: string;                   // Country full name (e.g., "Singapore")
+  reportingRegionId: string;             // custrecord_wag_reportingregion
+  reportingRegionName: string;           // custrecord_wag_reportingregionname (e.g., "Group")
 }
 
 export class NetSuiteClient {
@@ -238,6 +258,8 @@ export class NetSuiteClient {
           subsidiaryname: c.subsidiarynohierarchyname || c.subsidiary || '',
           currencyname: c.currencyname || '',
           address: c.address || '',
+          // WA internal country ID (per API doc v2)
+          wacountryid: c.custentity_wa_country_customer || '',
         }));
 
         // Cache using chunked storage (splits into ~5MB chunks) for 1 week (604800 seconds)
@@ -315,6 +337,8 @@ export class NetSuiteClient {
           subsidiarynohierarchy: item.subsidiarynohierarchy || '',
           subsidiaryId: item.subsidiarynohierarchy || '',
           subsidiary: item.subsidiaryname || '',
+          // WA country ID
+          waCountryId: item.wacountryid || '',
         };
       });
 
@@ -672,6 +696,103 @@ export class NetSuiteClient {
   }
 
   /**
+   * Fetch all subsidiaries from NetSuite (waType=subsidiary)
+   * Per API doc v2: Returns internalid, name, namenohierarchy, currency,
+   * currencyname, country, countryname, custrecord_wag_reportingregion/name
+   */
+  async searchSubsidiaries(): Promise<NetSuiteSubsidiary[]> {
+    try {
+      console.log('[NetSuite] Fetching ALL subsidiaries from RESTlet...');
+
+      // Try Redis cache first
+      const cacheKey = 'netsuite:subsidiaries';
+      let allSubsidiaries: any[] | null = await redisCache.getChunked<any>(cacheKey);
+
+      if (!allSubsidiaries) {
+        const restletUrl = process.env.NETSUITE_RESTLET_URL;
+
+        if (!restletUrl) {
+          throw new Error('NETSUITE_RESTLET_URL not configured');
+        }
+
+        const url = `${restletUrl}&waType=subsidiary`;
+        const authHeader = this.generateOAuthHeader('GET', url);
+
+        console.log('[NetSuite] Fetching subsidiaries from RESTlet...');
+        const startTime = Date.now();
+
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Authorization': authHeader,
+            'Content-Type': 'application/json',
+          },
+          signal: AbortSignal.timeout(60000), // 60 seconds
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`NetSuite RESTlet error: ${response.status} ${response.statusText} - ${errorText}`);
+        }
+
+        const data = await response.json();
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+
+        if (data.status === 'error') {
+          console.error(`[NetSuite] Subsidiary fetch error: ${data.details}`);
+          return [];
+        }
+
+        console.log(`[NetSuite] Fetched ${Array.isArray(data) ? data.length : 0} subsidiaries in ${elapsed}s`);
+
+        if (!Array.isArray(data)) {
+          console.error('[NetSuite] Unexpected response format from RESTlet:', data);
+          return [];
+        }
+
+        // Map to essential fields per API doc v2
+        const essentialData = data.map((s: any) => ({
+          internalid: s.internalid || '',
+          name: s.name || s.namenohierarchy || '',
+          namenohierarchy: s.namenohierarchy || s.name || '',
+          currency: s.currency || '',
+          currencyname: s.currencyname || '',
+          country: s.country || '',
+          countryname: s.countryname || '',
+          reportingRegionId: s.custrecord_wag_reportingregion || '',
+          reportingRegionName: s.custrecord_wag_reportingregionname || '',
+        }));
+
+        // Cache for 1 week
+        const cacheSuccess = await redisCache.setChunked(cacheKey, essentialData, 604800);
+        if (cacheSuccess) {
+          console.log(`[NetSuite] Cached ${essentialData.length} subsidiaries in Redis`);
+        }
+
+        allSubsidiaries = essentialData;
+      } else {
+        console.log(`[NetSuite] Retrieved ${allSubsidiaries.length} subsidiaries from cache`);
+      }
+
+      return allSubsidiaries.map((s: any) => ({
+        internalid: s.internalid,
+        name: s.name,
+        namenohierarchy: s.namenohierarchy,
+        currency: s.currency,
+        currencyname: s.currencyname,
+        country: s.country,
+        countryname: s.countryname,
+        reportingRegionId: s.reportingRegionId,
+        reportingRegionName: s.reportingRegionName,
+      }));
+
+    } catch (error) {
+      console.error('[NetSuite] Subsidiary search error:', error);
+      return [];
+    }
+  }
+
+  /**
    * Preload cache in background on server startup
    * This makes all searches instant from the first query
    */
@@ -730,6 +851,8 @@ export class NetSuiteClient {
               subsidiaryname: c.subsidiarynohierarchyname || c.subsidiary || '',
               currencyname: c.currencyname || '',
               address: c.address || '',
+              // WA internal country ID (per API doc v2)
+              wacountryid: c.custentity_wa_country_customer || '',
             }));
 
             // Cache using chunked storage (splits into ~5MB chunks) for 1 week
@@ -828,6 +951,8 @@ export class NetSuiteClient {
           const employeeData = await employeeResponse.json();
           if (Array.isArray(employeeData)) {
             // Store essential employee fields
+            // Per API doc: department = departmentnohierarchy/departmentnohierarchyname
+            //              location = locationnohierarchy/locationnohierarchyname
             const essentialEmployees = employeeData.map((e: any) => ({
               internalId: e.internalid || e.id,
               email: (e.email || '').toLowerCase().trim(),
@@ -835,13 +960,15 @@ export class NetSuiteClient {
               middlename: e.middlename || '',
               lastname: e.lastname || '',
               phone: e.phone || '',
-              // Subsidiary fields - provide both original and alias
-              subsidiarynohierarchy: e.subsidiarynohierarchy || '', // Original NetSuite field name
-              subsidiary: e.subsidiarynohierarchy || '',            // Alias for easier access
+              // Subsidiary fields
+              subsidiarynohierarchy: e.subsidiarynohierarchy || '',
               subsidiarynohierarchyname: e.subsidiarynohierarchyname || '',
-              subsidiaryname: e.subsidiarynohierarchyname || '',    // Alias for name
-              department: e.department || '',
-              location: e.location || '',
+              // Department fields (API returns departmentnohierarchy, NOT department)
+              departmentnohierarchy: e.departmentnohierarchy || '',
+              departmentnohierarchyname: e.departmentnohierarchyname || '',
+              // Location fields (API returns locationnohierarchy, NOT location)
+              locationnohierarchy: e.locationnohierarchy || '',
+              locationnohierarchyname: e.locationnohierarchyname || '',
             }));
 
             // Cache using chunked storage for 1 week
@@ -862,10 +989,63 @@ export class NetSuiteClient {
         console.error('[NetSuite] Employee preload error:', error);
       }
 
+      // Wait 3 seconds between requests to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      // Preload subsidiaries (waType=subsidiary)
+      try {
+        const subsidiaryUrl = `${restletUrl}&waType=subsidiary`;
+        const subsidiaryAuthHeader = this.generateOAuthHeader('GET', subsidiaryUrl);
+
+        console.log('[NetSuite] Preloading subsidiaries...');
+        const subsidiaryStart = Date.now();
+
+        const subsidiaryResponse = await fetch(subsidiaryUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': subsidiaryAuthHeader,
+            'Content-Type': 'application/json',
+          },
+          signal: AbortSignal.timeout(60000),
+        });
+
+        if (subsidiaryResponse.ok) {
+          const subsidiaryData = await subsidiaryResponse.json();
+          if (Array.isArray(subsidiaryData)) {
+            // Map to essential fields per API doc v2
+            const essentialSubsidiaries = subsidiaryData.map((s: any) => ({
+              internalid: s.internalid || '',
+              name: s.name || s.namenohierarchy || '',
+              namenohierarchy: s.namenohierarchy || s.name || '',
+              currency: s.currency || '',
+              currencyname: s.currencyname || '',
+              country: s.country || '',
+              countryname: s.countryname || '',
+              reportingRegionId: s.custrecord_wag_reportingregion || '',
+              reportingRegionName: s.custrecord_wag_reportingregionname || '',
+            }));
+
+            const cacheSuccess = await redisCache.setChunked('netsuite:subsidiaries', essentialSubsidiaries, 604800);
+            const elapsed = ((Date.now() - subsidiaryStart) / 1000).toFixed(2);
+            if (cacheSuccess) {
+              console.log(`[NetSuite] ✅ Preloaded ${essentialSubsidiaries.length} subsidiaries in ${elapsed}s`);
+            } else {
+              console.error(`[NetSuite] ❌ Failed to cache subsidiaries`);
+            }
+          }
+        } else {
+          const errorText = await subsidiaryResponse.text();
+          console.error(`[NetSuite] Subsidiary preload failed: ${subsidiaryResponse.status} ${subsidiaryResponse.statusText}`);
+          console.error(`[NetSuite] Error details: ${errorText.substring(0, 500)}`);
+        }
+      } catch (error) {
+        console.error('[NetSuite] Subsidiary preload error:', error);
+      }
+
       const totalElapsed = ((Date.now() - totalStart) / 1000).toFixed(2);
       console.log(`[NetSuite] 🎉 Cache preload complete in ${totalElapsed}s`);
       console.log('[NetSuite] All searches will now be INSTANT! ⚡');
-      console.log('[NetSuite] Cache valid for 1 week (customers + items + employees)');
+      console.log('[NetSuite] Cache valid for 1 week (customers + items + employees + subsidiaries)');
 
     } catch (error) {
       console.error('[NetSuite] Preload cache error:', error);
@@ -935,6 +1115,8 @@ export class NetSuiteClient {
         // Store essential employee fields
         // NOTE: NetSuite RESTlet doesn't return internalid for bulk employee fetch,
         // so we use email as the unique identifier
+        // Per API doc: department = departmentnohierarchy/departmentnohierarchyname
+        //              location = locationnohierarchy/locationnohierarchyname
         const essentialData = data.map((emp: any) => ({
           internalid: emp.internalid || emp.email, // Use email as fallback
           email: (emp.email || '').toLowerCase().trim(),
@@ -942,13 +1124,15 @@ export class NetSuiteClient {
           middlename: emp.middlename || null,
           lastname: emp.lastname || null,
           phone: emp.phone || null,
-          // Subsidiary fields - provide both original and aliases
-          subsidiarynohierarchy: emp.subsidiarynohierarchy || null, // Original NetSuite field
-          subsidiary: emp.subsidiarynohierarchy || null,            // Alias (ID)
+          // Subsidiary fields
+          subsidiarynohierarchy: emp.subsidiarynohierarchy || null,
           subsidiarynohierarchyname: emp.subsidiarynohierarchyname || null,
-          subsidiaryname: emp.subsidiarynohierarchyname || null,    // Alias (name)
-          department: emp.department || null,
-          location: emp.location || null,
+          // Department fields (API returns departmentnohierarchy, NOT department)
+          departmentnohierarchy: emp.departmentnohierarchy || null,
+          departmentnohierarchyname: emp.departmentnohierarchyname || null,
+          // Location fields (API returns locationnohierarchy, NOT location)
+          locationnohierarchy: emp.locationnohierarchy || null,
+          locationnohierarchyname: emp.locationnohierarchyname || null,
         }));
 
         // Cache using chunked storage for 1 week (604800 seconds)
@@ -972,14 +1156,19 @@ export class NetSuiteClient {
         middlename: emp.middlename,
         lastname: emp.lastname,
         phone: emp.phone,
-        // NetSuite raw field names
+        // NetSuite raw field names - subsidiary
         subsidiarynohierarchy: emp.subsidiarynohierarchy,
         subsidiarynohierarchyname: emp.subsidiarynohierarchyname,
-        // Friendly aliases for better mapping
         subsidiaryId: emp.subsidiarynohierarchy,
         subsidiary: emp.subsidiarynohierarchyname,
-        department: emp.department,
-        location: emp.location,
+        // NetSuite raw field names - department (per API doc)
+        departmentnohierarchy: emp.departmentnohierarchy,
+        departmentnohierarchyname: emp.departmentnohierarchyname,
+        department: emp.departmentnohierarchyname, // Alias: use name as friendly value
+        // NetSuite raw field names - location (per API doc)
+        locationnohierarchy: emp.locationnohierarchy,
+        locationnohierarchyname: emp.locationnohierarchyname,
+        location: emp.locationnohierarchyname, // Alias: use name as friendly value
       }));
 
     } catch (error) {
@@ -1078,14 +1267,19 @@ export class NetSuiteClient {
         middlename: emp.middlename || null,
         lastname: emp.lastname || null,
         phone: emp.phone || null,
-        // NetSuite raw field names
+        // NetSuite raw field names - subsidiary
         subsidiarynohierarchy: emp.subsidiarynohierarchy || null,
         subsidiarynohierarchyname: emp.subsidiarynohierarchyname || null,
-        // Friendly aliases for better mapping
         subsidiaryId: emp.subsidiarynohierarchy || null,
         subsidiary: emp.subsidiarynohierarchyname || null,
-        department: emp.department || null,
-        location: emp.location || null,
+        // Department (per API doc: departmentnohierarchy/departmentnohierarchyname)
+        departmentnohierarchy: emp.departmentnohierarchy || null,
+        departmentnohierarchyname: emp.departmentnohierarchyname || null,
+        department: emp.departmentnohierarchyname || null,
+        // Location (per API doc: locationnohierarchy/locationnohierarchyname)
+        locationnohierarchy: emp.locationnohierarchy || null,
+        locationnohierarchyname: emp.locationnohierarchyname || null,
+        location: emp.locationnohierarchyname || null,
       };
 
     } catch (error) {
@@ -1101,13 +1295,15 @@ export class NetSuiteClient {
     customers: { cached: boolean; count: number };
     items: { cached: boolean; count: number };
     employees: { cached: boolean; count: number };
+    subsidiaries: { cached: boolean; count: number };
     redis: { connected: boolean; type: 'redis' | 'memory' };
   }> {
-    // Check chunked cache metadata for customers, items, and employees
-    const [customersMeta, itemsMeta, employeesMeta, redisStatus] = await Promise.all([
+    // Check chunked cache metadata for customers, items, employees, and subsidiaries
+    const [customersMeta, itemsMeta, employeesMeta, subsidiariesMeta, redisStatus] = await Promise.all([
       redisCache.get<{ chunkCount: number; totalItems: number }>('netsuite:customers:meta'),
       redisCache.get<{ chunkCount: number; totalItems: number }>('netsuite:items:meta'),
       redisCache.get<{ chunkCount: number; totalItems: number }>('netsuite:employees:meta'),
+      redisCache.get<{ chunkCount: number; totalItems: number }>('netsuite:subsidiaries:meta'),
       redisCache.getStatus()
     ]);
 
@@ -1124,6 +1320,10 @@ export class NetSuiteClient {
         cached: employeesMeta !== null,
         count: employeesMeta?.totalItems || 0,
       },
+      subsidiaries: {
+        cached: subsidiariesMeta !== null,
+        count: subsidiariesMeta?.totalItems || 0,
+      },
       redis: {
         connected: redisStatus.connected,
         type: redisStatus.type,
@@ -1135,11 +1335,12 @@ export class NetSuiteClient {
    * Manually clear cache (for admin/testing purposes)
    */
   async clearCache(): Promise<void> {
-    // Clear chunked data for customers, items, and employees
+    // Clear chunked data for customers, items, employees, and subsidiaries
     await Promise.all([
       redisCache.delChunked('netsuite:customers'),
       redisCache.delChunked('netsuite:items'),
       redisCache.delChunked('netsuite:employees'),
+      redisCache.delChunked('netsuite:subsidiaries'),
     ]);
     console.log('[NetSuite] Cache cleared');
   }
