@@ -161,7 +161,23 @@ class NetSuiteClient {
       let allCustomers: any[] | null = await redisCache.getChunked<any>(cacheKey);
 
       if (!allCustomers) {
-        // Fetch from RESTlet API which we confirmed works
+        // Check if another instance is already fetching (fetch lock)
+        const fetchLockKey = 'netsuite:fetch-lock';
+        const existingLock = await redisCache.get<number>(fetchLockKey);
+        if (existingLock && (Date.now() - existingLock) < 180000) {
+          console.log('[NetSuite] Another instance is fetching, waiting 5s for cache...');
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          allCustomers = await redisCache.getChunked<any>(cacheKey);
+          if (allCustomers) {
+            console.log(`[NetSuite] Cache populated by other instance: ${allCustomers.length} customers`);
+          }
+        }
+      }
+
+      if (!allCustomers) {
+        // Acquire fetch lock to prevent concurrent API calls
+        await redisCache.set('netsuite:fetch-lock', Date.now(), 180);
+
         const restletUrl = process.env.NETSUITE_RESTLET_URL;
 
         if (!restletUrl) {
@@ -222,6 +238,9 @@ class NetSuiteClient {
         } else {
           console.error(`[NetSuite] Failed to cache customers in Redis`);
         }
+
+        // Release fetch lock
+        await redisCache.del('netsuite:fetch-lock');
 
         allCustomers = essentialData;
       }
@@ -656,7 +675,23 @@ class NetSuiteClient {
         return;
       }
 
-      console.log('[NetSuite] 🚀 Starting background cache preload...');
+      // Check if cache already exists in Redis - skip preload if so
+      const existingCustomers = await redisCache.get<{ chunkCount: number }>('netsuite:customers:meta');
+      if (existingCustomers) {
+        console.log(`[NetSuite] Preload skipped - cache already exists (${existingCustomers.chunkCount} chunks)`);
+        return;
+      }
+
+      // Fetch lock: prevent multiple Vercel instances from preloading simultaneously
+      const fetchLockKey = 'netsuite:fetch-lock';
+      const existingLock = await redisCache.get<number>(fetchLockKey);
+      if (existingLock && (Date.now() - existingLock) < 180000) {
+        console.log('[NetSuite] Preload skipped - another instance is already fetching');
+        return;
+      }
+      await redisCache.set(fetchLockKey, Date.now(), 180); // 3 min lock
+
+      console.log('[NetSuite] Starting background cache preload...');
       console.log('[NetSuite] This will take ~70 seconds (customers + items)');
       const totalStart = Date.now();
 
@@ -770,12 +805,17 @@ class NetSuiteClient {
         console.error('[NetSuite] Item preload error:', error);
       }
 
+      // Release fetch lock
+      await redisCache.del('netsuite:fetch-lock');
+
       const totalElapsed = ((Date.now() - totalStart) / 1000).toFixed(2);
-      console.log(`[NetSuite] 🎉 Cache preload complete in ${totalElapsed}s`);
-      console.log('[NetSuite] All searches will now be INSTANT! ⚡');
+      console.log(`[NetSuite] Cache preload complete in ${totalElapsed}s`);
+      console.log('[NetSuite] All searches will now be instant');
       console.log('[NetSuite] Cache valid for 1 week');
 
     } catch (error) {
+      // Release fetch lock on error too
+      await redisCache.del('netsuite:fetch-lock').catch(() => {});
       console.error('[NetSuite] Preload cache error:', error);
     }
   }

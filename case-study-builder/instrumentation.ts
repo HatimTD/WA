@@ -9,16 +9,21 @@ export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     console.log('[Server] Initializing...');
 
-    // Import NetSuite client
-    const { netsuiteClient } = await import('./lib/integrations/netsuite');
+    // Check if Redis cache already has data before triggering a preload.
+    // This prevents every Vercel cold start from hitting the NetSuite API.
+    const { redisCache } = await import('./lib/cache/redis-client');
+    const existingCache = await redisCache.get<{ chunkCount: number }>('netsuite:customers:meta');
 
-    // Start cache preload in background (non-blocking)
-    // This runs asynchronously and doesn't block server startup
-    netsuiteClient.preloadCache().catch((error) => {
-      console.error('[Server] Background cache preload failed:', error);
-    });
+    if (existingCache) {
+      console.log(`[Server] NetSuite cache already exists in Redis (${existingCache.chunkCount} chunks), skipping preload`);
+    } else {
+      const { netsuiteClient } = await import('./lib/integrations/netsuite');
+      netsuiteClient.preloadCache().catch((error) => {
+        console.error('[Server] Background cache preload failed:', error);
+      });
+      console.log('[Server] Background cache preload started');
+    }
 
-    console.log('[Server] Background cache preload started');
     console.log('[Server] Server is ready to accept requests');
   }
 }
