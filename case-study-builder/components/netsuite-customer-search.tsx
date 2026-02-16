@@ -56,6 +56,7 @@ export default function NetSuiteCustomerSearch({
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerWithOptionalCases | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const fetchInProgressRef = useRef<Promise<CustomerWithOptionalCases[] | null> | null>(null);
 
   // Sync internal state with value prop (for when parent resets value)
   useEffect(() => {
@@ -87,6 +88,7 @@ export default function NetSuiteCustomerSearch({
     debounceTimerRef.current = setTimeout(async () => {
       try {
         let filteredCustomers: CustomerWithOptionalCases[] = [];
+        let cacheHadData = false;
 
         // Try hybrid cache approach first
         try {
@@ -103,15 +105,31 @@ export default function NetSuiteCustomerSearch({
               console.log('[Hybrid Cache] IndexedDB MISS, fetching from server...');
             }
 
-            const result = await waGetAllCustomersForCache();
+            // Deduplicate: if a fetch is already in progress, wait for it
+            // instead of firing another concurrent server call
+            if (!fetchInProgressRef.current) {
+              fetchInProgressRef.current = waGetAllCustomersForCache().then(result => {
+                if (result.success && result.customers && result.customers.length > 0) {
+                  return result.customers as CustomerWithOptionalCases[];
+                }
+                return null;
+              }).finally(() => {
+                fetchInProgressRef.current = null;
+              });
+            } else {
+              console.log('[Hybrid Cache] Server fetch already in progress, waiting...');
+            }
 
-            if (result.success && result.customers && result.customers.length > 0) {
-              allCustomers = result.customers;
+            const fetchedCustomers = await fetchInProgressRef.current;
+            if (fetchedCustomers && fetchedCustomers.length > 0) {
+              allCustomers = fetchedCustomers;
+              cacheHadData = true;
               // 3. Cache in IndexedDB for 1 week
               await indexedDBCache.set(cacheKey, allCustomers, 604800000);
               console.log(`[Hybrid Cache] Cached ${allCustomers.length} customers in IndexedDB`);
             }
           } else {
+            cacheHadData = true;
             console.log(`[Hybrid Cache] IndexedDB HIT - ${allCustomers.length} customers`);
           }
 
@@ -136,9 +154,10 @@ export default function NetSuiteCustomerSearch({
           console.warn('[Hybrid Cache] Failed:', cacheError);
         }
 
-        // FALLBACK: If hybrid cache returned nothing, use the old working search
-        if (filteredCustomers.length === 0) {
-          console.log('[Fallback] Hybrid cache empty, using direct search...');
+        // FALLBACK: Only trigger when cache was genuinely empty (not loaded),
+        // NOT when search simply returned 0 matches from a populated cache.
+        if (!cacheHadData && filteredCustomers.length === 0) {
+          console.log('[Fallback] Cache is empty, using direct NetSuite search...');
           const fallbackResult = await waSearchNetSuiteCustomers(searchQuery);
           if (fallbackResult.success && fallbackResult.customers) {
             filteredCustomers = fallbackResult.customers;
