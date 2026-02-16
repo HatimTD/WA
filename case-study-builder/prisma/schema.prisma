@@ -24,12 +24,13 @@ model User {
   badges        Badge[]
 
   // Data Model V1.6 Fields
-  ssoUid        String?       @unique // Immutable SSO ID from IdP
-  subsidiaryId  String?
-  subsidiary    WaSubsidiary? @relation(fields: [subsidiaryId], references: [id])
-  lastLoginDate DateTime?
-  status        UserStatus    @default(ACTIVE)
-  userRoles     WaUserRole[]
+  ssoUid            String?             @unique // Immutable SSO ID from IdP
+  subsidiaryId      String?
+  subsidiary        WaSubsidiary?       @relation(fields: [subsidiaryId], references: [id])
+  lastLoginDate     DateTime?
+  status            UserStatus          @default(ACTIVE)
+  userRoles         WaUserRole[]
+  userSubsidiaries  WaUserSubsidiary[] // Multi-subsidiary support
 
   // User Preferences
   notificationPreferences Json? @default("{\"inAppNotifications\":true,\"emailNotifications\":true,\"caseApprovalNotif\":true,\"caseRejectionNotif\":true,\"newCommentNotif\":true,\"bhagMilestones\":true,\"inAppCaseApproval\":true,\"inAppCaseRejection\":true,\"inAppNewComment\":true,\"inAppBhagMilestones\":true}")
@@ -300,22 +301,29 @@ model WaMasterList {
 
 model WaSubsidiary {
   id            String  @id @default(cuid())
-  integrationId String  @unique // External ERP code
-  name          String // Legal name
+  integrationId String  @unique // External ERP code (NetSuite internalid)
+  name          String // Legal name (per API doc: namenohierarchy)
   region        String // EMEA, APAC, Americas, etc.
   currencyCode  String  @db.Char(3) // ISO currency code
   isActive      Boolean @default(true)
+  // NetSuite API doc v2 fields
+  country       String? // Country ISO code (e.g., "SG")
+  countryname   String? // Country full name (e.g., "Singapore")
+  reportingRegionId   String? // custrecord_wag_reportingregion ID
+  reportingRegionName String? // custrecord_wag_reportingregionname (e.g., "Group")
 
   // Relations
-  users       User[]
-  caseStudies WaCaseStudy[]
-  customers   WaCustomer[]
+  users            User[]
+  caseStudies      WaCaseStudy[]
+  customers        WaCustomer[]
+  userSubsidiaries WaUserSubsidiary[] @relation("UserSubsidiaries") // Multi-subsidiary assignments
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([region])
   @@index([isActive])
+  @@index([country])
   @@map("Subsidiary")
 }
 
@@ -419,6 +427,55 @@ model WaUserRole {
   @@unique([userId, role])
   @@index([userId])
   @@map("UserRole")
+}
+
+// Multi-Subsidiary Assignment (mirrors WaUserRole pattern)
+// BRD Data Model V1.6: Users can be assigned to multiple subsidiaries
+model WaUserSubsidiary {
+  id           String       @id @default(cuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subsidiaryId String
+  subsidiary   WaSubsidiary @relation("UserSubsidiaries", fields: [subsidiaryId], references: [id], onDelete: Cascade)
+  assignedAt   DateTime     @default(now())
+  assignedBy   String? // Admin who assigned the subsidiary
+  source       String       @default("MANUAL") // "NETSUITE" or "MANUAL"
+
+  @@unique([userId, subsidiaryId])
+  @@index([userId])
+  @@index([subsidiaryId])
+  @@map("UserSubsidiary")
+}
+
+// NetSuite Employee Cache (synced from NetSuite waType=user)
+// Used for auto-population on login when email matches
+model WaNetsuiteEmployee {
+  id                           String    @id @default(cuid())
+  netsuiteInternalId           String    @unique // NetSuite employee ID
+  email                        String?   @unique
+  firstname                    String?
+  middlename                   String?
+  lastname                     String?
+  phone                        String?
+  // Subsidiary fields (critical for auto-assignment)
+  subsidiarynohierarchy        String? // Subsidiary ID
+  subsidiarynohierarchyname    String? // Subsidiary name
+  // Department fields (per NetSuite API doc v2)
+  departmentnohierarchy        String? // Department ID (e.g., "137")
+  departmentnohierarchyname    String? // Department name (e.g., "Admin : General")
+  department                   String? // Alias for departmentnohierarchyname (backward compat)
+  // Location fields (per NetSuite API doc v2)
+  locationnohierarchy          String? // Location ID
+  locationnohierarchyname      String? // Location name
+  location                     String? // Alias for locationnohierarchyname (backward compat)
+  // Sync metadata
+  syncedAt                     DateTime  @default(now())
+  lastModified                 DateTime  @updatedAt
+
+  @@index([email])
+  @@index([netsuiteInternalId])
+  @@index([subsidiarynohierarchy])
+  @@map("NetsuiteEmployee")
 }
 
 // =====================================================

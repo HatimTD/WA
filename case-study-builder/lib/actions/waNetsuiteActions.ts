@@ -3,6 +3,7 @@
 import { netsuiteClient, NetSuiteCustomer } from '@/lib/integrations/netsuite';
 import { waSearchCustomers, waGetCustomer } from '@/lib/integrations/netsuite-dual-source';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/auth';
 
 // Extended customer type with case study info
 export type NetSuiteCustomerWithCases = NetSuiteCustomer & {
@@ -26,17 +27,9 @@ export async function waGetAllCustomersForCache(): Promise<{
   error?: string;
 }> {
   try {
-    console.log('[waGetAllCustomersForCache] Starting to fetch all customers...');
-
     // Get all customers from Redis cache (or NetSuite if not cached)
     // Pass empty query to get all from cache
     const customers = await waSearchCustomers('');
-
-    console.log(`[waGetAllCustomersForCache] Got ${customers?.length || 0} customers`);
-
-    if (!customers || customers.length === 0) {
-      console.warn('[waGetAllCustomersForCache] No customers returned!');
-    }
 
     return { success: true, customers };
   } catch (error) {
@@ -52,12 +45,78 @@ export async function waSearchNetSuiteCustomers(
   query: string
 ): Promise<{ success: boolean; customers?: NetSuiteCustomerWithCases[]; error?: string }> {
   try {
+
     if (!query || query.length < 2) {
       return { success: true, customers: [] };
     }
 
+    // Get current user session for subsidiary filtering
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    // Fetch user with roles and subsidiaries
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        role: true,
+        userRoles: {
+          select: { role: true },
+        },
+        userSubsidiaries: {
+          select: {
+            subsidiary: {
+              select: {
+                integrationId: true, // NetSuite subsidiary ID
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      return { success: false, error: 'User not found' };
+    }
+
+    // Get all user roles (primary + assigned)
+    const allRoles = user.userRoles.length > 0
+      ? user.userRoles.map((ur) => ur.role)
+      : [user.role];
+
+    // Check if user has ADMIN or APPROVER role (bypass filtering)
+    const hasAdminOrApprover = allRoles.some(
+      (role) => role === 'ADMIN' || role === 'APPROVER'
+    );
+
     // Use dual-source service (automatically uses NetSuite or mock data based on config)
-    const customers = await waSearchCustomers(query);
+    let customers = await waSearchCustomers(query);
+
+    // Filter by subsidiary if user is CONTRIBUTOR only (not ADMIN or APPROVER)
+    if (!hasAdminOrApprover) {
+      // Get user's subsidiary integration IDs (NetSuite subsidiary IDs)
+      const userSubsidiaryIds = user.userSubsidiaries.map(
+        (us) => us.subsidiary.integrationId
+      );
+
+      if (userSubsidiaryIds.length === 0) {
+        // User has no subsidiaries assigned - return empty results
+        return { success: true, customers: [] };
+      }
+
+      // Filter customers by subsidiarynohierarchy matching user's subsidiaries
+      customers = customers.filter((customer) => {
+        // If customer has no subsidiary field, exclude them
+        if (!customer.subsidiarynohierarchy) {
+          return false;
+        }
+
+        // Check if customer's subsidiary matches any of user's subsidiaries
+        return userSubsidiaryIds.includes(customer.subsidiarynohierarchy);
+      });
+    }
 
     // Enrich with case study data from our database
     const enrichedCustomers = await Promise.all(

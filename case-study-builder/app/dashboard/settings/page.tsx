@@ -21,7 +21,7 @@ export default async function SettingsPage() {
     redirect('/login');
   }
 
-  // Fetch user data with assigned roles
+  // Fetch user data with assigned roles and subsidiaries
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
@@ -32,6 +32,7 @@ export default async function SettingsPage() {
       role: true,
       region: true,
       totalPoints: true,
+      ssoUid: true, // NetSuite employee ID
     },
   });
 
@@ -46,10 +47,62 @@ export default async function SettingsPage() {
   });
 
   // Get list of assigned role strings (always include current role)
-  const assignedRoles = userRoles.map(ur => ur.role);
+  const assignedRoles = userRoles.map((ur) => ur.role);
   if (!assignedRoles.includes(user.role)) {
     assignedRoles.push(user.role);
   }
+
+  // Fetch user's subsidiaries
+  const userSubsidiaries = await prisma.waUserSubsidiary.findMany({
+    where: { userId: session.user.id },
+    select: {
+      source: true,
+      assignedAt: true,
+      subsidiary: {
+        select: {
+          id: true,
+          name: true,
+          region: true,
+        },
+      },
+    },
+    orderBy: {
+      source: 'asc', // MANUAL first, then NETSUITE
+    },
+  });
+
+  // Fetch NetSuite employee data if exists
+  let netsuiteEmployee = null;
+  if (user.ssoUid) {
+    netsuiteEmployee = await prisma.waNetsuiteEmployee.findUnique({
+      where: { netsuiteInternalId: user.ssoUid },
+      select: {
+        netsuiteInternalId: true,
+        email: true,
+        firstname: true,
+        middlename: true,
+        lastname: true,
+        phone: true,
+        subsidiarynohierarchy: true,
+        subsidiarynohierarchyname: true,
+        department: true,
+        location: true,
+        syncedAt: true,
+      },
+    });
+  }
+
+  // Map subsidiaries
+  const subsidiaries = userSubsidiaries.map((us) => ({
+    id: us.subsidiary.id,
+    name: us.subsidiary.name,
+    region: us.subsidiary.region,
+    source: us.source,
+    assignedAt: us.assignedAt.toISOString(),
+  }));
+
+  // Compute unique regions
+  const regions = [...new Set(subsidiaries.map((s) => s.region))];
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -60,7 +113,13 @@ export default async function SettingsPage() {
         </p>
       </div>
 
-      <SettingsForm user={user} assignedRoles={assignedRoles} />
+      <SettingsForm
+        user={user}
+        assignedRoles={assignedRoles}
+        subsidiaries={subsidiaries}
+        regions={regions}
+        netsuiteEmployee={netsuiteEmployee}
+      />
     </div>
   );
 }
