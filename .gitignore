@@ -20,3 +20,6 @@ __pycache__/
 # Documentation drafts (commit when finalized)
 # IMPLEMENTATION_PLAN_FINAL.md
 # MEETING_IT_REVIEW.md
+
+# Local documentation and tracking
+localdoc/

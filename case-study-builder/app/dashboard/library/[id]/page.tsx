@@ -10,7 +10,7 @@ import { WearTypeStarsDisplay } from '@/components/wear-type-progress-bar';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { auth } from '@/auth';
-import type { CaseStudyPDFData } from '@/lib/pdf-export-ppt';
+import type { CaseStudyPDFData } from '@/lib/export_pdf_design3';
 import {
   ArrowLeft,
   MapPin,
@@ -166,6 +166,7 @@ export default async function PublicCaseDetailPage({
     workType: caseStudy.workType || undefined,
     wearType: caseStudy.wearType,
     wearSeverities: caseStudy.wearSeverities as Record<string, number> | undefined,
+    wearTypeOthers: (caseStudy.wearTypeOthers as Array<{ name: string; severity: number }>) || undefined,
     problemDescription: caseStudy.problemDescription,
     previousSolution: caseStudy.previousSolution || undefined,
     previousServiceLife: waFormatExpandedServiceLife({

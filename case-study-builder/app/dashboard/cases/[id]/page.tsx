@@ -34,7 +34,7 @@ import { waGetWeldingProcedure } from '@/lib/actions/waWpsActions';
 import EnhancedCommentsSection from '@/components/enhanced-comments-section';
 import { waGetComments } from '@/lib/actions/waCommentActions';
 import dynamic from 'next/dynamic';
-import type { CaseStudyPDFData } from '@/lib/pdf-export-ppt';
+import type { CaseStudyPDFData } from '@/lib/export_pdf_design3';
 import { CompletionIndicator } from '@/components/completion-indicator';
 import { waCalculateCompletionPercentage, waGetFieldBreakdown } from '@/lib/utils/waCaseQuality';
 import QualityScoreBadge from '@/components/quality-score-badge';
@@ -215,6 +215,10 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
     componentWorkpiece: caseStudy.componentWorkpiece,
     workType: caseStudy.workType || undefined,
     wearType: caseStudy.wearType,
+    wearSeverities: caseStudy.wearSeverities as Record<string, number> | undefined,
+    wearTypeOthers: (caseStudy.wearTypeOthers as Array<{ name: string; severity: number }>) || undefined,
+    generalDescription: caseStudy.generalDescription || undefined,
+    unitSystem: (caseStudy as any).unitSystem as 'METRIC' | 'IMPERIAL' | undefined,
     problemDescription: caseStudy.problemDescription,
     previousSolution: caseStudy.previousSolution || undefined,
     previousServiceLife: waFormatExpandedServiceLife({
@@ -270,6 +274,15 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
     translatedText: caseStudy.translatedText || undefined,
     // WPS data for TECH and STAR cases
     wps: existingWPS ? {
+      // Base metal
+      baseMetalType: existingWPS.baseMetalType || undefined,
+      baseMetalGrade: existingWPS.baseMetalGrade || undefined,
+      baseMetalThickness: existingWPS.baseMetalThickness || undefined,
+      surfacePreparation: existingWPS.surfacePreparation || undefined,
+      surfacePreparationOther: (existingWPS as any).surfacePreparationOther || undefined,
+      // Layers (new multi-layer structure)
+      layers: (existingWPS as any).layers || undefined,
+      // Legacy fields
       numberOfLayers: existingWPS.layerNumbers?.toString() || undefined,
       process: existingWPS.weldingProcess || undefined,
       technique: existingWPS.currentModeSynergy || undefined,
@@ -277,12 +290,12 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
       torchPosition: existingWPS.torchAngle || undefined,
       baseMetal: existingWPS.baseMetalType || undefined,
       thickness: existingWPS.baseMetalThickness || undefined,
-      surfacePreparation: existingWPS.surfacePreparation || undefined,
       productName: existingWPS.waProductName || undefined,
       diameter: existingWPS.waProductDiameter || undefined,
       shieldingGas: existingWPS.shieldingGas || undefined,
       flowRate: existingWPS.shieldingFlowRate || undefined,
       flux: existingWPS.flux || undefined,
+      standardDesignation: existingWPS.standardDesignation || undefined,
       stickOut: existingWPS.stickOut || undefined,
       currentType: existingWPS.currentType || undefined,
       wireSpeed: existingWPS.wireFeedSpeed || undefined,
@@ -291,9 +304,28 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
       weldingSpeed: existingWPS.travelSpeed || undefined,
       oscillationWidth: existingWPS.oscillationWidth || undefined,
       oscillationSpeed: existingWPS.oscillationSpeed || undefined,
+      oscillationTempo: existingWPS.oscillationTempo || undefined,
+      stepoverDistance: existingWPS.oscillationStepOver || undefined,
+      // Heating procedure
+      preheatingTemp: (existingWPS as any).preheatingTemp || undefined,
+      interpassTemp: (existingWPS as any).interpassTemp || undefined,
+      postheatingTemp: (existingWPS as any).postheatingTemp || undefined,
       preheatTemperature: existingWPS.preheatTemperature || undefined,
       interpassTemperature: existingWPS.interpassTemperature || undefined,
+      postheatTemperature: existingWPS.postheatTemperature || undefined,
+      postheating: existingWPS.postheatTemperature || undefined,
+      // PWHT
+      pwhtRequired: (existingWPS as any).pwhtRequired || undefined,
+      pwhtHeatingRate: (existingWPS as any).pwhtHeatingRate || undefined,
+      pwhtTempHoldingTime: (existingWPS as any).pwhtTempHoldingTime || undefined,
+      pwhtCoolingRate: (existingWPS as any).pwhtCoolingRate || undefined,
       pwht: existingWPS.pwhtDetails || undefined,
+      pwhtDetails: existingWPS.pwhtDetails || undefined,
+      heatingRate: (existingWPS as any).pwhtHeatingRate || undefined,
+      temperatureHoldingTime: (existingWPS as any).pwhtTempHoldingTime || undefined,
+      coolingRate: (existingWPS as any).pwhtCoolingRate || undefined,
+      // Additional notes
+      additionalNotes: existingWPS.additionalNotes || undefined,
     } : undefined,
     // Cost Calculator data for STAR cases
     costCalculator: existingCostCalc ? {

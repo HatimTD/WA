@@ -2,6 +2,9 @@
  * Redis Cache Client - Upstash
  * Provides persistent caching for NetSuite data
  * Falls back to in-memory cache if Redis unavailable
+ *
+ * Uses lazy connection to ensure env vars are available
+ * (fixes issue where singleton was created before env vars loaded)
  */
 
 import { Redis } from '@upstash/redis';
@@ -9,19 +12,20 @@ import { Redis } from '@upstash/redis';
 class RedisCache {
   private redis: Redis | null = null;
   private isConnected = false;
+  private connectionAttempted = false;
   private cacheTTL = 604800; // 1 week in seconds
 
   // Fallback in-memory cache if Redis unavailable
   private memoryCache: Map<string, { data: any; expiresAt: number }> = new Map();
 
-  constructor() {
-    this.connect();
-  }
-
   /**
-   * Connect to Upstash Redis
+   * Lazy connect to Upstash Redis - only called on first actual use.
+   * This ensures process.env vars are loaded before we try to connect.
    */
-  private connect() {
+  private ensureConnected() {
+    if (this.connectionAttempted) return;
+    this.connectionAttempted = true;
+
     try {
       const url = process.env.UPSTASH_REDIS_REST_URL;
       const token = process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -38,7 +42,7 @@ class RedisCache {
       });
 
       this.isConnected = true;
-      console.log('[Redis] Connected to Upstash Redis ✅');
+      console.log('[Redis] Connected to Upstash Redis');
     } catch (error) {
       console.error('[Redis] Connection failed:', error);
       this.isConnected = false;
@@ -50,26 +54,25 @@ class RedisCache {
    * Returns null if not found or expired
    */
   async get<T>(key: string): Promise<T | null> {
+    this.ensureConnected();
     try {
       if (this.isConnected && this.redis) {
-        // Try Redis first
         const startTime = Date.now();
         const data = await this.redis.get<T>(key);
         const elapsed = Date.now() - startTime;
 
         if (data) {
-          console.log(`[Redis] Cache HIT - ${key} (${elapsed}ms) ⚡`);
+          console.log(`[Redis] Cache HIT - ${key} (${elapsed}ms)`);
           return data;
         } else {
           console.log(`[Redis] Cache MISS - ${key}`);
           return null;
         }
       } else {
-        // Fallback to memory cache
         const cached = this.memoryCache.get(key);
 
         if (cached && cached.expiresAt > Date.now()) {
-          console.log(`[Memory] Cache HIT - ${key} ⚡`);
+          console.log(`[Memory] Cache HIT - ${key}`);
           return cached.data as T;
         } else {
           console.log(`[Memory] Cache MISS - ${key}`);
@@ -86,19 +89,18 @@ class RedisCache {
    * Set cached data with TTL
    */
   async set<T>(key: string, data: T, ttl?: number): Promise<boolean> {
+    this.ensureConnected();
     try {
       const actualTTL = ttl || this.cacheTTL;
 
       if (this.isConnected && this.redis) {
-        // Set in Redis with expiration
         await this.redis.set(key, data, { ex: actualTTL });
-        console.log(`[Redis] Cached ${key} for ${actualTTL}s ✅`);
+        console.log(`[Redis] Cached ${key} for ${actualTTL}s`);
         return true;
       } else {
-        // Fallback to memory cache
         const expiresAt = Date.now() + (actualTTL * 1000);
         this.memoryCache.set(key, { data, expiresAt });
-        console.log(`[Memory] Cached ${key} for ${actualTTL}s ✅`);
+        console.log(`[Memory] Cached ${key} for ${actualTTL}s`);
         return true;
       }
     } catch (error) {
@@ -111,14 +113,15 @@ class RedisCache {
    * Delete cached data
    */
   async del(key: string): Promise<boolean> {
+    this.ensureConnected();
     try {
       if (this.isConnected && this.redis) {
         await this.redis.del(key);
-        console.log(`[Redis] Deleted ${key} ✅`);
+        console.log(`[Redis] Deleted ${key}`);
         return true;
       } else {
         this.memoryCache.delete(key);
-        console.log(`[Memory] Deleted ${key} ✅`);
+        console.log(`[Memory] Deleted ${key}`);
         return true;
       }
     } catch (error) {
@@ -131,18 +134,18 @@ class RedisCache {
    * Clear all cached data
    */
   async clear(): Promise<boolean> {
+    this.ensureConnected();
     try {
       if (this.isConnected && this.redis) {
-        // Clear NetSuite cache keys
         const keys = ['netsuite:customers:all', 'netsuite:items:all'];
         for (const key of keys) {
           await this.redis.del(key);
         }
-        console.log('[Redis] Cleared all NetSuite cache ✅');
+        console.log('[Redis] Cleared all NetSuite cache');
         return true;
       } else {
         this.memoryCache.clear();
-        console.log('[Memory] Cleared all cache ✅');
+        console.log('[Memory] Cleared all cache');
         return true;
       }
     } catch (error) {
@@ -155,6 +158,7 @@ class RedisCache {
    * Check if Redis is connected
    */
   isRedisConnected(): boolean {
+    this.ensureConnected();
     return this.isConnected;
   }
 
@@ -252,7 +256,6 @@ class RedisCache {
    */
   async delChunked(baseKey: string): Promise<boolean> {
     try {
-      // Get metadata to know how many chunks to delete
       const metaKey = `${baseKey}:meta`;
       const meta = await this.get<{ chunkCount: number; totalItems: number }>(metaKey);
 
@@ -260,13 +263,11 @@ class RedisCache {
         return true; // Nothing to delete
       }
 
-      // Delete all chunks
       for (let i = 0; i < meta.chunkCount; i++) {
         const chunkKey = `${baseKey}:chunk:${i}`;
         await this.del(chunkKey);
       }
 
-      // Delete metadata
       await this.del(metaKey);
 
       console.log(`[Redis] Deleted ${meta.chunkCount} chunks for ${baseKey}`);
@@ -286,9 +287,9 @@ class RedisCache {
     keys?: string[];
     memorySize?: number;
   }> {
+    this.ensureConnected();
     if (this.isConnected && this.redis) {
       try {
-        // Try to ping Redis
         await this.redis.ping();
         return {
           connected: true,
@@ -312,4 +313,5 @@ class RedisCache {
 }
 
 // Export singleton instance
+// Connection is lazy — won't attempt until first actual use
 export const redisCache = new RedisCache();
