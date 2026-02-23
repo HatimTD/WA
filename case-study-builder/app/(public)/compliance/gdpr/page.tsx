@@ -110,7 +110,7 @@ export default function GDPRPage() {
                 <h3 className="text-lg font-semibold text-wa-green-900 mb-3">3.1 Information You Provide</h3>
                 <ul className="list-disc pl-6 space-y-2 text-gray-700 mb-6">
                   <li><strong>Account Information:</strong> Name, email address, job title, department, employee ID</li>
-                  <li><strong>Case Study Content:</strong> Technical descriptions, photographs, project details, customer information (when authorized)</li>
+                  <li><strong>Case Study Content:</strong> Technical descriptions, photographs, project details, customer information (when authorised)</li>
                   <li><strong>Communications:</strong> Comments, feedback, questions, and support requests</li>
                 </ul>
 
@@ -171,7 +171,7 @@ export default function GDPRPage() {
                   <li><strong>Service Delivery:</strong> Provide access to the Case Study Builder, manage your account, and enable collaboration</li>
                   <li><strong>Communication:</strong> Send notifications, respond to inquiries, and provide technical support</li>
                   <li><strong>Analytics:</strong> Understand usage patterns and improve our services</li>
-                  <li><strong>Security:</strong> Protect against unauthorized access, fraud, and security threats</li>
+                  <li><strong>Security:</strong> Protect against unauthorised access, fraud, and security threats</li>
                   <li><strong>Compliance:</strong> Meet legal and regulatory requirements</li>
                   <li><strong>Business Operations:</strong> Manage workflows, approvals, and reporting</li>
                 </ul>
@@ -260,7 +260,7 @@ export default function GDPRPage() {
               <CardContent className="prose prose-gray max-w-none">
                 <h3 className="text-lg font-semibold text-wa-green-900 mb-3">7.1 Internal Sharing</h3>
                 <p className="text-gray-700 mb-4">
-                  Your personal data is accessible to authorized Welding Alloys employees who need it to perform their job
+                  Your personal data is accessible to authorised Welding Alloys employees who need it to perform their job
                   functions. Access is controlled through role-based permissions.
                 </p>
 
@@ -271,7 +271,7 @@ export default function GDPRPage() {
                 <ul className="list-disc pl-6 space-y-2 text-gray-700 mb-6">
                   <li>Cloud hosting providers (Vercel, AWS)</li>
                   <li>Authentication services</li>
-                  <li>Analytics services (with data minimization)</li>
+                  <li>Analytics services (with data minimisation)</li>
                   <li>Email service providers</li>
                 </ul>
                 <p className="text-gray-700 mb-6">
@@ -387,7 +387,7 @@ export default function GDPRPage() {
               </CardHeader>
               <CardContent className="prose prose-gray max-w-none">
                 <p className="text-gray-700">
-                  The Case Study Builder is intended for use by Welding Alloys employees and authorized business partners.
+                  The Case Study Builder is intended for use by Welding Alloys employees and authorised business partners.
                   We do not knowingly collect personal data from individuals under the age of 16. If you become aware that
                   a child has provided us with personal data, please contact our Data Protection Officer.
                 </p>

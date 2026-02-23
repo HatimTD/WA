@@ -307,7 +307,15 @@ export function generateCaseStudyPDF(caseStudy: CaseStudyPDFData, options?: PDFE
 
   // Technical Details Table
   const technicalData = [
-    ['Work Type', caseStudy.workType],
+    ['Business Type', ({
+      'INTEGRA_WORKSHOP': 'Integra - Workshop',
+      'INTEGRA_ON_SITE': 'Integra - On Site',
+      'INTEGRA_COMBINATION': 'Integra - Combination',
+      'CONSUMABLE_SALES': 'Consumable Sales',
+      'WORKSHOP': 'Workshop',
+      'ON_SITE': 'On Site',
+      'BOTH': 'Both',
+    } as Record<string, string>)[caseStudy.workType || ''] || caseStudy.workType],
     ['Wear Type', caseStudy.wearType.join(', ')],
     ['Base Metal', caseStudy.baseMetal || 'N/A'],
     ['Dimensions', caseStudy.generalDimensions || 'N/A'],
@@ -725,7 +733,18 @@ export function generateComparisonPDF(
     `${c.location}${c.country ? ', ' + c.country : ''}`
   ));
   waAddComparisonRow('Component/Workpiece', validCases.map(c => c.componentWorkpiece));
-  waAddComparisonRow('Work Type', validCases.map(c => c.workType));
+  waAddComparisonRow('Business Type', validCases.map(c => {
+    const labels: Record<string, string> = {
+      'INTEGRA_WORKSHOP': 'Integra - Workshop',
+      'INTEGRA_ON_SITE': 'Integra - On Site',
+      'INTEGRA_COMBINATION': 'Integra - Combination',
+      'CONSUMABLE_SALES': 'Consumable Sales',
+      'WORKSHOP': 'Workshop',
+      'ON_SITE': 'On Site',
+      'BOTH': 'Both',
+    };
+    return labels[c.workType || ''] || c.workType;
+  }));
   waAddComparisonRow('Job Type', validCases.map(c =>
     waFormatJobType(c.jobType, c.jobTypeOther) || '—'
   ));
