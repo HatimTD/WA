@@ -29,6 +29,7 @@ export default async function UserManagementPage() {
       role: true,
       region: true,
       totalPoints: true,
+      acceptedTermsAt: true,
       createdAt: true,
       userRoles: {
         select: {
@@ -86,6 +87,7 @@ export default async function UserManagementPage() {
       regions, // Add computed regions
       totalPoints: u.totalPoints,
       caseCount: u._count.caseStudies,
+      acceptedTermsAt: u.acceptedTermsAt?.toISOString() || null,
       createdAt: u.createdAt.toISOString(),
     };
   });

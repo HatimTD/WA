@@ -55,13 +55,21 @@ export default async function DashboardLayout({
     roles: userRoles,
   };
 
+  // Block ALL dashboard content until user accepts confidentiality terms
+  if (!user.acceptedTermsAt) {
+    return (
+      <SessionProvider>
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <ConfidentialityAgreementDialog />
+        </div>
+      </SessionProvider>
+    );
+  }
+
   return (
     <SessionProvider>
       {/* Maintenance Mode Auto-Redirect - Temporarily disabled */}
       {/* <MaintenanceRedirect /> */}
-
-      {/* First-time login confidentiality agreement */}
-      {!user.acceptedTermsAt && <ConfidentialityAgreementDialog />}
 
       <div className="flex min-h-screen flex-col">
         {/* Announcement Banner */}
