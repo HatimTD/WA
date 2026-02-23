@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CaseStudyFormData } from '@/app/dashboard/new/page';
 import LocationAutocomplete from '@/components/location-autocomplete';
+import { cn } from '@/lib/utils';
 import { Mic, Sparkles } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
@@ -29,9 +30,10 @@ const AITextAssistant = dynamic(() => import('@/components/ai-text-assistant'), 
 type Props = {
   formData: CaseStudyFormData;
   updateFormData: (data: Partial<CaseStudyFormData>) => void;
+  highlightedFields?: string[];
 };
 
-export default function StepTwo({ formData, updateFormData }: Props) {
+export default function StepTwo({ formData, updateFormData, highlightedFields }: Props) {
   return (
     <div className="space-y-6">
       {/* Industrial Challenge Title - Full width */}
@@ -44,7 +46,10 @@ export default function StepTwo({ formData, updateFormData }: Props) {
           value={formData.title}
           onChange={(e) => updateFormData({ title: e.target.value })}
           placeholder="e.g., Crusher Hammer Rebuild - ABC Mining"
-          className="dark:bg-input dark:border-border dark:text-foreground"
+          className={cn(
+            "dark:bg-input dark:border-border dark:text-foreground",
+            highlightedFields?.includes('title') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+          )}
           required
         />
       </div>
@@ -60,11 +65,12 @@ export default function StepTwo({ formData, updateFormData }: Props) {
               currentValue={formData.generalDescription || ''}
               onTranscript={(text) => updateFormData({ generalDescription: text })}
             />
-            <AITextAssistant
+            {/* HIDDEN: Bullet to Prose AI assistant - can be re-enabled */}
+            {/* <AITextAssistant
               text={formData.generalDescription || ''}
               onTextChange={(text) => updateFormData({ generalDescription: text })}
               fieldType="general"
-            />
+            /> */}
           </div>
         </div>
         <Textarea
@@ -72,7 +78,10 @@ export default function StepTwo({ formData, updateFormData }: Props) {
           value={formData.generalDescription || ''}
           onChange={(e) => updateFormData({ generalDescription: e.target.value })}
           placeholder="Briefly describe the application and context, the equipment, how it is used, what it is used for, the type of wear and abrasive, etc."
-          className="min-h-[100px] dark:bg-input dark:border-border dark:text-foreground"
+          className={cn(
+            "min-h-[100px] dark:bg-input dark:border-border dark:text-foreground",
+            highlightedFields?.includes('generalDescription') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+          )}
           required
         />
       </div>
@@ -91,6 +100,7 @@ export default function StepTwo({ formData, updateFormData }: Props) {
           label="Location (City/Plant)"
           required
           placeholder="Search for a city..."
+          inputClassName={highlightedFields?.includes('location') ? "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40" : undefined}
         />
 
         {/* Country - Auto-filled from location selection */}
@@ -101,7 +111,10 @@ export default function StepTwo({ formData, updateFormData }: Props) {
             value={formData.country}
             onChange={(e) => updateFormData({ country: e.target.value })}
             placeholder="Auto-filled from location or enter manually"
-            className="dark:bg-input dark:border-border dark:text-foreground"
+            className={cn(
+              "dark:bg-input dark:border-border dark:text-foreground",
+              highlightedFields?.includes('country') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+            )}
           />
         </div>
 
@@ -115,24 +128,31 @@ export default function StepTwo({ formData, updateFormData }: Props) {
             value={formData.componentWorkpiece}
             onChange={(e) => updateFormData({ componentWorkpiece: e.target.value })}
             placeholder="e.g., Crusher Hammers"
-            className="dark:bg-input dark:border-border dark:text-foreground"
+            className={cn(
+              "dark:bg-input dark:border-border dark:text-foreground",
+              highlightedFields?.includes('componentWorkpiece') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+            )}
             required
           />
         </div>
 
-        {/* Work Type */}
+        {/* Business Type */}
         <div className="space-y-2">
           <Label htmlFor="workType" className="dark:text-foreground">
-            Work Type <span className="text-red-500 dark:text-red-400">*</span>
+            Business Type <span className="text-red-500 dark:text-red-400">*</span>
           </Label>
           <Select value={formData.workType} onValueChange={(value) => updateFormData({ workType: value as any })}>
-            <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
-              <SelectValue placeholder="Select work type" />
+            <SelectTrigger className={cn(
+              "dark:bg-input dark:border-border dark:text-foreground",
+              highlightedFields?.includes('workType') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+            )}>
+              <SelectValue placeholder="Select business type" />
             </SelectTrigger>
             <SelectContent className="dark:bg-popover dark:border-border">
-              <SelectItem value="WORKSHOP">Workshop</SelectItem>
-              <SelectItem value="ON_SITE">On Site</SelectItem>
-              <SelectItem value="BOTH">Both</SelectItem>
+              <SelectItem value="INTEGRA_WORKSHOP">Integra - Workshop</SelectItem>
+              <SelectItem value="INTEGRA_ON_SITE">Integra - On Site</SelectItem>
+              <SelectItem value="INTEGRA_COMBINATION">Integra - Combination</SelectItem>
+              <SelectItem value="CONSUMABLE_SALES">Consumable Sales</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -151,7 +171,10 @@ export default function StepTwo({ formData, updateFormData }: Props) {
               }
             }}
           >
-            <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
+            <SelectTrigger className={cn(
+              "dark:bg-input dark:border-border dark:text-foreground",
+              highlightedFields?.includes('jobType') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+            )}>
               <SelectValue placeholder="Select job type" />
             </SelectTrigger>
             <SelectContent className="dark:bg-popover dark:border-border">
@@ -180,7 +203,10 @@ export default function StepTwo({ formData, updateFormData }: Props) {
             value={formData.oem}
             onChange={(e) => updateFormData({ oem: e.target.value })}
             placeholder="e.g., Caterpillar, Komatsu, Liebherr"
-            className="dark:bg-input dark:border-border dark:text-foreground"
+            className={cn(
+              "dark:bg-input dark:border-border dark:text-foreground",
+              highlightedFields?.includes('oem') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+            )}
           />
         </div>
 

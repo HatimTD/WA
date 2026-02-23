@@ -194,7 +194,8 @@ export default async function ApprovalReviewPage({ params, searchParams }: Props
         </Link>
       </div>
 
-      {/* Approval Actions */}
+      {/* HIDDEN: Top approval actions - can be re-enabled */}
+      {/*
       <Card role="article" className="bg-gradient-to-r from-wa-green-50 to-purple-50 dark:from-accent dark:to-purple-900/20 border-2 border-wa-green-200 dark:border-primary">
         <CardHeader>
           <CardTitle className="text-xl dark:text-foreground">Review & Approve</CardTitle>
@@ -206,6 +207,7 @@ export default async function ApprovalReviewPage({ params, searchParams }: Props
           <ApprovalActions caseStudyId={caseStudy.id} />
         </CardContent>
       </Card>
+      */}
 
       {/* Title and Info */}
       <div className="space-y-4">
@@ -267,8 +269,16 @@ export default async function ApprovalReviewPage({ params, searchParams }: Props
             <div className="flex items-start gap-3">
               <Wrench className="h-5 w-5 text-gray-400 dark:text-muted-foreground mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Work Type</p>
-                <p className="text-base font-semibold dark:text-foreground">{caseStudy.workType}</p>
+                <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Business Type</p>
+                <p className="text-base font-semibold dark:text-foreground">{({
+                  'INTEGRA_WORKSHOP': 'Integra - Workshop',
+                  'INTEGRA_ON_SITE': 'Integra - On Site',
+                  'INTEGRA_COMBINATION': 'Integra - Combination',
+                  'CONSUMABLE_SALES': 'Consumable Sales',
+                  'WORKSHOP': 'Workshop',
+                  'ON_SITE': 'On Site',
+                  'BOTH': 'Both',
+                } as Record<string, string>)[caseStudy.workType || ''] || caseStudy.workType}</p>
               </div>
             </div>
 
@@ -512,7 +522,7 @@ export default async function ApprovalReviewPage({ params, searchParams }: Props
                 <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-border bg-gray-100 dark:bg-background">
                   <Image
                     src={imageUrl}
-                    alt={`${caseStudy.customerName} - Image ${index + 1}`}
+                    alt={`Case study image ${index + 1}`}
                     fill
                     className="object-cover hover:scale-105 transition-transform duration-200"
                     sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"

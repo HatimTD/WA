@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -167,11 +167,18 @@ export interface WpsLayer {
   oscillationAmplitude?: string;
   oscillationPeriod?: string;
   oscillationTempos?: string;
+  // Heating Procedure (per layer)
+  preheatingTemp?: string;
+  interpassTemp?: string;
+  postheatingTemp?: string;
 }
 
 // Default empty layer
 const waCreateEmptyLayer = (): WpsLayer => ({
   id: `layer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+  preheatingTemp: '',
+  interpassTemp: '',
+  postheatingTemp: '',
 });
 
 type Props = {
@@ -195,9 +202,6 @@ export default function StepWPS({ formData, updateFormData }: Props) {
   // Track active product search per layer
   const [activeProductSearch, setActiveProductSearch] = useState<Record<string, string>>({});
   const [showProductSuggestions, setShowProductSuggestions] = useState<Record<string, boolean>>({});
-
-  // Other field states
-  const [surfacePrepOther, setSurfacePrepOther] = useState('');
 
   // Initialize WPS on mount - auto-fill base metal and create empty layer if needed
   useEffect(() => {
@@ -339,7 +343,9 @@ export default function StepWPS({ formData, updateFormData }: Props) {
               value={formData.wps?.surfacePreparation || ''}
               onChange={(e) => {
                 waUpdateWps('surfacePreparation', e.target.value);
-                if (e.target.value !== 'Other') setSurfacePrepOther('');
+                if (e.target.value !== 'Other') {
+                  waUpdateWps('surfacePreparationOther', '');
+                }
               }}
               className="w-full h-10 px-3 rounded-md border border-border bg-input text-foreground"
               required
@@ -351,9 +357,8 @@ export default function StepWPS({ formData, updateFormData }: Props) {
             </select>
             {formData.wps?.surfacePreparation === 'Other' && (
               <Input
-                value={surfacePrepOther}
+                value={formData.wps?.surfacePreparationOther || ''}
                 onChange={(e) => {
-                  setSurfacePrepOther(e.target.value);
                   waUpdateWps('surfacePreparationOther', e.target.value);
                 }}
                 placeholder="Specify other preparation"
@@ -861,6 +866,37 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                       </div>
                     </div>
                   </div>
+
+                  {/* Heating Procedure - Per Layer */}
+                  <div className="space-y-4 mt-4">
+                    <h5 className="font-medium text-sm text-gray-700 dark:text-gray-300">Heating Procedure</h5>
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label>Preheating Temperature (°C)</Label>
+                        <Input
+                          value={layer.preheatingTemp || ''}
+                          onChange={(e) => waUpdateLayer(layer.id, 'preheatingTemp', e.target.value)}
+                          placeholder="e.g., 150"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Interpass Temperature (°C)</Label>
+                        <Input
+                          value={layer.interpassTemp || ''}
+                          onChange={(e) => waUpdateLayer(layer.id, 'interpassTemp', e.target.value)}
+                          placeholder="e.g., 250"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Postheating Temperature (°C)</Label>
+                        <Input
+                          value={layer.postheatingTemp || ''}
+                          onChange={(e) => waUpdateLayer(layer.id, 'postheatingTemp', e.target.value)}
+                          placeholder="e.g., 200"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -879,7 +915,8 @@ export default function StepWPS({ formData, updateFormData }: Props) {
         </Button>
       </div>
 
-      {/* Heating Procedure Section */}
+      {/* HIDDEN: Standalone heating procedure - moved inside layers */}
+      {/*
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground">Heating Procedure</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -916,7 +953,11 @@ export default function StepWPS({ formData, updateFormData }: Props) {
             />
           </div>
         </div>
+      </div>
+      */}
 
+      {/* Heating Procedure - PWHT Section (remains standalone) */}
+      <div className="space-y-4">
         {/* PWHT Section */}
         <div className="space-y-4 mt-4 p-4 border border-border rounded-lg">
           <div className="flex items-center gap-4">

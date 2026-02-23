@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { SessionProvider } from 'next-auth/react';
 import AnnouncementBanner from '@/components/announcement-banner';
 import MaintenanceRedirect from '@/components/maintenance-redirect';
+import ConfidentialityAgreementDialog from '@/components/confidentiality-agreement-dialog';
 
 export default async function DashboardLayout({
   children,
@@ -28,6 +29,7 @@ export default async function DashboardLayout({
       role: true,
       totalPoints: true,
       badges: true,
+      acceptedTermsAt: true,
     },
   });
 
@@ -57,6 +59,9 @@ export default async function DashboardLayout({
     <SessionProvider>
       {/* Maintenance Mode Auto-Redirect - Temporarily disabled */}
       {/* <MaintenanceRedirect /> */}
+
+      {/* First-time login confidentiality agreement */}
+      {!user.acceptedTermsAt && <ConfidentialityAgreementDialog />}
 
       <div className="flex min-h-screen flex-col">
         {/* Announcement Banner */}

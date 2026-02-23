@@ -28,15 +28,22 @@ function waCreateUniqueKey(cs: {
  * A solved challenge is counted ONCE when Customer Name, Location, Component,
  * and WA Solution are unique. Duplicates are treated as updates.
  *
+ * Only NEW_CUSTOMER and CROSS_SELL qualifier types count toward the BHAG goal.
+ * MAINTENANCE cases are tracked separately but do NOT count toward the target.
+ *
  * Deduplication Key: customerName + location + componentWorkpiece + waProduct
  * Only count APPROVED case studies
  */
 export async function waGetBhagProgress() {
   try {
-    // Get all approved case studies with deduplication fields (BRD Section 5)
-    const approvedCases = await prisma.waCaseStudy.findMany({
+    // Get approved case studies that count toward the goal:
+    // Only NEW_CUSTOMER and CROSS_SELL qualifier types (BRD Section 5)
+    const goalCases = await prisma.waCaseStudy.findMany({
       where: {
         status: 'APPROVED',
+        qualifierType: {
+          in: ['NEW_CUSTOMER', 'CROSS_SELL'],
+        },
       },
       select: {
         customerName: true,
@@ -47,14 +54,21 @@ export async function waGetBhagProgress() {
       },
     });
 
+    // Also get ALL approved cases for total submission count
+    const totalApprovedCount = await prisma.waCaseStudy.count({
+      where: {
+        status: 'APPROVED',
+      },
+    });
+
     // Create unique identifier for each case per BRD Section 5
     // Format: "customerName|location|componentWorkpiece|waProduct"
-    const uniqueCases = new Set(approvedCases.map(waCreateUniqueKey));
+    const uniqueCases = new Set(goalCases.map(waCreateUniqueKey));
 
     const uniqueCount = uniqueCases.size;
-    const totalCount = approvedCases.length;
+    const totalCount = totalApprovedCount;
 
-    // Count by type (deduplicated)
+    // Count by type (deduplicated) - only goal-qualifying cases
     const byType = {
       APPLICATION: 0,
       TECH: 0,
@@ -67,7 +81,7 @@ export async function waGetBhagProgress() {
       STAR: new Set<string>(),
     };
 
-    approvedCases.forEach((cs) => {
+    goalCases.forEach((cs) => {
       const uniqueKey = waCreateUniqueKey(cs);
       uniqueByType[cs.type].add(uniqueKey);
     });
@@ -102,12 +116,16 @@ export async function waGetBhagProgress() {
 /**
  * Get regional breakdown of case studies
  * Uses BRD Section 5 deduplication logic
+ * Only counts NEW_CUSTOMER and CROSS_SELL toward the goal
  */
 export async function waGetRegionalBhagProgress() {
   try {
     const approvedCases = await prisma.waCaseStudy.findMany({
       where: {
         status: 'APPROVED',
+        qualifierType: {
+          in: ['NEW_CUSTOMER', 'CROSS_SELL'],
+        },
       },
       select: {
         customerName: true,
@@ -154,12 +172,16 @@ export async function waGetRegionalBhagProgress() {
 /**
  * Get industry breakdown
  * Uses BRD Section 5 deduplication logic
+ * Only counts NEW_CUSTOMER and CROSS_SELL toward the goal
  */
 export async function waGetIndustryBhagProgress() {
   try {
     const approvedCases = await prisma.waCaseStudy.findMany({
       where: {
         status: 'APPROVED',
+        qualifierType: {
+          in: ['NEW_CUSTOMER', 'CROSS_SELL'],
+        },
       },
       select: {
         customerName: true,
@@ -225,12 +247,11 @@ export async function waGetQualifierTypeBhagProgress() {
       },
     });
 
-    // Group by qualifier type
+    // Group by qualifier type (only the 3 valid types)
     const byQualifierType = {
       NEW_CUSTOMER: new Set<string>(),
       CROSS_SELL: new Set<string>(),
       MAINTENANCE: new Set<string>(),
-      UNQUALIFIED: new Set<string>(), // Cases without qualifierType
     };
 
     let targetCount = 0;
@@ -248,8 +269,6 @@ export async function waGetQualifierTypeBhagProgress() {
         byQualifierType.CROSS_SELL.add(uniqueKey);
       } else if (cs.qualifierType === 'MAINTENANCE') {
         byQualifierType.MAINTENANCE.add(uniqueKey);
-      } else {
-        byQualifierType.UNQUALIFIED.add(uniqueKey);
       }
     });
 
@@ -272,12 +291,6 @@ export async function waGetQualifierTypeBhagProgress() {
         description: 'Repeat of existing solution - Does NOT count toward target',
         countsTowardTarget: false,
       },
-      unqualified: {
-        count: byQualifierType.UNQUALIFIED.size,
-        label: 'Unqualified',
-        description: 'Not yet qualified through Challenge Qualifier',
-        countsTowardTarget: false,
-      },
       targetTotal: targetCount,
     };
 
@@ -298,12 +311,16 @@ export async function waGetQualifierTypeBhagProgress() {
  * Get BHAG progress split by Contributor's Region (BRD 3.5)
  * Groups by user.region instead of case study location
  * Uses BRD Section 5 deduplication logic
+ * Only counts NEW_CUSTOMER and CROSS_SELL toward the goal
  */
 export async function waGetContributorRegionBhagProgress() {
   try {
     const approvedCases = await prisma.waCaseStudy.findMany({
       where: {
         status: 'APPROVED',
+        qualifierType: {
+          in: ['NEW_CUSTOMER', 'CROSS_SELL'],
+        },
       },
       select: {
         customerName: true,

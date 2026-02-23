@@ -356,7 +356,7 @@ export function OfflineSettings() {
         <CardHeader>
           <CardTitle>Sync Settings</CardTitle>
           <CardDescription>
-            Configure automatic sync behavior when users come back online
+            Configure automatic sync behaviour when users come back online
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

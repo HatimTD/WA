@@ -380,7 +380,7 @@ export default function ApprovalsClient({ userId }: ApprovalsClientProps) {
                       {caseStudy.location} • {caseStudy.waProduct}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
-                      Reviewed on {new Date(caseStudy.approvedAt!).toLocaleDateString()}
+                      Reviewed on {new Date(caseStudy.approvedAt || caseStudy.submittedAt || Date.now()).toLocaleDateString()}
                     </p>
                   </div>
                   <Link href={`/dashboard/cases/${caseStudy.id}`}>

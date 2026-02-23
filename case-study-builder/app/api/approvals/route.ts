@@ -58,12 +58,19 @@ export async function GET() {
     });
 
     // Fetch recently reviewed by this user
+    // Cases can be approved (approverId) or rejected (rejectedBy) by different fields
     const recentlyReviewed = await prisma.waCaseStudy.findMany({
       where: {
-        status: {
-          in: ['APPROVED', 'REJECTED'],
-        },
-        approverId: session.user.id,
+        OR: [
+          {
+            status: 'APPROVED',
+            approverId: session.user.id,
+          },
+          {
+            status: 'REJECTED',
+            rejectedBy: session.user.id,
+          },
+        ],
       },
       include: {
         contributor: {
@@ -79,9 +86,15 @@ export async function GET() {
             name: true,
           },
         },
+        rejector: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
       orderBy: {
-        approvedAt: 'desc',
+        updatedAt: 'desc',
       },
       take: 5,
     });
@@ -99,7 +112,7 @@ export async function GET() {
       rejectedByMe: await prisma.waCaseStudy.count({
         where: {
           status: 'REJECTED',
-          approverId: session.user.id,
+          rejectedBy: session.user.id,
         },
       }),
     };

@@ -123,7 +123,7 @@ function anonymizeCaseStudyContent(original: string | null, field: string): stri
     case 'testimonial':
       return `"The WA team delivered an exceptional solution that exceeded our expectations. We've seen remarkable improvements across all key metrics." - Project Manager, ${company}`;
     case 'projectDescription':
-      return `Large-scale ${productType.toLowerCase()} deployment for ${industry.toLowerCase()} client ${company}, involving technical consultation, product customization, and on-site implementation support.`;
+      return `Large-scale ${productType.toLowerCase()} deployment for ${industry.toLowerCase()} client ${company}, involving technical consultation, product customisation, and on-site implementation support.`;
     default:
       return `[Anonymized ${field}]`;
   }

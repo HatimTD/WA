@@ -179,12 +179,12 @@ export function ImageAnalyzer({
                 {analyzing ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Analyzing...
+                    Analysing...
                   </>
                 ) : (
                   <>
                     <FileText className="h-4 w-4 mr-2" />
-                    Analyze Image
+                    Analyse Image
                   </>
                 )}
               </Button>

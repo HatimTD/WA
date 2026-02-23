@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,22 +28,6 @@ import { useMasterList } from '@/lib/hooks/use-master-list';
 import { toast } from 'sonner';
 import { WaCaseStudy, WaWeldingProcedure, WaCostCalculator } from '@prisma/client';
 import type { CaseStudyFormData } from '@/app/dashboard/new/page';
-
-// Fallback industries if Master List API fails
-const FALLBACK_INDUSTRIES = [
-  { id: 'mining', value: 'Mining & Quarrying', sortOrder: 0 },
-  { id: 'cement', value: 'Cement', sortOrder: 1 },
-  { id: 'steel', value: 'Steel & Metal Processing', sortOrder: 2 },
-  { id: 'power', value: 'Power Generation', sortOrder: 3 },
-  { id: 'pulp', value: 'Pulp & Paper', sortOrder: 4 },
-  { id: 'oil', value: 'Oil & Gas', sortOrder: 5 },
-  { id: 'chemical', value: 'Chemical & Petrochemical', sortOrder: 6 },
-  { id: 'marine', value: 'Marine', sortOrder: 7 },
-  { id: 'agriculture', value: 'Agriculture', sortOrder: 8 },
-  { id: 'construction', value: 'Construction', sortOrder: 9 },
-  { id: 'recycling', value: 'Recycling', sortOrder: 10 },
-  { id: 'other', value: 'Other', sortOrder: 11 },
-];
 
 // Re-export for backward compatibility
 export type { CaseStudyFormData };
@@ -181,27 +165,57 @@ function waCalculateResumeStep(
     }
   }
 
-  // Calculate Finalize step number based on case type
-  // APPLICATION: 6 steps (Type, Customer, Basic, Challenge, Solution, Finalize)
+  // Calculate Finalise step number based on case type
+  // APPLICATION: 6 steps (Type, Customer, Basic, Challenge, Solution, Finalise)
   // TECH: 7 steps (adds Welding Procedure)
   // STAR: 8 steps (adds Welding Procedure + Cost Reduction Analysis)
   const finalizeStep = caseType === 'STAR' ? 8 : (caseType === 'TECH' ? 7 : 6);
 
   // Step 7: Cost Reduction Analysis (for STAR only) - always optional, skip validation
 
-  // Final step: Finalize - check financial fields
+  // Final step: Finalise - check financial fields
   // Note: Financial fields are numbers/Decimals, check if they exist
   // customerSavingsAmount is now optional, so we don't check for it
   const hasValidRevenue = caseStudy.solutionValueRevenue !== null && caseStudy.solutionValueRevenue !== undefined;
   const hasValidAnnualRevenue = caseStudy.annualPotentialRevenue !== null && caseStudy.annualPotentialRevenue !== undefined;
 
   if (!hasValidRevenue || !hasValidAnnualRevenue) {
-    return finalizeStep; // Finalize
+    return finalizeStep; // Finalise
   }
 
-  // All complete - go to last step (Finalize)
+  // All complete - go to last step (Finalise)
   return finalizeStep;
 }
+
+// Map missing field labels (from getMissingFields) to form field IDs (used in step components)
+const FIELD_LABEL_TO_ID: Record<string, string> = {
+  'Industrial Challenge Title': 'title',
+  'General Description': 'generalDescription',
+  'Customer Name': 'customerName',
+  'Industry': 'industry',
+  'Location': 'location',
+  'Country': 'country',
+  'Component/Workpiece': 'componentWorkpiece',
+  'Business Type': 'workType',
+  'Job Type': 'jobType',
+  'Job Type (specify)': 'jobTypeOther',
+  'Type of Wear': 'wearType',
+  'Wear Severity (set for at least one wear type)': 'wearType',
+  'Problem Description': 'problemDescription',
+  'Previous Service Life': 'previousServiceLife',
+  'WA Solution Description': 'waSolution',
+  'WA Product Used': 'waProduct',
+  'WA Product Category': 'productCategory',
+  'Specify Category': 'productCategoryOther',
+  'Product Description': 'productDescription',
+  'Diameter': 'waProductDiameter',
+  'Solution Value/Revenue': 'solutionValueRevenue',
+  'Annual Potential Revenue': 'annualPotentialRevenue',
+  'Base Metal': 'baseMetal',
+  'General Dimensions': 'generalDimensions',
+  'At least 1 image': 'images',
+  'Technical Advantages': 'technicalAdvantages',
+};
 
 export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: Props) {
   const router = useRouter();
@@ -215,9 +229,12 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
   const [currentStep, setCurrentStep] = useState(initialStep);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [industryLoading, setIndustryLoading] = useState(false);
+  const [isCustomIndustry, setIsCustomIndustry] = useState(false);
+  const [customIndustryText, setCustomIndustryText] = useState('');
+  const [highlightedFields, setHighlightedFields] = useState<string[]>([]);
 
-  // Fetch master list for industries
-  const { items: industries, isLoading: industriesLoading } = useMasterList('Industry', FALLBACK_INDUSTRIES);
+  // Fetch industries from DB (WaMasterList)
+  const { items: industries, isLoading: industriesLoading } = useMasterList('Industry');
 
   // Ref to store full cost calculator values from CostCalculator component
   const costCalcValuesRef = useRef<CostCalculatorValues | null>(
@@ -261,7 +278,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
     location: caseStudy.location,
     country: caseStudy.country || '',
     componentWorkpiece: caseStudy.componentWorkpiece,
-    workType: caseStudy.workType as 'WORKSHOP' | 'ON_SITE' | 'BOTH',
+    workType: caseStudy.workType || '',
     jobType: ((caseStudy as any).jobType as 'PREVENTIVE' | 'CORRECTIVE' | 'IMPROVEMENT' | 'OTHER' | '') || '',
     jobTypeOther: (caseStudy as any).jobTypeOther || '',
     wearType: caseStudy.wearType as string[],
@@ -367,24 +384,72 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
       additionalNotes: wpsData.additionalNotes || undefined,
     } : undefined,
     // Cost calculator form data - loaded from database
-    costCalculator: costCalcData ? {
-      costOfPart: costCalcData.costOfPart?.toString() || '',
-      costOfWaSolution: costCalcData.costOfWaSolution?.toString() || '',
-      partsUsedPerYear: costCalcData.partsUsedPerYear?.toString() || '',
-      // Convert days back to days field (user can adjust if needed)
-      oldLifetimeDays: costCalcData.oldSolutionLifetimeDays?.toString() || '',
-      waLifetimeDays: costCalcData.waSolutionLifetimeDays?.toString() || '',
-      maintenanceCostPerEvent: costCalcData.maintenanceRepairCostBefore?.toString() || '',
-      disassemblyAssemblyCost: costCalcData.disassemblyCostBefore?.toString() || '',
-      downtimeCostPerEvent: costCalcData.downtimeCostPerEvent?.toString() || '',
-      currency: (costCalcData.currency as any) || 'EUR',
-      extraBenefits: costCalcData.extraBenefits || '',
-    } : undefined,
+    costCalculator: costCalcData ? (() => {
+      // Check if granular lifetime fields exist (new format)
+      const hasGranularOldLifetime = (costCalcData as any).oldLifetimeHours ||
+        (costCalcData as any).oldLifetimeDays || (costCalcData as any).oldLifetimeWeeks ||
+        (costCalcData as any).oldLifetimeMonths || (costCalcData as any).oldLifetimeYears;
+      const hasGranularWaLifetime = (costCalcData as any).waLifetimeHours ||
+        (costCalcData as any).waLifetimeDays || (costCalcData as any).waLifetimeWeeks ||
+        (costCalcData as any).waLifetimeMonths || (costCalcData as any).waLifetimeYears;
+
+      return {
+        costOfPart: costCalcData.costOfPart?.toString() || '',
+        costOfWaSolution: costCalcData.costOfWaSolution?.toString() || '',
+        partsUsedPerYear: costCalcData.partsUsedPerYear?.toString() || '',
+        // Restore granular lifetime fields if available, otherwise fall back to legacy days
+        oldLifetimeHours: (costCalcData as any).oldLifetimeHours || '',
+        oldLifetimeDays: hasGranularOldLifetime
+          ? ((costCalcData as any).oldLifetimeDays || '')
+          : (costCalcData.oldSolutionLifetimeDays?.toString() || ''),
+        oldLifetimeWeeks: (costCalcData as any).oldLifetimeWeeks || '',
+        oldLifetimeMonths: (costCalcData as any).oldLifetimeMonths || '',
+        oldLifetimeYears: (costCalcData as any).oldLifetimeYears || '',
+        waLifetimeHours: (costCalcData as any).waLifetimeHours || '',
+        waLifetimeDays: hasGranularWaLifetime
+          ? ((costCalcData as any).waLifetimeDays || '')
+          : (costCalcData.waSolutionLifetimeDays?.toString() || ''),
+        waLifetimeWeeks: (costCalcData as any).waLifetimeWeeks || '',
+        waLifetimeMonths: (costCalcData as any).waLifetimeMonths || '',
+        waLifetimeYears: (costCalcData as any).waLifetimeYears || '',
+        maintenanceCostPerEvent: costCalcData.maintenanceRepairCostBefore?.toString() || '',
+        disassemblyAssemblyCost: costCalcData.disassemblyCostBefore?.toString() || '',
+        downtimeCostPerEvent: costCalcData.downtimeCostPerEvent?.toString() || '',
+        currency: (costCalcData.currency as any) || 'EUR',
+        extraBenefits: costCalcData.extraBenefits || '',
+      };
+    })() : undefined,
   });
 
   const updateFormData = (data: Partial<CaseStudyFormData>) => {
     setFormData((prev) => ({ ...prev, ...data }));
+    // Clear highlighted fields when user edits them
+    if (highlightedFields.length > 0) {
+      const editedFieldIds = Object.keys(data);
+      setHighlightedFields((prev) => prev.filter((id) => !editedFieldIds.includes(id)));
+    }
   };
+
+  // Helper: map missing field labels to field IDs and set highlighted fields
+  const waSetHighlightedFromMissing = (missingFields: string[]) => {
+    const fieldIds = missingFields
+      .map((label) => FIELD_LABEL_TO_ID[label])
+      .filter(Boolean);
+    setHighlightedFields(fieldIds);
+  };
+
+  // Detect custom industry on load (industry not in master list)
+  useEffect(() => {
+    if (industriesLoading || !industries.length) return;
+    const loadedIndustry = caseStudy.industry;
+    if (!loadedIndustry) return;
+    const filteredIndustries = industries.filter(i => i.value.toLowerCase() !== 'other');
+    const isInList = filteredIndustries.some(i => i.value === loadedIndustry);
+    if (!isInList) {
+      setIsCustomIndustry(true);
+      setCustomIndustryText(loadedIndustry);
+    }
+  }, [industriesLoading, industries, caseStudy.industry]);
 
   // Dynamic steps based on case type (includes Qualifier step)
   const STEPS = useMemo(() => {
@@ -406,10 +471,10 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
       baseSteps.push({ number: baseSteps.length + 1, title: 'Cost Reduction Analysis', description: '' });
     }
 
-    // Always add Finalize step last
+    // Always add Finalise step last
     baseSteps.push({
       number: baseSteps.length + 1,
-      title: 'Finalize',
+      title: 'Finalise',
       description: ''
     });
 
@@ -430,7 +495,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
       case 'Customer Info':
         if (!formData.customerName) missing.push('Customer Name');
         if (!formData.customerSelected) missing.push('Customer Selection (click a customer from the list)');
-        if (!formData.industry || formData.industry === '__CUSTOM__') missing.push('Industry');
+        if (!formData.industry) missing.push('Industry');
         if (!formData.qualifierCompleted) missing.push('Qualifier Questions');
         break;
       case 'Basic Info':
@@ -438,7 +503,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
         if (!formData.customerName) missing.push('Customer Name');
         if (!formData.location) missing.push('Location');
         if (!formData.componentWorkpiece) missing.push('Component/Workpiece');
-        if (!formData.workType) missing.push('Work Type');
+        if (!formData.workType) missing.push('Business Type');
         if (!formData.jobType) missing.push('Job Type');
         if (formData.jobType === 'OTHER' && !formData.jobTypeOther) missing.push('Job Type (specify)');
         break;
@@ -522,7 +587,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
           }
         }
         break;
-      case 'Finalize':
+      case 'Finalise':
         if (!formData.solutionValueRevenue) missing.push('Solution Value/Revenue');
         if (!formData.annualPotentialRevenue) missing.push('Annual Potential Revenue');
         break;
@@ -538,6 +603,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
   const handleNext = () => {
     const missingFields = getMissingFields(currentStep);
     if (missingFields.length === 0) {
+      setHighlightedFields([]);
       setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
       // Scroll to top for better UX (scroll the main content area, not window)
       const mainElement = document.querySelector('main.overflow-y-auto');
@@ -545,6 +611,8 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
         mainElement.scrollTo({ top: 0, behavior: 'smooth' });
       }
     } else {
+      // Highlight missing fields with red border
+      waSetHighlightedFromMissing(missingFields);
       // Show specific missing fields in toast
       const fieldList = missingFields.slice(0, 3).join(', ');
       const moreCount = missingFields.length > 3 ? ` and ${missingFields.length - 3} more` : '';
@@ -654,6 +722,17 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
       totalCostAfter: annualCostWA,
       annualSavings,
       savingsPercentage,
+      // Granular lifetime fields - preserve user-entered time units
+      oldLifetimeHours: cc.oldLifetimeHours || '',
+      oldLifetimeDays: cc.oldLifetimeDays || '',
+      oldLifetimeWeeks: cc.oldLifetimeWeeks || '',
+      oldLifetimeMonths: cc.oldLifetimeMonths || '',
+      oldLifetimeYears: cc.oldLifetimeYears || '',
+      waLifetimeHours: cc.waLifetimeHours || '',
+      waLifetimeDays: cc.waLifetimeDays || '',
+      waLifetimeWeeks: cc.waLifetimeWeeks || '',
+      waLifetimeMonths: cc.waLifetimeMonths || '',
+      waLifetimeYears: cc.waLifetimeYears || '',
     };
   };
 
@@ -777,6 +856,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
     }
 
     if (allMissingFields.length > 0) {
+      waSetHighlightedFromMissing(allMissingFields);
       const fieldList = allMissingFields.slice(0, 3).join(', ');
       const moreCount = allMissingFields.length > 3 ? ` and ${allMissingFields.length - 3} more` : '';
       toast.error(`Missing required fields: ${fieldList}${moreCount}`);
@@ -898,6 +978,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
                     // For forward navigation, validate current step first
                     const missingFields = getMissingFields(currentStep);
                     if (missingFields.length === 0) {
+                      setHighlightedFields([]);
                       setCurrentStep(step.number);
                       // Scroll to top for better UX (scroll the main content area, not window)
                       const mainElement = document.querySelector('main.overflow-y-auto');
@@ -905,6 +986,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
                         mainElement.scrollTo({ top: 0, behavior: 'smooth' });
                       }
                     } else {
+                      waSetHighlightedFromMissing(missingFields);
                       const fieldList = missingFields.slice(0, 3).join(', ');
                       const moreCount = missingFields.length > 3 ? ` and ${missingFields.length - 3} more` : '';
                       toast.error(`Complete current step first: ${fieldList}${moreCount}`);
@@ -992,6 +1074,9 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
                   }
                 }}
                 onCustomerSelect={async (customer: NetSuiteCustomer) => {
+                  // Reset custom industry state when new customer is selected
+                  setIsCustomIndustry(false);
+                  setCustomIndustryText('');
                   const updates: Partial<CaseStudyFormData> = {
                     customerName: customer.companyName,
                     customerSelected: true,
@@ -1042,16 +1127,24 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
                   ) : (
                     <>
                       {(() => {
-                        const isOther = formData.industry && !industries.some(i => i.value === formData.industry) && formData.industry !== '__CUSTOM__';
-                        const selectValue = isOther ? '__OTHER__' : formData.industry;
+                        // Build dropdown options: industries from DB + auto-filled value if missing
+                        const filteredIndustries = industries.filter(i => i.value.toLowerCase() !== 'other');
+                        const autoFilledIndustry = !isCustomIndustry && formData.industry
+                          ? formData.industry : null;
+                        const isAutoFilledMissing = autoFilledIndustry &&
+                          !filteredIndustries.some(i => i.value === autoFilledIndustry);
                         return (
                           <>
                             <Select
-                              value={selectValue}
+                              value={isCustomIndustry ? '__OTHER__' : formData.industry}
                               onValueChange={(value) => {
                                 if (value === '__OTHER__') {
-                                  updateFormData({ industry: '__CUSTOM__' });
+                                  setIsCustomIndustry(true);
+                                  setCustomIndustryText('');
+                                  updateFormData({ industry: '' });
                                 } else {
+                                  setIsCustomIndustry(false);
+                                  setCustomIndustryText('');
                                   updateFormData({ industry: value });
                                 }
                               }}
@@ -1061,21 +1154,28 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
                                 <SelectValue placeholder={industriesLoading ? "Loading..." : "Select industry"} />
                               </SelectTrigger>
                               <SelectContent className="dark:bg-popover dark:border-border">
-                                {industries
-                                  .filter((industry) => industry.value.toLowerCase() !== 'other')
-                                  .map((industry) => (
-                                    <SelectItem key={industry.id} value={industry.value}>
-                                      {industry.value}
-                                    </SelectItem>
-                                  ))}
+                                {/* If auto-filled industry isn't in the list, show it first */}
+                                {isAutoFilledMissing && (
+                                  <SelectItem key="__autofill__" value={autoFilledIndustry}>
+                                    {autoFilledIndustry}
+                                  </SelectItem>
+                                )}
+                                {filteredIndustries.map((industry) => (
+                                  <SelectItem key={industry.id} value={industry.value}>
+                                    {industry.value}
+                                  </SelectItem>
+                                ))}
                                 <SelectItem value="__OTHER__">Other (specify)</SelectItem>
                               </SelectContent>
                             </Select>
-                            {(isOther || formData.industry === '__CUSTOM__') && (
+                            {isCustomIndustry && (
                               <Input
                                 placeholder="Enter custom industry..."
-                                value={formData.industry === '__CUSTOM__' ? '' : formData.industry}
-                                onChange={(e) => updateFormData({ industry: e.target.value || '__CUSTOM__' })}
+                                value={customIndustryText}
+                                onChange={(e) => {
+                                  setCustomIndustryText(e.target.value);
+                                  updateFormData({ industry: e.target.value });
+                                }}
                                 className="mt-2 dark:bg-input dark:border-border dark:text-foreground"
                                 autoFocus
                               />
@@ -1083,11 +1183,9 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
                           </>
                         );
                       })()}
-                      {formData.industry && formData.industry !== '__CUSTOM__' && (
+                      {!isCustomIndustry && formData.industry && (
                         <p className="text-xs text-muted-foreground">
-                          {industries.some(i => i.value === formData.industry)
-                            ? 'Industry auto-filled from customer data'
-                            : 'Custom industry specified'}
+                          Industry auto-filled from customer data
                         </p>
                       )}
                     </>
@@ -1095,8 +1193,8 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
                 </div>
               )}
 
-              {/* Qualifier Questions - Only show after customer is selected and industry is selected */}
-              {formData.customerSelected && formData.industry && formData.industry !== '__CUSTOM__' && (
+              {/* Qualifier Questions - show once customer is selected */}
+              {formData.customerSelected && (
                 <ChallengeQualifier
                   key={formData.customerName}
                   customerName={formData.customerName}
@@ -1145,13 +1243,14 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
             <StepTwo
               formData={formData}
               updateFormData={updateFormData}
+              highlightedFields={highlightedFields}
             />
           )}
           {STEPS[currentStep - 1]?.title === 'The Challenge' && (
-            <StepThree formData={formData} updateFormData={updateFormData} />
+            <StepThree formData={formData} updateFormData={updateFormData} highlightedFields={highlightedFields} />
           )}
           {STEPS[currentStep - 1]?.title === 'The Solution' && (
-            <StepFour formData={formData} updateFormData={updateFormData} />
+            <StepFour formData={formData} updateFormData={updateFormData} highlightedFields={highlightedFields} />
           )}
           {STEPS[currentStep - 1]?.title === 'Welding Procedure' && (
             <StepWPS formData={formData} updateFormData={updateFormData} />
@@ -1159,10 +1258,11 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
           {STEPS[currentStep - 1]?.title === 'Cost Reduction Analysis' && (
             <StepCostCalculator formData={formData} updateFormData={updateFormData} />
           )}
-          {STEPS[currentStep - 1]?.title === 'Finalize' && (
+          {STEPS[currentStep - 1]?.title === 'Finalise' && (
             <StepFive
               formData={formData}
               updateFormData={updateFormData}
+              highlightedFields={highlightedFields}
             />
           )}
         </CardContent>

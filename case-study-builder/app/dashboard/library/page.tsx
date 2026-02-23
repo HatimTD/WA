@@ -321,8 +321,15 @@ export default async function LibraryPage({
               {cases.map((caseStudy) => (
                 <Card role="article"
                   key={caseStudy.id}
-                  className="group hover:shadow-xl transition-all duration-300 cursor-pointer dark:bg-card dark:border-border dark:hover:border-primary overflow-hidden"
+                  className="relative group hover:shadow-xl transition-all duration-300 cursor-pointer dark:bg-card dark:border-border dark:hover:border-primary overflow-hidden"
                 >
+                  {/* Full-card clickable overlay link */}
+                  <Link
+                    href={`/dashboard/library/${caseStudy.id}`}
+                    className="absolute inset-0 z-0"
+                    aria-label={`View details for ${caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}`}
+                  />
+
                   {/* Type Badge Banner */}
                   <div className={`h-1.5 ${
                     caseStudy.type === 'STAR'
@@ -368,7 +375,10 @@ export default async function LibraryPage({
                           {caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}
                         </CardTitle>
                       </div>
-                      <SaveButton caseStudyId={caseStudy.id} variant="icon" size="sm" />
+                      {/* SaveButton sits above the overlay so it captures its own clicks */}
+                      <div className="relative z-10">
+                        <SaveButton caseStudyId={caseStudy.id} variant="icon" size="sm" />
+                      </div>
                     </div>
                     <CardDescription className="flex items-center gap-1 text-sm dark:text-muted-foreground mt-1">
                       <span className="truncate">{caseStudy.industry}</span>
@@ -443,12 +453,15 @@ export default async function LibraryPage({
                       )}
                     </div>
 
-                    <Link href={`/dashboard/library/${caseStudy.id}`} className="block">
-                      <Button className="w-full gap-2 bg-wa-green-600 hover:bg-wa-green-700 dark:bg-primary dark:hover:bg-primary/90 transition-all group-hover:shadow-md">
-                        View Details
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
-                    </Link>
+                    {/* View Details button sits above the overlay for visual affordance */}
+                    <div className="relative z-10">
+                      <Link href={`/dashboard/library/${caseStudy.id}`} className="block">
+                        <Button className="w-full gap-2 bg-wa-green-600 hover:bg-wa-green-700 dark:bg-primary dark:hover:bg-primary/90 transition-all group-hover:shadow-md">
+                          View Details
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                    </div>
                   </CardContent>
                 </Card>
               ))}

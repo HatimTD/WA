@@ -27,22 +27,6 @@ import { NetSuiteCustomer } from '@/lib/integrations/netsuite';
 import { useMasterList } from '@/lib/hooks/use-master-list';
 import { Building2, Loader2 } from 'lucide-react';
 
-// Fallback industries if Master List API fails
-const FALLBACK_INDUSTRIES = [
-  { id: 'mining', value: 'Mining & Quarrying', sortOrder: 0 },
-  { id: 'cement', value: 'Cement', sortOrder: 1 },
-  { id: 'steel', value: 'Steel & Metal Processing', sortOrder: 2 },
-  { id: 'power', value: 'Power Generation', sortOrder: 3 },
-  { id: 'pulp', value: 'Pulp & Paper', sortOrder: 4 },
-  { id: 'oil', value: 'Oil & Gas', sortOrder: 5 },
-  { id: 'chemical', value: 'Chemical & Petrochemical', sortOrder: 6 },
-  { id: 'marine', value: 'Marine', sortOrder: 7 },
-  { id: 'agriculture', value: 'Agriculture', sortOrder: 8 },
-  { id: 'construction', value: 'Construction', sortOrder: 9 },
-  { id: 'recycling', value: 'Recycling', sortOrder: 10 },
-  { id: 'other', value: 'Other', sortOrder: 11 },
-];
-
 export type CaseStudyFormData = {
   // Step 1: Case Type
   type: 'APPLICATION' | 'TECH' | 'STAR';
@@ -65,7 +49,7 @@ export type CaseStudyFormData = {
   location: string;
   country: string;
   componentWorkpiece: string;
-  workType: 'WORKSHOP' | 'ON_SITE' | 'BOTH';
+  workType: string;
   jobType: 'PREVENTIVE' | 'CORRECTIVE' | 'IMPROVEMENT' | 'OTHER' | ''; // Type of maintenance job
   jobTypeOther: string; // Custom job type when "OTHER" is selected
   wearType: string[];
@@ -236,14 +220,48 @@ export type CaseStudyFormData = {
   };
 };
 
+// Map missing field labels (from getMissingFields) to form field IDs (used in step components)
+const FIELD_LABEL_TO_ID: Record<string, string> = {
+  'Industrial Challenge Title': 'title',
+  'General Description': 'generalDescription',
+  'Customer Name': 'customerName',
+  'Industry': 'industry',
+  'Location': 'location',
+  'Country': 'country',
+  'Component/Workpiece': 'componentWorkpiece',
+  'Business Type': 'workType',
+  'Job Type': 'jobType',
+  'Job Type (specify)': 'jobTypeOther',
+  'Type of Wear': 'wearType',
+  'Wear Severity (set for at least one wear type)': 'wearType',
+  'Problem Description': 'problemDescription',
+  'Previous Service Life': 'previousServiceLife',
+  'WA Solution Description': 'waSolution',
+  'WA Product Used': 'waProduct',
+  'WA Product Category': 'productCategory',
+  'Specify Category': 'productCategoryOther',
+  'Product Description': 'productDescription',
+  'Diameter': 'waProductDiameter',
+  'Solution Value/Revenue': 'solutionValueRevenue',
+  'Annual Potential Revenue': 'annualPotentialRevenue',
+  'Base Metal': 'baseMetal',
+  'General Dimensions': 'generalDimensions',
+  'At least 1 image': 'images',
+  'Job Duration': 'jobDuration',
+  'Technical Advantages': 'technicalAdvantages',
+};
+
 export default function NewCaseStudyPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [industryLoading, setIndustryLoading] = useState(false);
+  const [isCustomIndustry, setIsCustomIndustry] = useState(false);
+  const [customIndustryText, setCustomIndustryText] = useState('');
+  const [highlightedFields, setHighlightedFields] = useState<string[]>([]);
 
-  // Fetch master list for industries
-  const { items: industries, isLoading: industriesLoading } = useMasterList('Industry', FALLBACK_INDUSTRIES);
+  // Fetch industries from DB (WaMasterList)
+  const { items: industries, isLoading: industriesLoading } = useMasterList('Industry');
 
   const [formData, setFormData] = useState<CaseStudyFormData>({
     type: 'APPLICATION',
@@ -258,7 +276,7 @@ export default function NewCaseStudyPage() {
     location: '',
     country: '',
     componentWorkpiece: '',
-    workType: 'WORKSHOP',
+    workType: 'INTEGRA_WORKSHOP',
     jobType: '',
     jobTypeOther: '',
     wearType: [],
@@ -329,10 +347,10 @@ export default function NewCaseStudyPage() {
       baseSteps.push({ number: baseSteps.length + 1, title: 'Cost Reduction Analysis', description: '' });
     }
 
-    // Always add Finalize step last
+    // Always add Finalise step last
     baseSteps.push({
       number: baseSteps.length + 1,
-      title: 'Finalize',
+      title: 'Finalise',
       description: ''
     });
 
@@ -341,6 +359,19 @@ export default function NewCaseStudyPage() {
 
   const updateFormData = (data: Partial<CaseStudyFormData>) => {
     setFormData((prev) => ({ ...prev, ...data }));
+    // Clear highlighted fields when user edits them
+    if (highlightedFields.length > 0) {
+      const editedFieldIds = Object.keys(data);
+      setHighlightedFields((prev) => prev.filter((id) => !editedFieldIds.includes(id)));
+    }
+  };
+
+  // Helper: map missing field labels to field IDs and set highlighted fields
+  const waSetHighlightedFromMissing = (missingFields: string[]) => {
+    const fieldIds = missingFields
+      .map((label) => FIELD_LABEL_TO_ID[label])
+      .filter(Boolean);
+    setHighlightedFields(fieldIds);
   };
 
   // Get missing fields for a step (returns array of field names that are missing)
@@ -357,7 +388,7 @@ export default function NewCaseStudyPage() {
       case 'Customer Info':
         if (!formData.customerName) missing.push('Customer Name');
         if (!formData.customerSelected) missing.push('Customer Selection (click a customer from the list)');
-        if (!formData.industry || formData.industry === '__CUSTOM__') missing.push('Industry');
+        if (!formData.industry) missing.push('Industry');
         if (!formData.qualifierCompleted) missing.push('Qualifier Questions');
         break;
       case 'Basic Info':
@@ -366,7 +397,7 @@ export default function NewCaseStudyPage() {
         if (!formData.location) missing.push('Location');
         if (!formData.country) missing.push('Country');
         if (!formData.componentWorkpiece) missing.push('Component/Workpiece');
-        if (!formData.workType) missing.push('Work Type');
+        if (!formData.workType) missing.push('Business Type');
         if (!formData.jobType) missing.push('Job Type');
         if (formData.jobType === 'OTHER' && !formData.jobTypeOther) missing.push('Job Type (specify)');
         break;
@@ -421,7 +452,7 @@ export default function NewCaseStudyPage() {
           formData.jobDurationYears;
         if (!hasJobDuration) missing.push('Job Duration');
         if (!formData.technicalAdvantages) missing.push('Technical Advantages');
-        if (!formData.images || formData.images.length < 2) missing.push('At least 2 images');
+        if (!formData.images || formData.images.length < 1) missing.push('At least 1 image');
         break;
       case 'Welding Procedure':
         // WPS is required for TECH cases
@@ -467,7 +498,7 @@ export default function NewCaseStudyPage() {
         if (!hasWaLifetime) missing.push('WA Solution Lifetime');
         // Event costs are optional (default to 0 if not provided)
         break;
-      case 'Finalize':
+      case 'Finalise':
         if (!formData.solutionValueRevenue) missing.push('Solution Value/Revenue');
         if (!formData.annualPotentialRevenue) missing.push('Annual Potential Revenue');
         break;
@@ -483,6 +514,7 @@ export default function NewCaseStudyPage() {
   const handleNext = () => {
     const missingFields = getMissingFields(currentStep);
     if (missingFields.length === 0) {
+      setHighlightedFields([]);
       setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
       // Scroll to top for better UX (scroll the main content area, not window)
       const mainElement = document.querySelector('main.overflow-y-auto');
@@ -490,6 +522,8 @@ export default function NewCaseStudyPage() {
         mainElement.scrollTo({ top: 0, behavior: 'smooth' });
       }
     } else {
+      // Highlight missing fields with red border
+      waSetHighlightedFromMissing(missingFields);
       // Show specific missing fields in toast
       const fieldList = missingFields.slice(0, 3).join(', ');
       const moreCount = missingFields.length > 3 ? ` and ${missingFields.length - 3} more` : '';
@@ -610,6 +644,17 @@ export default function NewCaseStudyPage() {
       totalCostAfter: annualCostWA,
       annualSavings,
       savingsPercentage,
+      // Granular lifetime fields - preserve user-entered time units
+      oldLifetimeHours: cc.oldLifetimeHours || '',
+      oldLifetimeDays: cc.oldLifetimeDays || '',
+      oldLifetimeWeeks: cc.oldLifetimeWeeks || '',
+      oldLifetimeMonths: cc.oldLifetimeMonths || '',
+      oldLifetimeYears: cc.oldLifetimeYears || '',
+      waLifetimeHours: cc.waLifetimeHours || '',
+      waLifetimeDays: cc.waLifetimeDays || '',
+      waLifetimeWeeks: cc.waLifetimeWeeks || '',
+      waLifetimeMonths: cc.waLifetimeMonths || '',
+      waLifetimeYears: cc.waLifetimeYears || '',
     };
   };
 
@@ -690,14 +735,21 @@ export default function NewCaseStudyPage() {
   };
 
   const handleSubmit = async () => {
-    // Validate all required steps
+    // Validate all required steps (including Finalise which has revenue fields)
     const hasWPS = formData.type === 'TECH' || formData.type === 'STAR';
     const hasCostCalc = formData.type === 'STAR';
-    for (let i = 1; i <= STEPS.length - 1; i++) { // -1 to exclude Review step
-      if (!validateStep(i)) {
-        toast.error('Please complete all required fields');
-        return;
-      }
+    const allMissingFields: string[] = [];
+    for (let i = 1; i <= STEPS.length; i++) {
+      const stepMissing = getMissingFields(i);
+      allMissingFields.push(...stepMissing);
+    }
+
+    if (allMissingFields.length > 0) {
+      waSetHighlightedFromMissing(allMissingFields);
+      const fieldList = allMissingFields.slice(0, 3).join(', ');
+      const moreCount = allMissingFields.length > 3 ? ` and ${allMissingFields.length - 3} more` : '';
+      toast.error(`Missing required fields: ${fieldList}${moreCount}`);
+      return;
     }
 
     setIsSubmitting(true);
@@ -768,6 +820,7 @@ export default function NewCaseStudyPage() {
                     // For forward navigation, validate current step first
                     const missingFields = getMissingFields(currentStep);
                     if (missingFields.length === 0) {
+                      setHighlightedFields([]);
                       setCurrentStep(step.number);
                       // Scroll to top for better UX (scroll the main content area, not window)
                       const mainElement = document.querySelector('main.overflow-y-auto');
@@ -775,6 +828,7 @@ export default function NewCaseStudyPage() {
                         mainElement.scrollTo({ top: 0, behavior: 'smooth' });
                       }
                     } else {
+                      waSetHighlightedFromMissing(missingFields);
                       const fieldList = missingFields.slice(0, 3).join(', ');
                       const moreCount = missingFields.length > 3 ? ` and ${missingFields.length - 3} more` : '';
                       toast.error(`Complete current step first: ${fieldList}${moreCount}`);
@@ -861,6 +915,9 @@ export default function NewCaseStudyPage() {
                   }
                 }}
                 onCustomerSelect={async (customer: NetSuiteCustomer) => {
+                  // Reset custom industry state when new customer is selected
+                  setIsCustomIndustry(false);
+                  setCustomIndustryText('');
                   // Auto-fill fields from NetSuite data and mark as selected
                   const updates: Partial<CaseStudyFormData> = {
                     customerName: customer.companyName,
@@ -919,16 +976,24 @@ export default function NewCaseStudyPage() {
                   ) : (
                     <>
                       {(() => {
-                        const isOther = formData.industry && !industries.some(i => i.value === formData.industry) && formData.industry !== '__CUSTOM__';
-                        const selectValue = isOther ? '__OTHER__' : formData.industry;
+                        // Build dropdown options: industries from DB + auto-filled value if missing
+                        const filteredIndustries = industries.filter(i => i.value.toLowerCase() !== 'other');
+                        const autoFilledIndustry = !isCustomIndustry && formData.industry
+                          ? formData.industry : null;
+                        const isAutoFilledMissing = autoFilledIndustry &&
+                          !filteredIndustries.some(i => i.value === autoFilledIndustry);
                         return (
                           <>
                             <Select
-                              value={selectValue}
+                              value={isCustomIndustry ? '__OTHER__' : formData.industry}
                               onValueChange={(value) => {
                                 if (value === '__OTHER__') {
-                                  updateFormData({ industry: '__CUSTOM__' });
+                                  setIsCustomIndustry(true);
+                                  setCustomIndustryText('');
+                                  updateFormData({ industry: '' });
                                 } else {
+                                  setIsCustomIndustry(false);
+                                  setCustomIndustryText('');
                                   updateFormData({ industry: value });
                                 }
                               }}
@@ -938,21 +1003,28 @@ export default function NewCaseStudyPage() {
                                 <SelectValue placeholder={industriesLoading ? "Loading..." : "Select industry"} />
                               </SelectTrigger>
                               <SelectContent className="dark:bg-popover dark:border-border">
-                                {industries
-                                  .filter((industry) => industry.value.toLowerCase() !== 'other')
-                                  .map((industry) => (
-                                    <SelectItem key={industry.id} value={industry.value}>
-                                      {industry.value}
-                                    </SelectItem>
-                                  ))}
+                                {/* If auto-filled industry isn't in the list, show it first */}
+                                {isAutoFilledMissing && (
+                                  <SelectItem key="__autofill__" value={autoFilledIndustry}>
+                                    {autoFilledIndustry}
+                                  </SelectItem>
+                                )}
+                                {filteredIndustries.map((industry) => (
+                                  <SelectItem key={industry.id} value={industry.value}>
+                                    {industry.value}
+                                  </SelectItem>
+                                ))}
                                 <SelectItem value="__OTHER__">Other (specify)</SelectItem>
                               </SelectContent>
                             </Select>
-                            {(isOther || formData.industry === '__CUSTOM__') && (
+                            {isCustomIndustry && (
                               <Input
                                 placeholder="Enter custom industry..."
-                                value={formData.industry === '__CUSTOM__' ? '' : formData.industry}
-                                onChange={(e) => updateFormData({ industry: e.target.value || '__CUSTOM__' })}
+                                value={customIndustryText}
+                                onChange={(e) => {
+                                  setCustomIndustryText(e.target.value);
+                                  updateFormData({ industry: e.target.value });
+                                }}
                                 className="mt-2 dark:bg-input dark:border-border dark:text-foreground"
                                 autoFocus
                               />
@@ -960,11 +1032,9 @@ export default function NewCaseStudyPage() {
                           </>
                         );
                       })()}
-                      {formData.industry && formData.industry !== '__CUSTOM__' && (
+                      {!isCustomIndustry && formData.industry && (
                         <p className="text-xs text-muted-foreground">
-                          {industries.some(i => i.value === formData.industry)
-                            ? 'Industry auto-filled from customer data'
-                            : 'Custom industry specified'}
+                          Industry auto-filled from customer data
                         </p>
                       )}
                     </>
@@ -972,8 +1042,8 @@ export default function NewCaseStudyPage() {
                 </div>
               )}
 
-              {/* Challenge Qualifier - only show once customer is SELECTED and industry is selected */}
-              {formData.customerSelected && formData.customerName && formData.industry && formData.industry !== '__CUSTOM__' && (
+              {/* Challenge Qualifier - show once customer is SELECTED */}
+              {formData.customerSelected && formData.customerName && (
                 <ChallengeQualifier
                   key={formData.customerName} // Force re-mount when customer changes
                   customerName={formData.customerName}
@@ -1021,13 +1091,14 @@ export default function NewCaseStudyPage() {
             <StepTwo
               formData={formData}
               updateFormData={updateFormData}
+              highlightedFields={highlightedFields}
             />
           )}
           {STEPS[currentStep - 1]?.title === 'The Challenge' && (
-            <StepThree formData={formData} updateFormData={updateFormData} />
+            <StepThree formData={formData} updateFormData={updateFormData} highlightedFields={highlightedFields} />
           )}
           {STEPS[currentStep - 1]?.title === 'The Solution' && (
-            <StepFour formData={formData} updateFormData={updateFormData} />
+            <StepFour formData={formData} updateFormData={updateFormData} highlightedFields={highlightedFields} />
           )}
           {STEPS[currentStep - 1]?.title === 'Welding Procedure' && (
             <StepWPS formData={formData} updateFormData={updateFormData} />
@@ -1035,8 +1106,8 @@ export default function NewCaseStudyPage() {
           {STEPS[currentStep - 1]?.title === 'Cost Reduction Analysis' && (
             <StepCostCalculator formData={formData} updateFormData={updateFormData} />
           )}
-          {STEPS[currentStep - 1]?.title === 'Finalize' && (
-            <StepFive formData={formData} updateFormData={updateFormData} />
+          {STEPS[currentStep - 1]?.title === 'Finalise' && (
+            <StepFive formData={formData} updateFormData={updateFormData} highlightedFields={highlightedFields} />
           )}
         </CardContent>
       </Card>

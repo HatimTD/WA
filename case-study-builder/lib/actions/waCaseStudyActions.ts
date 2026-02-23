@@ -6,6 +6,7 @@ import { logger } from '@/lib/logger';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { waAutoTranslateOnSubmit } from './waTranslationActions';
+import { waCreateNotification } from './waNotificationActions';
 
 type WaCreateCaseStudyInput = {
   type: 'APPLICATION' | 'TECH' | 'STAR';
@@ -17,7 +18,7 @@ type WaCreateCaseStudyInput = {
   location: string;
   country: string;
   componentWorkpiece: string;
-  workType: 'WORKSHOP' | 'ON_SITE' | 'BOTH';
+  workType: string;
   wearType: string[];
   wearSeverities?: Record<string, number>; // { "ABRASION": 3, "IMPACT": 2, ... }
   wearTypeOthers?: Array<{ name: string; severity: number }>; // Custom wear types
@@ -108,7 +109,7 @@ export async function waCreateCaseStudy(data: WaCreateCaseStudyInput) {
         location: data.location,
         country: data.country || null,
         componentWorkpiece: data.componentWorkpiece,
-        workType: data.workType,
+        workType: data.workType as any,
         wearType: normalizedWearType as any,
         wearSeverities: data.wearSeverities || undefined,
         wearTypeOthers: data.wearTypeOthers || undefined,
@@ -187,6 +188,36 @@ export async function waCreateCaseStudy(data: WaCreateCaseStudyInput) {
       } catch (err) {
         console.error(`[Case Study] Auto-translation failed for ${caseStudy.id}:`, err);
         // Don't fail the submission if translation fails
+      }
+    }
+
+    // Notify approvers when a case study is submitted
+    if (data.status === 'SUBMITTED' && caseStudy.id) {
+      try {
+        // Find all APPROVER and ADMIN users (exclude the submitter)
+        const approvers = await prisma.user.findMany({
+          where: {
+            role: { in: ['APPROVER', 'ADMIN'] },
+            id: { not: session.user.id },
+          },
+          select: { id: true },
+        });
+
+        // Create notification for each approver using the shared helper
+        await Promise.all(
+          approvers.map((approver) =>
+            waCreateNotification({
+              userId: approver.id,
+              type: 'CASE_SUBMITTED',
+              title: 'New Case Study Submitted',
+              message: `A new case study "${data.title || data.customerName}" has been submitted for approval.`,
+              link: `/dashboard/approvals/${caseStudy.id}`,
+            })
+          )
+        );
+      } catch (notifError) {
+        // Don't block the submission if notifications fail
+        console.error('Failed to send approver notifications:', notifError);
       }
     }
 
@@ -376,6 +407,34 @@ export async function waUpdateCaseStudy(id: string, data: any) {
       } catch (err) {
         console.error(`[Case Study] Auto-translation failed for ${id}:`, err);
         // Don't fail the update if translation fails
+      }
+    }
+
+    // Notify approvers when a case study status changes to SUBMITTED
+    if (data.status === 'SUBMITTED') {
+      try {
+        const approvers = await prisma.user.findMany({
+          where: {
+            role: { in: ['APPROVER', 'ADMIN'] },
+            id: { not: session.user.id },
+          },
+          select: { id: true },
+        });
+
+        await Promise.all(
+          approvers.map((approver) =>
+            waCreateNotification({
+              userId: approver.id,
+              type: 'CASE_SUBMITTED',
+              title: 'New Case Study Submitted',
+              message: `A case study "${data.title || 'Untitled'}" has been submitted for approval.`,
+              link: `/dashboard/approvals/${id}`,
+            })
+          )
+        );
+      } catch (notifError) {
+        // Don't block the update if notifications fail
+        console.error('Failed to send approver notifications:', notifError);
       }
     }
 

@@ -8,9 +8,11 @@ import { ShareButton } from '@/components/share-button';
 import CostCalculatorDisplay from '@/components/cost-calculator-display';
 import { WearTypeStarsDisplay } from '@/components/wear-type-progress-bar';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
 import { auth } from '@/auth';
-import type { CaseStudyPDFData } from '@/lib/export_pdf_design3';
+import EnhancedCommentsSection from '@/components/enhanced-comments-section';
+import { waGetComments } from '@/lib/actions/waCommentActions';
+// PDF EXPORT DISABLED - import dynamic from 'next/dynamic';
+// PDF EXPORT DISABLED - import type { CaseStudyPDFData } from '@/lib/export_pdf_design3';
 import {
   ArrowLeft,
   MapPin,
@@ -29,14 +31,14 @@ import {
 import type { WpsLayer } from '@/lib/actions/waWpsActions';
 import { waFormatJobType, waFormatProductCategory, waGetProductDisplay } from '@/lib/waUtils';
 
-// Dynamic import for PDF export
-const PDFExportButton = dynamic(() => import('@/components/pdf-export-button'), {
-  loading: () => (
-    <button className="px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse">
-      <span className="text-gray-400">Loading...</span>
-    </button>
-  ),
-});
+// PDF EXPORT DISABLED - Dynamic import for PDF export
+// const PDFExportButton = dynamic(() => import('@/components/pdf-export-button'), {
+//   loading: () => (
+//     <button className="px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse">
+//       <span className="text-gray-400">Loading...</span>
+//     </button>
+//   ),
+// });
 
 // BRD 5.4.4 - Language display names for translation notice
 const languageNames: Record<string, string> = {
@@ -97,7 +99,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const caseStudy = await prisma.waCaseStudy.findUnique({
     where: { id },
-    select: { customerName: true, industry: true, status: true },
+    select: { industry: true, status: true },
   });
 
   if (!caseStudy || caseStudy.status !== 'APPROVED') {
@@ -107,8 +109,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   }
 
   return {
-    title: `${caseStudy.customerName} - ${caseStudy.industry} | Case Study Library`,
-    description: `Industrial case study from ${caseStudy.industry} industry`,
+    title: `Case Study Details - ${caseStudy.industry}`,
+    description: `Industrial case study from the ${caseStudy.industry} industry`,
   };
 }
 
@@ -152,108 +154,112 @@ export default async function PublicCaseDetailPage({
     notFound();
   }
 
-  // Get session for PDF export
+  // Get session for comments and PDF export
   const session = await auth();
 
-  // Prepare PDF export data (same as cases detail page for consistency)
-  const pdfData: CaseStudyPDFData = {
-    id: caseStudy.id,
-    type: caseStudy.type as 'APPLICATION' | 'TECH' | 'STAR',
-    title: caseStudy.title || undefined,
-    customerName: caseStudy.customerName,
-    industry: caseStudy.industry,
-    componentWorkpiece: caseStudy.componentWorkpiece,
-    workType: caseStudy.workType || undefined,
-    wearType: caseStudy.wearType,
-    wearSeverities: caseStudy.wearSeverities as Record<string, number> | undefined,
-    wearTypeOthers: (caseStudy.wearTypeOthers as Array<{ name: string; severity: number }>) || undefined,
-    problemDescription: caseStudy.problemDescription,
-    previousSolution: caseStudy.previousSolution || undefined,
-    previousServiceLife: waFormatExpandedServiceLife({
-      hours: caseStudy.previousServiceLifeHours,
-      days: caseStudy.previousServiceLifeDays,
-      weeks: caseStudy.previousServiceLifeWeeks,
-      months: caseStudy.previousServiceLifeMonths,
-      years: caseStudy.previousServiceLifeYears,
-    }) || caseStudy.previousServiceLife || undefined,
-    competitorName: caseStudy.competitorName || undefined,
-    baseMetal: caseStudy.baseMetal || undefined,
-    generalDimensions: caseStudy.generalDimensions || undefined,
-    waSolution: caseStudy.waSolution,
-    productCategory: (caseStudy as any).productCategory || undefined,
-    productCategoryOther: (caseStudy as any).productCategoryOther || undefined,
-    waProduct: caseStudy.waProduct,
-    waProductDiameter: caseStudy.waProductDiameter || undefined,
-    productDescription: (caseStudy as any).productDescription || undefined,
-    technicalAdvantages: caseStudy.technicalAdvantages || undefined,
-    expectedServiceLife: waFormatExpandedServiceLife({
-      hours: caseStudy.expectedServiceLifeHours,
-      days: caseStudy.expectedServiceLifeDays,
-      weeks: caseStudy.expectedServiceLifeWeeks,
-      months: caseStudy.expectedServiceLifeMonths,
-      years: caseStudy.expectedServiceLifeYears,
-    }) || caseStudy.expectedServiceLife || undefined,
-    revenueCurrency: caseStudy.revenueCurrency || 'EUR',
-    solutionValueRevenue: caseStudy.solutionValueRevenue ? Number(caseStudy.solutionValueRevenue) : undefined,
-    annualPotentialRevenue: caseStudy.annualPotentialRevenue ? Number(caseStudy.annualPotentialRevenue) : undefined,
-    customerSavingsAmount: caseStudy.customerSavingsAmount ? Number(caseStudy.customerSavingsAmount) : undefined,
-    location: caseStudy.location,
-    country: caseStudy.country || undefined,
-    // Job info
-    jobType: caseStudy.jobType || undefined,
-    jobTypeOther: caseStudy.jobTypeOther || undefined,
-    oem: caseStudy.oem || undefined,
-    jobDurationHours: caseStudy.jobDurationHours || undefined,
-    jobDurationDays: caseStudy.jobDurationDays || undefined,
-    jobDurationWeeks: caseStudy.jobDurationWeeks || undefined,
-    jobDurationMonths: (caseStudy as any).jobDurationMonths || undefined,
-    jobDurationYears: (caseStudy as any).jobDurationYears || undefined,
-    // People
-    contributor: {
-      name: caseStudy.contributor?.name || 'Unknown',
-    },
-    approver: caseStudy.approver ? {
-      name: caseStudy.approver.name || 'Unknown',
-    } : undefined,
-    // Dates
-    createdAt: caseStudy.createdAt,
-    approvedAt: caseStudy.approvedAt || undefined,
-    // Translation fields
-    originalLanguage: caseStudy.originalLanguage || undefined,
-    translationAvailable: caseStudy.translationAvailable || undefined,
-    translatedText: caseStudy.translatedText || undefined,
-    // Cost calculator
-    costCalculator: caseStudy.costCalculator ? {
-      costOfPart: caseStudy.costCalculator.costOfPart ? Number(caseStudy.costCalculator.costOfPart) : undefined,
-      costOfWaSolution: caseStudy.costCalculator.costOfWaSolution ? Number(caseStudy.costCalculator.costOfWaSolution) : undefined,
-      oldSolutionLifetimeDays: caseStudy.costCalculator.oldSolutionLifetimeDays || undefined,
-      waSolutionLifetimeDays: caseStudy.costCalculator.waSolutionLifetimeDays || undefined,
-      partsUsedPerYear: caseStudy.costCalculator.partsUsedPerYear || undefined,
-      currency: caseStudy.costCalculator.currency || undefined,
-      annualSavings: caseStudy.costCalculator.annualSavings ? Number(caseStudy.costCalculator.annualSavings) : undefined,
-      savingsPercentage: caseStudy.costCalculator.savingsPercentage ? Number(caseStudy.costCalculator.savingsPercentage) : undefined,
-    } : undefined,
-    // WPS data for TECH and STAR cases
-    wps: caseStudy.wps ? {
-      numberOfLayers: caseStudy.wps.layerNumbers?.toString() || undefined,
-      process: caseStudy.wps.weldingProcess || undefined,
-      technique: caseStudy.wps.currentModeSynergy || undefined,
-      weldingPosition: caseStudy.wps.weldingPosition || undefined,
-      torchPosition: caseStudy.wps.torchAngle || undefined,
-      voltage: caseStudy.wps.voltage || undefined,
-      intensity: caseStudy.wps.intensity || undefined,
-      wireSpeed: caseStudy.wps.wireFeedSpeed || undefined,
-      oscillationWidth: caseStudy.wps.oscillationWidth || undefined,
-      oscillationSpeed: caseStudy.wps.oscillationSpeed || undefined,
-      stickOut: caseStudy.wps.stickOut || undefined,
-      weldingSpeed: caseStudy.wps.travelSpeed || undefined,
-      shieldingGas: caseStudy.wps.shieldingGas || undefined,
-      flowRate: caseStudy.wps.shieldingFlowRate || undefined,
-      preheatTemperature: caseStudy.wps.preheatTemperature || undefined,
-      interpassTemperature: caseStudy.wps.interpassTemperature || undefined,
-      pwht: caseStudy.wps.pwhtDetails || undefined,
-    } : undefined,
-  };
+  // Fetch comments for the case study
+  const commentsResult = await waGetComments(id);
+  const comments = commentsResult.comments || [];
+
+  // PDF EXPORT DISABLED - Prepare PDF export data (same as cases detail page for consistency)
+  // const pdfData: CaseStudyPDFData = {
+  //   id: caseStudy.id,
+  //   type: caseStudy.type as 'APPLICATION' | 'TECH' | 'STAR',
+  //   title: caseStudy.title || undefined,
+  //   customerName: caseStudy.customerName,
+  //   industry: caseStudy.industry,
+  //   componentWorkpiece: caseStudy.componentWorkpiece,
+  //   workType: caseStudy.workType || undefined,
+  //   wearType: caseStudy.wearType,
+  //   wearSeverities: caseStudy.wearSeverities as Record<string, number> | undefined,
+  //   wearTypeOthers: (caseStudy.wearTypeOthers as Array<{ name: string; severity: number }>) || undefined,
+  //   problemDescription: caseStudy.problemDescription,
+  //   previousSolution: caseStudy.previousSolution || undefined,
+  //   previousServiceLife: waFormatExpandedServiceLife({
+  //     hours: caseStudy.previousServiceLifeHours,
+  //     days: caseStudy.previousServiceLifeDays,
+  //     weeks: caseStudy.previousServiceLifeWeeks,
+  //     months: caseStudy.previousServiceLifeMonths,
+  //     years: caseStudy.previousServiceLifeYears,
+  //   }) || caseStudy.previousServiceLife || undefined,
+  //   competitorName: caseStudy.competitorName || undefined,
+  //   baseMetal: caseStudy.baseMetal || undefined,
+  //   generalDimensions: caseStudy.generalDimensions || undefined,
+  //   waSolution: caseStudy.waSolution,
+  //   productCategory: (caseStudy as any).productCategory || undefined,
+  //   productCategoryOther: (caseStudy as any).productCategoryOther || undefined,
+  //   waProduct: caseStudy.waProduct,
+  //   waProductDiameter: caseStudy.waProductDiameter || undefined,
+  //   productDescription: (caseStudy as any).productDescription || undefined,
+  //   technicalAdvantages: caseStudy.technicalAdvantages || undefined,
+  //   expectedServiceLife: waFormatExpandedServiceLife({
+  //     hours: caseStudy.expectedServiceLifeHours,
+  //     days: caseStudy.expectedServiceLifeDays,
+  //     weeks: caseStudy.expectedServiceLifeWeeks,
+  //     months: caseStudy.expectedServiceLifeMonths,
+  //     years: caseStudy.expectedServiceLifeYears,
+  //   }) || caseStudy.expectedServiceLife || undefined,
+  //   revenueCurrency: caseStudy.revenueCurrency || 'EUR',
+  //   solutionValueRevenue: caseStudy.solutionValueRevenue ? Number(caseStudy.solutionValueRevenue) : undefined,
+  //   annualPotentialRevenue: caseStudy.annualPotentialRevenue ? Number(caseStudy.annualPotentialRevenue) : undefined,
+  //   customerSavingsAmount: caseStudy.customerSavingsAmount ? Number(caseStudy.customerSavingsAmount) : undefined,
+  //   location: caseStudy.location,
+  //   country: caseStudy.country || undefined,
+  //   // Job info
+  //   jobType: caseStudy.jobType || undefined,
+  //   jobTypeOther: caseStudy.jobTypeOther || undefined,
+  //   oem: caseStudy.oem || undefined,
+  //   jobDurationHours: caseStudy.jobDurationHours || undefined,
+  //   jobDurationDays: caseStudy.jobDurationDays || undefined,
+  //   jobDurationWeeks: caseStudy.jobDurationWeeks || undefined,
+  //   jobDurationMonths: (caseStudy as any).jobDurationMonths || undefined,
+  //   jobDurationYears: (caseStudy as any).jobDurationYears || undefined,
+  //   // People
+  //   contributor: {
+  //     name: caseStudy.contributor?.name || 'Unknown',
+  //   },
+  //   approver: caseStudy.approver ? {
+  //     name: caseStudy.approver.name || 'Unknown',
+  //   } : undefined,
+  //   // Dates
+  //   createdAt: caseStudy.createdAt,
+  //   approvedAt: caseStudy.approvedAt || undefined,
+  //   // Translation fields
+  //   originalLanguage: caseStudy.originalLanguage || undefined,
+  //   translationAvailable: caseStudy.translationAvailable || undefined,
+  //   translatedText: caseStudy.translatedText || undefined,
+  //   // Cost calculator
+  //   costCalculator: caseStudy.costCalculator ? {
+  //     costOfPart: caseStudy.costCalculator.costOfPart ? Number(caseStudy.costCalculator.costOfPart) : undefined,
+  //     costOfWaSolution: caseStudy.costCalculator.costOfWaSolution ? Number(caseStudy.costCalculator.costOfWaSolution) : undefined,
+  //     oldSolutionLifetimeDays: caseStudy.costCalculator.oldSolutionLifetimeDays || undefined,
+  //     waSolutionLifetimeDays: caseStudy.costCalculator.waSolutionLifetimeDays || undefined,
+  //     partsUsedPerYear: caseStudy.costCalculator.partsUsedPerYear || undefined,
+  //     currency: caseStudy.costCalculator.currency || undefined,
+  //     annualSavings: caseStudy.costCalculator.annualSavings ? Number(caseStudy.costCalculator.annualSavings) : undefined,
+  //     savingsPercentage: caseStudy.costCalculator.savingsPercentage ? Number(caseStudy.costCalculator.savingsPercentage) : undefined,
+  //   } : undefined,
+  //   // WPS data for TECH and STAR cases
+  //   wps: caseStudy.wps ? {
+  //     numberOfLayers: caseStudy.wps.layerNumbers?.toString() || undefined,
+  //     process: caseStudy.wps.weldingProcess || undefined,
+  //     technique: caseStudy.wps.currentModeSynergy || undefined,
+  //     weldingPosition: caseStudy.wps.weldingPosition || undefined,
+  //     torchPosition: caseStudy.wps.torchAngle || undefined,
+  //     voltage: caseStudy.wps.voltage || undefined,
+  //     intensity: caseStudy.wps.intensity || undefined,
+  //     wireSpeed: caseStudy.wps.wireFeedSpeed || undefined,
+  //     oscillationWidth: caseStudy.wps.oscillationWidth || undefined,
+  //     oscillationSpeed: caseStudy.wps.oscillationSpeed || undefined,
+  //     stickOut: caseStudy.wps.stickOut || undefined,
+  //     weldingSpeed: caseStudy.wps.travelSpeed || undefined,
+  //     shieldingGas: caseStudy.wps.shieldingGas || undefined,
+  //     flowRate: caseStudy.wps.shieldingFlowRate || undefined,
+  //     preheatTemperature: caseStudy.wps.preheatTemperature || undefined,
+  //     interpassTemperature: caseStudy.wps.interpassTemperature || undefined,
+  //     pwht: caseStudy.wps.pwhtDetails || undefined,
+  //   } : undefined,
+  // };
 
   // Parse translation data if available
   let translatedContent: Record<string, string> = {};
@@ -297,11 +303,12 @@ export default async function PublicCaseDetailPage({
           </Link>
           <div className="flex gap-2">
             <ShareButton
-              title={`${caseStudy.customerName} - Case Study`}
-              text={`Check out this ${caseStudy.industry} case study from ${caseStudy.customerName}. ${caseStudy.problemDescription.substring(0, 100)}...`}
+              title={`${caseStudy.industry} - Case Study`}
+              text={`Check out this ${caseStudy.industry} case study. ${caseStudy.componentWorkpiece}`}
               variant="outline"
             />
             <SaveButton caseStudyId={id} variant="outline" />
+            {/* PDF EXPORT DISABLED
             {session?.user && (
               <PDFExportButton
                 caseStudy={pdfData}
@@ -309,6 +316,7 @@ export default async function PublicCaseDetailPage({
                 userEmail={session.user.email || undefined}
               />
             )}
+            */}
           </div>
         </div>
         <div>
@@ -414,8 +422,16 @@ export default async function PublicCaseDetailPage({
               <div className="flex items-start gap-3">
                 <Wrench className="h-5 w-5 text-wa-green-600 dark:text-primary mt-0.5" />
                 <div>
-                  <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground">Work Type</p>
-                  <p className="text-gray-900 dark:text-foreground">{caseStudy.workType}</p>
+                  <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground">Business Type</p>
+                  <p className="text-gray-900 dark:text-foreground">{({
+                    'INTEGRA_WORKSHOP': 'Integra - Workshop',
+                    'INTEGRA_ON_SITE': 'Integra - On Site',
+                    'INTEGRA_COMBINATION': 'Integra - Combination',
+                    'CONSUMABLE_SALES': 'Consumable Sales',
+                    'WORKSHOP': 'Workshop',
+                    'ON_SITE': 'On Site',
+                    'BOTH': 'Both',
+                  } as Record<string, string>)[caseStudy.workType || ''] || caseStudy.workType}</p>
                 </div>
               </div>
               {caseStudy.jobType && (
@@ -850,6 +866,33 @@ export default async function PublicCaseDetailPage({
                           </div>
                         </div>
                       )}
+
+                      {/* Per-Layer Heating Procedure */}
+                      {(layer.preheatingTemp || layer.interpassTemp || layer.postheatingTemp) && (
+                        <div className="space-y-2">
+                          <h5 className="font-medium text-sm text-gray-700 dark:text-gray-300">Heating Procedure</h5>
+                          <div className="grid md:grid-cols-3 gap-3 text-sm">
+                            {layer.preheatingTemp && (
+                              <div>
+                                <p className="text-xs text-gray-500 dark:text-muted-foreground">Preheating Temperature</p>
+                                <p className="font-medium text-gray-900 dark:text-foreground">{layer.preheatingTemp} °C</p>
+                              </div>
+                            )}
+                            {layer.interpassTemp && (
+                              <div>
+                                <p className="text-xs text-gray-500 dark:text-muted-foreground">Interpass Temperature</p>
+                                <p className="font-medium text-gray-900 dark:text-foreground">{layer.interpassTemp} °C</p>
+                              </div>
+                            )}
+                            {layer.postheatingTemp && (
+                              <div>
+                                <p className="text-xs text-gray-500 dark:text-muted-foreground">Postheating Temperature</p>
+                                <p className="font-medium text-gray-900 dark:text-foreground">{layer.postheatingTemp} °C</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1006,6 +1049,26 @@ export default async function PublicCaseDetailPage({
                   <p className="text-gray-900 dark:text-foreground text-sm whitespace-pre-wrap">{caseStudy.wps.additionalNotes}</p>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Comments Section */}
+        {session?.user && (
+          <Card role="article" className="dark:bg-card dark:border-border">
+            <CardHeader>
+              <CardTitle className="dark:text-foreground">Comments</CardTitle>
+              <CardDescription className="dark:text-muted-foreground">
+                Discussion and feedback on this case study
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <EnhancedCommentsSection
+                caseStudyId={id}
+                initialComments={comments}
+                currentUserId={session.user.id}
+                currentUserRole={session.user.role || 'CONTRIBUTOR'}
+              />
             </CardContent>
           </Card>
         )}

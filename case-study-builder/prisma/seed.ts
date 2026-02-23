@@ -312,7 +312,7 @@ async function main() {
         baseMetal: ['1045 Steel', 'A36 Steel', 'Cast Iron', '304 Stainless', '4140 Steel'][Math.floor(Math.random() * 5)],
         generalDimensions: `${50 + Math.floor(Math.random() * 200)}mm x ${100 + Math.floor(Math.random() * 400)}mm, ${5 + Math.floor(Math.random() * 20)}mm thick`,
 
-        waSolution: `${solution}. Applied ${product} using ${['FCAW', 'GMAW', 'GTAW', 'SMAW'][Math.floor(Math.random() * 4)]} process with optimized parameters. Multi-pass technique ensured excellent fusion and minimal dilution.`,
+        waSolution: `${solution}. Applied ${product} using ${['FCAW', 'GMAW', 'GTAW', 'SMAW'][Math.floor(Math.random() * 4)]} process with optimised parameters. Multi-pass technique ensured excellent fusion and minimal dilution.`,
 
         waProduct: product,
 

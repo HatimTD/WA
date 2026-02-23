@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CaseStudyFormData } from '@/app/dashboard/new/page';
+import { cn } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, CheckCircle2, Sparkles, X, Plus, Calculator, Clock } from 'lucide-react';
 import { ServiceLifePicker, ServiceLifeValue } from '@/components/ui/service-life-picker';
@@ -15,9 +16,10 @@ import { toast } from 'sonner';
 type Props = {
   formData: CaseStudyFormData;
   updateFormData: (data: Partial<CaseStudyFormData>) => void;
+  highlightedFields?: string[];
 };
 
-export default function StepFive({ formData, updateFormData }: Props) {
+export default function StepFive({ formData, updateFormData, highlightedFields }: Props) {
   const [isGeneratingTags, setIsGeneratingTags] = useState(false);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
@@ -194,7 +196,10 @@ export default function StepFive({ formData, updateFormData }: Props) {
                 value={formData.solutionValueRevenue}
                 onChange={(e) => updateFormData({ solutionValueRevenue: e.target.value })}
                 placeholder="e.g., 25000"
-                className="dark:bg-input dark:border-border dark:text-foreground"
+                className={cn(
+                  "dark:bg-input dark:border-border dark:text-foreground",
+                  highlightedFields?.includes('solutionValueRevenue') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+                )}
                 required
               />
             </div>
@@ -209,7 +214,10 @@ export default function StepFive({ formData, updateFormData }: Props) {
                 value={formData.annualPotentialRevenue}
                 onChange={(e) => updateFormData({ annualPotentialRevenue: e.target.value })}
                 placeholder="e.g., 100000"
-                className="dark:bg-input dark:border-border dark:text-foreground"
+                className={cn(
+                  "dark:bg-input dark:border-border dark:text-foreground",
+                  highlightedFields?.includes('annualPotentialRevenue') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+                )}
                 required
               />
             </div>

@@ -250,6 +250,33 @@ export default function WeldingProcedureForm({ caseStudyId, existingData }: Weld
                       </div>
                     </div>
                   )}
+
+                  {/* Per-Layer Heating Procedure */}
+                  {(layer.preheatingTemp || layer.interpassTemp || layer.postheatingTemp) && (
+                    <div className="space-y-2">
+                      <h5 className="font-medium text-sm text-gray-700 dark:text-gray-300">Heating Procedure</h5>
+                      <div className="grid md:grid-cols-3 gap-3 text-sm">
+                        {layer.preheatingTemp && (
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Preheating Temperature</Label>
+                            <p className="font-medium dark:text-foreground">{layer.preheatingTemp} °C</p>
+                          </div>
+                        )}
+                        {layer.interpassTemp && (
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Interpass Temperature</Label>
+                            <p className="font-medium dark:text-foreground">{layer.interpassTemp} °C</p>
+                          </div>
+                        )}
+                        {layer.postheatingTemp && (
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Postheating Temperature</Label>
+                            <p className="font-medium dark:text-foreground">{layer.postheatingTemp} °C</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

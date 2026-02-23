@@ -76,13 +76,13 @@ export default async function BHAGPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center">
               <p className="text-5xl font-bold text-wa-green-600 dark:text-green-300">{uniqueCount.toLocaleString()}</p>
-              <p className="text-sm text-gray-600 dark:text-green-100 mt-2">Unique Cases</p>
-              <p className="text-xs text-gray-500 dark:text-green-300/70">Deduplicated by Industry + Location + Component</p>
+              <p className="text-sm text-gray-600 dark:text-green-100 mt-2">Qualifying Unique Cases</p>
+              <p className="text-xs text-gray-500 dark:text-green-300/70">New Customer + Cross-Sell only</p>
             </div>
             <div className="text-center">
               <p className="text-5xl font-bold text-purple-600 dark:text-purple-300">{totalCount.toLocaleString()}</p>
               <p className="text-sm text-gray-600 dark:text-green-100 mt-2">Total Submissions</p>
-              <p className="text-xs text-gray-500 dark:text-green-300/70">All approved case studies</p>
+              <p className="text-xs text-gray-500 dark:text-green-300/70">All approved case studies (all types)</p>
             </div>
             <div className="text-center">
               <p className="text-5xl font-bold text-green-600 dark:text-emerald-300">{percentage}%</p>
@@ -155,11 +155,11 @@ export default async function BHAGPage() {
               Challenge Qualifier Breakdown
             </CardTitle>
             <CardDescription className="dark:text-muted-foreground">
-              New Customer vs. Cross-Sell distribution
+              Only New Customer and Cross-Sell count toward the {target.toLocaleString()} goal
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* New Customer */}
               <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 text-center dark:bg-green-900/20 dark:border-green-700">
                 <UserPlus className="h-6 w-6 mx-auto text-green-600 dark:text-green-400 mb-2" />
@@ -194,16 +194,6 @@ export default async function BHAGPage() {
                 </Badge>
                 <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">{qualifierData.maintenance.count}</p>
                 <p className="text-xs text-gray-600 dark:text-muted-foreground mt-1">{qualifierData.maintenance.description}</p>
-              </div>
-
-              {/* Unqualified */}
-              <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 text-center dark:bg-gray-800 dark:border-gray-600">
-                <Target className="h-6 w-6 mx-auto text-gray-600 dark:text-gray-400 mb-2" />
-                <Badge className="bg-gray-100 text-gray-700 mb-2 dark:bg-gray-700 dark:text-gray-300">
-                  {qualifierData.unqualified.label}
-                </Badge>
-                <p className="text-3xl font-bold text-gray-600 dark:text-gray-400">{qualifierData.unqualified.count}</p>
-                <p className="text-xs text-gray-600 dark:text-muted-foreground mt-1">{qualifierData.unqualified.description}</p>
               </div>
             </div>
 

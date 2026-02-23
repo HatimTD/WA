@@ -53,7 +53,7 @@ const caseStudyTemplates = [
     competitorName: 'DrillTech Coatings',
     baseMetal: 'Tool steel',
     generalDimensions: '6.625" OD x 4.5" ID',
-    waSolution: 'NIFD 120 casing-friendly hardbanding with optimized deposition',
+    waSolution: 'NIFD 120 casing-friendly hardbanding with optimised deposition',
     technicalAdvantages: 'Casing-friendly design, consistent hardness profile, minimal heat input',
     expectedServiceLife: '450 hours drilling time',
     solutionValueRevenue: 75000,

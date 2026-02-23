@@ -28,6 +28,17 @@ type WaCostCalculationData = {
   totalCostAfter: number;
   annualSavings: number;
   savingsPercentage: number;
+  // Granular lifetime fields (preserve user-entered time units)
+  oldLifetimeHours?: string;
+  oldLifetimeDays?: string;
+  oldLifetimeWeeks?: string;
+  oldLifetimeMonths?: string;
+  oldLifetimeYears?: string;
+  waLifetimeHours?: string;
+  waLifetimeDays?: string;
+  waLifetimeWeeks?: string;
+  waLifetimeMonths?: string;
+  waLifetimeYears?: string;
 };
 
 export async function waSaveCostCalculation(data: WaCostCalculationData) {
@@ -47,6 +58,20 @@ export async function waSaveCostCalculation(data: WaCostCalculationData) {
     console.log('Existing calculation:', existing ? 'Found' : 'Not found');
 
     let calculation;
+
+    // Prepare granular lifetime data (convert empty strings to null)
+    const granularLifetimeData = {
+      oldLifetimeHours: data.oldLifetimeHours || null,
+      oldLifetimeDays: data.oldLifetimeDays || null,
+      oldLifetimeWeeks: data.oldLifetimeWeeks || null,
+      oldLifetimeMonths: data.oldLifetimeMonths || null,
+      oldLifetimeYears: data.oldLifetimeYears || null,
+      waLifetimeHours: data.waLifetimeHours || null,
+      waLifetimeDays: data.waLifetimeDays || null,
+      waLifetimeWeeks: data.waLifetimeWeeks || null,
+      waLifetimeMonths: data.waLifetimeMonths || null,
+      waLifetimeYears: data.waLifetimeYears || null,
+    };
 
     if (existing) {
       // Update existing calculation
@@ -77,6 +102,7 @@ export async function waSaveCostCalculation(data: WaCostCalculationData) {
           totalCostAfter: data.totalCostAfter,
           annualSavings: data.annualSavings,
           savingsPercentage: data.savingsPercentage,
+          ...granularLifetimeData,
         },
       });
       console.log('Calculation updated successfully');
@@ -109,6 +135,7 @@ export async function waSaveCostCalculation(data: WaCostCalculationData) {
           totalCostAfter: data.totalCostAfter,
           annualSavings: data.annualSavings,
           savingsPercentage: data.savingsPercentage,
+          ...granularLifetimeData,
         },
       });
       console.log('Calculation created successfully');

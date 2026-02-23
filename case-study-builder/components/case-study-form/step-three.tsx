@@ -4,6 +4,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CaseStudyFormData } from '@/app/dashboard/new/page';
+import { cn } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import { Mic, Sparkles, Plus, X } from 'lucide-react';
 import { useMasterList } from '@/lib/hooks/use-master-list';
@@ -30,6 +31,7 @@ const AITextAssistant = dynamic(() => import('@/components/ai-text-assistant'), 
 type Props = {
   formData: CaseStudyFormData;
   updateFormData: (data: Partial<CaseStudyFormData>) => void;
+  highlightedFields?: string[];
 };
 
 // Default wear types - actual values come from master data and can include custom types
@@ -41,7 +43,7 @@ const FALLBACK_WEAR_TYPES = [
   { id: 'metal_metal', value: 'METAL_METAL', label: 'Metal-Metal', sortOrder: 4 },
 ];
 
-export default function StepThree({ formData, updateFormData }: Props) {
+export default function StepThree({ formData, updateFormData, highlightedFields }: Props) {
   // Fetch wear types from master list
   const { items: wearTypes, isLoading: wearTypesLoading } = useMasterList('WearType', FALLBACK_WEAR_TYPES);
 
@@ -73,7 +75,10 @@ export default function StepThree({ formData, updateFormData }: Props) {
           value={formData.problemDescription}
           onChange={(e) => updateFormData({ problemDescription: e.target.value })}
           placeholder="Describe the problem and previous solution used before WA..."
-          className="min-h-[120px] dark:bg-input dark:border-border dark:text-foreground"
+          className={cn(
+            "min-h-[120px] dark:bg-input dark:border-border dark:text-foreground",
+            highlightedFields?.includes('problemDescription') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+          )}
           required
         />
       </div>
@@ -128,7 +133,9 @@ export default function StepThree({ formData, updateFormData }: Props) {
         {wearTypesLoading ? (
           <span className="text-xs text-muted-foreground">Loading...</span>
         ) : (
-          <div style={{ display: 'inline-block' }}>
+          <div style={{ display: 'inline-block' }} className={cn(
+            highlightedFields?.includes('wearType') && "border-2 border-red-500 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40 rounded-lg p-2"
+          )}>
             {filteredWearTypes.map((wear) => {
               // Change High Temperature to Temperature in display
               let displayLabel = (wear as any).label || wear.value;

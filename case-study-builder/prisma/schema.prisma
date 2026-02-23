@@ -47,6 +47,9 @@ model User {
   sessions      Session[]
   taggedInCases WaCaseStudy[]    @relation("TaggedInCases")
 
+  // Terms acceptance (first-login confidentiality agreement)
+  acceptedTermsAt DateTime?
+
   // Soft delete support (WA Policy Section 5.1)
   isActive  Boolean   @default(true)
   deletedAt DateTime?
@@ -136,6 +139,10 @@ enum WorkType {
   WORKSHOP
   ON_SITE
   BOTH
+  INTEGRA_WORKSHOP
+  INTEGRA_ON_SITE
+  INTEGRA_COMBINATION
+  CONSUMABLE_SALES
 }
 
 enum WearType {
@@ -159,6 +166,7 @@ enum ReactionType {
 enum NotificationType {
   CASE_APPROVED
   CASE_REJECTED
+  CASE_SUBMITTED
   NEW_COMMENT
   BADGE_EARNED
   BHAG_MILESTONE
@@ -801,6 +809,18 @@ model WaCostCalculator {
   oldSolutionLifetimeDays     Int?    @default(0)
   waSolutionLifetimeDays      Int?    @default(0)
   partsUsedPerYear            Int?    @default(0)
+
+  // Granular lifetime fields (preserve user-entered time units)
+  oldLifetimeHours  String?
+  oldLifetimeDays   String?
+  oldLifetimeWeeks  String?
+  oldLifetimeMonths String?
+  oldLifetimeYears  String?
+  waLifetimeHours   String?
+  waLifetimeDays    String?
+  waLifetimeWeeks   String?
+  waLifetimeMonths  String?
+  waLifetimeYears   String?
   maintenanceRepairCostBefore Float?  @default(0)
   maintenanceRepairCostAfter  Float?  @default(0)
   disassemblyCostBefore       Float?  @default(0)

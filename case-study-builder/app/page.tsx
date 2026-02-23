@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Welding Alloys - Industrial Challenges App',
-  description: 'Welcome to Welding Alloys Industrial Challenges App (ICA). Capture, catalog, and share industrial challenge solutions. Track progress toward solving 10,000 challenges.',
+  description: 'Welcome to Welding Alloys Industrial Challenges App (ICA). Capture, catalogue, and share industrial challenge solutions. Track progress toward solving 10,000 challenges.',
   openGraph: {
     title: 'Welding Alloys - Industrial Challenges App',
     description: 'Capture and share industrial welding solutions',
@@ -68,7 +68,7 @@ export default function Home() {
 
             {/* Description */}
             <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed px-4">
-              Capture, catalog, and share industrial challenge solutions.
+              Capture, catalogue, and share industrial challenge solutions.
               Track our progress toward solving <span className="font-semibold text-wa-green-900">10,000 challenges</span>.
             </p>
 
@@ -117,7 +117,7 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">Organize Library</h3>
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">Organise Library</h3>
               <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
                 Build a searchable library of solutions that your team can access and learn from instantly.
               </p>

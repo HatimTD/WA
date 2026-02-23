@@ -34,7 +34,7 @@ export default async function BHAGProgress() {
             <div>
               <p className="text-4xl font-bold text-wa-green-600 dark:text-green-300">{uniqueCount.toLocaleString()}</p>
               <p className="text-sm text-gray-600 dark:text-green-100">
-                unique cases • {totalCount.toLocaleString()} total submissions
+                qualifying unique cases • {totalCount.toLocaleString()} total submissions
               </p>
             </div>
             <div className="text-right">

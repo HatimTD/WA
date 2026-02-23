@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CaseStudyFormData } from '@/app/dashboard/new/page';
+import { cn } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import { Mic, Sparkles, Camera, FileText } from 'lucide-react';
 import CaseStudyImageUpload from '@/components/case-study-image-upload';
@@ -117,9 +118,10 @@ const WA_PRODUCTS = [
 type Props = {
   formData: CaseStudyFormData;
   updateFormData: (data: Partial<CaseStudyFormData>) => void;
+  highlightedFields?: string[];
 };
 
-export default function StepFour({ formData, updateFormData }: Props) {
+export default function StepFour({ formData, updateFormData, highlightedFields }: Props) {
   const [showProductSuggestions, setShowProductSuggestions] = useState(false);
   const [productSearch, setProductSearch] = useState(formData.waProduct || '');
   const productInputRef = useRef<HTMLInputElement>(null);
@@ -163,7 +165,10 @@ export default function StepFour({ formData, updateFormData }: Props) {
           value={formData.baseMetal}
           onChange={(e) => updateFormData({ baseMetal: e.target.value })}
           placeholder="e.g., Carbon Steel, Stainless Steel, Manganese Steel"
-          className="dark:bg-input dark:border-border dark:text-foreground"
+          className={cn(
+            "dark:bg-input dark:border-border dark:text-foreground",
+            highlightedFields?.includes('baseMetal') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+          )}
           required
         />
       </div>
@@ -179,7 +184,10 @@ export default function StepFour({ formData, updateFormData }: Props) {
             value={formData.generalDimensions}
             onChange={(e) => updateFormData({ generalDimensions: e.target.value })}
             placeholder={formData.unitSystem === 'IMPERIAL' ? 'e.g., 24" x 36" x 2"' : 'e.g., 600mm x 900mm x 50mm'}
-            className="flex-1 dark:bg-input dark:border-border dark:text-foreground"
+            className={cn(
+              "flex-1 dark:bg-input dark:border-border dark:text-foreground",
+              highlightedFields?.includes('generalDimensions') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+            )}
             required
           />
           <div className="flex gap-1 flex-shrink-0">
@@ -232,7 +240,10 @@ export default function StepFour({ formData, updateFormData }: Props) {
           value={formData.waSolution}
           onChange={(e) => updateFormData({ waSolution: e.target.value })}
           placeholder="Describe the Welding Alloys solution implemented..."
-          className="min-h-[120px] dark:bg-input dark:border-border dark:text-foreground"
+          className={cn(
+            "min-h-[120px] dark:bg-input dark:border-border dark:text-foreground",
+            highlightedFields?.includes('waSolution') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+          )}
           required
         />
         <p className="text-xs text-muted-foreground dark:text-muted-foreground">
@@ -261,7 +272,10 @@ export default function StepFour({ formData, updateFormData }: Props) {
             }
           }}
         >
-          <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
+          <SelectTrigger className={cn(
+            "dark:bg-input dark:border-border dark:text-foreground",
+            highlightedFields?.includes('productCategory') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+          )}>
             <SelectValue placeholder="Select product category" />
           </SelectTrigger>
           <SelectContent className="dark:bg-popover dark:border-border">
@@ -292,7 +306,10 @@ export default function StepFour({ formData, updateFormData }: Props) {
               }}
               onFocus={() => setShowProductSuggestions(true)}
               placeholder="Type to search products..."
-              className="dark:bg-input dark:border-border dark:text-foreground"
+              className={cn(
+                "dark:bg-input dark:border-border dark:text-foreground",
+                highlightedFields?.includes('waProduct') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+              )}
               autoComplete="off"
               required
             />
@@ -329,7 +346,10 @@ export default function StepFour({ formData, updateFormData }: Props) {
               id="waProductDiameter"
               value={formData.waProductDiameter || ''}
               onChange={(e) => updateFormData({ waProductDiameter: e.target.value })}
-              className="w-full h-10 px-3 rounded-md border border-border bg-input text-foreground dark:bg-input dark:border-border dark:text-foreground"
+              className={cn(
+                "w-full h-10 px-3 rounded-md border border-border bg-input text-foreground dark:bg-input dark:border-border dark:text-foreground",
+                highlightedFields?.includes('waProductDiameter') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+              )}
               required
             >
               <option value="">Select diameter</option>
@@ -357,7 +377,10 @@ export default function StepFour({ formData, updateFormData }: Props) {
               value={formData.productCategoryOther}
               onChange={(e) => updateFormData({ productCategoryOther: e.target.value })}
               placeholder="e.g., Custom wear plates, Special coatings"
-              className="dark:bg-input dark:border-border dark:text-foreground"
+              className={cn(
+                "dark:bg-input dark:border-border dark:text-foreground",
+                highlightedFields?.includes('productCategoryOther') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+              )}
               required
             />
             <p className="text-xs text-muted-foreground">
@@ -373,7 +396,10 @@ export default function StepFour({ formData, updateFormData }: Props) {
               value={formData.productDescription}
               onChange={(e) => updateFormData({ productDescription: e.target.value })}
               placeholder="e.g., HARDPLATE 5+3 mm"
-              className="dark:bg-input dark:border-border dark:text-foreground"
+              className={cn(
+                "dark:bg-input dark:border-border dark:text-foreground",
+                highlightedFields?.includes('productDescription') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+              )}
               required
             />
             <p className="text-xs text-muted-foreground">
@@ -392,7 +418,10 @@ export default function StepFour({ formData, updateFormData }: Props) {
             value={formData.productDescription}
             onChange={(e) => updateFormData({ productDescription: e.target.value })}
             placeholder="e.g., HARDPLATE 5+3 mm"
-            className="dark:bg-input dark:border-border dark:text-foreground"
+            className={cn(
+              "dark:bg-input dark:border-border dark:text-foreground",
+              highlightedFields?.includes('productDescription') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+            )}
             required
           />
           <p className="text-xs text-muted-foreground">
@@ -452,13 +481,19 @@ export default function StepFour({ formData, updateFormData }: Props) {
           value={formData.technicalAdvantages}
           onChange={(e) => updateFormData({ technicalAdvantages: e.target.value })}
           placeholder="Describe how the WA solution improved the job. You can mention service life, wear resistance, hardness, welding quality, repair speed, intervention time, reduced downtime, easier handling, or improved safety."
-          className="min-h-[100px] dark:bg-input dark:border-border dark:text-foreground"
+          className={cn(
+            "min-h-[100px] dark:bg-input dark:border-border dark:text-foreground",
+            highlightedFields?.includes('technicalAdvantages') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+          )}
           required
         />
       </div>
 
       {/* Images Upload Section */}
-      <div className="space-y-2">
+      <div className={cn(
+        "space-y-2",
+        highlightedFields?.includes('images') && "border-2 border-red-500 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40 rounded-lg p-3"
+      )}>
         <Label className="dark:text-foreground flex items-center gap-2">
           <Camera className="h-4 w-4 text-wa-green-600" />
           Images <span className="text-red-500 dark:text-red-400">*</span>
@@ -469,9 +504,9 @@ export default function StepFour({ formData, updateFormData }: Props) {
           existingImages={formData.images}
           maxAdditionalImages={5}
         />
-        {formData.images.length < 2 && (
+        {formData.images.length < 1 && (
           <p className="text-xs text-red-500 dark:text-red-400">
-            Please upload at least 2 images ({formData.images.length}/2 uploaded)
+            Please upload at least 1 image ({formData.images.length}/1 uploaded)
           </p>
         )}
       </div>
