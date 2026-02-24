@@ -298,7 +298,7 @@ export default async function MyCasesPage({
             </div>
           </CardHeader>
           <CardContent>
-            <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
+            <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
               <TabsTrigger value="all" className="gap-2">
                 <FileText className="h-4 w-4" />
                 <span className="hidden sm:inline">All</span>
@@ -323,13 +323,6 @@ export default async function MyCasesPage({
                 <XCircle className="h-4 w-4" />
                 <span className="hidden sm:inline">Rejected</span>
                 <Badge variant="outline" className="ml-1">{stats.rejected}</Badge>
-              </TabsTrigger>
-              <TabsTrigger value="PUBLISHED" className="gap-2">
-                <Eye className="h-4 w-4" />
-                <span className="hidden sm:inline">Published</span>
-                <Badge variant="outline" className="ml-1">
-                  {caseStudies.filter((c) => c.status === 'PUBLISHED').length}
-                </Badge>
               </TabsTrigger>
             </TabsList>
           </CardContent>
@@ -488,35 +481,6 @@ export default async function MyCasesPage({
           </Card>
         </TabsContent>
 
-        {/* Published Cases */}
-        <TabsContent value="PUBLISHED">
-          <Card role="article" className="dark:bg-card dark:border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 dark:text-foreground">
-                <Eye className="h-5 w-5 text-purple-600" />
-                Published Cases
-              </CardTitle>
-              <CardDescription className="dark:text-muted-foreground">Cases available in the public library</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {caseStudies.filter((c) => c.status === 'PUBLISHED').length === 0 ? (
-                <div className="text-center py-12">
-                  <Eye className="h-12 w-12 mx-auto text-gray-400 dark:text-gray-600 mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground mb-2">
-                    No published cases
-                  </h3>
-                  <p className="text-gray-600 dark:text-muted-foreground mb-4">
-                    You don't have any published cases yet
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {caseStudies.filter((c) => c.status === 'PUBLISHED').map(renderCaseCard)}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   );

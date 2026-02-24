@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import BHAGProgress from '@/components/bhag-progress';
 import ActivityFeed from '@/components/activity-feed';
 import { DashboardSkeleton } from '@/components/loading-states';
-import { UserStats, QuickActions, GettingStartedTips } from './dashboard-components';
+import { UserStats, QuickActions } from './dashboard-components';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -68,7 +68,7 @@ export default async function DashboardPage() {
           Welcome back, {session?.user.name?.split(' ')[0]}!
         </h1>
         <p className="text-gray-600 dark:text-muted-foreground mt-2">
-          Track your contributions and explore case studies
+          Track your contributions and explore solved industrial challenges.
         </p>
       </div>
 
@@ -86,9 +86,6 @@ export default async function DashboardPage() {
       <Suspense fallback={<ActivityLoading />}>
         <ActivityFeedWrapper />
       </Suspense>
-
-      {/* Getting Started Tips - Renders immediately with minimal data */}
-      <GettingStartedTips isViewer={isViewer} />
     </div>
   );
 }

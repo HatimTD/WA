@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { CaseStudyFormData } from '@/app/dashboard/new/page';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, CheckCircle2, Sparkles, X, Plus, Calculator, Clock } from 'lucide-react';
+import { DollarSign, Sparkles, X, Plus, Calculator, Clock } from 'lucide-react';
 import { ServiceLifePicker, ServiceLifeValue } from '@/components/ui/service-life-picker';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -246,12 +246,6 @@ export default function StepFive({ formData, updateFormData, highlightedFields }
                     ${parseFloat(costSummary.annualCostOld).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <div className="flex justify-between">
-                    <span>Parts/year:</span>
-                    <span>{formData.costCalculator?.partsUsedPerYear}</span>
-                  </div>
-                </div>
               </div>
 
               <div className="space-y-3">
@@ -260,16 +254,6 @@ export default function StepFive({ formData, updateFormData, highlightedFields }
                   <p className="text-2xl font-bold text-wa-green-600 dark:text-primary">
                     ${parseFloat(costSummary.annualCostWA).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
-                </div>
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <div className="flex justify-between">
-                    <span>Lifetime improvement:</span>
-                    <span className="font-semibold text-wa-green-700 dark:text-primary">{costSummary.lifetimeRatio}x</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Parts/year (reduced):</span>
-                    <span>{costSummary.waPartsPerYear}</span>
-                  </div>
                 </div>
               </div>
 
@@ -396,39 +380,6 @@ export default function StepFive({ formData, updateFormData, highlightedFields }
         </CardContent>
       </Card>
 
-      {/* Review Summary */}
-      <Card role="article" className="bg-wa-green-50 border-wa-green-200 dark:bg-accent dark:border-primary">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 dark:text-foreground">
-            <CheckCircle2 className="h-5 w-5 text-wa-green-600" />
-            Ready to Submit?
-          </CardTitle>
-          <CardDescription className="text-wa-green-700 dark:text-muted-foreground">
-            Review your case study details before submission
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid md:grid-cols-2 gap-4 text-sm dark:text-muted-foreground">
-            <div>
-              <span className="font-semibold dark:text-foreground">Type:</span> {formData.type}
-            </div>
-            <div>
-              <span className="font-semibold dark:text-foreground">Customer:</span> {formData.customerName || 'Not provided'}
-            </div>
-            <div>
-              <span className="font-semibold dark:text-foreground">Component:</span>{' '}
-              {formData.componentWorkpiece || 'Not provided'}
-            </div>
-            <div>
-              <span className="font-semibold dark:text-foreground">WA Product:</span> {formData.waProduct || 'Not provided'}
-            </div>
-          </div>
-          <div className="bg-white rounded p-3 text-sm dark:bg-background dark:text-muted-foreground">
-            <span className="font-semibold dark:text-foreground">Next Steps:</span> Your case study will be sent to an Approver
-            for review. You'll be notified once it's approved and published!
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

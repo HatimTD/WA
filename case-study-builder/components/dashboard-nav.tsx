@@ -76,7 +76,7 @@ interface DashboardNavProps {
 const mainNavItems = [
   { href: '/dashboard', label: 'Home', icon: Home },
   { href: '/dashboard/new', label: 'New Case Study', icon: Plus, roles: ['CONTRIBUTOR', 'APPROVER', 'ADMIN'] },
-  { href: '/dashboard/my-cases', label: 'My Cases', icon: FileText, roles: ['CONTRIBUTOR', 'APPROVER', 'ADMIN'] },
+  { href: '/dashboard/my-cases', label: 'My Case Studies', icon: FileText, roles: ['CONTRIBUTOR', 'APPROVER', 'ADMIN'] },
   { href: '/dashboard/saved', label: 'Saved Cases', icon: Bookmark },
   { href: '/dashboard/library', label: 'Library', icon: BookOpen },
   // HIDDEN: { href: '/dashboard/search', label: 'Search Database', icon: Search, roles: ['CONTRIBUTOR', 'APPROVER', 'ADMIN', 'IT_DEPARTMENT', 'MARKETING'] },
@@ -84,7 +84,7 @@ const mainNavItems = [
   { href: '/dashboard/approvals', label: 'Approvals', icon: CheckCircle, roles: ['APPROVER', 'ADMIN'] },
   // HIDDEN: { href: '/dashboard/analytics', label: 'My Analytics', icon: TrendingUp, roles: ['CONTRIBUTOR', 'APPROVER', 'ADMIN', 'MARKETING'] },
   { href: '/dashboard/leaderboard', label: 'Leaderboard', icon: Trophy },
-  { href: '/dashboard/bhag', label: 'BHAG Tracker', icon: BarChart },
+  { href: '/dashboard/bhag', label: '2030 Goal Tracker', icon: BarChart },
 ];
 
 // Admin section items (collapsible)

@@ -1365,7 +1365,7 @@ async function waGeneratePage2(doc: jsPDF, data: CaseStudyPDFData, options?: PDF
       { label: `Cost of WA Solution`, value: waCost ? waFormatCurrency(waCost, cc.currency) : '-' },
       { label: 'Old Solution Lifetime', value: cc.oldSolutionLifetimeDays ? `${cc.oldSolutionLifetimeDays} days` : '-' },
       { label: 'WA Solution Lifetime', value: cc.waSolutionLifetimeDays ? `${cc.waSolutionLifetimeDays} days` : '-' },
-      { label: 'Parts Used Per Year (E)', value: E ? `${E}` : '-', highlight: true },
+      { label: 'Parts Replaced Per Year (E)', value: E ? `${E}` : '-', highlight: true },
       { label: 'Maintenance Cost (F)', value: F ? waFormatCurrency(F, cc.currency) : '-' },
       { label: 'Disassembly Cost (G)', value: G ? waFormatCurrency(G, cc.currency) : '-' },
       { label: 'Downtime Cost (H)', value: H ? waFormatCurrency(H, cc.currency) : '-' },

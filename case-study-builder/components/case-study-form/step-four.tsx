@@ -176,7 +176,7 @@ export default function StepFour({ formData, updateFormData, highlightedFields }
       {/* General Dimensions + Unit System on same line */}
       <div className="space-y-2">
         <Label htmlFor="generalDimensions" className="dark:text-foreground">
-          General dimensions ({formData.unitSystem === 'IMPERIAL' ? 'inches' : 'mm'}) <span className="text-red-500 dark:text-red-400">*</span>
+          General Dimensions ({formData.unitSystem === 'IMPERIAL' ? 'inches and pounds' : 'mm and kg'}) <span className="text-red-500 dark:text-red-400">*</span>
         </Label>
         <div className="flex gap-3 items-center">
           <Input
@@ -433,9 +433,9 @@ export default function StepFour({ formData, updateFormData, highlightedFields }
       {/* Job Duration - mobile-friendly picker */}
       <div className="space-y-2">
         <Label className="dark:text-foreground">
-          Job Duration <span className="text-red-500 dark:text-red-400">*</span>
+          Job Duration
         </Label>
-        <p className="text-xs text-muted-foreground">How long did the WA solution job/maintenance take</p>
+        <p className="text-xs text-muted-foreground">How long did it take to provide the completed solution?</p>
         <ServiceLifePicker
           label="Job Duration"
           required
@@ -523,16 +523,6 @@ export default function StepFour({ formData, updateFormData, highlightedFields }
           existingDocuments={formData.supportingDocs}
           maxDocuments={5}
         />
-      </div>
-
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4 dark:bg-accent dark:border-primary">
-        <h4 className="font-semibold text-green-900 mb-2 dark:text-foreground">Great Solution Descriptions Include:</h4>
-        <ul className="space-y-1 text-sm text-green-800 list-disc list-inside dark:text-muted-foreground">
-          <li>Specific WA product and process used</li>
-          <li>Technical specifications (hardness, layers, etc.)</li>
-          <li>Implementation approach (workshop vs on-site)</li>
-          <li>Measurable results and improvements</li>
-        </ul>
       </div>
     </div>
   );

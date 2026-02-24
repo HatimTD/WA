@@ -271,28 +271,6 @@ export default async function BHAGPage() {
           </CardContent>
         </Card>
       )}
-
-      {/* Deduplication Info */}
-      <Card role="article" className="bg-gray-50 border-gray-300 dark:bg-background dark:border-border">
-        <CardHeader>
-          <CardTitle className="text-lg dark:text-foreground">About Deduplication</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm text-gray-700 dark:text-muted-foreground">
-          <p>
-            <strong className="dark:text-foreground">How we count unique cases:</strong> Case studies are considered unique based on
-            the combination of <strong className="dark:text-foreground">Industry + Location + Component/Workpiece</strong>.
-          </p>
-          <p>
-            <strong className="dark:text-foreground">Why this matters:</strong> This ensures we're measuring true diversity in our
-            database rather than just the total number of submissions. The same problem solved in
-            different industries or locations counts as separate unique cases.
-          </p>
-          <p>
-            <strong className="dark:text-foreground">Example:</strong> A wear solution for pump impellers in Australian mining vs.
-            Canadian mining would count as 2 unique cases, even if using the same WA product.
-          </p>
-        </CardContent>
-      </Card>
     </div>
   );
 }

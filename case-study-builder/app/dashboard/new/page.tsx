@@ -479,9 +479,9 @@ export default function NewCaseStudyPage() {
         }
         break;
       case 'Cost Reduction Analysis':
-        if (!formData.costCalculator?.costOfPart) missing.push('Cost of Part (Old Solution)');
+        if (!formData.costCalculator?.costOfPart) missing.push('Previous Solution (A)');
         if (!formData.costCalculator?.costOfWaSolution) missing.push('Cost of WA Solution');
-        if (!formData.costCalculator?.partsUsedPerYear) missing.push('Parts Used Per Year');
+        if (!formData.costCalculator?.partsUsedPerYear) missing.push('Parts replaced per year');
         // Check if any old solution lifetime field has a value (mixed units)
         const hasOldLifetime = formData.costCalculator?.oldLifetimeHours ||
           formData.costCalculator?.oldLifetimeDays ||
