@@ -91,11 +91,9 @@ const COLUMN_MAPPINGS: Record<string, string> = {
   'component': 'componentWorkpiece',
   'workpiece': 'componentWorkpiece',
 
-  // Business Type (formerly Work Type)
+  // Work Type
   'worktype': 'workType',
   'work type': 'workType',
-  'businesstype': 'workType',
-  'business type': 'workType',
 
   // Wear Type
   'weartype': 'wearType',
@@ -396,7 +394,7 @@ export function convertToCreateInput(row: BulkImportRow): {
   location: string;
   country: string;
   componentWorkpiece: string;
-  workType: string;
+  workType: 'WORKSHOP' | 'ON_SITE' | 'BOTH';
   wearType: string[];
   baseMetal: string;
   generalDimensions: string;
@@ -434,7 +432,7 @@ export function convertToCreateInput(row: BulkImportRow): {
     location: row.location,
     country: row.country || '',
     componentWorkpiece: row.componentWorkpiece,
-    workType: row.workType.toUpperCase(),
+    workType: row.workType.toUpperCase() as 'WORKSHOP' | 'ON_SITE' | 'BOTH',
     wearType: wearTypes,
     baseMetal: row.baseMetal || '',
     generalDimensions: row.generalDimensions || '',

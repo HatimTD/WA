@@ -1281,15 +1281,7 @@ async function waGeneratePage1(
   // Right column
   const rightX = margin + colWidth + 4;
   rightY = await waDrawField(rightX, rightY, 'Location', `${data.location}${data.country ? ', ' + data.country : ''}`, 'map-pin');
-  rightY = await waDrawField(rightX, rightY, 'Business Type', ({
-    'INTEGRA_WORKSHOP': 'Integra - Workshop',
-    'INTEGRA_ON_SITE': 'Integra - On Site',
-    'INTEGRA_COMBINATION': 'Integra - Combination',
-    'CONSUMABLE_SALES': 'Consumable Sales',
-    'WORKSHOP': 'Workshop',
-    'ON_SITE': 'On Site',
-    'BOTH': 'Both',
-  } as Record<string, string>)[data.workType || ''] || data.workType || 'N/A', 'wrench');
+  rightY = await waDrawField(rightX, rightY, 'Work Type', data.workType || 'N/A', 'wrench');
   if (data.oem) {
     rightY = await waDrawField(rightX, rightY, 'OEM', data.oem, 'package');
   }

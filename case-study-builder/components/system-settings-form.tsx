@@ -350,7 +350,7 @@ export default function SystemSettingsForm() {
               <div>
                 <CardTitle>Email Templates</CardTitle>
                 <CardDescription>
-                  Customise email notification templates with logo and branding
+                  Customize email notification templates with logo and branding
                 </CardDescription>
               </div>
               <Button onClick={handleInitializeTemplates} variant="outline" disabled={loading}>

@@ -92,7 +92,7 @@ export default function DPAPage() {
                 <ul className="list-disc pl-6 space-y-2 text-gray-700 mb-6">
                   <li><strong>User Account Data:</strong> Name, email address, job title, department, employee ID</li>
                   <li><strong>Authentication Data:</strong> Login credentials, session tokens, IP addresses</li>
-                  <li><strong>Case Study Content:</strong> Technical data, project descriptions, photographs, customer information (when authorised)</li>
+                  <li><strong>Case Study Content:</strong> Technical data, project descriptions, photographs, customer information (when authorized)</li>
                   <li><strong>Usage Data:</strong> Access logs, feature usage, timestamps, device information</li>
                   <li><strong>Communication Data:</strong> Comments, feedback, support requests</li>
                 </ul>
@@ -104,7 +104,7 @@ export default function DPAPage() {
                 <ul className="list-disc pl-6 space-y-2 text-gray-700">
                   <li>User authentication and access control</li>
                   <li>Case study creation, management, and approval workflows</li>
-                  <li>Collaboration and knowledge sharing within the organisation</li>
+                  <li>Collaboration and knowledge sharing within the organization</li>
                   <li>Analytics and reporting on case study metrics</li>
                   <li>System security, maintenance, and improvement</li>
                   <li>Compliance with legal and regulatory requirements</li>
@@ -122,7 +122,7 @@ export default function DPAPage() {
                 </p>
                 <ul className="list-disc pl-6 space-y-3 text-gray-700">
                   <li>
-                    <strong>Contractual Necessity:</strong> Processing necessary to provide the Case Study Builder service to employees and authorised users
+                    <strong>Contractual Necessity:</strong> Processing necessary to provide the Case Study Builder service to employees and authorized users
                   </li>
                   <li>
                     <strong>Legitimate Interest:</strong> Processing for internal business operations, system security, and improvement of services
@@ -143,7 +143,7 @@ export default function DPAPage() {
               </CardHeader>
               <CardContent className="prose prose-gray max-w-none">
                 <p className="text-gray-700 mb-4">
-                  We implement comprehensive technical and organisational security measures:
+                  We implement comprehensive technical and organizational security measures:
                 </p>
 
                 <h3 className="text-lg font-semibold text-wa-green-900 mb-3">4.1 Technical Measures</h3>
@@ -157,7 +157,7 @@ export default function DPAPage() {
                   <li>Intrusion detection and prevention systems</li>
                 </ul>
 
-                <h3 className="text-lg font-semibold text-wa-green-900 mb-3">4.2 Organisational Measures</h3>
+                <h3 className="text-lg font-semibold text-wa-green-900 mb-3">4.2 Organizational Measures</h3>
                 <ul className="list-disc pl-6 space-y-2 text-gray-700">
                   <li>Comprehensive data protection policies and procedures</li>
                   <li>Regular security awareness training for staff</li>

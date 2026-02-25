@@ -75,7 +75,7 @@ test.describe('BRD 3.3 - Application Case Validation', () => {
       // Verify required field indicators
       await expect(page.getByText('Industry *', { exact: false })).toBeVisible();
       await expect(page.getByText('Component/Workpiece *', { exact: false })).toBeVisible();
-      await expect(page.getByText('Business Type *', { exact: false })).toBeVisible();
+      await expect(page.getByText('Work Type *', { exact: false })).toBeVisible();
       await expect(page.getByText('Type of Wear', { exact: false })).toBeVisible();
     } else {
       // Qualifier validation working - customer required

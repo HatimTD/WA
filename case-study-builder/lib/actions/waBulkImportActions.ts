@@ -170,7 +170,7 @@ export async function waBulkImportCaseStudies(
             location: input.location,
             country: input.country || null,
             componentWorkpiece: input.componentWorkpiece,
-            workType: input.workType as any,
+            workType: input.workType,
             wearType: input.wearType as any,
             baseMetal: input.baseMetal || null,
             generalDimensions: input.generalDimensions || null,

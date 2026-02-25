@@ -9,7 +9,7 @@ export type OfflineCaseStudyInput = {
   location: string;
   country?: string;
   componentWorkpiece: string;
-  workType: string;
+  workType: 'WORKSHOP' | 'ON_SITE' | 'BOTH';
   wearType: string[];
   baseMetal?: string;
   generalDimensions?: string;

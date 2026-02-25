@@ -180,7 +180,7 @@ export function waGetMissingForNextTier(
     if (!caseStudy.location) missing.push('Location');
     if (!caseStudy.industry) missing.push('Industry');
     if (!caseStudy.componentWorkpiece) missing.push('Component/Workpiece');
-    if (!caseStudy.workType) missing.push('Business Type');
+    if (!caseStudy.workType) missing.push('Work Type');
     if (!caseStudy.wearType || caseStudy.wearType.length === 0) missing.push('Wear Type');
     if (!caseStudy.problemDescription) missing.push('Problem Description');
     if (!caseStudy.waSolution) missing.push('WA Solution');

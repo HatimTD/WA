@@ -56,11 +56,11 @@ test.describe('BRD 3.3 Validation - Required Fields Block Progress', () => {
     // Fill Component
     await page.getByLabel(/Component/i).fill('Test Hammer');
 
-    // Select Business Type
+    // Select Work Type
     const workTypeSelect = page.locator('[role="combobox"]').nth(1);
     if (await workTypeSelect.isVisible({ timeout: 1000 }).catch(() => false)) {
       await workTypeSelect.click();
-      await page.getByRole('option', { name: /Integra - Workshop/i }).click();
+      await page.getByRole('option', { name: /Workshop/i }).click();
     }
 
     // Select Wear Type

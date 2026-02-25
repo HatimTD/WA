@@ -142,7 +142,7 @@ test.describe('Case Study Creation - Full Form', () => {
       await componentInput.fill(testData.componentWorkpiece);
     }
 
-    // Select Business Type - Integra Workshop
+    // Select Work Type - Workshop
     const workshopRadio = page.getByLabel(/Workshop/i);
     if (await workshopRadio.isVisible({ timeout: 1000 }).catch(() => false)) {
       await workshopRadio.click();

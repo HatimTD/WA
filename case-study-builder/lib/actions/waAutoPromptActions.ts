@@ -76,10 +76,10 @@ const FIELD_DEFINITIONS = {
     defaultPrompt: 'What component or workpiece is being addressed?',
   },
   workType: {
-    label: 'Business Type',
+    label: 'Work Type',
     section: 'application' as const,
     priority: 'required' as const,
-    defaultPrompt: 'What is the business type? (Integra Workshop, Integra On Site, Integra Combination, or Consumable Sales)',
+    defaultPrompt: 'Is this workshop-based, on-site, or both?',
   },
   wearType: {
     label: 'Wear Type',

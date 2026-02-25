@@ -302,7 +302,7 @@ export function waGetFieldBreakdown(
     { key: 'industry', value: caseStudy.industry, label: 'Industry' },
     { key: 'location', value: caseStudy.location, label: 'Location' },
     { key: 'componentWorkpiece', value: caseStudy.componentWorkpiece, label: 'Component/Workpiece' },
-    { key: 'workType', value: caseStudy.workType, label: 'Business Type' },
+    { key: 'workType', value: caseStudy.workType, label: 'Work Type' },
     { key: 'problemDescription', value: caseStudy.problemDescription, label: 'Problem Description' },
     { key: 'waSolution', value: caseStudy.waSolution, label: 'WA Solution' },
     { key: 'waProduct', value: caseStudy.waProduct, label: 'WA Product' },

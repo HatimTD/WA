@@ -204,7 +204,7 @@ export default function BreakGlassPage() {
           <p className="text-sm text-red-700">
             <strong>Warning:</strong> This access method is for emergency use only.
             All access attempts and actions are logged and monitored.
-            Unauthorised use will result in disciplinary action.
+            Unauthorized use will result in disciplinary action.
           </p>
         </div>
 
