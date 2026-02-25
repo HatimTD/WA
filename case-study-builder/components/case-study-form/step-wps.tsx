@@ -90,12 +90,13 @@ const WA_PRODUCTS = [
   "WA TETRA V 309L-E", "WA TETRA V 312-E", "WA TETRA V 316L-E", "WA TSS 308L", "WA TSS 309L",
   "WA TSS 316L", "WA TUB CS 71", "WA TUB CS 81Ni1", "WA TUB SS 12", "WA TUB SS 16L",
   "WA TUB SS 8L", "WA TUB SS 9L", "WA TUB SS R16L", "WA TUB SS R8L", "WA TUB SS R9L",
-  "WAROD 308L", "WAROD 309L", "WAROD 316L", "WAROD 347", "HARDFACE NICARBWHT"
+  "WAROD 308L", "WAROD 309L", "WAROD 316L", "WAROD 347", "HARDFACE NICARBWHT",
+  "Mill 100", "Mill 300", "Mill 400", "Mill 401", "Mill 415", "Mill 600", "Mill 750", "Mill 751"
 ];
 
 // Dropdown options
 const SURFACE_PREP_OPTIONS = ['Grinding', 'Machining', 'Blasting', 'Brushing', 'None', 'Other'];
-const PROCESS_OPTIONS = ['FCAW', 'SAW', 'SAW twin', 'SMAW', 'Tubular Electrodes', 'Electrodes', 'GTAW', 'Other'];
+const PROCESS_OPTIONS = ['FCAW', 'GMAW', 'SAW', 'SAW Twin', 'SMAW', 'Tubular Electrodes', 'GTAW', 'Laser', 'Thermal Spray', 'Other'];
 const TECHNIQUE_OPTIONS = ['Manual', 'Semi-auto', 'Automatic', 'Robotic', 'Other'];
 const WELDING_POSITION_OPTIONS = [
   'PA - 1G / 1F',
@@ -120,7 +121,7 @@ const SHIELDING_GAS_OPTIONS = [
   'C1 → 100%CO2',
   'Other'
 ];
-const FLUX_OPTIONS = ['WAF 325', 'WAF 415', 'WA ULTRAFLUX', 'Other'];
+const FLUX_OPTIONS = ['WAF 325', 'WAF 415', 'WA ULTRA FLUX', 'Other'];
 const CURRENT_TYPE_OPTIONS = ['DC+', 'DC-', 'Other'];
 const WELDING_MODE_OPTIONS = ['Standard', 'Pulsed', 'Other'];
 
@@ -128,11 +129,26 @@ const WELDING_MODE_OPTIONS = ['Standard', 'Pulsed', 'Other'];
 const FLUX_STANDARD_MAP: Record<string, string> = {
   'WAF 325': 'S A AB 1 65 DC H5',
   'WAF 415': 'S A FB 1 55 DC H5',
-  'WA ULTRAFLUX': 'S A FB 1 55',
+  'WA ULTRA FLUX': 'S A FB 1 55',
 };
 
-// Diameter options (same as step-four)
-const DIAMETER_OPTIONS = [1.0, 1.2, 1.3, 1.6, 2.0, 2.2, 2.4, 2.8, 3.2, 4.0, 5.0, 6.0, 8.0, 12.0];
+// Diameter options with metric/imperial mapping (from Excel master list)
+const DIAMETER_OPTIONS = [
+  { mm: '1.0', imperial: '0.039"' },
+  { mm: '1.2', imperial: '0.045"' },
+  { mm: '1.3', imperial: '0.052"' },
+  { mm: '1.6', imperial: '1/16"' },
+  { mm: '2.0', imperial: '5/64"' },
+  { mm: '2.2', imperial: '0.087"' },
+  { mm: '2.4', imperial: '3/32"' },
+  { mm: '2.8', imperial: '7/64"' },
+  { mm: '3.2', imperial: '1/8"' },
+  { mm: '4.0', imperial: '5/32"' },
+  { mm: '5.0', imperial: '7/32"' },
+  { mm: '6.0', imperial: '15/64"' },
+  { mm: '8.0', imperial: '5/16"' },
+  { mm: '12.0', imperial: '15/32"' },
+];
 
 // Layer interface for WA Consumables + Parameters + Oscillation
 export interface WpsLayer {
@@ -372,9 +388,9 @@ export default function StepWPS({ formData, updateFormData }: Props) {
       {/* Welding Layers - List of layers (Add button is at top of form) */}
       <div className="space-y-4">
         {layers.map((layer, index) => {
-          const isSAWProcess = layer.weldingProcess === 'SAW' || layer.weldingProcess === 'SAW twin';
-          // Shielding Gas only shows for FCAW, GTAW, or Other processes
-          const requiresShieldingGas = layer.weldingProcess === 'FCAW' || layer.weldingProcess === 'GTAW' || layer.weldingProcess === 'Other';
+          const isSAWProcess = layer.weldingProcess === 'SAW' || layer.weldingProcess === 'SAW Twin' || layer.weldingProcess === 'SAW twin';
+          // Shielding Gas shows for gas-shielded processes
+          const requiresShieldingGas = ['FCAW', 'GMAW', 'GTAW', 'Laser', 'Thermal Spray', 'Other'].includes(layer.weldingProcess || '');
           const requiresFlowRate = requiresShieldingGas && layer.shieldingGas && layer.shieldingGas !== 'Self shielded' && layer.shieldingGas !== '';
           const isExpanded = expandedLayers[layer.id] !== false;
           const productSearch = activeProductSearch[layer.id] || layer.waProductName || '';
@@ -466,8 +482,10 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                           required
                         >
                           <option value="">Select diameter</option>
-                          {DIAMETER_OPTIONS.map((mm) => (
-                            <option key={mm} value={mm.toFixed(1)}>{mm.toFixed(1)} mm</option>
+                          {DIAMETER_OPTIONS.map((opt) => (
+                            <option key={opt.mm} value={opt.mm}>
+                              {formData.unitSystem === 'IMPERIAL' ? opt.imperial : `${opt.mm} mm`}
+                            </option>
                           ))}
                         </select>
                       </div>
@@ -481,7 +499,7 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                           value={layer.weldingProcess || ''}
                           onChange={(e) => {
                             const newValue = e.target.value;
-                            if (newValue !== 'SAW' && newValue !== 'SAW twin') {
+                            if (newValue !== 'SAW' && newValue !== 'SAW Twin' && newValue !== 'SAW twin') {
                               // Clear flux fields when switching away from SAW
                               waUpdateLayerMultiple(layer.id, {
                                 weldingProcess: newValue,

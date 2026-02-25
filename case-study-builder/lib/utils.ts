@@ -62,8 +62,9 @@ export function waFormatProductCategory(
 
   const categoryMap: Record<string, string> = {
     'CONSUMABLES': 'Consumables',
-    'COMPOSITE_WEAR_PLATES': 'Composite wear plates',
-    'WEAR_PIPES_TUBES': 'Wear pipes & Tubes',
+    'COMPOSITE_WEAR_PLATES': 'Composite Wear Plates',
+    'WEAR_PIPES_TUBES': 'Wear Pipes & Tubes',
+    'INTEGRA_SERVICES': 'Integra Services',
     'OTHER': customName || 'Other',
   };
 

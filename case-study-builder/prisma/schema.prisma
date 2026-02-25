@@ -152,6 +152,7 @@ enum WearType {
   TEMPERATURE
   METAL_METAL
   COMBINATION
+  EROSION
 }
 
 enum ReactionType {

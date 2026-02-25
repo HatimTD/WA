@@ -41,6 +41,7 @@ const FALLBACK_WEAR_TYPES = [
   { id: 'corrosion', value: 'CORROSION', label: 'Corrosion', sortOrder: 2 },
   { id: 'temperature', value: 'TEMPERATURE', label: 'Temperature', sortOrder: 3 },
   { id: 'metal_metal', value: 'METAL_METAL', label: 'Metal-Metal', sortOrder: 4 },
+  { id: 'erosion', value: 'EROSION', label: 'Erosion', sortOrder: 5 },
 ];
 
 export default function StepThree({ formData, updateFormData, highlightedFields }: Props) {
