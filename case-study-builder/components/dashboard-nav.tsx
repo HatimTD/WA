@@ -85,6 +85,7 @@ const mainNavItems = [
   // HIDDEN: { href: '/dashboard/analytics', label: 'My Analytics', icon: TrendingUp, roles: ['CONTRIBUTOR', 'APPROVER', 'ADMIN', 'MARKETING'] },
   { href: '/dashboard/leaderboard', label: 'Leaderboard', icon: Trophy },
   { href: '/dashboard/bhag', label: '2030 Goal Tracker', icon: BarChart },
+  { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
 
 // Admin section items (collapsible)
@@ -383,56 +384,23 @@ export function DashboardNav({ user, isCollapsed, onNavigate }: DashboardNavProp
         <div className="p-2 space-y-1">
           <TooltipProvider>
             {!isCollapsed ? (
-              <>
-                <Link
-                  href="/dashboard/settings"
-                  className={cn(
-                    'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
-                    pathname === '/dashboard/settings'
-                      ? 'bg-wa-green-50 text-wa-green-900 dark:bg-accent dark:text-primary'
-                      : 'text-gray-700 hover:bg-wa-green-50 hover:text-wa-green-800 dark:text-muted-foreground dark:hover:bg-background dark:hover:text-foreground'
-                  )}
-                >
-                  <Settings className="h-5 w-5" />
-                  <span>Settings</span>
-                </Link>
-                <Button variant="ghost" aria-label="Sign out" className="w-full justify-start text-gray-700 hover:bg-red-50 hover:text-red-700 dark:text-muted-foreground dark:hover:bg-red-900/20 dark:hover:text-red-400" onClick={() => signOut({ callbackUrl: '/' })}
-                >
-                  <LogOut className="mr-3 h-5 w-5" />
-                  Log Out
-                </Button>
-              </>
+              <Button variant="ghost" aria-label="Sign out" className="w-full justify-start text-gray-700 hover:bg-red-50 hover:text-red-700 dark:text-muted-foreground dark:hover:bg-red-900/20 dark:hover:text-red-400" onClick={() => signOut({ callbackUrl: '/' })}
+              >
+                <LogOut className="mr-3 h-5 w-5" />
+                Log Out
+              </Button>
             ) : (
-              <>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Link                       href="/dashboard/settings"
-                      className={cn(
-                        'flex items-center justify-center px-3 py-2 rounded-md text-sm font-medium transition-colors',
-                        pathname === '/dashboard/settings'
-                          ? 'bg-wa-green-50 text-wa-green-900 dark:bg-accent dark:text-primary'
-                          : 'text-gray-700 hover:bg-wa-green-50 hover:text-wa-green-800 dark:text-muted-foreground dark:hover:bg-background dark:hover:text-foreground'
-                      )}
-                    >
-                      <Settings className="h-5 w-5" />
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    <p>Settings</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" aria-label="Sign out" className="w-full justify-start text-gray-700 hover:bg-red-50 hover:text-red-700 dark:text-muted-foreground dark:hover:bg-red-900/20 dark:hover:text-red-400" onClick={() => signOut({ callbackUrl: '/' })}
-                    >
-                      <LogOut className="h-5 w-5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    <p>Log Out</p>
-                  </TooltipContent>
-                </Tooltip>
-              </>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" aria-label="Sign out" className="w-full justify-center text-gray-700 hover:bg-red-50 hover:text-red-700 dark:text-muted-foreground dark:hover:bg-red-900/20 dark:hover:text-red-400" onClick={() => signOut({ callbackUrl: '/' })}
+                  >
+                    <LogOut className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Log Out</p>
+                </TooltipContent>
+              </Tooltip>
             )}
           </TooltipProvider>
         </div>

@@ -197,7 +197,7 @@ export default function StepThree({ formData, updateFormData, highlightedFields 
                       <button
                         key={level}
                         type="button"
-                        className="no-min-touch transition-colors p-0.5"
+                        className="no-min-touch transition-colors p-1.5"
                         onClick={() => {
                           const newOthers = [...(formData.wearTypeOthers || [])];
                           newOthers[index] = {
@@ -232,12 +232,12 @@ export default function StepThree({ formData, updateFormData, highlightedFields 
                 </div>
                 <button
                   type="button"
-                  className="no-min-touch ml-1 text-muted-foreground hover:text-foreground"
+                  className="no-min-touch ml-1 p-1.5 text-muted-foreground hover:text-foreground"
                   onClick={() => {
                     const newOthers = (formData.wearTypeOthers || []).filter((_, i) => i !== index);
                     updateFormData({ wearTypeOthers: newOthers });
                   }}
-                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer' }}
                   aria-label="Remove other wear type"
                 >
                   <X className="w-3.5 h-3.5" />

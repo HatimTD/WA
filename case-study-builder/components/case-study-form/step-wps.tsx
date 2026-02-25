@@ -417,7 +417,7 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                       e.stopPropagation();
                       waRemoveLayer(layer.id);
                     }}
-                    className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-red-500 transition-colors"
+                    className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-red-500 transition-colors"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>

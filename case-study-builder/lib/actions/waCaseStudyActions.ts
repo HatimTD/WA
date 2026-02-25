@@ -195,9 +195,13 @@ export async function waCreateCaseStudy(data: WaCreateCaseStudyInput) {
     if (data.status === 'SUBMITTED' && caseStudy.id) {
       try {
         // Find all APPROVER and ADMIN users (exclude the submitter)
+        // Check both primary role AND WaUserRole table for multi-role users
         const approvers = await prisma.user.findMany({
           where: {
-            role: { in: ['APPROVER', 'ADMIN'] },
+            OR: [
+              { role: { in: ['APPROVER', 'ADMIN'] } },
+              { userRoles: { some: { role: { in: ['APPROVER', 'ADMIN'] } } } },
+            ],
             id: { not: session.user.id },
           },
           select: { id: true },
@@ -413,9 +417,13 @@ export async function waUpdateCaseStudy(id: string, data: any) {
     // Notify approvers when a case study status changes to SUBMITTED
     if (data.status === 'SUBMITTED') {
       try {
+        // Check both primary role AND WaUserRole table for multi-role users
         const approvers = await prisma.user.findMany({
           where: {
-            role: { in: ['APPROVER', 'ADMIN'] },
+            OR: [
+              { role: { in: ['APPROVER', 'ADMIN'] } },
+              { userRoles: { some: { role: { in: ['APPROVER', 'ADMIN'] } } } },
+            ],
             id: { not: session.user.id },
           },
           select: { id: true },

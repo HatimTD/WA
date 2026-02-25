@@ -399,7 +399,7 @@ export default function StepFour({ formData, updateFormData, highlightedFields }
                   <button
                     key={index}
                     type="button"
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors border-b border-border last:border-b-0"
+                    className="w-full px-3 py-3 text-left text-sm hover:bg-muted transition-colors border-b border-border last:border-b-0"
                     onClick={() => {
                       setProductSearch(product);
                       updateFormData({ waProduct: product });
@@ -472,7 +472,7 @@ export default function StepFour({ formData, updateFormData, highlightedFields }
                   <button
                     key={index}
                     type="button"
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors border-b border-border last:border-b-0"
+                    className="w-full px-3 py-3 text-left text-sm hover:bg-muted transition-colors border-b border-border last:border-b-0"
                     onClick={() => {
                       setPlatesSearch(plate);
                       updateFormData({ waProduct: plate });
@@ -518,7 +518,7 @@ export default function StepFour({ formData, updateFormData, highlightedFields }
                   <button
                     key={index}
                     type="button"
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors border-b border-border last:border-b-0"
+                    className="w-full px-3 py-3 text-left text-sm hover:bg-muted transition-colors border-b border-border last:border-b-0"
                     onClick={() => {
                       setThicknessSearch(thickness);
                       updateFormData({ productDescription: thickness });

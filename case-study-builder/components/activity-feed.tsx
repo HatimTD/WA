@@ -10,7 +10,8 @@ type Props = {
 
 export default async function ActivityFeed({ limit = 10 }: Props) {
   // Fetch approved AND published cases (published cases are also approved)
-  // Use updatedAt as fallback ordering when approvedAt is null
+  // Order by updatedAt to show the most recently touched cases first
+  // This ensures cases appear even when approvedAt is null
   const recentApprovals = await prisma.waCaseStudy.findMany({
     where: {
       status: {
@@ -33,7 +34,6 @@ export default async function ActivityFeed({ limit = 10 }: Props) {
       },
     },
     orderBy: [
-      { approvedAt: 'desc' },
       { updatedAt: 'desc' },
     ],
     take: limit,
@@ -151,8 +151,8 @@ export default async function ActivityFeed({ limit = 10 }: Props) {
         {recentApprovals.length >= limit && (
           <div className="mt-4 text-center">
             <Link
-              href="/dashboard/search?status=APPROVED"
-              className="text-sm text-wa-green-600 hover:text-wa-green-700 dark:text-primary dark:hover:text-primary/80 font-medium transition-colors"
+              href="/dashboard/library"
+              className="inline-block py-3 text-sm text-wa-green-600 hover:text-wa-green-700 dark:text-primary dark:hover:text-primary/80 font-medium transition-colors"
             >
               View all approved cases →
             </Link>

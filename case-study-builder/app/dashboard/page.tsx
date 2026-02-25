@@ -24,7 +24,7 @@ async function UserStatsWrapper({ userId }: { userId: string }) {
 
 // Async wrapper for activity feed with its own data fetching
 async function ActivityFeedWrapper() {
-  return <ActivityFeed limit={5} />;
+  return <ActivityFeed limit={10} />;
 }
 
 // Loading component for stats

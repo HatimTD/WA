@@ -283,21 +283,21 @@ export default function LeaderboardClient() {
                 return (
                   <div
                     key={user.id}
-                    className={`flex items-center justify-between p-4 rounded-lg border ${
+                    className={`flex items-center justify-between p-3 sm:p-4 rounded-lg border ${
                       isCurrentUser ? 'bg-wa-green-50 border-wa-green-200 dark:bg-accent dark:border-primary' : 'bg-gray-50 border-gray-200 dark:bg-background dark:border-border'
                     }`}
                   >
-                    <div className="flex items-center gap-4 flex-1">
+                    <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
                       <div
-                        className={`text-lg font-semibold w-10 text-center ${
+                        className={`text-base sm:text-lg font-semibold w-8 sm:w-10 text-center flex-shrink-0 ${
                           isCurrentUser ? 'text-wa-green-600 dark:text-primary' : 'text-gray-600 dark:text-muted-foreground'
                         }`}
                       >
                         #{rank}
                       </div>
-                      <div className="flex-1">
-                        <p className="font-medium dark:text-foreground">{user.name}</p>
-                        <p className="text-sm text-gray-600 dark:text-muted-foreground truncate">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium dark:text-foreground truncate">{user.name}</p>
+                        <p className="text-sm text-gray-600 dark:text-muted-foreground truncate hidden sm:block">
                           {user.email}
                           {user.region && selectedRegion === 'all' && (
                             <span className="ml-2 text-xs">
@@ -305,13 +305,18 @@ export default function LeaderboardClient() {
                             </span>
                           )}
                         </p>
+                        {user.region && selectedRegion === 'all' && (
+                          <p className="text-xs text-gray-500 dark:text-muted-foreground sm:hidden">
+                            <MapPin className="h-3 w-3 inline" /> {user.region}
+                          </p>
+                        )}
                       </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold dark:text-foreground">{user.totalPoints}</p>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-base sm:text-lg font-bold dark:text-foreground">{user.totalPoints}</p>
                         <p className="text-xs text-gray-500 dark:text-muted-foreground">{user.approvedCases} approved</p>
                       </div>
                       {user.badges && user.badges.length > 0 && (
-                        <div className="ml-4">
+                        <div className="ml-2 hidden sm:block">
                           <BadgeDisplay badges={user.badges} showLabels={false} size="sm" />
                         </div>
                       )}
