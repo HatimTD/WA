@@ -749,7 +749,7 @@ export default function ComparePage() {
                 { key: 'industry', label: 'Industry' },
                 { key: 'location', label: 'Location' },
                 { key: 'component', label: 'Component' },
-                { key: 'workType', label: 'Work Type' },
+                { key: 'workType', label: 'Business Type' },
                 { key: 'jobType', label: 'Job Type' },
                 { key: 'oem', label: 'OEM' },
                 { key: 'jobDuration', label: 'Job Duration' },
@@ -820,8 +820,19 @@ export default function ComparePage() {
                   fieldKey="component"
                 />
                 <ComparisonCard
-                  label="Work Type"
-                  values={selectedCases.map(c => c?.workType)}
+                  label="Business Type"
+                  values={selectedCases.map(c => {
+                    const labels: Record<string, string> = {
+                      'INTEGRA_WORKSHOP': 'Integra - Workshop',
+                      'INTEGRA_ON_SITE': 'Integra - On Site',
+                      'INTEGRA_COMBINATION': 'Integra - Combination',
+                      'CONSUMABLE_SALES': 'Consumable Sales',
+                      'WORKSHOP': 'Workshop',
+                      'ON_SITE': 'On Site',
+                      'BOTH': 'Both',
+                    };
+                    return c?.workType ? (labels[c.workType] || c.workType) : null;
+                  })}
                   icon={Wrench}
                   fieldKey="workType"
                 />

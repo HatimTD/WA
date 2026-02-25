@@ -41,7 +41,7 @@ export default async function SystemSettingsPage() {
         <div className="mb-6">
           <h2 className="text-2xl font-bold dark:text-foreground">Offline Mode & PWA Settings</h2>
           <p className="text-muted-foreground dark:text-muted-foreground mt-2">
-            Configure offline functionality, cache durations, and synchronization settings
+            Configure offline functionality, cache durations, and synchronisation settings
           </p>
         </div>
         <OfflineSettings />

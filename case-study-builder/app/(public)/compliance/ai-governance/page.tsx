@@ -201,7 +201,7 @@ export default function AIGovernancePage() {
                   <li>Data is anonymized and stripped of personally identifiable information</li>
                   <li>Customer names, sensitive project details, and proprietary information are excluded</li>
                   <li>You can opt-in or opt-out at any time in your account settings</li>
-                  <li>Opt-in is per user, not organization-wide</li>
+                  <li>Opt-in is per user, not organisation-wide</li>
                 </ul>
                 <p className="text-gray-700">
                   To opt-in or opt-out, visit your <strong>Account Settings → Privacy → AI Training Preferences</strong>.
@@ -233,7 +233,7 @@ export default function AIGovernancePage() {
                   <li>Regular audits of AI outputs for potential bias</li>
                   <li>Diverse training data to reduce demographic bias</li>
                   <li>Continuous monitoring of AI performance across different user groups</li>
-                  <li>User feedback mechanisms to report problematic AI behavior</li>
+                  <li>User feedback mechanisms to report problematic AI behaviour</li>
                 </ul>
 
                 <h3 className="text-lg font-semibold text-wa-green-900 mb-3">5.2 Reporting Issues</h3>

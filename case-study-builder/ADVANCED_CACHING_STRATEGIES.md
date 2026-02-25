@@ -1,4 +1,4 @@
-  # Advanced Caching Strategies for NetSuite Integration
+# Advanced Caching Strategies for NetSuite Integration
 
 ## 🔍 Current Implementation vs Better Options
 

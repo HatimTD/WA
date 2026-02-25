@@ -402,13 +402,23 @@ export function generateCaseStudyPDFV2(
   doc.text(titleText, rightColStart, rightY + 5);
   rightY += 12;
 
-  // Work Type badge
+  // Business Type badge
   if (caseStudy.workType) {
+    const businessTypeLabels: Record<string, string> = {
+      'INTEGRA_WORKSHOP': 'Integra - Workshop',
+      'INTEGRA_ON_SITE': 'Integra - On Site',
+      'INTEGRA_COMBINATION': 'Integra - Combination',
+      'CONSUMABLE_SALES': 'Consumable Sales',
+      'WORKSHOP': 'Workshop',
+      'ON_SITE': 'On Site',
+      'BOTH': 'Both',
+    };
+    const businessTypeLabel = businessTypeLabels[caseStudy.workType] || caseStudy.workType;
     doc.setFillColor(0, 128, 0);
-    doc.roundedRect(rightColStart, rightY, 25, 6, 1, 1, 'F');
+    doc.roundedRect(rightColStart, rightY, 35, 6, 1, 1, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(7);
-    doc.text(caseStudy.workType.toUpperCase(), rightColStart + 2, rightY + 4.5);
+    doc.text(businessTypeLabel, rightColStart + 2, rightY + 4.5);
     rightY += 10;
   }
 

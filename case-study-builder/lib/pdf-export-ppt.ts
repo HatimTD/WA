@@ -998,7 +998,15 @@ async function waGeneratePage1(
     { icon: 'building', label: 'Industry', value: data.industry || 'N/A' },
     { icon: 'package', label: 'Component', value: data.componentWorkpiece || 'N/A' },
     { icon: 'clipboard', label: 'Job Type', value: jobTypeDisplay },
-    { icon: 'wrench', label: 'Work Type', value: data.workType || 'N/A' },
+    { icon: 'wrench', label: 'Business Type', value: ({
+      'INTEGRA_WORKSHOP': 'Integra - Workshop',
+      'INTEGRA_ON_SITE': 'Integra - On Site',
+      'INTEGRA_COMBINATION': 'Integra - Combination',
+      'CONSUMABLE_SALES': 'Consumable Sales',
+      'WORKSHOP': 'Workshop',
+      'ON_SITE': 'On Site',
+      'BOTH': 'Both',
+    } as Record<string, string>)[data.workType || ''] || data.workType || 'N/A' },
     { icon: 'mappin', label: 'Location', value: data.country || data.location || 'N/A' },
   ];
 
