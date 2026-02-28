@@ -169,6 +169,7 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
   // BRD: Get display content - translated to English by default, original if requested
   const hasTranslation = Boolean(caseStudy.translationAvailable && caseStudy.translatedText);
   let displayContent = {
+    generalDescription: caseStudy.generalDescription,
     problemDescription: caseStudy.problemDescription,
     previousSolution: caseStudy.previousSolution,
     technicalAdvantages: caseStudy.technicalAdvantages,
@@ -182,6 +183,7 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
       const translation = JSON.parse(caseStudy.translatedText!);
       const fields = translation.fields || {};
       displayContent = {
+        generalDescription: fields.generalDescription || caseStudy.generalDescription,
         problemDescription: fields.problemDescription || caseStudy.problemDescription,
         previousSolution: fields.previousSolution || caseStudy.previousSolution,
         technicalAdvantages: fields.technicalAdvantages || caseStudy.technicalAdvantages,
@@ -617,10 +619,10 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
         </CardHeader>
         <CardContent className="space-y-4">
           {/* General Description - Overview */}
-          {caseStudy.generalDescription && (
+          {(displayContent.generalDescription || caseStudy.generalDescription) && (
             <div className="pb-4 border-b dark:border-border">
               <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-2">Overview</p>
-              <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{caseStudy.generalDescription}</p>
+              <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{displayContent.generalDescription || caseStudy.generalDescription}</p>
             </div>
           )}
           <div className="grid md:grid-cols-2 gap-4">

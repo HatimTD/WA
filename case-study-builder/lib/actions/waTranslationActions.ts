@@ -11,6 +11,7 @@ import {
 export interface TranslateCaseStudyResult {
   success: boolean;
   translatedFields?: {
+    generalDescription?: string;
     problemDescription?: string;
     previousSolution?: string;
     technicalAdvantages?: string;
@@ -34,6 +35,7 @@ export async function waTranslateCaseStudy(
       where: { id: caseStudyId },
       select: {
         id: true,
+        generalDescription: true,
         problemDescription: true,
         previousSolution: true,
         technicalAdvantages: true,
@@ -56,6 +58,9 @@ export async function waTranslateCaseStudy(
     // Collect fields to translate
     const fieldsToTranslate: Record<string, string> = {};
 
+    if (caseStudy.generalDescription) {
+      fieldsToTranslate.generalDescription = caseStudy.generalDescription;
+    }
     if (caseStudy.problemDescription) {
       fieldsToTranslate.problemDescription = caseStudy.problemDescription;
     }
@@ -106,6 +111,7 @@ export async function waTranslateCaseStudy(
     return {
       success: true,
       translatedFields: {
+        generalDescription: translatedFields.generalDescription,
         problemDescription: translatedFields.problemDescription,
         previousSolution: translatedFields.previousSolution,
         technicalAdvantages: translatedFields.technicalAdvantages,
@@ -279,6 +285,7 @@ export async function waAutoTranslateOnSubmit(caseStudyId: string): Promise<{
       where: { id: caseStudyId },
       select: {
         id: true,
+        generalDescription: true,
         problemDescription: true,
         previousSolution: true,
         technicalAdvantages: true,
@@ -357,6 +364,7 @@ export async function waAutoTranslateOnSubmit(caseStudyId: string): Promise<{
 export async function waGetDisplayContent(caseStudyId: string): Promise<{
   success: boolean;
   content: {
+    generalDescription?: string;
     problemDescription: string;
     previousSolution?: string;
     technicalAdvantages?: string;
@@ -370,6 +378,7 @@ export async function waGetDisplayContent(caseStudyId: string): Promise<{
     const caseStudy = await prisma.waCaseStudy.findUnique({
       where: { id: caseStudyId },
       select: {
+        generalDescription: true,
         problemDescription: true,
         previousSolution: true,
         technicalAdvantages: true,
@@ -401,6 +410,7 @@ export async function waGetDisplayContent(caseStudyId: string): Promise<{
         return {
           success: true,
           content: {
+            generalDescription: fields.generalDescription || caseStudy.generalDescription || undefined,
             problemDescription: fields.problemDescription || caseStudy.problemDescription,
             previousSolution: fields.previousSolution || caseStudy.previousSolution || undefined,
             technicalAdvantages: fields.technicalAdvantages || caseStudy.technicalAdvantages || undefined,
@@ -418,6 +428,7 @@ export async function waGetDisplayContent(caseStudyId: string): Promise<{
     return {
       success: true,
       content: {
+        generalDescription: caseStudy.generalDescription || undefined,
         problemDescription: caseStudy.problemDescription,
         previousSolution: caseStudy.previousSolution || undefined,
         technicalAdvantages: caseStudy.technicalAdvantages || undefined,

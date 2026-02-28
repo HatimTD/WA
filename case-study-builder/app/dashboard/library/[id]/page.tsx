@@ -282,6 +282,7 @@ export default async function PublicCaseDetailPage({
   };
 
   // Content fields with possible translations
+  const displayGeneralDescription = getContent('generalDescription', caseStudy.generalDescription);
   const displayProblemDescription = getContent('problemDescription', caseStudy.problemDescription);
   const displayPreviousSolution = getContent('previousSolution', caseStudy.previousSolution);
   const displayWaSolution = getContent('waSolution', caseStudy.waSolution);
@@ -390,11 +391,11 @@ export default async function PublicCaseDetailPage({
             <CardTitle className="dark:text-foreground">Case Study Overview</CardTitle>
           </CardHeader>
           <CardContent>
-            {/* General Description - Overview */}
-            {caseStudy.generalDescription && (
+            {/* General Description - Overview (translated if available) */}
+            {(displayGeneralDescription || caseStudy.generalDescription) && (
               <div className="pb-4 mb-4 border-b dark:border-border">
                 <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground mb-2">Overview</p>
-                <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{caseStudy.generalDescription}</p>
+                <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{displayGeneralDescription || caseStudy.generalDescription}</p>
               </div>
             )}
             <div className="grid md:grid-cols-2 gap-6">
