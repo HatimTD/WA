@@ -131,9 +131,9 @@ export default async function MyCasesPage({
     return (
       <div
         key={caseStudy.id}
-        className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:border-border dark:hover:border-primary dark:hover:bg-card transition-colors"
+        className="flex flex-col gap-3 p-4 border rounded-lg hover:bg-gray-50 dark:border-border dark:hover:border-primary dark:hover:bg-card transition-colors sm:flex-row sm:items-center sm:justify-between sm:gap-0"
       >
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 mb-2 flex-wrap">
             <Badge className={getTypeColor(caseStudy.type)}>
               {caseStudy.type}
@@ -205,7 +205,7 @@ export default async function MyCasesPage({
             </div>
           )}
         </div>
-        <div className="flex gap-2 ml-4">
+        <div className="flex gap-2 sm:ml-4 flex-shrink-0">
           <Link href={`/dashboard/cases/${caseStudy.id}`}>
             <Button variant="outline" size="sm" className="dark:border-border">
               View
@@ -239,13 +239,13 @@ export default async function MyCasesPage({
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">My Case Studies</h1>
           <p className="text-gray-600 dark:text-muted-foreground mt-2">Track your submissions and progress</p>
         </div>
-        <Link href="/dashboard/new">
-          <Button>
+        <Link href="/dashboard/new" className="flex-shrink-0">
+          <Button className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             New Case Study
           </Button>
@@ -298,38 +298,31 @@ export default async function MyCasesPage({
             </div>
           </CardHeader>
           <CardContent>
-            <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
-              <TabsTrigger value="all" className="gap-2">
+            <TabsList className="flex w-full overflow-x-auto sm:grid sm:grid-cols-5 lg:w-auto lg:inline-grid">
+              <TabsTrigger value="all" className="gap-2 flex-shrink-0">
                 <FileText className="h-4 w-4" />
                 <span className="hidden sm:inline">All</span>
                 <Badge variant="outline" className="ml-1">{stats.total}</Badge>
               </TabsTrigger>
-              <TabsTrigger value="DRAFT" className="gap-2">
+              <TabsTrigger value="DRAFT" className="gap-2 flex-shrink-0">
                 <FileText className="h-4 w-4" />
                 <span className="hidden sm:inline">Drafts</span>
                 <Badge variant="outline" className="ml-1">{stats.draft}</Badge>
               </TabsTrigger>
-              <TabsTrigger value="SUBMITTED" className="gap-2">
+              <TabsTrigger value="SUBMITTED" className="gap-2 flex-shrink-0">
                 <Clock className="h-4 w-4" />
                 <span className="hidden sm:inline">Submitted</span>
                 <Badge variant="outline" className="ml-1">{stats.submitted}</Badge>
               </TabsTrigger>
-              <TabsTrigger value="APPROVED" className="gap-2">
+              <TabsTrigger value="APPROVED" className="gap-2 flex-shrink-0">
                 <CheckCircle2 className="h-4 w-4" />
                 <span className="hidden sm:inline">Approved</span>
                 <Badge variant="outline" className="ml-1">{stats.approved}</Badge>
               </TabsTrigger>
-              <TabsTrigger value="REJECTED" className="gap-2">
+              <TabsTrigger value="REJECTED" className="gap-2 flex-shrink-0">
                 <XCircle className="h-4 w-4" />
                 <span className="hidden sm:inline">Rejected</span>
                 <Badge variant="outline" className="ml-1">{stats.rejected}</Badge>
-              </TabsTrigger>
-              <TabsTrigger value="PUBLISHED" className="gap-2">
-                <Eye className="h-4 w-4" />
-                <span className="hidden sm:inline">Published</span>
-                <Badge variant="outline" className="ml-1">
-                  {caseStudies.filter((c) => c.status === 'PUBLISHED').length}
-                </Badge>
               </TabsTrigger>
             </TabsList>
           </CardContent>
@@ -488,35 +481,6 @@ export default async function MyCasesPage({
           </Card>
         </TabsContent>
 
-        {/* Published Cases */}
-        <TabsContent value="PUBLISHED">
-          <Card role="article" className="dark:bg-card dark:border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 dark:text-foreground">
-                <Eye className="h-5 w-5 text-purple-600" />
-                Published Cases
-              </CardTitle>
-              <CardDescription className="dark:text-muted-foreground">Cases available in the public library</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {caseStudies.filter((c) => c.status === 'PUBLISHED').length === 0 ? (
-                <div className="text-center py-12">
-                  <Eye className="h-12 w-12 mx-auto text-gray-400 dark:text-gray-600 mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground mb-2">
-                    No published cases
-                  </h3>
-                  <p className="text-gray-600 dark:text-muted-foreground mb-4">
-                    You don't have any published cases yet
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {caseStudies.filter((c) => c.status === 'PUBLISHED').map(renderCaseCard)}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   );

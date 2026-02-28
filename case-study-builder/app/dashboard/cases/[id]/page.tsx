@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { ShareButton } from '@/components/share-button';
 import { ShareButtons } from '@/components/share-buttons';
-import { EmailPDFButton } from '@/components/email-pdf-button';
+// PDF EXPORT DISABLED - import { EmailPDFButton } from '@/components/email-pdf-button';
 import { TagColleagues } from '@/components/tag-colleagues';
 import {
   ArrowLeft,
@@ -33,8 +33,8 @@ import WeldingProcedureForm from '@/components/welding-procedure-form';
 import { waGetWeldingProcedure } from '@/lib/actions/waWpsActions';
 import EnhancedCommentsSection from '@/components/enhanced-comments-section';
 import { waGetComments } from '@/lib/actions/waCommentActions';
-import dynamic from 'next/dynamic';
-import type { CaseStudyPDFData } from '@/lib/export_pdf_design3';
+// PDF EXPORT DISABLED - import dynamic from 'next/dynamic';
+// PDF EXPORT DISABLED - import type { CaseStudyPDFData } from '@/lib/export_pdf_design3';
 import { CompletionIndicator } from '@/components/completion-indicator';
 import { waCalculateCompletionPercentage, waGetFieldBreakdown } from '@/lib/utils/waCaseQuality';
 import QualityScoreBadge from '@/components/quality-score-badge';
@@ -90,14 +90,14 @@ function waFormatExpandedServiceLife(data: {
   return parts.length > 0 ? parts.join(' ') : null;
 }
 
-// Dynamic import for PDF export (saves ~200KB from jspdf)
-const PDFExportButton = dynamic(() => import('@/components/pdf-export-button'), {
-  loading: () => (
-    <button className="px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse">
-      <span className="text-gray-400">Loading PDF export...</span>
-    </button>
-  ),
-});
+// PDF EXPORT DISABLED - Dynamic import for PDF export (saves ~200KB from jspdf)
+// const PDFExportButton = dynamic(() => import('@/components/pdf-export-button'), {
+//   loading: () => (
+//     <button className="px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse">
+//       <span className="text-gray-400">Loading PDF export...</span>
+//     </button>
+//   ),
+// });
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -169,6 +169,7 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
   // BRD: Get display content - translated to English by default, original if requested
   const hasTranslation = Boolean(caseStudy.translationAvailable && caseStudy.translatedText);
   let displayContent = {
+    generalDescription: caseStudy.generalDescription,
     problemDescription: caseStudy.problemDescription,
     previousSolution: caseStudy.previousSolution,
     technicalAdvantages: caseStudy.technicalAdvantages,
@@ -182,6 +183,7 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
       const translation = JSON.parse(caseStudy.translatedText!);
       const fields = translation.fields || {};
       displayContent = {
+        generalDescription: fields.generalDescription || caseStudy.generalDescription,
         problemDescription: fields.problemDescription || caseStudy.problemDescription,
         previousSolution: fields.previousSolution || caseStudy.previousSolution,
         technicalAdvantages: fields.technicalAdvantages || caseStudy.technicalAdvantages,
@@ -205,149 +207,149 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
     existingCostCalc
   );
 
-  // Prepare data for PDF export (PPT-style)
-  const pdfData: CaseStudyPDFData = {
-    id: caseStudy.id,
-    type: caseStudy.type as 'APPLICATION' | 'TECH' | 'STAR',
-    title: caseStudy.title || undefined,
-    customerName: caseStudy.customerName,
-    industry: caseStudy.industry,
-    componentWorkpiece: caseStudy.componentWorkpiece,
-    workType: caseStudy.workType || undefined,
-    wearType: caseStudy.wearType,
-    wearSeverities: caseStudy.wearSeverities as Record<string, number> | undefined,
-    wearTypeOthers: (caseStudy.wearTypeOthers as Array<{ name: string; severity: number }>) || undefined,
-    generalDescription: caseStudy.generalDescription || undefined,
-    unitSystem: (caseStudy as any).unitSystem as 'METRIC' | 'IMPERIAL' | undefined,
-    problemDescription: caseStudy.problemDescription,
-    previousSolution: caseStudy.previousSolution || undefined,
-    previousServiceLife: waFormatExpandedServiceLife({
-      hours: caseStudy.previousServiceLifeHours,
-      days: caseStudy.previousServiceLifeDays,
-      weeks: caseStudy.previousServiceLifeWeeks,
-      months: caseStudy.previousServiceLifeMonths,
-      years: caseStudy.previousServiceLifeYears,
-    }) || caseStudy.previousServiceLife || undefined,
-    competitorName: caseStudy.competitorName || undefined,
-    baseMetal: caseStudy.baseMetal || undefined,
-    generalDimensions: caseStudy.generalDimensions || undefined,
-    waSolution: caseStudy.waSolution,
-    productCategory: (caseStudy as any).productCategory || undefined,
-    productCategoryOther: (caseStudy as any).productCategoryOther || undefined,
-    waProduct: caseStudy.waProduct,
-    waProductDiameter: caseStudy.waProductDiameter || undefined,
-    productDescription: (caseStudy as any).productDescription || undefined,
-    technicalAdvantages: caseStudy.technicalAdvantages || undefined,
-    expectedServiceLife: waFormatExpandedServiceLife({
-      hours: caseStudy.expectedServiceLifeHours,
-      days: caseStudy.expectedServiceLifeDays,
-      weeks: caseStudy.expectedServiceLifeWeeks,
-      months: caseStudy.expectedServiceLifeMonths,
-      years: caseStudy.expectedServiceLifeYears,
-    }) || caseStudy.expectedServiceLife || undefined,
-    revenueCurrency: caseStudy.revenueCurrency || 'EUR',
-    solutionValueRevenue: caseStudy.solutionValueRevenue ? Number(caseStudy.solutionValueRevenue) : undefined,
-    annualPotentialRevenue: caseStudy.annualPotentialRevenue ? Number(caseStudy.annualPotentialRevenue) : undefined,
-    customerSavingsAmount: caseStudy.customerSavingsAmount ? Number(caseStudy.customerSavingsAmount) : undefined,
-    location: caseStudy.location,
-    country: caseStudy.country || undefined,
-    // New fields
-    jobType: caseStudy.jobType || undefined,
-    jobTypeOther: caseStudy.jobTypeOther || undefined,
-    oem: caseStudy.oem || undefined,
-    jobDurationHours: caseStudy.jobDurationHours || undefined,
-    jobDurationDays: caseStudy.jobDurationDays || undefined,
-    jobDurationWeeks: caseStudy.jobDurationWeeks || undefined,
-    jobDurationMonths: (caseStudy as any).jobDurationMonths || undefined,
-    jobDurationYears: (caseStudy as any).jobDurationYears || undefined,
-    contributor: {
-      name: caseStudy.contributor.name || 'Unknown',
-    },
-    approver: caseStudy.approver ? {
-      name: caseStudy.approver.name || 'Unknown',
-    } : undefined,
-    createdAt: caseStudy.createdAt,
-    approvedAt: caseStudy.approvedAt || undefined,
-    // Translation fields
-    originalLanguage: caseStudy.originalLanguage || undefined,
-    translationAvailable: caseStudy.translationAvailable || undefined,
-    translatedText: caseStudy.translatedText || undefined,
-    // WPS data for TECH and STAR cases
-    wps: existingWPS ? {
-      // Base metal
-      baseMetalType: existingWPS.baseMetalType || undefined,
-      baseMetalGrade: existingWPS.baseMetalGrade || undefined,
-      baseMetalThickness: existingWPS.baseMetalThickness || undefined,
-      surfacePreparation: existingWPS.surfacePreparation || undefined,
-      surfacePreparationOther: (existingWPS as any).surfacePreparationOther || undefined,
-      // Layers (new multi-layer structure)
-      layers: (existingWPS as any).layers || undefined,
-      // Legacy fields
-      numberOfLayers: existingWPS.layerNumbers?.toString() || undefined,
-      process: existingWPS.weldingProcess || undefined,
-      technique: existingWPS.currentModeSynergy || undefined,
-      weldingPosition: existingWPS.weldingPosition || undefined,
-      torchPosition: existingWPS.torchAngle || undefined,
-      baseMetal: existingWPS.baseMetalType || undefined,
-      thickness: existingWPS.baseMetalThickness || undefined,
-      productName: existingWPS.waProductName || undefined,
-      diameter: existingWPS.waProductDiameter || undefined,
-      shieldingGas: existingWPS.shieldingGas || undefined,
-      flowRate: existingWPS.shieldingFlowRate || undefined,
-      flux: existingWPS.flux || undefined,
-      standardDesignation: existingWPS.standardDesignation || undefined,
-      stickOut: existingWPS.stickOut || undefined,
-      currentType: existingWPS.currentType || undefined,
-      wireSpeed: existingWPS.wireFeedSpeed || undefined,
-      intensity: existingWPS.intensity || undefined,
-      voltage: existingWPS.voltage || undefined,
-      weldingSpeed: existingWPS.travelSpeed || undefined,
-      oscillationWidth: existingWPS.oscillationWidth || undefined,
-      oscillationSpeed: existingWPS.oscillationSpeed || undefined,
-      oscillationTempo: existingWPS.oscillationTempo || undefined,
-      stepoverDistance: existingWPS.oscillationStepOver || undefined,
-      // Heating procedure
-      preheatingTemp: (existingWPS as any).preheatingTemp || undefined,
-      interpassTemp: (existingWPS as any).interpassTemp || undefined,
-      postheatingTemp: (existingWPS as any).postheatingTemp || undefined,
-      preheatTemperature: existingWPS.preheatTemperature || undefined,
-      interpassTemperature: existingWPS.interpassTemperature || undefined,
-      postheatTemperature: existingWPS.postheatTemperature || undefined,
-      postheating: existingWPS.postheatTemperature || undefined,
-      // PWHT
-      pwhtRequired: (existingWPS as any).pwhtRequired || undefined,
-      pwhtHeatingRate: (existingWPS as any).pwhtHeatingRate || undefined,
-      pwhtTempHoldingTime: (existingWPS as any).pwhtTempHoldingTime || undefined,
-      pwhtCoolingRate: (existingWPS as any).pwhtCoolingRate || undefined,
-      pwht: existingWPS.pwhtDetails || undefined,
-      pwhtDetails: existingWPS.pwhtDetails || undefined,
-      heatingRate: (existingWPS as any).pwhtHeatingRate || undefined,
-      temperatureHoldingTime: (existingWPS as any).pwhtTempHoldingTime || undefined,
-      coolingRate: (existingWPS as any).pwhtCoolingRate || undefined,
-      // Additional notes
-      additionalNotes: existingWPS.additionalNotes || undefined,
-    } : undefined,
-    // Cost Calculator data for STAR cases
-    costCalculator: existingCostCalc ? {
-      equipmentName: caseStudy.componentWorkpiece,
-      costOfPart: existingCostCalc.costOfPart ? Number(existingCostCalc.costOfPart) : undefined,
-      costOfWaSolution: existingCostCalc.costOfWaSolution ? Number(existingCostCalc.costOfWaSolution) : undefined,
-      oldSolutionLifetimeDays: existingCostCalc.oldSolutionLifetimeDays || undefined,
-      waSolutionLifetimeDays: existingCostCalc.waSolutionLifetimeDays || undefined,
-      partsUsedPerYear: existingCostCalc.partsUsedPerYear || undefined,
-      maintenanceRepairCost: existingCostCalc.maintenanceRepairCostBefore ? Number(existingCostCalc.maintenanceRepairCostBefore) : undefined,
-      disassemblyCost: existingCostCalc.disassemblyCostBefore ? Number(existingCostCalc.disassemblyCostBefore) : undefined,
-      downtimeCost: existingCostCalc.downtimeCostPerEvent ? Number(existingCostCalc.downtimeCostPerEvent) : undefined,
-      currency: existingCostCalc.currency || undefined,
-      totalCostBefore: existingCostCalc.totalCostBefore ? Number(existingCostCalc.totalCostBefore) : undefined,
-      totalCostAfter: existingCostCalc.totalCostAfter ? Number(existingCostCalc.totalCostAfter) : undefined,
-      annualSavings: existingCostCalc.annualSavings ? Number(existingCostCalc.annualSavings) : undefined,
-      savingsPercentage: existingCostCalc.savingsPercentage ? Number(existingCostCalc.savingsPercentage) : undefined,
-      extraBenefits: existingCostCalc.extraBenefits || undefined,
-    } : undefined,
-    // Images for PDF export
-    images: caseStudy.images && caseStudy.images.length > 0 ? caseStudy.images : undefined,
-  };
+  // PDF EXPORT DISABLED - Prepare data for PDF export (PPT-style)
+  // const pdfData: CaseStudyPDFData = {
+  //   id: caseStudy.id,
+  //   type: caseStudy.type as 'APPLICATION' | 'TECH' | 'STAR',
+  //   title: caseStudy.title || undefined,
+  //   customerName: caseStudy.customerName,
+  //   industry: caseStudy.industry,
+  //   componentWorkpiece: caseStudy.componentWorkpiece,
+  //   workType: caseStudy.workType || undefined,
+  //   wearType: caseStudy.wearType,
+  //   wearSeverities: caseStudy.wearSeverities as Record<string, number> | undefined,
+  //   wearTypeOthers: (caseStudy.wearTypeOthers as Array<{ name: string; severity: number }>) || undefined,
+  //   generalDescription: caseStudy.generalDescription || undefined,
+  //   unitSystem: (caseStudy as any).unitSystem as 'METRIC' | 'IMPERIAL' | undefined,
+  //   problemDescription: caseStudy.problemDescription,
+  //   previousSolution: caseStudy.previousSolution || undefined,
+  //   previousServiceLife: waFormatExpandedServiceLife({
+  //     hours: caseStudy.previousServiceLifeHours,
+  //     days: caseStudy.previousServiceLifeDays,
+  //     weeks: caseStudy.previousServiceLifeWeeks,
+  //     months: caseStudy.previousServiceLifeMonths,
+  //     years: caseStudy.previousServiceLifeYears,
+  //   }) || caseStudy.previousServiceLife || undefined,
+  //   competitorName: caseStudy.competitorName || undefined,
+  //   baseMetal: caseStudy.baseMetal || undefined,
+  //   generalDimensions: caseStudy.generalDimensions || undefined,
+  //   waSolution: caseStudy.waSolution,
+  //   productCategory: (caseStudy as any).productCategory || undefined,
+  //   productCategoryOther: (caseStudy as any).productCategoryOther || undefined,
+  //   waProduct: caseStudy.waProduct,
+  //   waProductDiameter: caseStudy.waProductDiameter || undefined,
+  //   productDescription: (caseStudy as any).productDescription || undefined,
+  //   technicalAdvantages: caseStudy.technicalAdvantages || undefined,
+  //   expectedServiceLife: waFormatExpandedServiceLife({
+  //     hours: caseStudy.expectedServiceLifeHours,
+  //     days: caseStudy.expectedServiceLifeDays,
+  //     weeks: caseStudy.expectedServiceLifeWeeks,
+  //     months: caseStudy.expectedServiceLifeMonths,
+  //     years: caseStudy.expectedServiceLifeYears,
+  //   }) || caseStudy.expectedServiceLife || undefined,
+  //   revenueCurrency: caseStudy.revenueCurrency || 'EUR',
+  //   solutionValueRevenue: caseStudy.solutionValueRevenue ? Number(caseStudy.solutionValueRevenue) : undefined,
+  //   annualPotentialRevenue: caseStudy.annualPotentialRevenue ? Number(caseStudy.annualPotentialRevenue) : undefined,
+  //   customerSavingsAmount: caseStudy.customerSavingsAmount ? Number(caseStudy.customerSavingsAmount) : undefined,
+  //   location: caseStudy.location,
+  //   country: caseStudy.country || undefined,
+  //   // New fields
+  //   jobType: caseStudy.jobType || undefined,
+  //   jobTypeOther: caseStudy.jobTypeOther || undefined,
+  //   oem: caseStudy.oem || undefined,
+  //   jobDurationHours: caseStudy.jobDurationHours || undefined,
+  //   jobDurationDays: caseStudy.jobDurationDays || undefined,
+  //   jobDurationWeeks: caseStudy.jobDurationWeeks || undefined,
+  //   jobDurationMonths: (caseStudy as any).jobDurationMonths || undefined,
+  //   jobDurationYears: (caseStudy as any).jobDurationYears || undefined,
+  //   contributor: {
+  //     name: caseStudy.contributor.name || 'Unknown',
+  //   },
+  //   approver: caseStudy.approver ? {
+  //     name: caseStudy.approver.name || 'Unknown',
+  //   } : undefined,
+  //   createdAt: caseStudy.createdAt,
+  //   approvedAt: caseStudy.approvedAt || undefined,
+  //   // Translation fields
+  //   originalLanguage: caseStudy.originalLanguage || undefined,
+  //   translationAvailable: caseStudy.translationAvailable || undefined,
+  //   translatedText: caseStudy.translatedText || undefined,
+  //   // WPS data for TECH and STAR cases
+  //   wps: existingWPS ? {
+  //     // Base metal
+  //     baseMetalType: existingWPS.baseMetalType || undefined,
+  //     baseMetalGrade: existingWPS.baseMetalGrade || undefined,
+  //     baseMetalThickness: existingWPS.baseMetalThickness || undefined,
+  //     surfacePreparation: existingWPS.surfacePreparation || undefined,
+  //     surfacePreparationOther: (existingWPS as any).surfacePreparationOther || undefined,
+  //     // Layers (new multi-layer structure)
+  //     layers: (existingWPS as any).layers || undefined,
+  //     // Legacy fields
+  //     numberOfLayers: existingWPS.layerNumbers?.toString() || undefined,
+  //     process: existingWPS.weldingProcess || undefined,
+  //     technique: existingWPS.currentModeSynergy || undefined,
+  //     weldingPosition: existingWPS.weldingPosition || undefined,
+  //     torchPosition: existingWPS.torchAngle || undefined,
+  //     baseMetal: existingWPS.baseMetalType || undefined,
+  //     thickness: existingWPS.baseMetalThickness || undefined,
+  //     productName: existingWPS.waProductName || undefined,
+  //     diameter: existingWPS.waProductDiameter || undefined,
+  //     shieldingGas: existingWPS.shieldingGas || undefined,
+  //     flowRate: existingWPS.shieldingFlowRate || undefined,
+  //     flux: existingWPS.flux || undefined,
+  //     standardDesignation: existingWPS.standardDesignation || undefined,
+  //     stickOut: existingWPS.stickOut || undefined,
+  //     currentType: existingWPS.currentType || undefined,
+  //     wireSpeed: existingWPS.wireFeedSpeed || undefined,
+  //     intensity: existingWPS.intensity || undefined,
+  //     voltage: existingWPS.voltage || undefined,
+  //     weldingSpeed: existingWPS.travelSpeed || undefined,
+  //     oscillationWidth: existingWPS.oscillationWidth || undefined,
+  //     oscillationSpeed: existingWPS.oscillationSpeed || undefined,
+  //     oscillationTempo: existingWPS.oscillationTempo || undefined,
+  //     stepoverDistance: existingWPS.oscillationStepOver || undefined,
+  //     // Heating procedure
+  //     preheatingTemp: (existingWPS as any).preheatingTemp || undefined,
+  //     interpassTemp: (existingWPS as any).interpassTemp || undefined,
+  //     postheatingTemp: (existingWPS as any).postheatingTemp || undefined,
+  //     preheatTemperature: existingWPS.preheatTemperature || undefined,
+  //     interpassTemperature: existingWPS.interpassTemperature || undefined,
+  //     postheatTemperature: existingWPS.postheatTemperature || undefined,
+  //     postheating: existingWPS.postheatTemperature || undefined,
+  //     // PWHT
+  //     pwhtRequired: (existingWPS as any).pwhtRequired || undefined,
+  //     pwhtHeatingRate: (existingWPS as any).pwhtHeatingRate || undefined,
+  //     pwhtTempHoldingTime: (existingWPS as any).pwhtTempHoldingTime || undefined,
+  //     pwhtCoolingRate: (existingWPS as any).pwhtCoolingRate || undefined,
+  //     pwht: existingWPS.pwhtDetails || undefined,
+  //     pwhtDetails: existingWPS.pwhtDetails || undefined,
+  //     heatingRate: (existingWPS as any).pwhtHeatingRate || undefined,
+  //     temperatureHoldingTime: (existingWPS as any).pwhtTempHoldingTime || undefined,
+  //     coolingRate: (existingWPS as any).pwhtCoolingRate || undefined,
+  //     // Additional notes
+  //     additionalNotes: existingWPS.additionalNotes || undefined,
+  //   } : undefined,
+  //   // Cost Calculator data for STAR cases
+  //   costCalculator: existingCostCalc ? {
+  //     equipmentName: caseStudy.componentWorkpiece,
+  //     costOfPart: existingCostCalc.costOfPart ? Number(existingCostCalc.costOfPart) : undefined,
+  //     costOfWaSolution: existingCostCalc.costOfWaSolution ? Number(existingCostCalc.costOfWaSolution) : undefined,
+  //     oldSolutionLifetimeDays: existingCostCalc.oldSolutionLifetimeDays || undefined,
+  //     waSolutionLifetimeDays: existingCostCalc.waSolutionLifetimeDays || undefined,
+  //     partsUsedPerYear: existingCostCalc.partsUsedPerYear || undefined,
+  //     maintenanceRepairCost: existingCostCalc.maintenanceRepairCostBefore ? Number(existingCostCalc.maintenanceRepairCostBefore) : undefined,
+  //     disassemblyCost: existingCostCalc.disassemblyCostBefore ? Number(existingCostCalc.disassemblyCostBefore) : undefined,
+  //     downtimeCost: existingCostCalc.downtimeCostPerEvent ? Number(existingCostCalc.downtimeCostPerEvent) : undefined,
+  //     currency: existingCostCalc.currency || undefined,
+  //     totalCostBefore: existingCostCalc.totalCostBefore ? Number(existingCostCalc.totalCostBefore) : undefined,
+  //     totalCostAfter: existingCostCalc.totalCostAfter ? Number(existingCostCalc.totalCostAfter) : undefined,
+  //     annualSavings: existingCostCalc.annualSavings ? Number(existingCostCalc.annualSavings) : undefined,
+  //     savingsPercentage: existingCostCalc.savingsPercentage ? Number(existingCostCalc.savingsPercentage) : undefined,
+  //     extraBenefits: existingCostCalc.extraBenefits || undefined,
+  //   } : undefined,
+  //   // Images for PDF export
+  //   images: caseStudy.images && caseStudy.images.length > 0 ? caseStudy.images : undefined,
+  // };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -423,11 +425,12 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
         <div className="flex gap-2">
           <ShareButtons
             caseStudyId={caseStudy.id}
-            title={`${caseStudy.customerName} - Case Study`}
-            description={`${caseStudy.industry} case study: ${caseStudy.problemDescription.substring(0, 100)}...`}
+            title={`${caseStudy.industry} - Case Study`}
+            description={`${caseStudy.industry} case study: ${caseStudy.componentWorkpiece}`}
             variant="outline"
             size="sm"
           />
+          {/* PDF EXPORT DISABLED
           <EmailPDFButton
             caseStudyId={caseStudy.id}
             variant="outline"
@@ -438,6 +441,7 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
             userName={session.user.name || 'Unknown User'}
             userEmail={session.user.email || undefined}
           />
+          */}
           {canEdit && (
             <Link href={`/dashboard/cases/${caseStudy.id}/edit`}>
               <Button variant="outline" size="sm" className="dark:border-border">
@@ -492,6 +496,8 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
                 {caseStudy.status}
               </span>
             </Badge>
+            {/* HIDDEN: Quality Score badge */}
+            {/*
             <QualityScoreBadge
               caseStudy={{
                 ...caseStudy,
@@ -503,11 +509,13 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
                 costCalculator: existingCostCalc,
               } as CaseStudyWithRelations}
             />
+            */}
           </div>
         </div>
       </div>
 
-      {/* Completion Quality Indicator */}
+      {/* HIDDEN: Case Study Quality card - can be re-enabled */}
+      {/*
       <Card role="article" className="dark:bg-card dark:border-border">
         <CardHeader>
           <CardTitle className="dark:text-foreground">Case Study Quality</CardTitle>
@@ -602,6 +610,7 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
           )}
         </CardContent>
       </Card>
+      */}
 
       {/* Basic Information */}
       <Card role="article" className="dark:bg-card dark:border-border">
@@ -610,10 +619,10 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
         </CardHeader>
         <CardContent className="space-y-4">
           {/* General Description - Overview */}
-          {caseStudy.generalDescription && (
+          {(displayContent.generalDescription || caseStudy.generalDescription) && (
             <div className="pb-4 border-b dark:border-border">
               <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-2">Overview</p>
-              <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{caseStudy.generalDescription}</p>
+              <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{displayContent.generalDescription || caseStudy.generalDescription}</p>
             </div>
           )}
           <div className="grid md:grid-cols-2 gap-4">
@@ -646,8 +655,16 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
             <div className="flex items-start gap-3">
               <Wrench className="h-5 w-5 text-gray-400 dark:text-gray-500 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Work Type</p>
-                <p className="text-base font-semibold dark:text-foreground">{caseStudy.workType}</p>
+                <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Business Type</p>
+                <p className="text-base font-semibold dark:text-foreground">{({
+                  'INTEGRA_WORKSHOP': 'Integra - Workshop',
+                  'INTEGRA_ON_SITE': 'Integra - On Site',
+                  'INTEGRA_COMBINATION': 'Integra - Combination',
+                  'CONSUMABLE_SALES': 'Consumable Sales',
+                  'WORKSHOP': 'Workshop',
+                  'ON_SITE': 'On Site',
+                  'BOTH': 'Both',
+                } as Record<string, string>)[caseStudy.workType || ''] || caseStudy.workType}</p>
               </div>
             </div>
 
@@ -831,7 +848,7 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
             years: caseStudy.expectedServiceLifeYears,
           })) && (
             <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Expected/Achieved Service Life</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Service Life</p>
               <p className="text-base dark:text-foreground">
                 {waFormatExpandedServiceLife({
                   hours: caseStudy.expectedServiceLifeHours,
@@ -862,7 +879,7 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
                 <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-border bg-gray-100 dark:bg-gray-800">
                   <Image
                     src={imageUrl}
-                    alt={`${caseStudy.customerName} - Image ${index + 1}`}
+                    alt={`Case study image ${index + 1}`}
                     fill
                     className="object-cover hover:scale-105 transition-transform duration-200"
                     sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
@@ -922,7 +939,7 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
       )}
 
       {/* Financial Information - Only for APPLICATION and TECH cases */}
-      {(caseStudy.type === 'APPLICATION' || caseStudy.type === 'TECH') && (caseStudy.solutionValueRevenue || caseStudy.annualPotentialRevenue || caseStudy.customerSavingsAmount) && (
+      {(caseStudy.type === 'APPLICATION' || caseStudy.type === 'TECH') && (caseStudy.solutionValueRevenue || caseStudy.customerSavingsAmount) && (
         <Card role="article" className="dark:bg-card dark:border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 dark:text-foreground">
@@ -931,21 +948,12 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-2 gap-4">
               {caseStudy.solutionValueRevenue && (
                 <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Solution Value/Revenue</p>
+                  <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Solution Revenue</p>
                   <p className="text-2xl font-bold text-green-600">
                     {getCurrencySymbol(caseStudy.revenueCurrency)}{Number(caseStudy.solutionValueRevenue).toLocaleString()}
-                  </p>
-                </div>
-              )}
-
-              {caseStudy.annualPotentialRevenue && (
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Annual Potential Revenue</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {getCurrencySymbol(caseStudy.revenueCurrency)}{Number(caseStudy.annualPotentialRevenue).toLocaleString()}
                   </p>
                 </div>
               )}

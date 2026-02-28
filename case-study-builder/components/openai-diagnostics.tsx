@@ -204,7 +204,7 @@ export default function OpenAIDiagnostics() {
               <div className="bg-white dark:bg-gray-900 p-3 rounded border dark:border-border">
                 <div className="flex items-center gap-2 mb-2">
                   {getStatusIcon(testResults.tests.summarize.status)}
-                  <span className="font-medium dark:text-foreground">Text Summarization</span>
+                  <span className="font-medium dark:text-foreground">Text Summarisation</span>
                 </div>
                 {testResults.tests.summarize.status === 'success' ? (
                   <div className="text-sm text-gray-600 dark:text-gray-400 ml-7">

@@ -63,6 +63,7 @@ type User = {
   regions?: string[]; // Computed from subsidiaries
   totalPoints: number;
   caseCount: number;
+  acceptedTermsAt: string | null;
   createdAt: string;
 };
 
@@ -85,6 +86,7 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
   const [users, setUsers] = useState(initialUsers);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('ALL');
+  const [termsFilter, setTermsFilter] = useState('ALL');
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [allSubsidiaries, setAllSubsidiaries] = useState<Array<{ id: string; name: string; region: string }>>([]);
   const [subsidiariesByRegion, setSubsidiariesByRegion] = useState<Record<string, Array<{ id: string; name: string }>>>({});
@@ -120,7 +122,11 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
 
     const matchesRole = roleFilter === 'ALL' || user.role === roleFilter;
 
-    return matchesSearch && matchesRole;
+    const matchesTerms = termsFilter === 'ALL' ||
+      (termsFilter === 'ACCEPTED' && user.acceptedTermsAt) ||
+      (termsFilter === 'NOT_ACCEPTED' && !user.acceptedTermsAt);
+
+    return matchesSearch && matchesRole && matchesTerms;
   });
 
   // Get user's current roles (from roles array or fall back to single role)
@@ -557,6 +563,28 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
               </SelectContent>
             </Select>
           </div>
+          <div className="w-full md:w-48">
+            <Select value={termsFilter} onValueChange={setTermsFilter}>
+              <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
+                <SelectValue placeholder="Filter by terms" />
+              </SelectTrigger>
+              <SelectContent className="dark:bg-popover dark:border-border">
+                <SelectItem value="ALL">All Terms Status</SelectItem>
+                <SelectItem value="ACCEPTED">
+                  <div className="flex items-center gap-2">
+                    <Check className="h-3 w-3 text-green-600" />
+                    <span>Accepted</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="NOT_ACCEPTED">
+                  <div className="flex items-center gap-2">
+                    <span className="h-3 w-3 text-red-500 font-bold text-xs">✗</span>
+                    <span>Not Accepted</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Users Table */}
@@ -568,6 +596,7 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
                 <TableHead className="dark:text-foreground hover:bg-gray-50 dark:hover:bg-muted/50">Role</TableHead>
                 <TableHead className="dark:text-foreground hover:bg-gray-50 dark:hover:bg-muted/50">Subsidiaries</TableHead>
                 <TableHead className="dark:text-foreground hover:bg-gray-50 dark:hover:bg-muted/50">Regions</TableHead>
+                <TableHead className="dark:text-foreground hover:bg-gray-50 dark:hover:bg-muted/50">Terms</TableHead>
                 <TableHead className="text-right dark:text-foreground hover:bg-gray-50 dark:hover:bg-muted/50">Points</TableHead>
                 <TableHead className="text-right dark:text-foreground hover:bg-gray-50 dark:hover:bg-muted/50">Cases</TableHead>
                 <TableHead className="dark:text-foreground hover:bg-gray-50 dark:hover:bg-muted/50">Joined</TableHead>
@@ -795,6 +824,20 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
                           ))
                         )}
                       </div>
+                    </TableCell>
+
+                    {/* Terms Accepted */}
+                    <TableCell>
+                      {user.acceptedTermsAt ? (
+                        <div className="flex items-center gap-1.5">
+                          <Check className="h-4 w-4 text-green-600" />
+                          <span className="text-xs text-gray-600 dark:text-muted-foreground">
+                            {new Date(user.acceptedTermsAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-red-500 font-medium">Not accepted</span>
+                      )}
                     </TableCell>
 
                     {/* Points */}

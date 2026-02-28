@@ -255,7 +255,7 @@ export default function ApprovalsClient({ userId }: ApprovalsClientProps) {
             <div className="flex gap-4">
               {/* Sort By */}
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-[200px] dark:bg-input dark:border-border dark:text-foreground">
+                <SelectTrigger className="w-full sm:w-[200px] dark:bg-input dark:border-border dark:text-foreground">
                   <SelectValue placeholder="Sort By" />
                 </SelectTrigger>
                 <SelectContent className="dark:bg-popover dark:border-border">
@@ -307,10 +307,10 @@ export default function ApprovalsClient({ userId }: ApprovalsClientProps) {
               {filteredAndSortedCases.map((caseStudy) => (
                 <div
                   key={caseStudy.id}
-                  className="flex items-center justify-between p-4 border dark:border-border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                  className="flex flex-col gap-3 p-4 border dark:border-border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors sm:flex-row sm:items-center sm:justify-between sm:gap-0"
                 >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-2 flex-wrap">
                       <Badge className={getTypeColor(caseStudy.type)}>
                         {caseStudy.type}
                       </Badge>
@@ -319,10 +319,10 @@ export default function ApprovalsClient({ userId }: ApprovalsClientProps) {
                         Pending
                       </Badge>
                     </div>
-                    <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">
+                    <h3 className="font-semibold text-base sm:text-lg text-gray-900 dark:text-gray-100 truncate">
                       {caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}
                     </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 truncate">
                       {caseStudy.location} • {caseStudy.waProduct}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
@@ -330,9 +330,9 @@ export default function ApprovalsClient({ userId }: ApprovalsClientProps) {
                       {new Date(caseStudy.submittedAt!).toLocaleDateString()}
                     </p>
                   </div>
-                  <div className="flex gap-2 ml-4">
-                    <Link href={`/dashboard/approvals/${caseStudy.id}`}>
-                      <Button className="dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90">
+                  <div className="flex gap-2 sm:ml-4 flex-shrink-0">
+                    <Link href={`/dashboard/approvals/${caseStudy.id}`} className="w-full sm:w-auto">
+                      <Button className="w-full sm:w-auto dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90">
                         <Eye className="h-4 w-4 mr-2" />
                         Review
                       </Button>
@@ -357,10 +357,10 @@ export default function ApprovalsClient({ userId }: ApprovalsClientProps) {
               {recentlyReviewed.map((caseStudy) => (
                 <div
                   key={caseStudy.id}
-                  className="flex items-center justify-between p-4 border dark:border-border rounded-lg"
+                  className="flex flex-col gap-3 p-4 border dark:border-border rounded-lg sm:flex-row sm:items-center sm:justify-between sm:gap-0"
                 >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-2 flex-wrap">
                       <Badge className={getTypeColor(caseStudy.type)}>
                         {caseStudy.type}
                       </Badge>
@@ -373,22 +373,24 @@ export default function ApprovalsClient({ userId }: ApprovalsClientProps) {
                         {caseStudy.status}
                       </Badge>
                     </div>
-                    <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">
+                    <h3 className="font-semibold text-base sm:text-lg text-gray-900 dark:text-gray-100 truncate">
                       {caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}
                     </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 truncate">
                       {caseStudy.location} • {caseStudy.waProduct}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
-                      Reviewed on {new Date(caseStudy.approvedAt!).toLocaleDateString()}
+                      Reviewed on {new Date(caseStudy.approvedAt || caseStudy.submittedAt || Date.now()).toLocaleDateString()}
                     </p>
                   </div>
-                  <Link href={`/dashboard/cases/${caseStudy.id}`}>
-                    <Button variant="outline" size="sm" className="dark:border-border dark:text-foreground dark:hover:bg-accent">
-                      <Eye className="h-4 w-4 mr-2" />
-                      View
-                    </Button>
-                  </Link>
+                  <div className="flex-shrink-0 sm:ml-4">
+                    <Link href={`/dashboard/cases/${caseStudy.id}`}>
+                      <Button variant="outline" size="sm" className="dark:border-border dark:text-foreground dark:hover:bg-accent">
+                        <Eye className="h-4 w-4 mr-2" />
+                        View
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               ))}
             </div>

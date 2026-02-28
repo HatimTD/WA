@@ -35,6 +35,10 @@ export type WpsLayer = {
   oscillationAmplitude?: string;
   oscillationPeriod?: string;
   oscillationTempos?: string;
+  // Heating Procedure (per layer)
+  preheatingTemp?: string;
+  interpassTemp?: string;
+  postheatingTemp?: string;
 };
 
 // Document metadata for uploaded files

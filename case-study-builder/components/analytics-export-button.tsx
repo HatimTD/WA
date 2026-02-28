@@ -107,9 +107,7 @@ export function AnalyticsExportButton(props: AnalyticsExportButtonProps) {
     yPos += 7;
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Total Solution Value: $${props.totalRevenue.toLocaleString()}`, 20, yPos);
-    yPos += 6;
-    doc.text(`Annual Potential Revenue: $${props.totalAnnualRevenue.toLocaleString()}`, 20, yPos);
+    doc.text(`Total Solution Revenue: $${props.totalRevenue.toLocaleString()}`, 20, yPos);
     yPos += 12;
 
     // Badges & Achievements

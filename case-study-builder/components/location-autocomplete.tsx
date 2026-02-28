@@ -42,6 +42,8 @@ interface LocationAutocompleteProps {
   required?: boolean;
   /** Additional className */
   className?: string;
+  /** Additional className for the input element */
+  inputClassName?: string;
   /** Restrict to specific country codes (e.g., ['au', 'us']) */
   countryRestrictions?: string[];
   /** Disable the autocomplete */
@@ -64,6 +66,7 @@ export default function LocationAutocomplete({
   placeholder = 'Start typing a city or address...',
   required = false,
   className,
+  inputClassName,
   countryRestrictions,
   disabled = false,
 }: LocationAutocompleteProps) {
@@ -242,7 +245,8 @@ export default function LocationAutocomplete({
           required={required}
           className={cn(
             'pl-10 dark:bg-input dark:border-border dark:text-foreground',
-            showFallbackInput && 'pr-24'
+            showFallbackInput && 'pr-24',
+            inputClassName
           )}
           autoComplete="off"
         />

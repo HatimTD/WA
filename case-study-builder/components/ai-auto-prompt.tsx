@@ -87,7 +87,7 @@ export default function AIAutoPrompt({
         <CardContent className="py-4">
           <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-sm">Analyzing missing fields...</span>
+            <span className="text-sm">Analysing missing fields...</span>
           </div>
         </CardContent>
       </Card>

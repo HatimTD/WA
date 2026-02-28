@@ -108,7 +108,7 @@ export function QuickActions({
             <CardHeader>
               <CardTitle className="flex items-center gap-2 dark:text-foreground">
                 <Award className="h-5 w-5 text-green-600 dark:text-primary" />
-                My Progress
+                My Case Studies
               </CardTitle>
               <CardDescription className="dark:text-muted-foreground">
                 View your submissions and badges

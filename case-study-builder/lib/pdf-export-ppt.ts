@@ -998,7 +998,15 @@ async function waGeneratePage1(
     { icon: 'building', label: 'Industry', value: data.industry || 'N/A' },
     { icon: 'package', label: 'Component', value: data.componentWorkpiece || 'N/A' },
     { icon: 'clipboard', label: 'Job Type', value: jobTypeDisplay },
-    { icon: 'wrench', label: 'Work Type', value: data.workType || 'N/A' },
+    { icon: 'wrench', label: 'Business Type', value: ({
+      'INTEGRA_WORKSHOP': 'Integra - Workshop',
+      'INTEGRA_ON_SITE': 'Integra - On Site',
+      'INTEGRA_COMBINATION': 'Integra - Combination',
+      'CONSUMABLE_SALES': 'Consumable Sales',
+      'WORKSHOP': 'Workshop',
+      'ON_SITE': 'On Site',
+      'BOTH': 'Both',
+    } as Record<string, string>)[data.workType || ''] || data.workType || 'N/A' },
     { icon: 'mappin', label: 'Location', value: data.country || data.location || 'N/A' },
   ];
 
@@ -1246,7 +1254,7 @@ async function waGeneratePage1(
   doc.setFontSize(6);
   doc.setTextColor(COLORS.gray.r, COLORS.gray.g, COLORS.gray.b);
   doc.setFont('helvetica', 'normal');
-  doc.text('Expected Service Life', margin + (metricWidth + 6) * 2 + 4, y + 5);
+  doc.text('Service Life', margin + (metricWidth + 6) * 2 + 4, y + 5);
   doc.setFontSize(10);
   doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
   doc.setFont('helvetica', 'bold');
@@ -1357,7 +1365,7 @@ async function waGeneratePage2(doc: jsPDF, data: CaseStudyPDFData, options?: PDF
       { label: `Cost of WA Solution`, value: waCost ? waFormatCurrency(waCost, cc.currency) : '-' },
       { label: 'Old Solution Lifetime', value: cc.oldSolutionLifetimeDays ? `${cc.oldSolutionLifetimeDays} days` : '-' },
       { label: 'WA Solution Lifetime', value: cc.waSolutionLifetimeDays ? `${cc.waSolutionLifetimeDays} days` : '-' },
-      { label: 'Parts Used Per Year (E)', value: E ? `${E}` : '-', highlight: true },
+      { label: 'Parts Replaced Per Year (E)', value: E ? `${E}` : '-', highlight: true },
       { label: 'Maintenance Cost (F)', value: F ? waFormatCurrency(F, cc.currency) : '-' },
       { label: 'Disassembly Cost (G)', value: G ? waFormatCurrency(G, cc.currency) : '-' },
       { label: 'Downtime Cost (H)', value: H ? waFormatCurrency(H, cc.currency) : '-' },

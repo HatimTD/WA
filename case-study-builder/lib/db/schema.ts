@@ -24,7 +24,7 @@ export interface OfflineCaseStudy {
   customerName: string;
   industry: string;
   componentWorkpiece: string;
-  workType: 'WORKSHOP' | 'ON_SITE' | 'BOTH';
+  workType: string;
   wearType: string[];
   problemDescription: string;
   previousSolution?: string;

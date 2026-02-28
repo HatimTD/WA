@@ -248,18 +248,12 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
 
   return (
     <div className="space-y-6">
-      <div className="bg-wa-green-50 border border-wa-green-200 rounded-lg p-4 dark:bg-accent dark:border-primary">
-        <p className="text-sm text-wa-green-800 dark:text-muted-foreground">
-          <span className="font-semibold dark:text-foreground">Star Case Requirement:</span> The Cost Calculator helps demonstrate the financial value of the WA solution. Event costs are optional.
-        </p>
-      </div>
-
       {/* Currency Selection */}
       <Card role="article" className="dark:bg-card dark:border-border">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg dark:text-foreground">
             <Settings className="h-5 w-5 text-wa-green-600" />
-            Currency
+            Costs
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -298,17 +292,17 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg dark:text-foreground">
             <TrendingDown className="h-5 w-5 text-wa-green-600" />
-            Part & Material Costs
+            Cost of Previous Solution
           </CardTitle>
           <CardDescription className="dark:text-muted-foreground">
-            Compare the cost of old solution vs WA solution ({currencySymbol})
+            Compare the cost of previous solution vs WA solution ({currencySymbol})
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="costOfPart" className="dark:text-foreground">
-                Cost of Old Solution/Part (A) <span className="text-red-500 dark:text-red-400">*</span>
+                Previous Solution (A) <span className="text-red-500 dark:text-red-400">*</span>
               </Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">
@@ -325,7 +319,7 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Cost per unit with old solution
+                Cost per unit
               </p>
             </div>
 
@@ -348,14 +342,14 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Cost per unit with WA solution (may be higher, but lasts longer)
+                Cost per unit
               </p>
             </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="partsUsedPerYear" className="dark:text-foreground">
-              Parts Used Per Year (E) <span className="text-red-500 dark:text-red-400">*</span>
+              How many times per year was the customer replacing the parts with their previous solution? (E) <span className="text-red-500 dark:text-red-400">*</span>
             </Label>
             <Input
               id="partsUsedPerYear"
@@ -424,28 +418,42 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
                   <span className="text-xs w-24 text-muted-foreground">Old Solution</span>
-                  <div className="flex-1 h-6 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div className="flex-1 h-6 bg-gray-200 dark:bg-gray-700 rounded-full relative">
                     <div
                       className="h-full bg-gray-500 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
-                      style={{ width: `${lifetimeVisual.oldWidth}%` }}
+                      style={{ width: `${lifetimeVisual.oldWidth}%`, minWidth: '8px' }}
                     >
-                      <span className="text-xs text-white font-medium">
+                      {lifetimeVisual.oldWidth >= 25 && (
+                        <span className="text-xs text-white font-medium whitespace-nowrap">
+                          {lifetimeVisual.oldLifetimeWeeks.toFixed(1)} weeks
+                        </span>
+                      )}
+                    </div>
+                    {lifetimeVisual.oldWidth < 25 && (
+                      <span className="absolute text-xs font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap" style={{ left: `calc(${lifetimeVisual.oldWidth}% + 8px)`, top: '50%', transform: 'translateY(-50%)' }}>
                         {lifetimeVisual.oldLifetimeWeeks.toFixed(1)} weeks
                       </span>
-                    </div>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-xs w-24 text-muted-foreground">WA Solution</span>
-                  <div className="flex-1 h-6 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div className="flex-1 h-6 bg-gray-200 dark:bg-gray-700 rounded-full relative">
                     <div
                       className="h-full bg-wa-green-500 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
-                      style={{ width: `${lifetimeVisual.waWidth}%` }}
+                      style={{ width: `${lifetimeVisual.waWidth}%`, minWidth: '8px' }}
                     >
-                      <span className="text-xs text-white font-medium">
+                      {lifetimeVisual.waWidth >= 25 && (
+                        <span className="text-xs text-white font-medium whitespace-nowrap">
+                          {lifetimeVisual.waLifetimeWeeks.toFixed(1)} weeks
+                        </span>
+                      )}
+                    </div>
+                    {lifetimeVisual.waWidth < 25 && (
+                      <span className="absolute text-xs font-medium text-wa-green-700 dark:text-wa-green-400 whitespace-nowrap" style={{ left: `calc(${lifetimeVisual.waWidth}% + 8px)`, top: '50%', transform: 'translateY(-50%)' }}>
                         {lifetimeVisual.waLifetimeWeeks.toFixed(1)} weeks
                       </span>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -462,11 +470,8 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg dark:text-foreground">
             <Wrench className="h-5 w-5 text-wa-green-600" />
-            Event Costs (Per Replacement)
+            Costs Incurred (per replacement)
           </CardTitle>
-          <CardDescription className="dark:text-muted-foreground">
-            Optional: Costs incurred each time a part needs to be replaced (enter 0 if not applicable)
-          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid md:grid-cols-3 gap-4">
@@ -486,7 +491,7 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Maintenance/repair labor cost per event
+                Labour costs for repair and maintenance
               </p>
             </div>
 
@@ -506,7 +511,7 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Labor to remove and reinstall per event
+                Labour costs for removal and reinstallation
               </p>
             </div>
 
@@ -575,9 +580,6 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
         <CardContent className="text-xs text-blue-800 dark:text-blue-200 space-y-1">
           <p><strong>Annual Cost (Old):</strong> (A × E) + (E − 1) × (F + G + H)</p>
           <p><strong>Annual Cost (WA):</strong> (B × E÷(D/C)) + (E÷(D/C) − 1) × (F + G + H)</p>
-          <p className="text-muted-foreground pt-1">
-            The WA solution costs more per unit but lasts longer, reducing total parts needed and replacement events.
-          </p>
         </CardContent>
       </Card>
 
@@ -587,7 +589,7 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg dark:text-foreground">
               <Calculator className="h-5 w-5 text-wa-green-600" />
-              Calculated Annual Savings
+              Cost of Previous Solution
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -597,28 +599,42 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
                   <span className="text-xs w-24 text-muted-foreground">Old Solution</span>
-                  <div className="flex-1 h-8 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div className="flex-1 h-8 bg-gray-200 dark:bg-gray-700 rounded-full relative">
                     <div
                       className="h-full bg-red-400 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
-                      style={{ width: `${costWidths.oldWidth}%` }}
+                      style={{ width: `${costWidths.oldWidth}%`, minWidth: '8px' }}
                     >
-                      <span className="text-xs text-white font-medium">
+                      {costWidths.oldWidth >= 25 && (
+                        <span className="text-xs text-white font-medium whitespace-nowrap">
+                          {currencySymbol}{parseFloat(savings.annualCostOld).toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                    {costWidths.oldWidth < 25 && (
+                      <span className="absolute text-xs font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap" style={{ left: `calc(${costWidths.oldWidth}% + 8px)`, top: '50%', transform: 'translateY(-50%)' }}>
                         {currencySymbol}{parseFloat(savings.annualCostOld).toLocaleString()}
                       </span>
-                    </div>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-xs w-24 text-muted-foreground">WA Solution</span>
-                  <div className="flex-1 h-8 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div className="flex-1 h-8 bg-gray-200 dark:bg-gray-700 rounded-full relative">
                     <div
                       className="h-full bg-wa-green-500 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
-                      style={{ width: `${costWidths.waWidth}%` }}
+                      style={{ width: `${costWidths.waWidth}%`, minWidth: '8px' }}
                     >
-                      <span className="text-xs text-white font-medium">
+                      {costWidths.waWidth >= 25 && (
+                        <span className="text-xs text-white font-medium whitespace-nowrap">
+                          {currencySymbol}{parseFloat(savings.annualCostWA).toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                    {costWidths.waWidth < 25 && (
+                      <span className="absolute text-xs font-medium text-wa-green-700 dark:text-wa-green-400 whitespace-nowrap" style={{ left: `calc(${costWidths.waWidth}% + 8px)`, top: '50%', transform: 'translateY(-50%)' }}>
                         {currencySymbol}{parseFloat(savings.annualCostWA).toLocaleString()}
                       </span>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -633,12 +649,6 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
                     {currencySymbol}{parseFloat(savings.annualCostOld).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <div className="flex justify-between">
-                    <span>Parts/year:</span>
-                    <span>{formData.costCalculator?.partsUsedPerYear}</span>
-                  </div>
-                </div>
               </div>
 
               <div className="space-y-3">
@@ -647,16 +657,6 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
                   <p className="text-2xl font-bold text-wa-green-600 dark:text-primary">
                     {currencySymbol}{parseFloat(savings.annualCostWA).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
-                </div>
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <div className="flex justify-between">
-                    <span>Lifetime improvement:</span>
-                    <span className="font-semibold text-wa-green-700 dark:text-primary">{savings.lifetimeRatio}x</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Parts/year (reduced):</span>
-                    <span>{savings.waPartsPerYear}</span>
-                  </div>
                 </div>
               </div>
 
@@ -669,16 +669,6 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
                   <p className="text-sm font-semibold text-wa-green-600 dark:text-primary/80 mt-1">
                     {savings.savingsPercentage}% reduction
                   </p>
-                </div>
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <div className="flex justify-between">
-                    <span>Parts savings:</span>
-                    <span>{currencySymbol}{savings.partsSavings}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Event savings:</span>
-                    <span>{currencySymbol}{savings.eventSavings}</span>
-                  </div>
                 </div>
               </div>
             </div>

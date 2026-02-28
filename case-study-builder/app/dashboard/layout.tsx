@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { SessionProvider } from 'next-auth/react';
 import AnnouncementBanner from '@/components/announcement-banner';
 import MaintenanceRedirect from '@/components/maintenance-redirect';
+import ConfidentialityAgreementDialog from '@/components/confidentiality-agreement-dialog';
 
 export default async function DashboardLayout({
   children,
@@ -28,6 +29,7 @@ export default async function DashboardLayout({
       role: true,
       totalPoints: true,
       badges: true,
+      acceptedTermsAt: true,
     },
   });
 
@@ -52,6 +54,17 @@ export default async function DashboardLayout({
     ...user,
     roles: userRoles,
   };
+
+  // Block ALL dashboard content until user accepts confidentiality terms
+  if (!user.acceptedTermsAt) {
+    return (
+      <SessionProvider>
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <ConfidentialityAgreementDialog />
+        </div>
+      </SessionProvider>
+    );
+  }
 
   return (
     <SessionProvider>

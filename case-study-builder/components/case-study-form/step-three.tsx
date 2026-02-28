@@ -4,6 +4,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CaseStudyFormData } from '@/app/dashboard/new/page';
+import { cn } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import { Mic, Sparkles, Plus, X } from 'lucide-react';
 import { useMasterList } from '@/lib/hooks/use-master-list';
@@ -30,6 +31,7 @@ const AITextAssistant = dynamic(() => import('@/components/ai-text-assistant'), 
 type Props = {
   formData: CaseStudyFormData;
   updateFormData: (data: Partial<CaseStudyFormData>) => void;
+  highlightedFields?: string[];
 };
 
 // Default wear types - actual values come from master data and can include custom types
@@ -39,9 +41,10 @@ const FALLBACK_WEAR_TYPES = [
   { id: 'corrosion', value: 'CORROSION', label: 'Corrosion', sortOrder: 2 },
   { id: 'temperature', value: 'TEMPERATURE', label: 'Temperature', sortOrder: 3 },
   { id: 'metal_metal', value: 'METAL_METAL', label: 'Metal-Metal', sortOrder: 4 },
+  { id: 'erosion', value: 'EROSION', label: 'Erosion', sortOrder: 5 },
 ];
 
-export default function StepThree({ formData, updateFormData }: Props) {
+export default function StepThree({ formData, updateFormData, highlightedFields }: Props) {
   // Fetch wear types from master list
   const { items: wearTypes, isLoading: wearTypesLoading } = useMasterList('WearType', FALLBACK_WEAR_TYPES);
 
@@ -73,7 +76,10 @@ export default function StepThree({ formData, updateFormData }: Props) {
           value={formData.problemDescription}
           onChange={(e) => updateFormData({ problemDescription: e.target.value })}
           placeholder="Describe the problem and previous solution used before WA..."
-          className="min-h-[120px] dark:bg-input dark:border-border dark:text-foreground"
+          className={cn(
+            "min-h-[120px] dark:bg-input dark:border-border dark:text-foreground",
+            highlightedFields?.includes('problemDescription') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+          )}
           required
         />
       </div>
@@ -128,7 +134,9 @@ export default function StepThree({ formData, updateFormData }: Props) {
         {wearTypesLoading ? (
           <span className="text-xs text-muted-foreground">Loading...</span>
         ) : (
-          <div style={{ display: 'inline-block' }}>
+          <div style={{ display: 'inline-block' }} className={cn(
+            highlightedFields?.includes('wearType') && "border-2 border-red-500 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40 rounded-lg p-2"
+          )}>
             {filteredWearTypes.map((wear) => {
               // Change High Temperature to Temperature in display
               let displayLabel = (wear as any).label || wear.value;
@@ -182,7 +190,7 @@ export default function StepThree({ formData, updateFormData }: Props) {
                   }}
                   className="text-sm w-28 h-7 px-2 border border-border rounded flex-shrink-0 bg-input text-foreground"
                 />
-                <div className="flex gap-0.5 ml-0">
+                <div className="flex gap-0.5">
                   {[1, 2, 3, 4, 5].map((level) => {
                     const isFilled = level <= other.severity;
                     return (
@@ -224,12 +232,12 @@ export default function StepThree({ formData, updateFormData }: Props) {
                 </div>
                 <button
                   type="button"
-                  className="no-min-touch ml-1 text-muted-foreground hover:text-foreground"
+                  className="no-min-touch ml-1 p-1.5 text-muted-foreground hover:text-foreground"
                   onClick={() => {
                     const newOthers = (formData.wearTypeOthers || []).filter((_, i) => i !== index);
                     updateFormData({ wearTypeOthers: newOthers });
                   }}
-                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer' }}
                   aria-label="Remove other wear type"
                 >
                   <X className="w-3.5 h-3.5" />

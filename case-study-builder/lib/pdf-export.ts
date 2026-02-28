@@ -307,7 +307,15 @@ export function generateCaseStudyPDF(caseStudy: CaseStudyPDFData, options?: PDFE
 
   // Technical Details Table
   const technicalData = [
-    ['Work Type', caseStudy.workType],
+    ['Business Type', ({
+      'INTEGRA_WORKSHOP': 'Integra - Workshop',
+      'INTEGRA_ON_SITE': 'Integra - On Site',
+      'INTEGRA_COMBINATION': 'Integra - Combination',
+      'CONSUMABLE_SALES': 'Consumable Sales',
+      'WORKSHOP': 'Workshop',
+      'ON_SITE': 'On Site',
+      'BOTH': 'Both',
+    } as Record<string, string>)[caseStudy.workType || ''] || caseStudy.workType],
     ['Wear Type', caseStudy.wearType.join(', ')],
     ['Base Metal', caseStudy.baseMetal || 'N/A'],
     ['Dimensions', caseStudy.generalDimensions || 'N/A'],
@@ -359,7 +367,7 @@ export function generateCaseStudyPDF(caseStudy: CaseStudyPDFData, options?: PDFE
   ];
 
   if (caseStudy.expectedServiceLife) {
-    solutionData.push(['Expected Service Life', caseStudy.expectedServiceLife]);
+    solutionData.push(['Service Life', caseStudy.expectedServiceLife]);
   }
 
   autoTable(doc, {
@@ -452,7 +460,7 @@ export function downloadCaseStudyPDF(caseStudy: CaseStudyPDFData, options?: PDFE
 
 /**
  * BRD 3.4F - Side-by-side comparison PDF
- * Highlight: Annual Potential Revenue, Service Life
+ * Highlight: Solution Revenue, Service Life
  */
 export interface ComparisonPDFData {
   id: string;
@@ -725,7 +733,18 @@ export function generateComparisonPDF(
     `${c.location}${c.country ? ', ' + c.country : ''}`
   ));
   waAddComparisonRow('Component/Workpiece', validCases.map(c => c.componentWorkpiece));
-  waAddComparisonRow('Work Type', validCases.map(c => c.workType));
+  waAddComparisonRow('Business Type', validCases.map(c => {
+    const labels: Record<string, string> = {
+      'INTEGRA_WORKSHOP': 'Integra - Workshop',
+      'INTEGRA_ON_SITE': 'Integra - On Site',
+      'INTEGRA_COMBINATION': 'Integra - Combination',
+      'CONSUMABLE_SALES': 'Consumable Sales',
+      'WORKSHOP': 'Workshop',
+      'ON_SITE': 'On Site',
+      'BOTH': 'Both',
+    };
+    return labels[c.workType || ''] || c.workType;
+  }));
   waAddComparisonRow('Job Type', validCases.map(c =>
     waFormatJobType(c.jobType, c.jobTypeOther) || '—'
   ));
@@ -817,7 +836,7 @@ export function generateComparisonPDF(
     waProductDiameter: c.waProductDiameter,
     productDescription: c.productDescription,
   })), { bold: true });
-  waAddComparisonRow('Expected Service Life', validCases.map(c => c.expectedServiceLife || '—'), { highlighted: true, bold: true });
+  waAddComparisonRow('Service Life', validCases.map(c => c.expectedServiceLife || '—'), { highlighted: true, bold: true });
 
   // Job Duration
   waAddComparisonRow('Job Duration', validCases.map(c => {
@@ -843,12 +862,8 @@ export function generateComparisonPDF(
     return `${symbol} ${numValue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
   };
 
-  waAddComparisonRow('Solution Value Revenue', validCases.map(c =>
+  waAddComparisonRow('Solution Revenue', validCases.map(c =>
     waFormatCurrencyWithSymbol(c.solutionValueRevenue, c.currency)
-  ), { highlighted: true, bold: true });
-
-  waAddComparisonRow('Annual Potential Revenue', validCases.map(c =>
-    waFormatCurrencyWithSymbol(c.annualPotentialRevenue, c.currency)
   ), { highlighted: true, bold: true });
 
   waAddComparisonRow('Customer Savings', validCases.map(c =>

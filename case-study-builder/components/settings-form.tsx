@@ -544,12 +544,12 @@ export default function SettingsForm({
         </CardContent>
       </Card>
 
-      {/* Organization Information */}
+      {/* Organisation Information */}
       <Card className="dark:bg-card dark:border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 dark:text-foreground">
             <Building className="h-5 w-5 text-wa-green-600 dark:text-primary" />
-            Organization Information
+            Organisation Information
           </CardTitle>
           <CardDescription className="dark:text-muted-foreground">
             Your subsidiary and region assignments
@@ -699,7 +699,7 @@ export default function SettingsForm({
             Display Preferences
           </CardTitle>
           <CardDescription className="dark:text-muted-foreground">
-            Customize your viewing experience
+            Customise your viewing experience
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

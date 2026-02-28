@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const caseStudy = await prisma.waCaseStudy.findUnique({
     where: { id },
-    select: { customerName: true, industry: true, status: true },
+    select: { industry: true, status: true },
   });
 
   if (!caseStudy || caseStudy.status !== 'APPROVED') {
@@ -52,8 +52,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   }
 
   return {
-    title: `${caseStudy.customerName} - ${caseStudy.industry} | Case Study Library`,
-    description: `Industrial case study from ${caseStudy.industry} industry`,
+    title: `Case Study Details - ${caseStudy.industry}`,
+    description: `Industrial case study from the ${caseStudy.industry} industry`,
   };
 }
 
@@ -179,8 +179,16 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
               <div className="flex items-start gap-3">
                 <Wrench className="h-5 w-5 text-wa-green-600 mt-0.5" />
                 <div>
-                  <p className="font-medium text-sm text-gray-600">Work Type</p>
-                  <p className="text-gray-900">{caseStudy.workType}</p>
+                  <p className="font-medium text-sm text-gray-600">Business Type</p>
+                  <p className="text-gray-900">{({
+                    'INTEGRA_WORKSHOP': 'Integra - Workshop',
+                    'INTEGRA_ON_SITE': 'Integra - On Site',
+                    'INTEGRA_COMBINATION': 'Integra - Combination',
+                    'CONSUMABLE_SALES': 'Consumable Sales',
+                    'WORKSHOP': 'Workshop',
+                    'ON_SITE': 'On Site',
+                    'BOTH': 'Both',
+                  } as Record<string, string>)[caseStudy.workType || ''] || caseStudy.workType}</p>
                 </div>
               </div>
               {caseStudy.jobType && (
@@ -327,7 +335,7 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
                 years: caseStudy.expectedServiceLifeYears,
               })) && (
                 <div>
-                  <p className="font-medium text-sm text-gray-600 mb-1">Expected Service Life</p>
+                  <p className="font-medium text-sm text-gray-600 mb-1">Service Life</p>
                   <p className="text-2xl font-bold text-wa-green-600">
                     {waFormatExpandedServiceLife({
                       hours: caseStudy.expectedServiceLifeHours,
@@ -341,19 +349,9 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
               )}
               {caseStudy.solutionValueRevenue && (
                 <div>
-                  <p className="font-medium text-sm text-gray-600 mb-1">Solution Value Revenue</p>
+                  <p className="font-medium text-sm text-gray-600 mb-1">Solution Revenue</p>
                   <p className="text-2xl font-bold text-green-600">
                     ${parseFloat(caseStudy.solutionValueRevenue.toString()).toLocaleString()}
-                  </p>
-                </div>
-              )}
-              {caseStudy.annualPotentialRevenue && (
-                <div>
-                  <p className="font-medium text-sm text-gray-600 mb-1">
-                    Annual Potential Revenue
-                  </p>
-                  <p className="text-2xl font-bold text-purple-600">
-                    ${parseFloat(caseStudy.annualPotentialRevenue.toString()).toLocaleString()}
                   </p>
                 </div>
               )}

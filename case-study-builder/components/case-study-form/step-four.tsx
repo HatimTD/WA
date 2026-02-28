@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CaseStudyFormData } from '@/app/dashboard/new/page';
+import { cn } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import { Mic, Sparkles, Camera, FileText } from 'lucide-react';
 import CaseStudyImageUpload from '@/components/case-study-image-upload';
@@ -29,7 +30,7 @@ const AITextAssistant = dynamic(() => import('@/components/ai-text-assistant'), 
   ),
 });
 
-// WA Products list (379 products)
+// WA Consumables Products list (from Excel master list)
 const WA_PRODUCTS = [
   "CAST NICI-G", "CAST NICI-O", "CAST NIFE-G", "CAVITALLOY", "CHROMECORE 12 4V-G",
   "CHROMECORE 410-G", "CHROMECORE 410-O", "CHROMECORE 410-S", "CHROMECORE 410NiMo-S",
@@ -111,45 +112,122 @@ const WA_PRODUCTS = [
   "WA TETRA V 309L-E", "WA TETRA V 312-E", "WA TETRA V 316L-E", "WA TSS 308L", "WA TSS 309L",
   "WA TSS 316L", "WA TUB CS 71", "WA TUB CS 81Ni1", "WA TUB SS 12", "WA TUB SS 16L",
   "WA TUB SS 8L", "WA TUB SS 9L", "WA TUB SS R16L", "WA TUB SS R8L", "WA TUB SS R9L",
-  "WAROD 308L", "WAROD 309L", "WAROD 316L", "WAROD 347", "HARDFACE NICARBWHT"
+  "WAROD 308L", "WAROD 309L", "WAROD 316L", "WAROD 347", "HARDFACE NICARBWHT",
+  "Mill 100", "Mill 300", "Mill 400", "Mill 401", "Mill 415", "Mill 600", "Mill 750", "Mill 751"
+];
+
+// Composite Wear Plates products (from Excel master list)
+const COMPOSITE_WEAR_PLATES_PRODUCTS = [
+  "Hardplate 100", "Hardplate 300", "Hardplate 600", "Hardlite 100", "Hardlite 600",
+  "Tuffplate", "Hardplate FlowMax", "Hardplate FlowMax Plus", "Altcrom 700", "Altcrom 800",
+  "Glass Plate", "Ceramic composite wear plates", "Rubber wear plates", "RPMaxlife"
+];
+
+// Composite Wear Plates thickness options (from Excel master list)
+const COMPOSITE_THICKNESS_OPTIONS = [
+  "2+2 Hardlite", "2+3 Hardlite", "3+2 Hardlite", "3+3 Hardlite", "3+4", "4+2", "4+3", "4+4",
+  "5+2", "5+3", "5+4", "5+5", "6+2", "6+3", "6+4", "6+5", "6+6", "6+7", "6+8", "6+9",
+  "7+3", "7+5", "7+6", "8+2", "8+3", "8+4", "8+5", "8+6", "8+7", "8+8", "8+9", "8+10", "8+12",
+  "9+3", "9+4", "9+6", "10+2", "10+3", "10+4", "10+5", "10+6", "10+7", "10+8", "10+9",
+  "10+10", "10+12", "10+13", "10+15", "10+18", "12+3", "12+4", "12+5", "12+6", "12+7", "12+8",
+  "12+10", "12+12", "12+13", "12+15", "12+16", "13+17", "13+20", "13+25", "15+4", "15+5",
+  "15+6", "15+7", "15+8", "15+9", "15+10", "15+12", "15+14", "15+15", "16+06", "16+08",
+  "16+09", "16+10", "16+12", "20+4", "20+5", "20+8", "20+12", "20+10", "22+3", "22+8", "22+10",
+  "25+5", "25+7", "25+8", "25+10", "25+15", "30+5", "30+10", "35+5",
+  "2+4+2 Double Sided Hardplate", "3+4+3 Double Sided Hardplate", "4+12+4 Double Sided Hardplate",
+  "3+6+3 Double Sided Hardplate", "4+6+4 Double Sided Hardplate", "6+6+6 Double Sided Hardplate",
+  "3+8+3 Double Sided Hardplate", "5+8+5 Double Sided Hardplate", "3+10+3 Double Sided Hardplate"
+];
+
+// Diameter options with metric/imperial mapping (from Excel master list)
+const DIAMETER_OPTIONS = [
+  { mm: '1.0', imperial: '0.039"' },
+  { mm: '1.2', imperial: '0.045"' },
+  { mm: '1.3', imperial: '0.052"' },
+  { mm: '1.6', imperial: '1/16"' },
+  { mm: '2.0', imperial: '5/64"' },
+  { mm: '2.2', imperial: '0.087"' },
+  { mm: '2.4', imperial: '3/32"' },
+  { mm: '2.8', imperial: '7/64"' },
+  { mm: '3.2', imperial: '1/8"' },
+  { mm: '4.0', imperial: '5/32"' },
+  { mm: '5.0', imperial: '7/32"' },
+  { mm: '6.0', imperial: '15/64"' },
+  { mm: '8.0', imperial: '5/16"' },
+  { mm: '12.0', imperial: '15/32"' },
 ];
 
 type Props = {
   formData: CaseStudyFormData;
   updateFormData: (data: Partial<CaseStudyFormData>) => void;
+  highlightedFields?: string[];
 };
 
-export default function StepFour({ formData, updateFormData }: Props) {
+export default function StepFour({ formData, updateFormData, highlightedFields }: Props) {
   const [showProductSuggestions, setShowProductSuggestions] = useState(false);
   const [productSearch, setProductSearch] = useState(formData.waProduct || '');
   const productInputRef = useRef<HTMLInputElement>(null);
   const productDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Filter products based on search
+  // Composite Wear Plates product search state
+  const [showPlatesSuggestions, setShowPlatesSuggestions] = useState(false);
+  const [platesSearch, setPlatesSearch] = useState(formData.waProduct || '');
+  const platesInputRef = useRef<HTMLInputElement>(null);
+  const platesDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Composite Wear Plates thickness search state
+  const [showThicknessSuggestions, setShowThicknessSuggestions] = useState(false);
+  const [thicknessSearch, setThicknessSearch] = useState(formData.productDescription || '');
+  const thicknessInputRef = useRef<HTMLInputElement>(null);
+  const thicknessDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Filter products based on search (Consumables)
   const filteredProducts = productSearch.length > 0
     ? WA_PRODUCTS.filter(p => p.toLowerCase().includes(productSearch.toLowerCase())).slice(0, 10)
     : [];
 
-  // Handle click outside to close dropdown
+  // Filter composite wear plates products
+  const filteredPlates = platesSearch.length > 0
+    ? COMPOSITE_WEAR_PLATES_PRODUCTS.filter(p => p.toLowerCase().includes(platesSearch.toLowerCase())).slice(0, 10)
+    : COMPOSITE_WEAR_PLATES_PRODUCTS;
+
+  // Filter composite wear plates thickness
+  const filteredThickness = thicknessSearch.length > 0
+    ? COMPOSITE_THICKNESS_OPTIONS.filter(t => t.toLowerCase().includes(thicknessSearch.toLowerCase())).slice(0, 15)
+    : COMPOSITE_THICKNESS_OPTIONS.slice(0, 15);
+
+  // Unit system for diameter display
+  const isImperial = formData.unitSystem === 'IMPERIAL';
+
+  // Handle click outside to close dropdowns
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        productDropdownRef.current &&
-        !productDropdownRef.current.contains(event.target as Node) &&
-        productInputRef.current &&
-        !productInputRef.current.contains(event.target as Node)
-      ) {
+      const target = event.target as Node;
+      if (productDropdownRef.current && !productDropdownRef.current.contains(target) &&
+          productInputRef.current && !productInputRef.current.contains(target)) {
         setShowProductSuggestions(false);
+      }
+      if (platesDropdownRef.current && !platesDropdownRef.current.contains(target) &&
+          platesInputRef.current && !platesInputRef.current.contains(target)) {
+        setShowPlatesSuggestions(false);
+      }
+      if (thicknessDropdownRef.current && !thicknessDropdownRef.current.contains(target) &&
+          thicknessInputRef.current && !thicknessInputRef.current.contains(target)) {
+        setShowThicknessSuggestions(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Sync productSearch with formData.waProduct
+  // Sync search states with formData
   useEffect(() => {
     setProductSearch(formData.waProduct || '');
-  }, [formData.waProduct]);
+    if (formData.productCategory === 'COMPOSITE_WEAR_PLATES') {
+      setPlatesSearch(formData.waProduct || '');
+      setThicknessSearch(formData.productDescription || '');
+    }
+  }, [formData.waProduct, formData.productCategory, formData.productDescription]);
 
   return (
     <div className="space-y-6">
@@ -163,7 +241,10 @@ export default function StepFour({ formData, updateFormData }: Props) {
           value={formData.baseMetal}
           onChange={(e) => updateFormData({ baseMetal: e.target.value })}
           placeholder="e.g., Carbon Steel, Stainless Steel, Manganese Steel"
-          className="dark:bg-input dark:border-border dark:text-foreground"
+          className={cn(
+            "dark:bg-input dark:border-border dark:text-foreground",
+            highlightedFields?.includes('baseMetal') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+          )}
           required
         />
       </div>
@@ -171,7 +252,7 @@ export default function StepFour({ formData, updateFormData }: Props) {
       {/* General Dimensions + Unit System on same line */}
       <div className="space-y-2">
         <Label htmlFor="generalDimensions" className="dark:text-foreground">
-          General dimensions ({formData.unitSystem === 'IMPERIAL' ? 'inches' : 'mm'}) <span className="text-red-500 dark:text-red-400">*</span>
+          General Dimensions ({formData.unitSystem === 'IMPERIAL' ? 'inches and pounds' : 'mm and kg'}) <span className="text-red-500 dark:text-red-400">*</span>
         </Label>
         <div className="flex gap-3 items-center">
           <Input
@@ -179,7 +260,10 @@ export default function StepFour({ formData, updateFormData }: Props) {
             value={formData.generalDimensions}
             onChange={(e) => updateFormData({ generalDimensions: e.target.value })}
             placeholder={formData.unitSystem === 'IMPERIAL' ? 'e.g., 24" x 36" x 2"' : 'e.g., 600mm x 900mm x 50mm'}
-            className="flex-1 dark:bg-input dark:border-border dark:text-foreground"
+            className={cn(
+              "flex-1 dark:bg-input dark:border-border dark:text-foreground",
+              highlightedFields?.includes('generalDimensions') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+            )}
             required
           />
           <div className="flex gap-1 flex-shrink-0">
@@ -232,7 +316,10 @@ export default function StepFour({ formData, updateFormData }: Props) {
           value={formData.waSolution}
           onChange={(e) => updateFormData({ waSolution: e.target.value })}
           placeholder="Describe the Welding Alloys solution implemented..."
-          className="min-h-[120px] dark:bg-input dark:border-border dark:text-foreground"
+          className={cn(
+            "min-h-[120px] dark:bg-input dark:border-border dark:text-foreground",
+            highlightedFields?.includes('waSolution') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+          )}
           required
         />
         <p className="text-xs text-muted-foreground dark:text-muted-foreground">
@@ -240,7 +327,7 @@ export default function StepFour({ formData, updateFormData }: Props) {
         </p>
       </div>
 
-      {/* Product Category - New Dropdown */}
+      {/* Product Category - Dropdown */}
       <div className="space-y-2">
         <Label htmlFor="productCategory" className="dark:text-foreground">
           WA Product Category <span className="text-red-500 dark:text-red-400">*</span>
@@ -248,27 +335,30 @@ export default function StepFour({ formData, updateFormData }: Props) {
         <Select
           value={formData.productCategory}
           onValueChange={(value) => {
-            updateFormData({ productCategory: value });
-            // Clear other fields when changing category
-            if (value !== 'CONSUMABLES') {
-              updateFormData({ waProduct: '', waProductDiameter: '' });
-            }
-            if (value !== 'OTHER') {
-              updateFormData({ productCategoryOther: '' });
-            }
-            if (value === 'CONSUMABLES') {
-              updateFormData({ productDescription: '' });
-            }
+            // Clear all product fields when switching category
+            updateFormData({
+              productCategory: value,
+              waProduct: '',
+              waProductDiameter: '',
+              productDescription: '',
+              productCategoryOther: '',
+            });
+            setProductSearch('');
+            setPlatesSearch('');
+            setThicknessSearch('');
           }}
         >
-          <SelectTrigger className="dark:bg-input dark:border-border dark:text-foreground">
+          <SelectTrigger className={cn(
+            "dark:bg-input dark:border-border dark:text-foreground",
+            highlightedFields?.includes('productCategory') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+          )}>
             <SelectValue placeholder="Select product category" />
           </SelectTrigger>
           <SelectContent className="dark:bg-popover dark:border-border">
             <SelectItem value="CONSUMABLES">Consumables</SelectItem>
-            <SelectItem value="COMPOSITE_WEAR_PLATES">Composite wear plates</SelectItem>
-            <SelectItem value="WEAR_PIPES_TUBES">Wear pipes & Tubes</SelectItem>
-            <SelectItem value="OTHER">Other (specify)</SelectItem>
+            <SelectItem value="COMPOSITE_WEAR_PLATES">Composite Wear Plates</SelectItem>
+            <SelectItem value="WEAR_PIPES_TUBES">Wear Pipes & Tubes</SelectItem>
+            <SelectItem value="INTEGRA_SERVICES">Integra Services</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -292,7 +382,10 @@ export default function StepFour({ formData, updateFormData }: Props) {
               }}
               onFocus={() => setShowProductSuggestions(true)}
               placeholder="Type to search products..."
-              className="dark:bg-input dark:border-border dark:text-foreground"
+              className={cn(
+                "dark:bg-input dark:border-border dark:text-foreground",
+                highlightedFields?.includes('waProduct') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+              )}
               autoComplete="off"
               required
             />
@@ -306,7 +399,7 @@ export default function StepFour({ formData, updateFormData }: Props) {
                   <button
                     key={index}
                     type="button"
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors border-b border-border last:border-b-0"
+                    className="w-full px-3 py-3 text-left text-sm hover:bg-muted transition-colors border-b border-border last:border-b-0"
                     onClick={() => {
                       setProductSearch(product);
                       updateFormData({ waProduct: product });
@@ -320,69 +413,127 @@ export default function StepFour({ formData, updateFormData }: Props) {
             )}
           </div>
 
-          {/* Diameter - Always in mm regardless of unit system */}
+          {/* Diameter - switches between metric and imperial */}
           <div className="space-y-2">
             <Label htmlFor="waProductDiameter" className="dark:text-foreground">
-              Diameter (mm) <span className="text-red-500 dark:text-red-400">*</span>
+              Diameter <span className="text-red-500 dark:text-red-400">*</span>
             </Label>
             <select
               id="waProductDiameter"
               value={formData.waProductDiameter || ''}
               onChange={(e) => updateFormData({ waProductDiameter: e.target.value })}
-              className="w-full h-10 px-3 rounded-md border border-border bg-input text-foreground dark:bg-input dark:border-border dark:text-foreground"
+              className={cn(
+                "w-full h-10 px-3 rounded-md border border-border bg-input text-foreground dark:bg-input dark:border-border dark:text-foreground",
+                highlightedFields?.includes('waProductDiameter') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+              )}
               required
             >
               <option value="">Select diameter</option>
-              {[1.0, 1.2, 1.3, 1.6, 2.0, 2.2, 2.4, 2.8, 3.2, 4.0, 5.0, 6.0, 8.0, 12.0].map((mm) => {
-                const mmFormatted = mm.toFixed(1); // Always x.x format
-                const displayValue = `${mmFormatted} mm`; // Always display in mm
-                return (
-                  <option key={mm} value={mmFormatted}>
-                    {displayValue}
-                  </option>
-                );
-              })}
+              {DIAMETER_OPTIONS.map((opt) => (
+                <option key={opt.mm} value={opt.mm}>
+                  {isImperial ? opt.imperial : `${opt.mm} mm`}
+                </option>
+              ))}
             </select>
           </div>
         </div>
-      ) : formData.productCategory === 'OTHER' ? (
-        /* Show TWO inputs for OTHER category */
+      ) : formData.productCategory === 'COMPOSITE_WEAR_PLATES' ? (
+        /* Show Product Name Dropdown + Thickness Dropdown for Composite Wear Plates */
         <div className="grid md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="productCategoryOther" className="dark:text-foreground">
-              Specify Category <span className="text-red-500 dark:text-red-400">*</span>
+          {/* Product Name - Searchable dropdown */}
+          <div className="space-y-2 relative">
+            <Label htmlFor="waProductPlates" className="dark:text-foreground">
+              Product Name <span className="text-red-500 dark:text-red-400">*</span>
             </Label>
             <Input
-              id="productCategoryOther"
-              value={formData.productCategoryOther}
-              onChange={(e) => updateFormData({ productCategoryOther: e.target.value })}
-              placeholder="e.g., Custom wear plates, Special coatings"
-              className="dark:bg-input dark:border-border dark:text-foreground"
+              ref={platesInputRef}
+              id="waProductPlates"
+              value={platesSearch}
+              onChange={(e) => {
+                setPlatesSearch(e.target.value);
+                updateFormData({ waProduct: e.target.value });
+                setShowPlatesSuggestions(true);
+              }}
+              onFocus={() => setShowPlatesSuggestions(true)}
+              placeholder="Type to search plates..."
+              className={cn(
+                "dark:bg-input dark:border-border dark:text-foreground",
+                highlightedFields?.includes('waProduct') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+              )}
+              autoComplete="off"
               required
             />
-            <p className="text-xs text-muted-foreground">
-              Name the product category
-            </p>
+            {showPlatesSuggestions && filteredPlates.length > 0 && (
+              <div
+                ref={platesDropdownRef}
+                className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto"
+              >
+                {filteredPlates.map((plate, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    className="w-full px-3 py-3 text-left text-sm hover:bg-muted transition-colors border-b border-border last:border-b-0"
+                    onClick={() => {
+                      setPlatesSearch(plate);
+                      updateFormData({ waProduct: plate });
+                      setShowPlatesSuggestions(false);
+                    }}
+                  >
+                    {plate}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="productDescription" className="dark:text-foreground">
-              Product Description <span className="text-red-500 dark:text-red-400">*</span>
+
+          {/* Thickness - Searchable dropdown */}
+          <div className="space-y-2 relative">
+            <Label htmlFor="plateThickness" className="dark:text-foreground">
+              Thickness <span className="text-red-500 dark:text-red-400">*</span>
             </Label>
             <Input
-              id="productDescription"
-              value={formData.productDescription}
-              onChange={(e) => updateFormData({ productDescription: e.target.value })}
-              placeholder="e.g., HARDPLATE 5+3 mm"
-              className="dark:bg-input dark:border-border dark:text-foreground"
+              ref={thicknessInputRef}
+              id="plateThickness"
+              value={thicknessSearch}
+              onChange={(e) => {
+                setThicknessSearch(e.target.value);
+                updateFormData({ productDescription: e.target.value });
+                setShowThicknessSuggestions(true);
+              }}
+              onFocus={() => setShowThicknessSuggestions(true)}
+              placeholder="Type to search thickness..."
+              className={cn(
+                "dark:bg-input dark:border-border dark:text-foreground",
+                highlightedFields?.includes('productDescription') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+              )}
+              autoComplete="off"
               required
             />
-            <p className="text-xs text-muted-foreground">
-              Describe the product specification
-            </p>
+            {showThicknessSuggestions && filteredThickness.length > 0 && (
+              <div
+                ref={thicknessDropdownRef}
+                className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto"
+              >
+                {filteredThickness.map((thickness, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    className="w-full px-3 py-3 text-left text-sm hover:bg-muted transition-colors border-b border-border last:border-b-0"
+                    onClick={() => {
+                      setThicknessSearch(thickness);
+                      updateFormData({ productDescription: thickness });
+                      setShowThicknessSuggestions(false);
+                    }}
+                  >
+                    {thickness}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
-      ) : formData.productCategory ? (
-        /* Show Text Field for Other Categories (Composite wear plates, Wear pipes & Tubes) */
+      ) : formData.productCategory === 'WEAR_PIPES_TUBES' ? (
+        /* Show Product Description with specific placeholder for Wear Pipes & Tubes */
         <div className="space-y-2">
           <Label htmlFor="productDescription" className="dark:text-foreground">
             Product Description <span className="text-red-500 dark:text-red-400">*</span>
@@ -391,22 +542,40 @@ export default function StepFour({ formData, updateFormData }: Props) {
             id="productDescription"
             value={formData.productDescription}
             onChange={(e) => updateFormData({ productDescription: e.target.value })}
-            placeholder="e.g., HARDPLATE 5+3 mm"
-            className="dark:bg-input dark:border-border dark:text-foreground"
+            placeholder="e.g. Wear Pipe OD 140mm, 3mm ID hardfacing"
+            className={cn(
+              "dark:bg-input dark:border-border dark:text-foreground",
+              highlightedFields?.includes('productDescription') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+            )}
             required
           />
-          <p className="text-xs text-muted-foreground">
-            Describe the product specification (e.g., dimensions, grade)
-          </p>
+        </div>
+      ) : formData.productCategory === 'INTEGRA_SERVICES' ? (
+        /* Show Product Description for Integra Services */
+        <div className="space-y-2">
+          <Label htmlFor="productDescription" className="dark:text-foreground">
+            Product Description <span className="text-red-500 dark:text-red-400">*</span>
+          </Label>
+          <Input
+            id="productDescription"
+            value={formData.productDescription}
+            onChange={(e) => updateFormData({ productDescription: e.target.value })}
+            placeholder="Describe the Integra service or product used"
+            className={cn(
+              "dark:bg-input dark:border-border dark:text-foreground",
+              highlightedFields?.includes('productDescription') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+            )}
+            required
+          />
         </div>
       ) : null}
 
       {/* Job Duration - mobile-friendly picker */}
       <div className="space-y-2">
         <Label className="dark:text-foreground">
-          Job Duration <span className="text-red-500 dark:text-red-400">*</span>
+          Job Duration
         </Label>
-        <p className="text-xs text-muted-foreground">How long did the WA solution job/maintenance take</p>
+        <p className="text-xs text-muted-foreground">How long did it take to provide the completed solution?</p>
         <ServiceLifePicker
           label="Job Duration"
           required
@@ -452,26 +621,32 @@ export default function StepFour({ formData, updateFormData }: Props) {
           value={formData.technicalAdvantages}
           onChange={(e) => updateFormData({ technicalAdvantages: e.target.value })}
           placeholder="Describe how the WA solution improved the job. You can mention service life, wear resistance, hardness, welding quality, repair speed, intervention time, reduced downtime, easier handling, or improved safety."
-          className="min-h-[100px] dark:bg-input dark:border-border dark:text-foreground"
+          className={cn(
+            "min-h-[100px] dark:bg-input dark:border-border dark:text-foreground",
+            highlightedFields?.includes('technicalAdvantages') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+          )}
           required
         />
       </div>
 
       {/* Images Upload Section */}
-      <div className="space-y-2">
+      <div className={cn(
+        "space-y-2",
+        highlightedFields?.includes('images') && "border-2 border-red-500 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40 rounded-lg p-3"
+      )}>
         <Label className="dark:text-foreground flex items-center gap-2">
           <Camera className="h-4 w-4 text-wa-green-600" />
           Images <span className="text-red-500 dark:text-red-400">*</span>
-          <span className="text-xs text-muted-foreground">(Minimum 2 required)</span>
+          <span className="text-xs text-muted-foreground">(Minimum 1 required)</span>
         </Label>
         <CaseStudyImageUpload
           onImagesChange={(images) => updateFormData({ images })}
           existingImages={formData.images}
           maxAdditionalImages={5}
         />
-        {formData.images.length < 2 && (
+        {formData.images.length < 1 && (
           <p className="text-xs text-red-500 dark:text-red-400">
-            Please upload at least 2 images ({formData.images.length}/2 uploaded)
+            Please upload at least 1 image ({formData.images.length}/1 uploaded)
           </p>
         )}
       </div>
@@ -488,16 +663,6 @@ export default function StepFour({ formData, updateFormData }: Props) {
           existingDocuments={formData.supportingDocs}
           maxDocuments={5}
         />
-      </div>
-
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4 dark:bg-accent dark:border-primary">
-        <h4 className="font-semibold text-green-900 mb-2 dark:text-foreground">Great Solution Descriptions Include:</h4>
-        <ul className="space-y-1 text-sm text-green-800 list-disc list-inside dark:text-muted-foreground">
-          <li>Specific WA product and process used</li>
-          <li>Technical specifications (hardness, layers, etc.)</li>
-          <li>Implementation approach (workshop vs on-site)</li>
-          <li>Measurable results and improvements</li>
-        </ul>
       </div>
     </div>
   );

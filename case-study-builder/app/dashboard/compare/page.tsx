@@ -749,7 +749,7 @@ export default function ComparePage() {
                 { key: 'industry', label: 'Industry' },
                 { key: 'location', label: 'Location' },
                 { key: 'component', label: 'Component' },
-                { key: 'workType', label: 'Work Type' },
+                { key: 'workType', label: 'Business Type' },
                 { key: 'jobType', label: 'Job Type' },
                 { key: 'oem', label: 'OEM' },
                 { key: 'jobDuration', label: 'Job Duration' },
@@ -820,8 +820,19 @@ export default function ComparePage() {
                   fieldKey="component"
                 />
                 <ComparisonCard
-                  label="Work Type"
-                  values={selectedCases.map(c => c?.workType)}
+                  label="Business Type"
+                  values={selectedCases.map(c => {
+                    const labels: Record<string, string> = {
+                      'INTEGRA_WORKSHOP': 'Integra - Workshop',
+                      'INTEGRA_ON_SITE': 'Integra - On Site',
+                      'INTEGRA_COMBINATION': 'Integra - Combination',
+                      'CONSUMABLE_SALES': 'Consumable Sales',
+                      'WORKSHOP': 'Workshop',
+                      'ON_SITE': 'On Site',
+                      'BOTH': 'Both',
+                    };
+                    return c?.workType ? (labels[c.workType] || c.workType) : null;
+                  })}
                   icon={Wrench}
                   fieldKey="workType"
                 />
@@ -909,7 +920,7 @@ export default function ComparePage() {
                   fieldKey="previousLife"
                 />
                 <ComparisonCard
-                  label="Expected Service Life"
+                  label="Service Life"
                   values={selectedCases.map(c => c ? (waFormatExpandedServiceLife({
                     hours: c.expectedServiceLifeHours,
                     days: c.expectedServiceLifeDays,
@@ -927,26 +938,17 @@ export default function ComparePage() {
 
           {/* Financial Impact Section */}
           <div className="space-y-4">
-            <SectionHeader section="financial" title="Financial Impact" icon={DollarSign} count={3} />
+            <SectionHeader section="financial" title="Financial Impact" icon={DollarSign} count={2} />
 
             {expandedSections.has('financial') && (
               <div className="space-y-4 pl-4">
                 <ComparisonCard
-                  label="Solution Value Revenue"
+                  label="Solution Revenue"
                   values={selectedCases.map(c =>
                     c?.solutionValueRevenue ? `${getCurrencySymbol(c.currency)}${c.solutionValueRevenue.toLocaleString()}` : null
                   )}
                   icon={DollarSign}
                   fieldKey="solutionValue"
-                  showIndicator
-                />
-                <ComparisonCard
-                  label="Annual Potential Revenue"
-                  values={selectedCases.map(c =>
-                    c?.annualPotentialRevenue ? `${getCurrencySymbol(c.currency)}${c.annualPotentialRevenue.toLocaleString()}` : null
-                  )}
-                  icon={DollarSign}
-                  fieldKey="annualRevenue"
                   showIndicator
                 />
                 <ComparisonCard
