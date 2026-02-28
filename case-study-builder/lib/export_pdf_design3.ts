@@ -1560,7 +1560,7 @@ async function waGeneratePage1(
     doc.setFontSize(6);
     doc.setTextColor(COLORS.gray.r, COLORS.gray.g, COLORS.gray.b);
     doc.setFont('helvetica', 'normal');
-    doc.text('Expected/Achieved Service Life', solRightX, solRightY);
+    doc.text('Service Life', solRightX, solRightY);
 
     doc.setFontSize(7);
     doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
@@ -1586,35 +1586,18 @@ async function waGeneratePage1(
     const finColWidth = (pageWidth - margin * 2 - 8) / 3;
     let finX = margin;
 
-    // Solution Value/Revenue
+    // Solution Revenue
     if (data.solutionValueRevenue) {
       doc.setFontSize(6);
       doc.setTextColor(COLORS.gray.r, COLORS.gray.g, COLORS.gray.b);
       doc.setFont('helvetica', 'normal');
-      doc.text('Solution Value/Revenue', finX, y);
+      doc.text('Solution Revenue', finX, y);
 
       doc.setFontSize(11);
       doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
       doc.setFont('helvetica', 'bold');
       doc.text(
         waFormatCurrency(data.solutionValueRevenue, data.revenueCurrency),
-        finX, y + 7
-      );
-      finX += finColWidth + 4;
-    }
-
-    // Annual Potential Revenue
-    if (data.annualPotentialRevenue) {
-      doc.setFontSize(6);
-      doc.setTextColor(COLORS.gray.r, COLORS.gray.g, COLORS.gray.b);
-      doc.setFont('helvetica', 'normal');
-      doc.text('Annual Potential Revenue', finX, y);
-
-      doc.setFontSize(11);
-      doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
-      doc.setFont('helvetica', 'bold');
-      doc.text(
-        waFormatCurrency(data.annualPotentialRevenue, data.revenueCurrency),
         finX, y + 7
       );
       finX += finColWidth + 4;

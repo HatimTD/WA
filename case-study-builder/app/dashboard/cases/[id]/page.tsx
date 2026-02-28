@@ -846,7 +846,7 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
             years: caseStudy.expectedServiceLifeYears,
           })) && (
             <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Expected/Achieved Service Life</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Service Life</p>
               <p className="text-base dark:text-foreground">
                 {waFormatExpandedServiceLife({
                   hours: caseStudy.expectedServiceLifeHours,
@@ -937,7 +937,7 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
       )}
 
       {/* Financial Information - Only for APPLICATION and TECH cases */}
-      {(caseStudy.type === 'APPLICATION' || caseStudy.type === 'TECH') && (caseStudy.solutionValueRevenue || caseStudy.annualPotentialRevenue || caseStudy.customerSavingsAmount) && (
+      {(caseStudy.type === 'APPLICATION' || caseStudy.type === 'TECH') && (caseStudy.solutionValueRevenue || caseStudy.customerSavingsAmount) && (
         <Card role="article" className="dark:bg-card dark:border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 dark:text-foreground">
@@ -946,21 +946,12 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-2 gap-4">
               {caseStudy.solutionValueRevenue && (
                 <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Solution Value/Revenue</p>
+                  <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Solution Revenue</p>
                   <p className="text-2xl font-bold text-green-600">
                     {getCurrencySymbol(caseStudy.revenueCurrency)}{Number(caseStudy.solutionValueRevenue).toLocaleString()}
-                  </p>
-                </div>
-              )}
-
-              {caseStudy.annualPotentialRevenue && (
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Annual Potential Revenue</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {getCurrencySymbol(caseStudy.revenueCurrency)}{Number(caseStudy.annualPotentialRevenue).toLocaleString()}
                   </p>
                 </div>
               )}

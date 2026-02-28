@@ -610,7 +610,7 @@ export default async function PublicCaseDetailPage({
                 years: caseStudy.expectedServiceLifeYears,
               })) && (
                 <div>
-                  <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground mb-1">Expected Service Life</p>
+                  <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground mb-1">Service Life</p>
                   <p className="text-2xl font-bold text-wa-green-600 dark:text-primary">
                     {waFormatExpandedServiceLife({
                       hours: caseStudy.expectedServiceLifeHours,
@@ -624,19 +624,9 @@ export default async function PublicCaseDetailPage({
               )}
               {caseStudy.solutionValueRevenue && (
                 <div>
-                  <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground mb-1">Solution Value Revenue</p>
+                  <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground mb-1">Solution Revenue</p>
                   <p className="text-2xl font-bold text-green-600">
                     {getCurrencySymbol(caseStudy.revenueCurrency)}{parseFloat(caseStudy.solutionValueRevenue.toString()).toLocaleString()}
-                  </p>
-                </div>
-              )}
-              {caseStudy.annualPotentialRevenue && (
-                <div>
-                  <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground mb-1">
-                    Annual Potential Revenue
-                  </p>
-                  <p className="text-2xl font-bold text-purple-600">
-                    {getCurrencySymbol(caseStudy.revenueCurrency)}{parseFloat(caseStudy.annualPotentialRevenue.toString()).toLocaleString()}
                   </p>
                 </div>
               )}

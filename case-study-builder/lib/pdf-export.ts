@@ -367,7 +367,7 @@ export function generateCaseStudyPDF(caseStudy: CaseStudyPDFData, options?: PDFE
   ];
 
   if (caseStudy.expectedServiceLife) {
-    solutionData.push(['Expected Service Life', caseStudy.expectedServiceLife]);
+    solutionData.push(['Service Life', caseStudy.expectedServiceLife]);
   }
 
   autoTable(doc, {
@@ -460,7 +460,7 @@ export function downloadCaseStudyPDF(caseStudy: CaseStudyPDFData, options?: PDFE
 
 /**
  * BRD 3.4F - Side-by-side comparison PDF
- * Highlight: Annual Potential Revenue, Service Life
+ * Highlight: Solution Revenue, Service Life
  */
 export interface ComparisonPDFData {
   id: string;
@@ -836,7 +836,7 @@ export function generateComparisonPDF(
     waProductDiameter: c.waProductDiameter,
     productDescription: c.productDescription,
   })), { bold: true });
-  waAddComparisonRow('Expected Service Life', validCases.map(c => c.expectedServiceLife || '—'), { highlighted: true, bold: true });
+  waAddComparisonRow('Service Life', validCases.map(c => c.expectedServiceLife || '—'), { highlighted: true, bold: true });
 
   // Job Duration
   waAddComparisonRow('Job Duration', validCases.map(c => {
@@ -862,12 +862,8 @@ export function generateComparisonPDF(
     return `${symbol} ${numValue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
   };
 
-  waAddComparisonRow('Solution Value Revenue', validCases.map(c =>
+  waAddComparisonRow('Solution Revenue', validCases.map(c =>
     waFormatCurrencyWithSymbol(c.solutionValueRevenue, c.currency)
-  ), { highlighted: true, bold: true });
-
-  waAddComparisonRow('Annual Potential Revenue', validCases.map(c =>
-    waFormatCurrencyWithSymbol(c.annualPotentialRevenue, c.currency)
   ), { highlighted: true, bold: true });
 
   waAddComparisonRow('Customer Savings', validCases.map(c =>

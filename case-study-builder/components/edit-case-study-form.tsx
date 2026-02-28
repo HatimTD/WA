@@ -209,12 +209,33 @@ const FIELD_LABEL_TO_ID: Record<string, string> = {
   'Specify Category': 'productCategoryOther',
   'Product Description': 'productDescription',
   'Diameter': 'waProductDiameter',
-  'Solution Value/Revenue': 'solutionValueRevenue',
-  'Annual Potential Revenue': 'annualPotentialRevenue',
+  'Solution Revenue': 'solutionValueRevenue',
   'Base Metal': 'baseMetal',
   'General Dimensions': 'generalDimensions',
   'At least 1 image': 'images',
   'Technical Advantages': 'technicalAdvantages',
+  // WPS main fields
+  'Base Metal Type': 'wps.baseMetalType',
+  'Surface Preparation': 'wps.surfacePreparation',
+  // WPS layer fields (both with and without "Layer 1:" prefix)
+  'WA Product Name': 'wps.layers.waProductName',
+  'Layer 1: WA Product Name': 'wps.layers.waProductName',
+  'Layer 1: Diameter': 'wps.layers.waProductDiameter',
+  'Welding Process': 'wps.layers.weldingProcess',
+  'Layer 1: Process': 'wps.layers.weldingProcess',
+  'Welding Position': 'wps.layers.weldingPosition',
+  'Layer 1: Welding Position': 'wps.layers.weldingPosition',
+  'Layer 1: Torch Position': 'wps.layers.torchAngle',
+  'Shielding Gas': 'wps.layers.shieldingGas',
+  'Layer 1: Shielding Gas': 'wps.layers.shieldingGas',
+  'Layer 1: Stick-out': 'wps.layers.stickOut',
+  'Layer 1: Type of Current': 'wps.layers.currentType',
+  'Layer 1: Specify Current Type': 'wps.layers.currentType',
+  'Layer 1: Welding Mode': 'wps.layers.currentModeSynergy',
+  'Layer 1: Wire Feed Speed': 'wps.layers.wireFeedSpeed',
+  'Layer 1: Intensity': 'wps.layers.intensity',
+  'Layer 1: Voltage': 'wps.layers.voltage',
+  'Layer 1: Welding Speed': 'wps.layers.travelSpeed',
 };
 
 export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: Props) {
@@ -588,8 +609,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
         }
         break;
       case 'Finalise':
-        if (!formData.solutionValueRevenue) missing.push('Solution Value/Revenue');
-        if (!formData.annualPotentialRevenue) missing.push('Annual Potential Revenue');
+        if (!formData.solutionValueRevenue) missing.push('Solution Revenue');
         break;
     }
 
@@ -1253,7 +1273,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
             <StepFour formData={formData} updateFormData={updateFormData} highlightedFields={highlightedFields} />
           )}
           {STEPS[currentStep - 1]?.title === 'Welding Procedure' && (
-            <StepWPS formData={formData} updateFormData={updateFormData} />
+            <StepWPS formData={formData} updateFormData={updateFormData} highlightedFields={highlightedFields} />
           )}
           {STEPS[currentStep - 1]?.title === 'Cost Reduction Analysis' && (
             <StepCostCalculator formData={formData} updateFormData={updateFormData} />

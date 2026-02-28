@@ -314,8 +314,7 @@ export function waGetFieldBreakdown(
     { key: 'baseMetal', value: caseStudy.baseMetal, label: 'Base Metal' },
     { key: 'generalDimensions', value: caseStudy.generalDimensions, label: 'Dimensions' },
     { key: 'technicalAdvantages', value: caseStudy.technicalAdvantages, label: 'Technical Advantages' },
-    { key: 'solutionValueRevenue', value: caseStudy.solutionValueRevenue, label: 'Solution Value Revenue' },
-    { key: 'annualPotentialRevenue', value: caseStudy.annualPotentialRevenue, label: 'Annual Potential Revenue' },
+    { key: 'solutionValueRevenue', value: caseStudy.solutionValueRevenue, label: 'Solution Revenue' },
     { key: 'customerSavingsAmount', value: caseStudy.customerSavingsAmount, label: 'Customer Savings' },
   ];
 

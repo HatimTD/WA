@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { FileUp, X, Plus, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import type { CaseStudyFormData } from '@/app/dashboard/new/page';
+import { cn } from '@/lib/utils';
 
 // WA Products list (same as step-four)
 const WA_PRODUCTS = [
@@ -200,9 +201,10 @@ const waCreateEmptyLayer = (): WpsLayer => ({
 type Props = {
   formData: CaseStudyFormData;
   updateFormData: (data: Partial<CaseStudyFormData>) => void;
+  highlightedFields?: string[];
 };
 
-export default function StepWPS({ formData, updateFormData }: Props) {
+export default function StepWPS({ formData, updateFormData, highlightedFields }: Props) {
   const isStarCase = formData.type === 'STAR';
 
   // Initialize layers if not present
@@ -342,7 +344,10 @@ export default function StepWPS({ formData, updateFormData }: Props) {
               value={formData.wps?.baseMetalType || ''}
               onChange={(e) => waUpdateWps('baseMetalType', e.target.value)}
               placeholder="Auto-filled from Solution step"
-              className="dark:bg-input dark:border-border dark:text-foreground"
+              className={cn(
+                "dark:bg-input dark:border-border dark:text-foreground",
+                highlightedFields?.includes('wps.baseMetalType') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+              )}
               required
             />
             {formData.baseMetal && (
@@ -358,12 +363,17 @@ export default function StepWPS({ formData, updateFormData }: Props) {
               id="surfacePreparation"
               value={formData.wps?.surfacePreparation || ''}
               onChange={(e) => {
-                waUpdateWps('surfacePreparation', e.target.value);
-                if (e.target.value !== 'Other') {
-                  waUpdateWps('surfacePreparationOther', '');
+                const val = e.target.value;
+                const updates: Record<string, unknown> = { surfacePreparation: val };
+                if (val !== 'Other') {
+                  updates.surfacePreparationOther = '';
                 }
+                updateFormData({ wps: { ...formData.wps, ...updates } });
               }}
-              className="w-full h-10 px-3 rounded-md border border-border bg-input text-foreground"
+              className={cn(
+                "w-full h-10 px-3 rounded-md border border-border bg-input text-foreground",
+                highlightedFields?.includes('wps.surfacePreparation') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+              )}
               required
             >
               <option value="">Select preparation</option>
@@ -446,7 +456,10 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                           onFocus={() => setShowProductSuggestions(prev => ({ ...prev, [layer.id]: true }))}
                           onBlur={() => setTimeout(() => setShowProductSuggestions(prev => ({ ...prev, [layer.id]: false })), 200)}
                           placeholder="Type to search products..."
-                          className="dark:bg-input dark:border-border dark:text-foreground"
+                          className={cn(
+                            "dark:bg-input dark:border-border dark:text-foreground",
+                            highlightedFields?.includes('wps.layers.waProductName') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+                          )}
                           autoComplete="off"
                           required
                         />
@@ -478,7 +491,10 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                         <select
                           value={layer.waProductDiameter || ''}
                           onChange={(e) => waUpdateLayer(layer.id, 'waProductDiameter', e.target.value)}
-                          className="w-full h-10 px-3 rounded-md border border-border bg-input text-foreground"
+                          className={cn(
+                            "w-full h-10 px-3 rounded-md border border-border bg-input text-foreground",
+                            highlightedFields?.includes('wps.layers.waProductDiameter') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+                          )}
                           required
                         >
                           <option value="">Select diameter</option>
@@ -511,7 +527,10 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                               waUpdateLayer(layer.id, 'weldingProcess', newValue);
                             }
                           }}
-                          className="w-full h-10 px-3 rounded-md border border-border bg-input text-foreground"
+                          className={cn(
+                            "w-full h-10 px-3 rounded-md border border-border bg-input text-foreground",
+                            highlightedFields?.includes('wps.layers.weldingProcess') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+                          )}
                           required
                         >
                           <option value="">Select process</option>
@@ -560,7 +579,10 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                         <select
                           value={layer.weldingPosition || ''}
                           onChange={(e) => waUpdateLayer(layer.id, 'weldingPosition', e.target.value)}
-                          className="w-full h-10 px-3 rounded-md border border-border bg-input text-foreground"
+                          className={cn(
+                            "w-full h-10 px-3 rounded-md border border-border bg-input text-foreground",
+                            highlightedFields?.includes('wps.layers.weldingPosition') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+                          )}
                           required
                         >
                           <option value="">Select position</option>
@@ -587,7 +609,10 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                           value={layer.torchAngle || ''}
                           onChange={(e) => waUpdateLayer(layer.id, 'torchAngle', e.target.value)}
                           placeholder="Push 10°"
-                          className="dark:bg-input dark:border-border dark:text-foreground"
+                          className={cn(
+                            "dark:bg-input dark:border-border dark:text-foreground",
+                            highlightedFields?.includes('wps.layers.torchAngle') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+                          )}
                           required
                         />
                       </div>
@@ -618,7 +643,10 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                                 waUpdateLayer(layer.id, 'shieldingGas', newValue);
                               }
                             }}
-                            className="w-full h-10 px-3 rounded-md border border-border bg-input text-foreground"
+                            className={cn(
+                              "w-full h-10 px-3 rounded-md border border-border bg-input text-foreground",
+                              highlightedFields?.includes('wps.layers.shieldingGas') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+                            )}
                             required
                           >
                             <option value="">Select shielding gas</option>
@@ -728,7 +756,10 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                           value={layer.stickOut || ''}
                           onChange={(e) => waUpdateLayer(layer.id, 'stickOut', e.target.value)}
                           placeholder="e.g., 15 mm"
-                          className="dark:bg-input dark:border-border dark:text-foreground"
+                          className={cn(
+                            "dark:bg-input dark:border-border dark:text-foreground",
+                            highlightedFields?.includes('wps.layers.stickOut') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+                          )}
                           required
                         />
                       </div>
@@ -750,7 +781,10 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                               waUpdateLayer(layer.id, 'currentType', newValue);
                             }
                           }}
-                          className="w-full h-10 px-3 rounded-md border border-border bg-input text-foreground"
+                          className={cn(
+                            "w-full h-10 px-3 rounded-md border border-border bg-input text-foreground",
+                            highlightedFields?.includes('wps.layers.currentType') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+                          )}
                           required
                         >
                           <option value="">Select current type</option>
@@ -776,7 +810,10 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                         <select
                           value={layer.currentModeSynergy || ''}
                           onChange={(e) => waUpdateLayer(layer.id, 'currentModeSynergy', e.target.value)}
-                          className="w-full h-10 px-3 rounded-md border border-border bg-input text-foreground"
+                          className={cn(
+                            "w-full h-10 px-3 rounded-md border border-border bg-input text-foreground",
+                            highlightedFields?.includes('wps.layers.currentModeSynergy') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+                          )}
                           required
                         >
                           <option value="">Select welding mode</option>
@@ -803,7 +840,10 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                           value={layer.wireFeedSpeed || ''}
                           onChange={(e) => waUpdateLayer(layer.id, 'wireFeedSpeed', e.target.value)}
                           placeholder="e.g., 7 m/min"
-                          className="dark:bg-input dark:border-border dark:text-foreground"
+                          className={cn(
+                            "dark:bg-input dark:border-border dark:text-foreground",
+                            highlightedFields?.includes('wps.layers.wireFeedSpeed') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+                          )}
                           required
                         />
                       </div>
@@ -816,7 +856,10 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                           value={layer.intensity || ''}
                           onChange={(e) => waUpdateLayer(layer.id, 'intensity', e.target.value)}
                           placeholder="e.g., 200 A"
-                          className="dark:bg-input dark:border-border dark:text-foreground"
+                          className={cn(
+                            "dark:bg-input dark:border-border dark:text-foreground",
+                            highlightedFields?.includes('wps.layers.intensity') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+                          )}
                           required
                         />
                       </div>
@@ -829,7 +872,10 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                           value={layer.voltage || ''}
                           onChange={(e) => waUpdateLayer(layer.id, 'voltage', e.target.value)}
                           placeholder="e.g., 26 V"
-                          className="dark:bg-input dark:border-border dark:text-foreground"
+                          className={cn(
+                            "dark:bg-input dark:border-border dark:text-foreground",
+                            highlightedFields?.includes('wps.layers.voltage') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+                          )}
                           required
                         />
                       </div>
@@ -842,7 +888,10 @@ export default function StepWPS({ formData, updateFormData }: Props) {
                           value={layer.travelSpeed || ''}
                           onChange={(e) => waUpdateLayer(layer.id, 'travelSpeed', e.target.value)}
                           placeholder="e.g., 30 cm/min"
-                          className="dark:bg-input dark:border-border dark:text-foreground"
+                          className={cn(
+                            "dark:bg-input dark:border-border dark:text-foreground",
+                            highlightedFields?.includes('wps.layers.travelSpeed') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
+                          )}
                           required
                         />
                       </div>

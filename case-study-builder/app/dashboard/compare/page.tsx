@@ -920,7 +920,7 @@ export default function ComparePage() {
                   fieldKey="previousLife"
                 />
                 <ComparisonCard
-                  label="Expected Service Life"
+                  label="Service Life"
                   values={selectedCases.map(c => c ? (waFormatExpandedServiceLife({
                     hours: c.expectedServiceLifeHours,
                     days: c.expectedServiceLifeDays,
@@ -938,26 +938,17 @@ export default function ComparePage() {
 
           {/* Financial Impact Section */}
           <div className="space-y-4">
-            <SectionHeader section="financial" title="Financial Impact" icon={DollarSign} count={3} />
+            <SectionHeader section="financial" title="Financial Impact" icon={DollarSign} count={2} />
 
             {expandedSections.has('financial') && (
               <div className="space-y-4 pl-4">
                 <ComparisonCard
-                  label="Solution Value Revenue"
+                  label="Solution Revenue"
                   values={selectedCases.map(c =>
                     c?.solutionValueRevenue ? `${getCurrencySymbol(c.currency)}${c.solutionValueRevenue.toLocaleString()}` : null
                   )}
                   icon={DollarSign}
                   fieldKey="solutionValue"
-                  showIndicator
-                />
-                <ComparisonCard
-                  label="Annual Potential Revenue"
-                  values={selectedCases.map(c =>
-                    c?.annualPotentialRevenue ? `${getCurrencySymbol(c.currency)}${c.annualPotentialRevenue.toLocaleString()}` : null
-                  )}
-                  icon={DollarSign}
-                  fieldKey="annualRevenue"
                   showIndicator
                 />
                 <ComparisonCard

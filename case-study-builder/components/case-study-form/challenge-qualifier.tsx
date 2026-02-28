@@ -19,7 +19,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { CheckCircle2, XCircle, AlertCircle, Target, TrendingUp, Wrench, Sparkles } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Target, TrendingUp, Wrench, Sparkles } from 'lucide-react';
 import Celebration from '@/components/ui/celebration';
 
 export type QualifierResult = {
@@ -248,20 +248,18 @@ export default function ChallengeQualifier({
               <Button
                 size="lg"
                 variant="outline"
-                className="h-20 text-lg flex flex-col gap-1 border-green-300 hover:bg-green-50 hover:border-green-500 dark:border-green-700 dark:hover:bg-green-950/50"
+                className="h-auto min-h-[5rem] py-4 text-base sm:text-lg flex flex-col gap-1 border-green-300 hover:bg-green-50 hover:border-green-500 dark:border-green-700 dark:hover:bg-green-950/50"
                 onClick={() => handleQuestion1(false)}
               >
-                <XCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
-                <span>NO - New Customer</span>
+                <span className="text-center leading-tight">NO - New Customer</span>
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-                className="h-20 text-lg flex flex-col gap-1 hover:bg-gray-50 dark:hover:bg-gray-900/50"
+                className="h-auto min-h-[5rem] py-4 text-base sm:text-lg flex flex-col gap-1 hover:bg-gray-50 dark:hover:bg-gray-900/50"
                 onClick={() => handleQuestion1(true)}
               >
-                <CheckCircle2 className="h-6 w-6 text-gray-500" />
-                <span>YES - Existing</span>
+                <span className="text-center leading-tight">YES - Existing</span>
               </Button>
             </div>
           </div>
@@ -278,20 +276,18 @@ export default function ChallengeQualifier({
               <Button
                 size="lg"
                 variant="outline"
-                className="h-20 text-lg flex flex-col gap-1 border-green-300 hover:bg-green-50 hover:border-green-500 dark:border-green-700 dark:hover:bg-green-950/50"
+                className="h-auto min-h-[5rem] py-4 text-base sm:text-lg flex flex-col gap-1 border-green-300 hover:bg-green-50 hover:border-green-500 dark:border-green-700 dark:hover:bg-green-950/50"
                 onClick={() => handleQuestion2(false)}
               >
-                <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
-                <span>NO - Cross-Sell</span>
+                <span className="text-center leading-tight">NO - Cross-Sell</span>
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-                className="h-20 text-lg flex flex-col gap-1 hover:bg-gray-50 dark:hover:bg-gray-900/50"
+                className="h-auto min-h-[5rem] py-4 text-base sm:text-lg flex flex-col gap-1 hover:bg-gray-50 dark:hover:bg-gray-900/50"
                 onClick={() => handleQuestion2(true)}
               >
-                <Wrench className="h-6 w-6 text-gray-500" />
-                <span>YES - Existing Solution</span>
+                <span className="text-center leading-tight">YES - Existing Solution</span>
               </Button>
             </div>
             <Button

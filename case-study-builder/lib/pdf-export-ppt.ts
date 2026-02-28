@@ -1254,7 +1254,7 @@ async function waGeneratePage1(
   doc.setFontSize(6);
   doc.setTextColor(COLORS.gray.r, COLORS.gray.g, COLORS.gray.b);
   doc.setFont('helvetica', 'normal');
-  doc.text('Expected Service Life', margin + (metricWidth + 6) * 2 + 4, y + 5);
+  doc.text('Service Life', margin + (metricWidth + 6) * 2 + 4, y + 5);
   doc.setFontSize(10);
   doc.setTextColor(COLORS.waGreen.r, COLORS.waGreen.g, COLORS.waGreen.b);
   doc.setFont('helvetica', 'bold');

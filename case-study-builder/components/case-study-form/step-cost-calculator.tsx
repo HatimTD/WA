@@ -418,28 +418,42 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
                   <span className="text-xs w-24 text-muted-foreground">Old Solution</span>
-                  <div className="flex-1 h-6 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div className="flex-1 h-6 bg-gray-200 dark:bg-gray-700 rounded-full relative">
                     <div
                       className="h-full bg-gray-500 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
-                      style={{ width: `${lifetimeVisual.oldWidth}%` }}
+                      style={{ width: `${lifetimeVisual.oldWidth}%`, minWidth: '8px' }}
                     >
-                      <span className="text-xs text-white font-medium">
+                      {lifetimeVisual.oldWidth >= 25 && (
+                        <span className="text-xs text-white font-medium whitespace-nowrap">
+                          {lifetimeVisual.oldLifetimeWeeks.toFixed(1)} weeks
+                        </span>
+                      )}
+                    </div>
+                    {lifetimeVisual.oldWidth < 25 && (
+                      <span className="absolute text-xs font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap" style={{ left: `calc(${lifetimeVisual.oldWidth}% + 8px)`, top: '50%', transform: 'translateY(-50%)' }}>
                         {lifetimeVisual.oldLifetimeWeeks.toFixed(1)} weeks
                       </span>
-                    </div>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-xs w-24 text-muted-foreground">WA Solution</span>
-                  <div className="flex-1 h-6 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div className="flex-1 h-6 bg-gray-200 dark:bg-gray-700 rounded-full relative">
                     <div
                       className="h-full bg-wa-green-500 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
-                      style={{ width: `${lifetimeVisual.waWidth}%` }}
+                      style={{ width: `${lifetimeVisual.waWidth}%`, minWidth: '8px' }}
                     >
-                      <span className="text-xs text-white font-medium">
+                      {lifetimeVisual.waWidth >= 25 && (
+                        <span className="text-xs text-white font-medium whitespace-nowrap">
+                          {lifetimeVisual.waLifetimeWeeks.toFixed(1)} weeks
+                        </span>
+                      )}
+                    </div>
+                    {lifetimeVisual.waWidth < 25 && (
+                      <span className="absolute text-xs font-medium text-wa-green-700 dark:text-wa-green-400 whitespace-nowrap" style={{ left: `calc(${lifetimeVisual.waWidth}% + 8px)`, top: '50%', transform: 'translateY(-50%)' }}>
                         {lifetimeVisual.waLifetimeWeeks.toFixed(1)} weeks
                       </span>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>

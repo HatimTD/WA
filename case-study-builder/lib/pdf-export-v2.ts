@@ -537,7 +537,7 @@ export function generateCaseStudyPDFV2(
     if (caseStudy.expectedServiceLife) {
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0, 128, 0);
-      doc.text(`Expected/new service life = ${caseStudy.expectedServiceLife}`, rightColStart + 2, rightY + 3);
+      doc.text(`Service Life = ${caseStudy.expectedServiceLife}`, rightColStart + 2, rightY + 3);
       doc.setTextColor(0, 0, 0);
       rightY += 8;
     }

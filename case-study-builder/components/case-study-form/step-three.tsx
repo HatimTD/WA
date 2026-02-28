@@ -190,14 +190,14 @@ export default function StepThree({ formData, updateFormData, highlightedFields 
                   }}
                   className="text-sm w-28 h-7 px-2 border border-border rounded flex-shrink-0 bg-input text-foreground"
                 />
-                <div className="flex gap-0.5 ml-0">
+                <div className="flex gap-0.5">
                   {[1, 2, 3, 4, 5].map((level) => {
                     const isFilled = level <= other.severity;
                     return (
                       <button
                         key={level}
                         type="button"
-                        className="no-min-touch transition-colors p-1.5"
+                        className="no-min-touch transition-colors p-0.5"
                         onClick={() => {
                           const newOthers = [...(formData.wearTypeOthers || [])];
                           newOthers[index] = {

@@ -143,7 +143,7 @@ export default function StepFive({ formData, updateFormData, highlightedFields }
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 dark:text-foreground">
             <Clock className="h-5 w-5 text-wa-green-600" />
-            Expected or new calculated service life
+            Service Life
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -163,7 +163,7 @@ export default function StepFive({ formData, updateFormData, highlightedFields }
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="revenueCurrency" className="dark:text-foreground">
                 Currency <span className="text-red-500 dark:text-red-400">*</span>
@@ -188,7 +188,7 @@ export default function StepFive({ formData, updateFormData, highlightedFields }
 
             <div className="space-y-2">
               <Label htmlFor="solutionValueRevenue" className="dark:text-foreground">
-                Solution Value/Revenue <span className="text-red-500 dark:text-red-400">*</span>
+                Solution Revenue <span className="text-red-500 dark:text-red-400">*</span>
               </Label>
               <Input
                 id="solutionValueRevenue"
@@ -199,24 +199,6 @@ export default function StepFive({ formData, updateFormData, highlightedFields }
                 className={cn(
                   "dark:bg-input dark:border-border dark:text-foreground",
                   highlightedFields?.includes('solutionValueRevenue') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
-                )}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="annualPotentialRevenue" className="dark:text-foreground">
-                Annual Potential Revenue <span className="text-red-500 dark:text-red-400">*</span>
-              </Label>
-              <Input
-                id="annualPotentialRevenue"
-                type="number"
-                value={formData.annualPotentialRevenue}
-                onChange={(e) => updateFormData({ annualPotentialRevenue: e.target.value })}
-                placeholder="e.g., 100000"
-                className={cn(
-                  "dark:bg-input dark:border-border dark:text-foreground",
-                  highlightedFields?.includes('annualPotentialRevenue') && "border-red-500 border-2 ring-1 ring-red-500/20 dark:!border-red-400 dark:!ring-2 dark:!ring-red-500/40"
                 )}
                 required
               />
