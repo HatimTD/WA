@@ -243,15 +243,27 @@ export async function waDetectCaseStudyLanguage(caseStudyId: string): Promise<{
     const caseStudy = await prisma.waCaseStudy.findUnique({
       where: { id: caseStudyId },
       select: {
+        generalDescription: true,
         problemDescription: true,
+        previousSolution: true,
+        waSolution: true,
+        technicalAdvantages: true,
       },
     });
 
-    if (!caseStudy || !caseStudy.problemDescription) {
+    const allText = [
+      caseStudy?.generalDescription,
+      caseStudy?.problemDescription,
+      caseStudy?.previousSolution,
+      caseStudy?.waSolution,
+      caseStudy?.technicalAdvantages,
+    ].filter(Boolean).join(' ');
+
+    if (!caseStudy || !allText.trim()) {
       return { success: false, error: 'No text to analyze' };
     }
 
-    const result = await translationService.detectLanguage(caseStudy.problemDescription);
+    const result = await translationService.detectLanguage(allText);
 
     if (result.success) {
       // Update the case study with detected language
@@ -308,8 +320,16 @@ export async function waAutoTranslateOnSubmit(caseStudyId: string): Promise<{
       };
     }
 
-    // Detect language from problem description (main content field)
-    const detectResult = await translationService.detectLanguage(caseStudy.problemDescription);
+    // Detect language from ALL text fields combined for better accuracy
+    // Single short fields like "asdsda" can't be detected - combining gives the heuristic more signal
+    const allText = [
+      caseStudy.generalDescription,
+      caseStudy.problemDescription,
+      caseStudy.previousSolution,
+      caseStudy.waSolution,
+      caseStudy.technicalAdvantages,
+    ].filter(Boolean).join(' ');
+    const detectResult = await translationService.detectLanguage(allText);
     const detectedLanguage: string = detectResult.success && detectResult.detectedLanguage ? detectResult.detectedLanguage : 'en';
 
     // Update original language
