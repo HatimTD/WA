@@ -637,7 +637,7 @@ export default function StepFour({ formData, updateFormData, highlightedFields }
         <Label className="dark:text-foreground flex items-center gap-2">
           <Camera className="h-4 w-4 text-wa-green-600" />
           Images <span className="text-red-500 dark:text-red-400">*</span>
-          <span className="text-xs text-muted-foreground">(Minimum 2 required)</span>
+          <span className="text-xs text-muted-foreground">(Minimum 1 required)</span>
         </Label>
         <CaseStudyImageUpload
           onImagesChange={(images) => updateFormData({ images })}
