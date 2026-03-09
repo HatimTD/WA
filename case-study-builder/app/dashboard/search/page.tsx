@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -50,6 +51,8 @@ type FilterOptions = {
 };
 
 export default function SearchPage() {
+  const { data: session } = useSession();
+  const canSeeCustomerName = session?.user?.role === 'ADMIN' || session?.user?.role === 'APPROVER';
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -695,7 +698,7 @@ export default function SearchPage() {
 
                         {/* Title */}
                         <h3 className="text-base font-semibold mb-2 dark:text-foreground group-hover:text-wa-green-600 dark:group-hover:text-primary transition-colors line-clamp-2">
-                          {caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}
+                          {caseStudy.title || (canSeeCustomerName ? `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}` : caseStudy.componentWorkpiece)}
                         </h3>
 
                         {/* Key Details Grid */}

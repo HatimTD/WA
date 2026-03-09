@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { auth } from '@/auth';
 
 /**
  * BRD Section 5 - Search & Filtering
@@ -131,6 +132,10 @@ export async function waSearchCaseStudies(filters: WaSearchFilters) {
 
     // Text search across multiple fields (including title)
     // BRD Section 5 - searchable by all key fields
+    // Customer name search restricted to ADMIN/APPROVER only
+    const session = await auth();
+    const canSearchByCustomer = session?.user?.role === 'ADMIN' || session?.user?.role === 'APPROVER';
+
     if (filters.query) {
       where.OR = [
         {
@@ -139,12 +144,12 @@ export async function waSearchCaseStudies(filters: WaSearchFilters) {
             mode: 'insensitive',
           },
         },
-        {
+        ...(canSearchByCustomer ? [{
           customerName: {
             contains: filters.query,
-            mode: 'insensitive',
+            mode: 'insensitive' as const,
           },
-        },
+        }] : []),
         {
           industry: {
             contains: filters.query,

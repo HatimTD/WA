@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -114,6 +115,8 @@ function waFormatExpandedServiceLife(data: {
 type SectionKey = 'basic' | 'solution' | 'financial' | 'details';
 
 export default function ComparePage() {
+  const { data: session } = useSession();
+  const canSeeCustomerName = session?.user?.role === 'ADMIN' || session?.user?.role === 'APPROVER';
   const searchParams = useSearchParams();
   const [searchTerm1, setSearchTerm1] = useState('');
   const [searchTerm2, setSearchTerm2] = useState('');
@@ -260,7 +263,7 @@ export default function ComparePage() {
       return {
         id: cs.id,
         type: cs.type,
-        customerName: cs.customerName,
+        customerName: canSeeCustomerName ? cs.customerName : cs.componentWorkpiece,
         industry: cs.industry,
         location: cs.location,
         country: cs.country,
@@ -601,7 +604,7 @@ export default function ComparePage() {
               {selectedCases[position] ? (
                 <div className="space-y-2">
                   <h3 className="font-semibold text-sm dark:text-foreground">
-                    {selectedCases[position]!.customerName}
+                    {canSeeCustomerName ? selectedCases[position]!.customerName : selectedCases[position]!.componentWorkpiece}
                   </h3>
                   <p className="text-xs text-gray-600 dark:text-muted-foreground">
                     {selectedCases[position]!.componentWorkpiece}
@@ -648,7 +651,7 @@ export default function ComparePage() {
                           className="w-full text-left p-2 hover:bg-wa-green-50 dark:hover:bg-wa-green-900/20 rounded-md border border-gray-100 dark:border-border transition-colors"
                         >
                           <p className="text-sm font-medium text-gray-900 dark:text-foreground line-clamp-1">
-                            {caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}
+                            {caseStudy.title || (canSeeCustomerName ? `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}` : caseStudy.componentWorkpiece)}
                           </p>
                           <p className="text-xs text-gray-600 dark:text-muted-foreground">
                             {caseStudy.industry} • {caseStudy.location}
@@ -795,12 +798,14 @@ export default function ComparePage() {
 
             {expandedSections.has('basic') && (
               <div className="space-y-4 pl-4">
-                <ComparisonCard
-                  label="Customer Name"
-                  values={selectedCases.map(c => c?.customerName)}
-                  icon={Building2}
-                  fieldKey="customer"
-                />
+                {canSeeCustomerName && (
+                  <ComparisonCard
+                    label="Customer Name"
+                    values={selectedCases.map(c => c?.customerName)}
+                    icon={Building2}
+                    fieldKey="customer"
+                  />
+                )}
                 <ComparisonCard
                   label="Industry"
                   values={selectedCases.map(c => c?.industry)}
@@ -1008,7 +1013,7 @@ export default function ComparePage() {
                   </p>
                   <div className="flex items-center gap-4 text-sm text-gray-700 dark:text-muted-foreground">
                     <div>
-                      <span className="font-medium dark:text-foreground">Customer:</span> {selectedCases[winnerIndex]?.customerName}
+                      <span className="font-medium dark:text-foreground">{canSeeCustomerName ? 'Customer:' : 'Component:'}</span> {canSeeCustomerName ? selectedCases[winnerIndex]?.customerName : selectedCases[winnerIndex]?.componentWorkpiece}
                     </div>
                     <div>
                       <Badge className={getTypeColor(selectedCases[winnerIndex]!.type)}>

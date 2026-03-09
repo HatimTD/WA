@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,8 @@ interface SearchResult {
 }
 
 export function LibrarySearch() {
+  const { data: session } = useSession();
+  const canSeeCustomerName = session?.user?.role === 'ADMIN' || session?.user?.role === 'APPROVER';
   const router = useRouter();
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(searchParams.get('q') || '');
@@ -184,7 +187,7 @@ export function LibrarySearch() {
                 className="block p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow bg-white dark:bg-card dark:border-border dark:hover:border-primary"
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
-                  <h3 className="font-semibold text-lg line-clamp-1 dark:text-foreground">{result.customerName}</h3>
+                  <h3 className="font-semibold text-lg line-clamp-1 dark:text-foreground">{canSeeCustomerName ? result.customerName : result.componentWorkpiece}</h3>
                   <Badge
                     variant={
                       result.type === 'STAR' ? 'default' : result.type === 'TECH' ? 'secondary' : 'outline'

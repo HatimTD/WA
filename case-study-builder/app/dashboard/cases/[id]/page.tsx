@@ -154,17 +154,20 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
   const commentsResult = await waGetComments(id);
   const comments = commentsResult.comments || [];
 
-  // Get current user info
+  // Get current user info (include userRoles for multi-role check)
   const currentUser = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
       id: true,
       role: true,
+      userRoles: { select: { role: true } },
     },
   });
 
   const isOwner = caseStudy.contributorId === session.user.id;
   const canEdit = isOwner && caseStudy.status === 'DRAFT';
+  const userRoles = currentUser?.userRoles?.map(ur => ur.role) || [];
+  const canSeeCustomerName = currentUser?.role === 'ADMIN' || currentUser?.role === 'APPROVER' || userRoles.includes('ADMIN') || userRoles.includes('APPROVER') || isOwner;
 
   // BRD: Get display content - translated to English by default, original if requested
   const hasTranslation = Boolean(caseStudy.translationAvailable && caseStudy.translatedText);
@@ -458,7 +461,7 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">
-              {caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}
+              {caseStudy.title || (canSeeCustomerName ? `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}` : caseStudy.componentWorkpiece)}
             </h1>
             <p className="text-lg text-gray-600 dark:text-muted-foreground mt-2">
               {caseStudy.location}, {caseStudy.country || 'N/A'}
@@ -626,6 +629,15 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
             </div>
           )}
           <div className="grid md:grid-cols-2 gap-4">
+            {canSeeCustomerName && caseStudy.customerName && (
+              <div className="flex items-start gap-3 md:col-span-2">
+                <Building2 className="h-5 w-5 text-gray-400 dark:text-gray-500 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Customer</p>
+                  <p className="text-base font-semibold dark:text-foreground">{caseStudy.customerName}</p>
+                </div>
+              </div>
+            )}
             <div className="flex items-start gap-3">
               <Building2 className="h-5 w-5 text-gray-400 dark:text-gray-500 mt-0.5" />
               <div>

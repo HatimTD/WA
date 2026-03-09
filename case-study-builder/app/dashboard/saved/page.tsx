@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
+import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -40,6 +41,8 @@ interface SavedCase {
 }
 
 export default function SavedCasesPage() {
+  const { data: session } = useSession();
+  const canSeeCustomerName = session?.user?.role === 'ADMIN' || session?.user?.role === 'APPROVER';
   const [savedCases, setSavedCases] = useState<SavedCase[]>([]);
   const [loading, setLoading] = useState(true);
   const [removingId, setRemovingId] = useState<string | null>(null);
@@ -102,7 +105,7 @@ export default function SavedCasesPage() {
     if (searchTerm) {
       const lowerSearch = searchTerm.toLowerCase();
       filtered = filtered.filter(saved =>
-        saved.caseStudy.customerName.toLowerCase().includes(lowerSearch) ||
+        (canSeeCustomerName && saved.caseStudy.customerName.toLowerCase().includes(lowerSearch)) ||
         saved.caseStudy.waProduct.toLowerCase().includes(lowerSearch) ||
         saved.caseStudy.componentWorkpiece.toLowerCase().includes(lowerSearch) ||
         saved.caseStudy.location.toLowerCase().includes(lowerSearch) ||
@@ -278,7 +281,7 @@ export default function SavedCasesPage() {
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="text-lg line-clamp-2 dark:text-foreground">
-                    {saved.caseStudy.title || `${saved.caseStudy.customerName} - ${saved.caseStudy.componentWorkpiece}`}
+                    {saved.caseStudy.title || (canSeeCustomerName ? `${saved.caseStudy.customerName} - ${saved.caseStudy.componentWorkpiece}` : saved.caseStudy.componentWorkpiece)}
                   </CardTitle>
                   <Badge
                     variant={

@@ -266,6 +266,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token = { ...token, ...session.user };
       }
 
+      // Always refresh role and points from DB (so admin role changes take effect without re-login)
+      if (token.sub && !user) {
+        try {
+          const freshUser = await prisma.user.findUnique({
+            where: { id: token.sub },
+            select: { role: true, totalPoints: true, userRoles: { select: { role: true } } },
+          });
+          if (freshUser) {
+            // Use highest priority role from userRoles (ADMIN > APPROVER > others)
+            const allRoles = freshUser.userRoles?.map(ur => ur.role) || [freshUser.role];
+            if (allRoles.includes('ADMIN')) {
+              token.role = 'ADMIN';
+            } else if (allRoles.includes('APPROVER')) {
+              token.role = 'APPROVER';
+            } else {
+              token.role = freshUser.role;
+            }
+            token.totalPoints = freshUser.totalPoints;
+          }
+        } catch {
+          // Continue with cached token values
+        }
+      }
+
       return token;
     },
   },

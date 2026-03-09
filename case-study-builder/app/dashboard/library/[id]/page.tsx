@@ -156,6 +156,16 @@ export default async function PublicCaseDetailPage({
 
   // Get session for comments and PDF export
   const session = await auth();
+  // Check multi-role system for customer name visibility
+  let canSeeCustomerName = session?.user?.role === 'ADMIN' || session?.user?.role === 'APPROVER';
+  if (!canSeeCustomerName && session?.user?.id) {
+    const userWithRoles = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { userRoles: { select: { role: true } } },
+    });
+    const roles = userWithRoles?.userRoles?.map(ur => ur.role) || [];
+    canSeeCustomerName = roles.includes('ADMIN') || roles.includes('APPROVER');
+  }
 
   // Fetch comments for the case study
   const commentsResult = await waGetComments(id);
@@ -323,7 +333,7 @@ export default async function PublicCaseDetailPage({
         <div>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">{displayTitle || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}</h1>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">{displayTitle || (canSeeCustomerName ? `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}` : caseStudy.componentWorkpiece)}</h1>
               <p className="text-gray-600 dark:text-muted-foreground mt-2">
                 {displayIndustry} • {displayLocation}
               </p>
@@ -399,6 +409,15 @@ export default async function PublicCaseDetailPage({
               </div>
             )}
             <div className="grid md:grid-cols-2 gap-6">
+              {canSeeCustomerName && caseStudy.customerName && (
+                <div className="flex items-start gap-3 md:col-span-2">
+                  <Building2 className="h-5 w-5 text-wa-green-600 dark:text-primary mt-0.5" />
+                  <div>
+                    <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground">Customer</p>
+                    <p className="text-gray-900 dark:text-foreground">{caseStudy.customerName}</p>
+                  </div>
+                </div>
+              )}
               <div className="flex items-start gap-3">
                 <MapPin className="h-5 w-5 text-wa-green-600 dark:text-primary mt-0.5" />
                 <div>
