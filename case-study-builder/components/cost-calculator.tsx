@@ -370,7 +370,7 @@ export default function CostCalculator({ caseStudyId, existingData, onValuesChan
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="oldSolutionLifetimeDays" className="dark:text-foreground">Old Solution Lifetime (days)</Label>
+                <Label htmlFor="oldSolutionLifetimeDays" className="dark:text-foreground">Previous Solution Lifetime (days)</Label>
                 <Input
                   id="oldSolutionLifetimeDays"
                   type="number"

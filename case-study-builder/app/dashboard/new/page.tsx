@@ -509,7 +509,7 @@ export default function NewCaseStudyPage() {
           formData.costCalculator?.oldLifetimeWeeks ||
           formData.costCalculator?.oldLifetimeMonths ||
           formData.costCalculator?.oldLifetimeYears;
-        if (!hasOldLifetime) missing.push('Old Solution Lifetime');
+        if (!hasOldLifetime) missing.push('Previous Solution Lifetime');
         // Check if any WA solution lifetime field has a value (mixed units)
         const hasWaLifetime = formData.costCalculator?.waLifetimeHours ||
           formData.costCalculator?.waLifetimeDays ||
@@ -1125,7 +1125,21 @@ export default function NewCaseStudyPage() {
             <StepFour formData={formData} updateFormData={updateFormData} highlightedFields={highlightedFields} />
           )}
           {STEPS[currentStep - 1]?.title === 'Welding Procedure' && (
-            <StepWPS formData={formData} updateFormData={updateFormData} highlightedFields={highlightedFields} />
+            <>
+              {formData.type === 'STAR' && (
+                <div className="flex justify-end mb-4">
+                  <Button
+                    variant="outline"
+                    onClick={handleSkipWPS}
+                    disabled={isSubmitting}
+                    className="dark:border-border dark:text-foreground"
+                  >
+                    Skip
+                  </Button>
+                </div>
+              )}
+              <StepWPS formData={formData} updateFormData={updateFormData} highlightedFields={highlightedFields} />
+            </>
           )}
           {STEPS[currentStep - 1]?.title === 'Cost Reduction Analysis' && (
             <StepCostCalculator formData={formData} updateFormData={updateFormData} />

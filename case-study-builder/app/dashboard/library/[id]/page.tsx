@@ -869,7 +869,7 @@ export default async function PublicCaseDetailPage({
                             )}
                             {layer.oscillationTempos && (
                               <div>
-                                <p className="text-xs text-gray-500 dark:text-muted-foreground">Tempos</p>
+                                <p className="text-xs text-gray-500 dark:text-muted-foreground">Dwell Time</p>
                                 <p className="font-medium text-gray-900 dark:text-foreground">{layer.oscillationTempos} s</p>
                               </div>
                             )}
@@ -896,8 +896,8 @@ export default async function PublicCaseDetailPage({
                             )}
                             {layer.postheatingTemp && (
                               <div>
-                                <p className="text-xs text-gray-500 dark:text-muted-foreground">Postheating Temperature</p>
-                                <p className="font-medium text-gray-900 dark:text-foreground">{layer.postheatingTemp} °C</p>
+                                <p className="text-xs text-gray-500 dark:text-muted-foreground">Postheating Temperature & Holding Time</p>
+                                <p className="font-medium text-gray-900 dark:text-foreground">{layer.postheatingTemp}</p>
                               </div>
                             )}
                           </div>
@@ -979,9 +979,9 @@ export default async function PublicCaseDetailPage({
                       </p>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-600 dark:text-muted-foreground">Postheating Temperature</p>
+                      <p className="font-medium text-gray-600 dark:text-muted-foreground">Postheating Temperature & Holding Time</p>
                       <p className="text-gray-900 dark:text-foreground">
-                        {waDisplayValue(caseStudy.wps.postheatingTemp || caseStudy.wps.postheatTemperature)} {(caseStudy.wps.postheatingTemp || caseStudy.wps.postheatTemperature) && '°C'}
+                        {waDisplayValue(caseStudy.wps.postheatingTemp || caseStudy.wps.postheatTemperature)}
                       </p>
                     </div>
                   </div>

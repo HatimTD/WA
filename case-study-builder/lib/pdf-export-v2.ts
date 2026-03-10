@@ -705,9 +705,9 @@ export function generateCaseStudyPDFV2(
 
       const inputData = [
         ['Equipment/part name', cc.equipmentName || caseStudy.componentWorkpiece],
-        ['Cost of old solution', cc.costOfPart ? `${currency}${cc.costOfPart.toLocaleString()}` : '-'],
+        ['Cost of previous solution', cc.costOfPart ? `${currency}${cc.costOfPart.toLocaleString()}` : '-'],
         ['Cost of WA solution', cc.costOfWaSolution ? `${currency}${cc.costOfWaSolution.toLocaleString()}` : '-'],
-        ['Old solution lifetime', cc.oldSolutionLifetimeDays ? `${cc.oldSolutionLifetimeDays} days` : '-'],
+        ['Previous solution lifetime', cc.oldSolutionLifetimeDays ? `${cc.oldSolutionLifetimeDays} days` : '-'],
         ['WA solution lifetime', cc.waSolutionLifetimeDays ? `${cc.waSolutionLifetimeDays} days` : '-'],
         ['Parts used per year', cc.partsUsedPerYear?.toString() || '-'],
         ['Maintenance cost (before)', cc.maintenanceRepairCostBefore ? `${currency}${cc.maintenanceRepairCostBefore.toLocaleString()}` : '-'],
@@ -739,7 +739,7 @@ export function generateCaseStudyPDFV2(
 
       if (cc.totalCostBefore) {
         doc.setFont('helvetica', 'normal');
-        doc.text('Annual cost (old):', outputX + 5, outputY);
+        doc.text('Annual cost (previous):', outputX + 5, outputY);
         doc.text(`${currency}${cc.totalCostBefore.toLocaleString()}`, outputX + 50, outputY);
         outputY += 6;
       }
