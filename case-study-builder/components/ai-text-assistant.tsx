@@ -157,14 +157,6 @@ export default function AITextAssistant({ text, onTextChange, fieldType = 'gener
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuItem onClick={handleBulletsToProse}>
-          <ListTree className="h-4 w-4 mr-2 text-blue-600" />
-          <div>
-            <div className="font-medium">Bullets to Prose</div>
-            <div className="text-xs text-muted-foreground">Convert notes to professional text</div>
-          </div>
-        </DropdownMenuItem>
-
         <DropdownMenuItem onClick={handleImprove}>
           <RefreshCw className="h-4 w-4 mr-2 text-wa-green-600" />
           <div>

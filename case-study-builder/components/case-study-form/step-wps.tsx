@@ -850,7 +850,7 @@ export default function StepWPS({ formData, updateFormData, highlightedFields }:
 
                       <div className="space-y-2">
                         <Label className="dark:text-foreground">
-                          Intensity (A) <span className="text-red-500 dark:text-red-400">*</span>
+                          Current (A) <span className="text-red-500 dark:text-red-400">*</span>
                         </Label>
                         <Input
                           value={layer.intensity || ''}
@@ -923,7 +923,7 @@ export default function StepWPS({ formData, updateFormData, highlightedFields }:
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="dark:text-foreground">Tempos (s)</Label>
+                        <Label className="dark:text-foreground">Dwell Time (s)</Label>
                         <Input
                           value={layer.oscillationTempos || ''}
                           onChange={(e) => waUpdateLayer(layer.id, 'oscillationTempos', e.target.value)}
@@ -955,11 +955,11 @@ export default function StepWPS({ formData, updateFormData, highlightedFields }:
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Postheating Temperature (°C)</Label>
+                        <Label>Postheating Temperature (°C) & Holding Time (h)</Label>
                         <Input
                           value={layer.postheatingTemp || ''}
                           onChange={(e) => waUpdateLayer(layer.id, 'postheatingTemp', e.target.value)}
-                          placeholder="e.g., 200"
+                          placeholder="e.g. 250°C – 2h"
                         />
                       </div>
                     </div>
@@ -1010,12 +1010,12 @@ export default function StepWPS({ formData, updateFormData, highlightedFields }:
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="postheatingTemp" className="dark:text-foreground">Postheating (°C)</Label>
+            <Label htmlFor="postheatingTemp" className="dark:text-foreground">Postheating Temperature (°C) & Holding Time (h)</Label>
             <Input
               id="postheatingTemp"
               value={formData.wps?.postheatingTemp || ''}
               onChange={(e) => waUpdateWps('postheatingTemp', e.target.value)}
-              placeholder="e.g., 250 °C"
+              placeholder="e.g. 250°C – 2h"
               className="dark:bg-input dark:border-border dark:text-foreground"
             />
           </div>

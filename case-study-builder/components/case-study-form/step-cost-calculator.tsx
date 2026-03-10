@@ -253,7 +253,7 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg dark:text-foreground">
             <Settings className="h-5 w-5 text-wa-green-600" />
-            Costs
+            Currency
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -292,7 +292,7 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg dark:text-foreground">
             <TrendingDown className="h-5 w-5 text-wa-green-600" />
-            Cost of Previous Solution
+            Costs
           </CardTitle>
           <CardDescription className="dark:text-muted-foreground">
             Compare the cost of previous solution vs WA solution ({currencySymbol})
@@ -302,7 +302,7 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="costOfPart" className="dark:text-foreground">
-                Previous Solution (A) <span className="text-red-500 dark:text-red-400">*</span>
+                Cost of Previous Solution (A) <span className="text-red-500 dark:text-red-400">*</span>
               </Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">
@@ -313,7 +313,7 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
                   type="number"
                   value={formData.costCalculator?.costOfPart || ''}
                   onChange={(e) => waUpdateCostCalculator('costOfPart', e.target.value)}
-                  placeholder="Cost per unit with the old solution."
+                  placeholder="Cost per unit with the previous solution."
                   className="pl-12 dark:bg-input dark:border-border dark:text-foreground"
                   required
                 />
@@ -356,12 +356,12 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
               type="number"
               value={formData.costCalculator?.partsUsedPerYear || ''}
               onChange={(e) => waUpdateCostCalculator('partsUsedPerYear', e.target.value)}
-              placeholder="Number of parts replaced per year with the old solution."
+              placeholder="Number of parts replaced per year with the previous solution."
               className="dark:bg-input dark:border-border dark:text-foreground"
               required
             />
             <p className="text-xs text-muted-foreground">
-              Number of parts replaced annually with the old solution
+              Number of parts replaced annually with the previous solution
             </p>
           </div>
         </CardContent>
@@ -372,26 +372,26 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg dark:text-foreground">
             <Clock className="h-5 w-5 text-wa-green-600" />
-            Lifetime Comparison
+            Lifetime
           </CardTitle>
           <CardDescription className="dark:text-muted-foreground">
-            Compare the service life of the old solution vs WA solution (use any combination of time units)
+            Compare the service life of the previous solution vs WA solution (use any combination of time units)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Old Solution Lifetime */}
+          {/* Previous Solution Lifetime */}
           <div className="space-y-3">
             <Label className="dark:text-foreground">
-              Old Solution Lifetime (C) <span className="text-red-500 dark:text-red-400">*</span>
+              Previous Solution Lifetime (C) <span className="text-red-500 dark:text-red-400">*</span>
             </Label>
             <ServiceLifePicker
               value={waGetOldLifetimeValue()}
               onChange={waUpdateOldLifetime}
-              label="Old Solution Lifetime"
+              label="Previous Solution Lifetime"
               required
             />
             <p className="text-xs text-muted-foreground">
-              Service life with the old solution
+              Service life with the previous solution
             </p>
           </div>
 
@@ -414,10 +414,10 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
           {/* Visual Lifetime Comparison - Shows when lifetime data is entered (independent of other fields) */}
           {hasLifetimeData && (
             <div className="mt-4 p-4 bg-muted/30 rounded-lg space-y-3">
-              <p className="text-sm font-semibold text-foreground">Lifetime Comparison</p>
+              <p className="text-sm font-semibold text-foreground">Lifetime</p>
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
-                  <span className="text-xs w-24 text-muted-foreground">Old Solution</span>
+                  <span className="text-xs w-24 text-muted-foreground">Previous Solution</span>
                   <div className="flex-1 h-6 bg-gray-200 dark:bg-gray-700 rounded-full relative">
                     <div
                       className="h-full bg-gray-500 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
@@ -578,7 +578,7 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
           </CardTitle>
         </CardHeader>
         <CardContent className="text-xs text-blue-800 dark:text-blue-200 space-y-1">
-          <p><strong>Annual Cost (Old):</strong> (A × E) + (E − 1) × (F + G + H)</p>
+          <p><strong>Annual Cost (Previous):</strong> (A × E) + (E − 1) × (F + G + H)</p>
           <p><strong>Annual Cost (WA):</strong> (B × E÷(D/C)) + (E÷(D/C) − 1) × (F + G + H)</p>
         </CardContent>
       </Card>
@@ -589,7 +589,7 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg dark:text-foreground">
               <Calculator className="h-5 w-5 text-wa-green-600" />
-              Cost of Previous Solution
+              Savings Summary
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -598,7 +598,7 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
               <p className="text-sm font-semibold text-foreground">Annual Cost Comparison</p>
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
-                  <span className="text-xs w-24 text-muted-foreground">Old Solution</span>
+                  <span className="text-xs w-24 text-muted-foreground">Previous Solution</span>
                   <div className="flex-1 h-8 bg-gray-200 dark:bg-gray-700 rounded-full relative">
                     <div
                       className="h-full bg-red-400 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
@@ -644,7 +644,7 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
             <div className="grid md:grid-cols-3 gap-6">
               <div className="space-y-3">
                 <div className="text-center p-3 bg-white dark:bg-card rounded-lg">
-                  <p className="text-xs text-muted-foreground mb-1">Annual Cost (Old Solution)</p>
+                  <p className="text-xs text-muted-foreground mb-1">Annual Cost (Previous Solution)</p>
                   <p className="text-2xl font-bold text-gray-800 dark:text-foreground">
                     {currencySymbol}{parseFloat(savings.annualCostOld).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>

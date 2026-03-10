@@ -123,7 +123,7 @@ export default function CostCalculatorDisplay({ data }: CostCalculatorDisplayPro
           <div className="space-y-3">
             <div>
               <div className="flex justify-between text-sm mb-1">
-                <span className="text-red-600 dark:text-red-400 font-medium">Old Solution</span>
+                <span className="text-red-600 dark:text-red-400 font-medium">Previous Solution</span>
                 <span className="text-red-600 dark:text-red-400 font-bold">{waFormatCurrency(data.totalCostBefore)}</span>
               </div>
               <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
@@ -173,7 +173,7 @@ export default function CostCalculatorDisplay({ data }: CostCalculatorDisplayPro
                 <div className="space-y-3">
                   <div>
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="text-red-600 dark:text-red-400">Old Solution:</span>
+                      <span className="text-red-600 dark:text-red-400">Previous Solution:</span>
                       <span className="font-medium text-red-600 dark:text-red-400">{waFormatDays(data.oldSolutionLifetimeDays)}</span>
                     </div>
                     <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
@@ -201,7 +201,7 @@ export default function CostCalculatorDisplay({ data }: CostCalculatorDisplayPro
             {/* Before/After Event Costs */}
             <div className="grid md:grid-cols-2 gap-4">
               <div className="bg-red-50 dark:bg-red-900/10 rounded-lg p-4 border border-red-200 dark:border-red-800">
-                <h5 className="font-medium text-red-700 dark:text-red-300 mb-3">Before (Old Solution)</h5>
+                <h5 className="font-medium text-red-700 dark:text-red-300 mb-3">Before (Previous Solution)</h5>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-red-600 dark:text-red-400">Maintenance/Repair (F):</span>

@@ -243,7 +243,7 @@ export default function WeldingProcedureForm({ caseStudyId, existingData }: Weld
                         )}
                         {layer.oscillationTempos && (
                           <div>
-                            <Label className="text-xs text-muted-foreground">Tempos</Label>
+                            <Label className="text-xs text-muted-foreground">Dwell Time</Label>
                             <p className="font-medium dark:text-foreground">{layer.oscillationTempos} s</p>
                           </div>
                         )}
@@ -270,8 +270,8 @@ export default function WeldingProcedureForm({ caseStudyId, existingData }: Weld
                         )}
                         {layer.postheatingTemp && (
                           <div>
-                            <Label className="text-xs text-muted-foreground">Postheating Temperature</Label>
-                            <p className="font-medium dark:text-foreground">{layer.postheatingTemp} °C</p>
+                            <Label className="text-xs text-muted-foreground">Postheating Temperature & Holding Time</Label>
+                            <p className="font-medium dark:text-foreground">{layer.postheatingTemp}</p>
                           </div>
                         )}
                       </div>
@@ -397,9 +397,9 @@ export default function WeldingProcedureForm({ caseStudyId, existingData }: Weld
                   </p>
                 </div>
                 <div>
-                  <Label className="text-sm text-muted-foreground">Postheating Temperature</Label>
+                  <Label className="text-sm text-muted-foreground">Postheating Temperature & Holding Time</Label>
                   <p className="font-medium dark:text-foreground">
-                    {waDisplayValue(existingData?.postheatingTemp || existingData?.postheatTemperature)} {(existingData?.postheatingTemp || existingData?.postheatTemperature) && '°C'}
+                    {waDisplayValue(existingData?.postheatingTemp || existingData?.postheatTemperature)}
                   </p>
                 </div>
               </div>

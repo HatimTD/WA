@@ -1731,16 +1731,16 @@ async function waGeneratePage1(
     const maxCost = Math.max(displayCostBefore, displayCostAfter);
     const oldWidth = maxCost > 0 ? (displayCostBefore / maxCost) * 100 : 50;
     const waWidth = maxCost > 0 ? (displayCostAfter / maxCost) * 100 : 50;
-    const labelWidth = 35; // Space for "Old Solution" / "WA Solution"
+    const labelWidth = 35; // Space for "Previous Solution" / "WA Solution"
     const valueWidth = 45; // Space for currency values on right
     const barStartX = margin + 4 + labelWidth;
     const barMaxWidth = pageWidth - margin * 2 - labelWidth - valueWidth - 12;
 
-    // Old Solution Bar
+    // Previous Solution Bar
     doc.setFontSize(6.5);
     doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
     doc.setFont('helvetica', 'normal');
-    doc.text('Old Solution', margin + 4, y + 13);
+    doc.text('Previous Solution', margin + 4, y + 13);
 
     // Background bar
     doc.setFillColor(229, 231, 235); // gray-200
@@ -1825,7 +1825,7 @@ async function waGeneratePage1(
     doc.setFontSize(6.5);
     doc.setTextColor(220, 38, 38);
     doc.setFont('helvetica', 'normal');
-    doc.text('Old Solution:', margin + 4, detailY);
+    doc.text('Previous Solution:', margin + 4, detailY);
     doc.setFont('helvetica', 'bold');
     const oldDays = cc.oldSolutionLifetimeDays || 0;
     const oldLifetimeStr = oldDays >= 365 ? `${(oldDays / 365).toFixed(1)}y` : `${oldDays}d`;
@@ -2045,7 +2045,7 @@ async function waGeneratePage1(
           const oscillation = [
             layer.oscillationAmplitude ? `Amplitude: ${layer.oscillationAmplitude} mm` : '',
             layer.oscillationPeriod ? `Period: ${layer.oscillationPeriod} s` : '',
-            layer.oscillationTempos ? `Tempos: ${layer.oscillationTempos} s` : '',
+            layer.oscillationTempos ? `Dwell Time: ${layer.oscillationTempos} s` : '',
           ].filter(Boolean);
 
           oscillation.forEach((item, idx) => {
@@ -2114,7 +2114,7 @@ async function waGeneratePage1(
       const heatingItems = [
         `Preheat: ${wps.preheatingTemp || wps.preheatTemperature ? (wps.preheatingTemp || wps.preheatTemperature) + ' °C' : '-'}`,
         `Interpass: ${wps.interpassTemp || wps.interpassTemperature ? (wps.interpassTemp || wps.interpassTemperature) + ' °C' : '-'}`,
-        `Postheat: ${wps.postheatingTemp || wps.postheatTemperature ? (wps.postheatingTemp || wps.postheatTemperature) + ' °C' : '-'}`,
+        `Postheat & Hold: ${wps.postheatingTemp || wps.postheatTemperature ? (wps.postheatingTemp || wps.postheatTemperature) : '-'}`,
       ];
 
       heatingItems.forEach((item, idx) => {
