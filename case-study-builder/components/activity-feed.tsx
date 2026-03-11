@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Clock } from 'lucide-react';
@@ -9,6 +10,9 @@ type Props = {
 };
 
 export default async function ActivityFeed({ limit = 10 }: Props) {
+  const session = await auth();
+  const canSeeCustomerName = session?.user?.role === 'ADMIN' || session?.user?.role === 'APPROVER';
+
   // Fetch approved AND published cases (published cases are also approved)
   // Order by updatedAt to show the most recently touched cases first
   // This ensures cases appear even when approvedAt is null
@@ -115,7 +119,7 @@ export default async function ActivityFeed({ limit = 10 }: Props) {
                     </span>
                   </div>
                   <h4 className="font-semibold text-sm mb-1 truncate dark:text-foreground">
-                    {caseStudy.customerName} - {caseStudy.componentWorkpiece}
+                    {canSeeCustomerName ? `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}` : caseStudy.componentWorkpiece}
                   </h4>
                   <p className="text-xs text-gray-600 dark:text-muted-foreground line-clamp-1 mb-2">
                     {caseStudy.problemDescription}

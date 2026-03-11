@@ -1363,7 +1363,7 @@ async function waGeneratePage2(doc: jsPDF, data: CaseStudyPDFData, options?: PDF
       { label: 'Equipment/Part', value: cc.equipmentName || data.componentWorkpiece || '-' },
       { label: `Cost of Current Part`, value: A ? waFormatCurrency(A, cc.currency) : '-', highlight: true },
       { label: `Cost of WA Solution`, value: waCost ? waFormatCurrency(waCost, cc.currency) : '-' },
-      { label: 'Old Solution Lifetime', value: cc.oldSolutionLifetimeDays ? `${cc.oldSolutionLifetimeDays} days` : '-' },
+      { label: 'Previous Solution Lifetime', value: cc.oldSolutionLifetimeDays ? `${cc.oldSolutionLifetimeDays} days` : '-' },
       { label: 'WA Solution Lifetime', value: cc.waSolutionLifetimeDays ? `${cc.waSolutionLifetimeDays} days` : '-' },
       { label: 'Parts Replaced Per Year (E)', value: E ? `${E}` : '-', highlight: true },
       { label: 'Maintenance Cost (F)', value: F ? waFormatCurrency(F, cc.currency) : '-' },
@@ -1582,7 +1582,7 @@ async function waGeneratePage2(doc: jsPDF, data: CaseStudyPDFData, options?: PDF
     doc.setFontSize(6.5);
     const paramData = [
       { label: 'Current', value: wps.currentType || '-' },
-      { label: 'Intensity', value: wps.intensity || '-' },
+      { label: 'Current (A)', value: wps.intensity || '-' },
       { label: 'Voltage', value: wps.voltage || '-' },
       { label: 'Wire Speed', value: wps.wireSpeed || '-' },
       { label: 'Weld Speed', value: wps.weldingSpeed || '-' },

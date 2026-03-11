@@ -24,6 +24,20 @@ export async function register() {
       console.log('[Server] Background cache preload started');
     }
 
+    // Always sync employees to DB (needed for login auto-assign).
+    // This is lightweight (~418 records) and ensures the waNetsuiteEmployee
+    // table is populated even if the daily cron hasn't run yet.
+    const { waSyncNetSuiteEmployees } = await import('./lib/integrations/netsuite-sync');
+    waSyncNetSuiteEmployees().then((result) => {
+      if (result.success) {
+        console.log(`[Server] Employee DB sync: ${result.totalEmployees} employees (${result.newEmployees} new, ${result.updatedEmployees} updated)`);
+      } else {
+        console.log(`[Server] Employee DB sync skipped: ${result.error || 'no data'}`);
+      }
+    }).catch((error) => {
+      console.error('[Server] Employee DB sync failed:', error);
+    });
+
     console.log('[Server] Server is ready to accept requests');
   }
 }

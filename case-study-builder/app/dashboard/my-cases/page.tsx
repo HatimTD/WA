@@ -164,6 +164,11 @@ export default async function MyCasesPage({
           <h3 className="font-semibold text-lg text-gray-900 dark:text-foreground">
             {caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}
           </h3>
+          {caseStudy.title && caseStudy.customerName && (
+            <p className="text-sm text-gray-700 dark:text-gray-300 mt-0.5">
+              {caseStudy.customerName}
+            </p>
+          )}
           <p className="text-sm text-gray-600 dark:text-muted-foreground mt-1">
             {caseStudy.location} • {waGetProductDisplay({
               productCategory: (caseStudy as any).productCategory,

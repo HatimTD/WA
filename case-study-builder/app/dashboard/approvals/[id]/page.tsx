@@ -240,6 +240,15 @@ export default async function ApprovalReviewPage({ params, searchParams }: Props
             </div>
           )}
           <div className="grid md:grid-cols-2 gap-4">
+            {caseStudy.customerName && (
+              <div className="flex items-start gap-3 md:col-span-2">
+                <Building2 className="h-5 w-5 text-gray-400 dark:text-muted-foreground mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Customer Name</p>
+                  <p className="text-base font-semibold dark:text-foreground">{caseStudy.customerName}</p>
+                </div>
+              </div>
+            )}
             <div className="flex items-start gap-3">
               <Building2 className="h-5 w-5 text-gray-400 dark:text-muted-foreground mt-0.5" />
               <div>

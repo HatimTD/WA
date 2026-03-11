@@ -223,7 +223,7 @@ export default function StepFive({ formData, updateFormData, highlightedFields }
             <div className="grid md:grid-cols-3 gap-6">
               <div className="space-y-3">
                 <div className="text-center p-3 bg-white dark:bg-card rounded-lg">
-                  <p className="text-xs text-muted-foreground mb-1">Annual Cost (Old Solution)</p>
+                  <p className="text-xs text-muted-foreground mb-1">Annual Cost (Previous Solution)</p>
                   <p className="text-2xl font-bold text-gray-800 dark:text-foreground">
                     ${parseFloat(costSummary.annualCostOld).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>

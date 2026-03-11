@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/auth';
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await auth();
+    const canSeeCustomerName = session?.user?.role === 'ADMIN' || session?.user?.role === 'APPROVER';
     const searchParams = request.nextUrl.searchParams;
     const query = searchParams.get('q') || '';
 
@@ -21,12 +24,12 @@ export async function GET(request: NextRequest) {
               mode: 'insensitive',
             },
           },
-          {
+          ...(canSeeCustomerName ? [{
             customerName: {
               contains: query,
-              mode: 'insensitive',
+              mode: 'insensitive' as const,
             },
-          },
+          }] : []),
           {
             industry: {
               contains: query,
@@ -121,7 +124,7 @@ export async function GET(request: NextRequest) {
     const suggestions: string[] = [];
 
     // Get unique suggestions from matching fields
-    const [titles, customerNames, industries, products] = await Promise.all([
+    const [titles, industries, products, customerNames] = await Promise.all([
       prisma.waCaseStudy.findMany({
         where: {
           status: 'APPROVED',
@@ -129,15 +132,6 @@ export async function GET(request: NextRequest) {
         },
         select: { title: true },
         distinct: ['title'],
-        take: 3,
-      }),
-      prisma.waCaseStudy.findMany({
-        where: {
-          status: 'APPROVED',
-          customerName: { contains: query, mode: 'insensitive' },
-        },
-        select: { customerName: true },
-        distinct: ['customerName'],
         take: 3,
       }),
       prisma.waCaseStudy.findMany({
@@ -158,10 +152,22 @@ export async function GET(request: NextRequest) {
         distinct: ['waProduct'],
         take: 3,
       }),
+      // Only search customerName for ADMIN/APPROVER
+      ...(canSeeCustomerName ? [prisma.waCaseStudy.findMany({
+        where: {
+          status: 'APPROVED',
+          customerName: { contains: query, mode: 'insensitive' },
+        },
+        select: { customerName: true },
+        distinct: ['customerName'],
+        take: 3,
+      })] : [Promise.resolve([])]),
     ]);
 
     suggestions.push(...titles.filter(t => t.title).map((t) => t.title!));
-    suggestions.push(...customerNames.map((c) => c.customerName));
+    if (canSeeCustomerName) {
+      suggestions.push(...(customerNames as { customerName: string }[]).map((c) => c.customerName));
+    }
     suggestions.push(...industries.map((i) => i.industry));
     suggestions.push(...products.map((p) => p.waProduct));
 

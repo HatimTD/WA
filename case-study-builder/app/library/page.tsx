@@ -61,7 +61,6 @@ export default async function PublicLibraryPage({
 
   if (query) {
     where.OR = [
-      { customerName: { contains: query, mode: 'insensitive' } },
       { industry: { contains: query, mode: 'insensitive' } },
       { componentWorkpiece: { contains: query, mode: 'insensitive' } },
       { waProduct: { contains: query, mode: 'insensitive' } },
@@ -276,7 +275,7 @@ export default async function PublicLibraryPage({
                     <CardHeader>
                       <div className="flex items-start justify-between gap-2">
                         <CardTitle className="text-lg line-clamp-2">
-                          {caseStudy.customerName}
+                          {caseStudy.componentWorkpiece || caseStudy.industry}
                         </CardTitle>
                         <div className="flex items-center gap-2 shrink-0">
                           <SaveButton caseStudyId={caseStudy.id} variant="icon" size="sm" />

@@ -388,7 +388,7 @@ export function waGetFieldBreakdown(
         { key: 'laborCostBefore', value: costCalc.laborCostBefore, label: 'Labor Cost (Before)' },
         { key: 'laborCostAfter', value: costCalc.laborCostAfter, label: 'Labor Cost (After)' },
         { key: 'costOfPart', value: costCalc.costOfPart, label: 'Cost of Part' },
-        { key: 'oldSolutionLifetimeDays', value: costCalc.oldSolutionLifetimeDays, label: 'Old Solution Lifetime' },
+        { key: 'oldSolutionLifetimeDays', value: costCalc.oldSolutionLifetimeDays, label: 'Previous Solution Lifetime' },
         { key: 'waSolutionLifetimeDays', value: costCalc.waSolutionLifetimeDays, label: 'WA Solution Lifetime' },
       ];
 

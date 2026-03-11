@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -43,6 +44,9 @@ export default async function LibraryPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
+  const session = await auth();
+  const canSeeCustomerName = session?.user?.role === 'ADMIN' || session?.user?.role === 'APPROVER';
+
   const params = await searchParams;
   const query = params.q || '';
   const typeFilter = params.type || '';
@@ -70,7 +74,7 @@ export default async function LibraryPage({
   if (query) {
     where.OR = [
       { title: { contains: query, mode: 'insensitive' } },
-      { customerName: { contains: query, mode: 'insensitive' } },
+      ...(canSeeCustomerName ? [{ customerName: { contains: query, mode: 'insensitive' } }] : []),
       { industry: { contains: query, mode: 'insensitive' } },
       { componentWorkpiece: { contains: query, mode: 'insensitive' } },
       { waProduct: { contains: query, mode: 'insensitive' } },
@@ -327,7 +331,7 @@ export default async function LibraryPage({
                   <Link
                     href={`/dashboard/library/${caseStudy.id}`}
                     className="absolute inset-0 z-0"
-                    aria-label={`View details for ${caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}`}
+                    aria-label={`View details for ${caseStudy.title || (canSeeCustomerName ? `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}` : caseStudy.componentWorkpiece)}`}
                   />
 
                   {/* Type Badge Banner */}
@@ -372,7 +376,7 @@ export default async function LibraryPage({
                           )}
                         </div>
                         <CardTitle className="text-base font-semibold line-clamp-2 dark:text-foreground group-hover:text-wa-green-600 dark:group-hover:text-primary transition-colors">
-                          {caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}
+                          {caseStudy.title || (canSeeCustomerName ? `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}` : caseStudy.componentWorkpiece)}
                         </CardTitle>
                       </div>
                       {/* SaveButton sits above the overlay so it captures its own clicks */}
