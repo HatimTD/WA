@@ -250,12 +250,10 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
   const [currentStep, setCurrentStep] = useState(initialStep);
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Track if WPS was skipped (for STAR cases - WPS is optional)
-  // Auto-detect: if case has no WPS base metal data, it was skipped
-  const [wpsSkipped, setWpsSkipped] = useState(() => {
-    if (formData.type !== 'STAR') return false;
-    // If no WPS data exists in form, it was skipped during creation
-    return !formData.wps?.baseMetalType && !formData.wps?.waProductName;
-  });
+  // Use caseStudy prop directly (not formData state) to avoid TDZ in production builds
+  const [wpsSkipped, setWpsSkipped] = useState(
+    caseStudy.type === 'STAR' && !wpsData
+  );
   const [industryLoading, setIndustryLoading] = useState(false);
   const [isCustomIndustry, setIsCustomIndustry] = useState(false);
   const [customIndustryText, setCustomIndustryText] = useState('');
