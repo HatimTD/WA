@@ -63,11 +63,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For non-navigation requests (CSS, JS, images), let Serwist handle caching
-  const serwistResponse = serwist.handleFetch(event);
-  if (serwistResponse) {
-    event.respondWith(serwistResponse);
-  }
+  // For non-navigation requests (CSS, JS, images), delegate to Serwist
+  // Note: handleFetch calls event.respondWith() internally
+  // API routes already returned above so they never reach here
+  serwist.handleFetch(event);
 });
 
 // Handle messages from client
