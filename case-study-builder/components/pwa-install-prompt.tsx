@@ -25,39 +25,62 @@ export function PWAInstallPrompt() {
 
     // Check if user previously dismissed the prompt
     const dismissed = localStorage.getItem('pwa-install-dismissed');
-    const dismissedTime = dismissed ? parseInt(dismissed) : 0;
-    const oneDayInMs = 24 * 60 * 60 * 1000;
+    if (dismissed) {
+      const dismissedTime = parseInt(dismissed);
+      const dismissCount = parseInt(localStorage.getItem('pwa-install-dismiss-count') || '0');
+      // Exponential backoff: 1st dismiss = 7 days, 2nd = 30 days, 3rd+ = never show again
+      const waitMs = dismissCount >= 3
+        ? Infinity
+        : dismissCount >= 2
+        ? 30 * 24 * 60 * 60 * 1000
+        : 7 * 24 * 60 * 60 * 1000;
 
-    // Don't show if dismissed within the last day
-    if (dismissedTime && Date.now() - dismissedTime < oneDayInMs) {
+      if (Date.now() - dismissedTime < waitMs) {
+        return;
+      }
+    }
+
+    // Only show once per session (don't re-show on every navigation)
+    const shownThisSession = sessionStorage.getItem('pwa-install-shown');
+    if (shownThisSession) {
       return;
     }
 
-    // Listen for the beforeinstallprompt event
-    const handleBeforeInstallPrompt = (e: Event) => {
-      // Prevent the mini-infobar from appearing on mobile
-      e.preventDefault();
+    let showTimeout: ReturnType<typeof setTimeout>;
+    let autoDismissTimeout: ReturnType<typeof setTimeout>;
 
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
       const promptEvent = e as BeforeInstallPromptEvent;
       setDeferredPrompt(promptEvent);
 
-      // Show the install prompt after a short delay (better UX)
-      setTimeout(() => {
+      // Show after 5 seconds on the page
+      showTimeout = setTimeout(() => {
         setShowPrompt(true);
-      }, 3000);
+        sessionStorage.setItem('pwa-install-shown', 'true');
+
+        // Auto-dismiss after 10 seconds if user doesn't interact
+        autoDismissTimeout = setTimeout(() => {
+          setShowPrompt(false);
+        }, 10000);
+      }, 5000);
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    // Listen for successful installation
-    window.addEventListener('appinstalled', () => {
+    const handleAppInstalled = () => {
       setIsInstalled(true);
       setShowPrompt(false);
       setDeferredPrompt(null);
-    });
+      localStorage.setItem('pwa-install-dismissed', Date.now().toString());
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+      clearTimeout(showTimeout);
+      clearTimeout(autoDismissTimeout);
     };
   }, []);
 
@@ -89,8 +112,9 @@ export function PWAInstallPrompt() {
 
   const handleDismiss = () => {
     setShowPrompt(false);
-    // Store dismissal time in localStorage
     localStorage.setItem('pwa-install-dismissed', Date.now().toString());
+    const count = parseInt(localStorage.getItem('pwa-install-dismiss-count') || '0');
+    localStorage.setItem('pwa-install-dismiss-count', String(count + 1));
   };
 
   // Don't render anything if already installed or prompt shouldn't be shown
