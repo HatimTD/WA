@@ -104,8 +104,10 @@ const adapter = {
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
   adapter: adapter as any,
   session: { strategy: 'jwt' },
+  trustHost: true,
   providers,
   callbacks: {
     async signIn() {
