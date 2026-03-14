@@ -117,103 +117,76 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async jwt({ token, user, trigger, session }) {
       if (user) {
-        // Fetch full user data from database
-        const dbUser = await prisma.user.findUnique({
-          where: { id: user.id },
-        });
+        // Fetch user data AND subsidiaries in parallel (both essential for session)
+        const [dbUser, userSubsidiaries] = await Promise.all([
+          prisma.user.findUnique({
+            where: { id: user.id },
+            select: { id: true, role: true, region: true, totalPoints: true, name: true, email: true, ssoUid: true },
+          }),
+          prisma.waUserSubsidiary.findMany({
+            where: { userId: user.id },
+            select: { subsidiary: { select: { id: true, name: true, region: true } } },
+          }),
+        ]);
+
         if (dbUser) {
           token.role = dbUser.role;
           token.region = dbUser.region;
           token.totalPoints = dbUser.totalPoints;
-          // Ensure name is stored in token
           token.name = dbUser.name || user.name;
 
-          // NetSuite Employee Auto-Sync: Check if email exists in NetSuite employees
-          if (dbUser.email) {
-            try {
-              const nsEmployee = await prisma.waNetsuiteEmployee.findUnique({
-                where: { email: dbUser.email.toLowerCase().trim() },
-                select: {
-                  netsuiteInternalId: true,
-                  firstname: true,
-                  middlename: true,
-                  lastname: true,
-                  subsidiarynohierarchy: true,
-                },
-              });
+          // Set subsidiaries from parallel fetch
+          const subsidiaries = userSubsidiaries.map((us) => ({
+            id: us.subsidiary.id, name: us.subsidiary.name, region: us.subsidiary.region,
+          }));
+          token.subsidiaries = subsidiaries;
+          token.regions = [...new Set(subsidiaries.map((s) => s.region))];
 
-              if (nsEmployee) {
-                // Build a single update for ssoUid and name if needed
-                const updateData: Record<string, string> = {};
+          // NetSuite sync runs in background - don't block the OAuth callback
+          // This prevents Vercel function timeout on cold starts
+          const userId = dbUser.id;
+          const userEmail = dbUser.email;
+          const userSsoUid = dbUser.ssoUid;
+          const userName = dbUser.name;
 
-                if (!dbUser.ssoUid && nsEmployee.netsuiteInternalId) {
-                  updateData.ssoUid = nsEmployee.netsuiteInternalId;
-                }
-
-                if (!dbUser.name && nsEmployee.firstname) {
-                  const fullName = [
-                    nsEmployee.firstname,
-                    nsEmployee.middlename,
-                    nsEmployee.lastname,
-                  ]
-                    .filter(Boolean)
-                    .join(' ');
-                  updateData.name = fullName;
-                  token.name = fullName;
-                }
-
-                if (Object.keys(updateData).length > 0) {
-                  await prisma.user.update({
-                    where: { id: dbUser.id },
-                    data: updateData,
-                  });
-                }
-
-                // Auto-assign subsidiary from NetSuite (only if exists)
-                if (nsEmployee.netsuiteInternalId && nsEmployee.subsidiarynohierarchy) {
-                  await waAutoAssignSubsidiaryFromNetSuite(
-                    dbUser.id,
-                    nsEmployee.netsuiteInternalId
-                  );
-                }
-              }
-            } catch (error) {
-              console.error('[Auth] NetSuite employee auto-sync error:', error);
-              // Continue without failing the login
-            }
-          }
-
-          // Fetch user's subsidiaries and compute regions
-          try {
-            const userSubsidiaries = await prisma.waUserSubsidiary.findMany({
-              where: { userId: dbUser.id },
-              select: {
-                subsidiary: {
+          if (userEmail) {
+            // Fire and forget - don't await
+            (async () => {
+              try {
+                const nsEmployee = await prisma.waNetsuiteEmployee.findUnique({
+                  where: { email: userEmail.toLowerCase().trim() },
                   select: {
-                    id: true,
-                    name: true,
-                    region: true,
+                    netsuiteInternalId: true,
+                    firstname: true,
+                    middlename: true,
+                    lastname: true,
+                    subsidiarynohierarchy: true,
                   },
-                },
-              },
-            });
+                });
 
-            const subsidiaries = userSubsidiaries.map((us) => ({
-              id: us.subsidiary.id,
-              name: us.subsidiary.name,
-              region: us.subsidiary.region,
-            }));
-
-            const regions = [...new Set(subsidiaries.map((s) => s.region))];
-
-            // Add to token
-            token.subsidiaries = subsidiaries;
-            token.regions = regions;
-          } catch (error) {
-            console.error('[Auth] Error fetching subsidiaries:', error);
-            token.subsidiaries = [];
-            token.regions = [];
+                if (nsEmployee) {
+                  const updateData: Record<string, string> = {};
+                  if (!userSsoUid && nsEmployee.netsuiteInternalId) {
+                    updateData.ssoUid = nsEmployee.netsuiteInternalId;
+                  }
+                  if (!userName && nsEmployee.firstname) {
+                    updateData.name = [nsEmployee.firstname, nsEmployee.middlename, nsEmployee.lastname]
+                      .filter(Boolean).join(' ');
+                  }
+                  if (Object.keys(updateData).length > 0) {
+                    await prisma.user.update({ where: { id: userId }, data: updateData });
+                  }
+                  if (nsEmployee.netsuiteInternalId && nsEmployee.subsidiarynohierarchy) {
+                    await waAutoAssignSubsidiaryFromNetSuite(userId, nsEmployee.netsuiteInternalId);
+                  }
+                }
+              } catch {
+                // Non-critical - sync will happen on next login
+              }
+            })();
           }
+
+          // Subsidiaries already fetched in parallel above
         }
       }
 
