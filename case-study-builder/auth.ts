@@ -13,47 +13,6 @@ const providers: Provider[] = [
   Google({
     clientId: process.env.GOOGLE_CLIENT_ID!,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    // Override token exchange to log Google's actual error response
-    token: {
-      async request({ params, provider }: any) {
-        const url = 'https://oauth2.googleapis.com/token';
-        const body = new URLSearchParams({
-          code: params.code as string,
-          client_id: process.env.GOOGLE_CLIENT_ID!,
-          client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-          redirect_uri: provider.callbackUrl,
-          grant_type: 'authorization_code',
-          code_verifier: params.code_verifier as string,
-        });
-
-        console.log('[GOOGLE TOKEN] Requesting token exchange', {
-          redirect_uri: provider.callbackUrl,
-          has_code: !!params.code,
-          has_code_verifier: !!params.code_verifier,
-        });
-
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: body.toString(),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          console.error('[GOOGLE TOKEN ERROR]', {
-            status: response.status,
-            error: data.error,
-            error_description: data.error_description,
-            redirect_uri: provider.callbackUrl,
-          });
-          throw new Error(`Google token error: ${data.error} - ${data.error_description}`);
-        }
-
-        console.log('[GOOGLE TOKEN] Success - got tokens');
-        return { tokens: data };
-      },
-    },
   }),
 ];
 
@@ -145,7 +104,7 @@ const adapter = {
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
-  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
   adapter: adapter as any,
   session: { strategy: 'jwt' },
   trustHost: true,
