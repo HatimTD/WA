@@ -70,15 +70,45 @@ providers.push(
     })
 );
 
+// Wrap PrismaAdapter to handle re-login (upsert instead of insert for accounts)
+const basePrismaAdapter = PrismaAdapter(prisma);
+const adapter = {
+  ...basePrismaAdapter,
+  linkAccount: async (account: any) => {
+    // On re-login, the account already exists - upsert instead of insert
+    try {
+      return await prisma.account.upsert({
+        where: {
+          provider_providerAccountId: {
+            provider: account.provider,
+            providerAccountId: account.providerAccountId,
+          },
+        },
+        update: {
+          access_token: account.access_token,
+          refresh_token: account.refresh_token,
+          expires_at: account.expires_at,
+          id_token: account.id_token,
+          scope: account.scope,
+          token_type: account.token_type,
+          session_state: account.session_state,
+        },
+        create: account,
+      });
+    } catch {
+      // Fallback to original adapter
+      return basePrismaAdapter.linkAccount!(account);
+    }
+  },
+};
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
-  adapter: PrismaAdapter(prisma) as any,
+  adapter: adapter as any,
   session: { strategy: 'jwt' },
   providers,
   callbacks: {
     async signIn() {
-      // All providers allowed (Google OAuth + credentials for pre-defined accounts)
-      // Domain restriction enforced in Google Cloud Console
       return true;
     },
     async session({ session, token }) {
