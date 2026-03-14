@@ -13,73 +13,60 @@ const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
   clientsClaim: true,
-  navigationPreload: true,
+  navigationPreload: false, // Disable - we handle navigation ourselves
 });
 
-// Handle navigation requests properly to avoid preload warnings
-serwist.addEventListeners();
+// Manually add install and activate listeners (NOT fetch - we handle that ourselves)
+self.addEventListener('install', (event) => {
+  event.waitUntil(serwist.handleInstall(event));
+});
 
-// Add fetch event listener to properly handle navigation preload
+self.addEventListener('activate', (event) => {
+  event.waitUntil(serwist.handleActivate(event));
+});
+
+// Single fetch handler with proper API exclusion
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Never intercept auth callbacks or API routes - let them pass through to the server
-  if (url.pathname.startsWith('/api/auth/') || url.pathname.startsWith('/api/')) {
-    return;
+  // CRITICAL: Never intercept API routes - especially OAuth callbacks
+  // The OAuth callback returns 302 redirects that SW can't handle properly
+  if (url.pathname.startsWith('/api/')) {
+    return; // Let the browser handle it directly
   }
 
-  // Handle navigation requests
-  if (request.mode === 'navigate') {
+  // Only handle same-origin navigation requests
+  if (request.mode === 'navigate' && url.origin === self.location.origin) {
     event.respondWith(
       (async () => {
         try {
-          // Try to use the preload response if available
-          const preloadResponse = event.preloadResponse;
-          if (preloadResponse) {
-            const response = await preloadResponse;
-            if (response && response.ok) {
-              return response;
-            }
-          }
-
-          // Otherwise, try the network
+          // Try network first
           const networkResponse = await fetch(request);
-          if (networkResponse && networkResponse.ok) {
-            return networkResponse;
-          }
-
-          // If network fails, try cache
+          return networkResponse;
+        } catch {
+          // Network failed - try cache
           const cachedResponse = await caches.match(request);
           if (cachedResponse) {
             return cachedResponse;
           }
 
-          // Return offline page if available
-          return caches.match('/offline') || new Response('Offline', {
+          // Return offline page
+          const offlinePage = await caches.match('/offline');
+          return offlinePage || new Response('Offline', {
             status: 503,
-            statusText: 'Service Unavailable',
-            headers: new Headers({
-              'Content-Type': 'text/plain',
-            }),
-          });
-        } catch (error) {
-          // Return cached response or offline page on error
-          const cachedResponse = await caches.match(request);
-          if (cachedResponse) {
-            return cachedResponse;
-          }
-
-          return caches.match('/offline') || new Response('Offline', {
-            status: 503,
-            statusText: 'Service Unavailable',
-            headers: new Headers({
-              'Content-Type': 'text/plain',
-            }),
+            headers: { 'Content-Type': 'text/plain' },
           });
         }
       })()
     );
+    return;
+  }
+
+  // For non-navigation requests (CSS, JS, images), let Serwist handle caching
+  const serwistResponse = serwist.handleFetch(event);
+  if (serwistResponse) {
+    event.respondWith(serwistResponse);
   }
 });
 
@@ -91,7 +78,6 @@ self.addEventListener('message', (event) => {
         self.skipWaiting();
         break;
       case 'SYNC_NOW':
-        // Trigger sync when online - notify all clients
         self.clients.matchAll().then((clients) => {
           clients.forEach((client) => {
             client.postMessage({ type: 'SYNC_TRIGGERED' });
