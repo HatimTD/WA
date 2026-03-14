@@ -23,28 +23,28 @@ export function PWAInstallPrompt() {
       return;
     }
 
-    // Check if user previously dismissed the prompt
-    const dismissed = localStorage.getItem('pwa-install-dismissed');
-    if (dismissed) {
-      const dismissedTime = parseInt(dismissed);
-      const dismissCount = parseInt(localStorage.getItem('pwa-install-dismiss-count') || '0');
-      // Exponential backoff: 1st dismiss = 7 days, 2nd = 30 days, 3rd+ = never show again
-      const waitMs = dismissCount >= 3
-        ? Infinity
-        : dismissCount >= 2
-        ? 30 * 24 * 60 * 60 * 1000
-        : 7 * 24 * 60 * 60 * 1000;
+    // Helper: should we suppress the prompt?
+    function shouldSuppress(): boolean {
+      // Already shown this session
+      if (sessionStorage.getItem('pwa-install-shown')) return true;
 
-      if (Date.now() - dismissedTime < waitMs) {
-        return;
+      // Check localStorage dismiss history
+      const dismissed = localStorage.getItem('pwa-install-dismissed');
+      if (dismissed) {
+        const dismissedTime = parseInt(dismissed);
+        const dismissCount = parseInt(localStorage.getItem('pwa-install-dismiss-count') || '0');
+        // 1st dismiss = 7 days, 2nd = 30 days, 3rd+ = never
+        if (dismissCount >= 3) return true;
+        const waitMs = dismissCount >= 2
+          ? 30 * 24 * 60 * 60 * 1000
+          : 7 * 24 * 60 * 60 * 1000;
+        if (Date.now() - dismissedTime < waitMs) return true;
       }
+      return false;
     }
 
-    // Only show once per session (don't re-show on every navigation)
-    const shownThisSession = sessionStorage.getItem('pwa-install-shown');
-    if (shownThisSession) {
-      return;
-    }
+    // Early exit if suppressed
+    if (shouldSuppress()) return;
 
     let showTimeout: ReturnType<typeof setTimeout>;
     let autoDismissTimeout: ReturnType<typeof setTimeout>;
@@ -52,14 +52,20 @@ export function PWAInstallPrompt() {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       const promptEvent = e as BeforeInstallPromptEvent;
+
+      // Re-check suppression inside the handler (catches re-mounts and race conditions)
+      if (shouldSuppress()) return;
+
       setDeferredPrompt(promptEvent);
 
-      // Show after 5 seconds on the page
       showTimeout = setTimeout(() => {
+        // Final check before showing
+        if (shouldSuppress()) return;
+
         setShowPrompt(true);
         sessionStorage.setItem('pwa-install-shown', 'true');
 
-        // Auto-dismiss after 10 seconds if user doesn't interact
+        // Auto-dismiss after 10 seconds
         autoDismissTimeout = setTimeout(() => {
           setShowPrompt(false);
         }, 10000);
@@ -112,6 +118,9 @@ export function PWAInstallPrompt() {
 
   const handleDismiss = () => {
     setShowPrompt(false);
+    setDeferredPrompt(null);
+    // Mark both storages immediately to prevent any re-show
+    sessionStorage.setItem('pwa-install-shown', 'true');
     localStorage.setItem('pwa-install-dismissed', Date.now().toString());
     const count = parseInt(localStorage.getItem('pwa-install-dismiss-count') || '0');
     localStorage.setItem('pwa-install-dismiss-count', String(count + 1));

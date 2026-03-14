@@ -62,6 +62,7 @@ export function IOSPWAPrompt() {
 
   const handleDismiss = () => {
     setShowPrompt(false);
+    sessionStorage.setItem('ios-pwa-prompt-shown', 'true');
     localStorage.setItem('ios-pwa-prompt-dismissed', Date.now().toString());
     const count = parseInt(localStorage.getItem('ios-pwa-dismiss-count') || '0');
     localStorage.setItem('ios-pwa-dismiss-count', String(count + 1));
