@@ -15,7 +15,7 @@ const providers: Provider[] = [
     clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     // Override token exchange to log Google's actual error response
     token: {
-      async request({ params, provider }) {
+      async request({ params, provider }: any) {
         const url = 'https://oauth2.googleapis.com/token';
         const body = new URLSearchParams({
           code: params.code as string,
