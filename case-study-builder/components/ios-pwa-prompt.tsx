@@ -23,23 +23,48 @@ export function IOSPWAPrompt() {
 
     // Check if user previously dismissed the prompt
     const dismissed = localStorage.getItem('ios-pwa-prompt-dismissed');
-    const dismissedTime = dismissed ? parseInt(dismissed) : 0;
-    const threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
+    const dismissCount = parseInt(localStorage.getItem('ios-pwa-dismiss-count') || '0');
 
-    // Only show if: iOS device, not installed, not recently dismissed
-    if (iOS && !standalone && (!dismissedTime || Date.now() - dismissedTime > threeDaysInMs)) {
-      // Show prompt after 3 seconds
+    if (dismissed) {
+      const dismissedTime = parseInt(dismissed);
+      // Exponential backoff: 1st = 7 days, 2nd = 30 days, 3rd+ = never
+      const waitMs = dismissCount >= 3
+        ? Infinity
+        : dismissCount >= 2
+        ? 30 * 24 * 60 * 60 * 1000
+        : 7 * 24 * 60 * 60 * 1000;
+
+      if (Date.now() - dismissedTime < waitMs) return;
+    }
+
+    // Only show once per session
+    const shownThisSession = sessionStorage.getItem('ios-pwa-prompt-shown');
+    if (shownThisSession) return;
+
+    // Only show if: iOS device, not installed
+    if (iOS && !standalone) {
       const timer = setTimeout(() => {
         setShowPrompt(true);
-      }, 3000);
+        sessionStorage.setItem('ios-pwa-prompt-shown', 'true');
+      }, 5000);
 
-      return () => clearTimeout(timer);
+      // Auto-dismiss after 10 seconds
+      const autoDismiss = setTimeout(() => {
+        setShowPrompt(false);
+      }, 15000);
+
+      return () => {
+        clearTimeout(timer);
+        clearTimeout(autoDismiss);
+      };
     }
   }, []);
 
   const handleDismiss = () => {
     setShowPrompt(false);
     localStorage.setItem('ios-pwa-prompt-dismissed', Date.now().toString());
+    const count = parseInt(localStorage.getItem('ios-pwa-dismiss-count') || '0');
+    localStorage.setItem('ios-pwa-dismiss-count', String(count + 1));
   };
 
   // Don't render if not iOS, already installed, or shouldn't show
