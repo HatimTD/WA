@@ -24,6 +24,11 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // Never intercept auth callbacks or API routes - let them pass through to the server
+  if (url.pathname.startsWith('/api/auth/') || url.pathname.startsWith('/api/')) {
+    return;
+  }
+
   // Handle navigation requests
   if (request.mode === 'navigate') {
     event.respondWith(
