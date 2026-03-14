@@ -57,18 +57,15 @@ class IndexedDBCache {
       const cached = await table.get(key);
 
       if (!cached) {
-        console.log(`[IndexedDB] Cache MISS - ${key}`);
         return null;
       }
 
       // Check if expired
       if (cached.expiresAt < now) {
-        console.log(`[IndexedDB] Cache EXPIRED - ${key}`);
         await table.delete(key); // Clean up expired entry
         return null;
       }
 
-      console.log(`[IndexedDB] Cache HIT - ${key} ⚡⚡⚡`);
       return cached.data as T;
 
     } catch (error) {
@@ -96,8 +93,6 @@ class IndexedDBCache {
         expiresAt: now + actualTTL
       });
 
-      const daysValid = Math.floor(actualTTL / (1000 * 60 * 60 * 24));
-      console.log(`[IndexedDB] Cached ${key} for ${daysValid} days ✅`);
       return true;
 
     } catch (error) {
@@ -113,7 +108,6 @@ class IndexedDBCache {
     try {
       const table = key.includes('customers') ? db.customers : db.items;
       await table.delete(key);
-      console.log(`[IndexedDB] Deleted ${key} ✅`);
       return true;
     } catch (error) {
       console.error(`[IndexedDB] Delete error for ${key}:`, error);
@@ -128,7 +122,6 @@ class IndexedDBCache {
     try {
       await db.customers.clear();
       await db.items.clear();
-      console.log('[IndexedDB] Cleared all cache ✅');
       return true;
     } catch (error) {
       console.error('[IndexedDB] Clear error:', error);
@@ -193,10 +186,6 @@ class IndexedDBCache {
       for (const entry of expiredItems) {
         await db.items.delete(entry.id);
         deletedCount++;
-      }
-
-      if (deletedCount > 0) {
-        console.log(`[IndexedDB] Cleaned up ${deletedCount} expired entries`);
       }
 
       return deletedCount;

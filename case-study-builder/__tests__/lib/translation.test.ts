@@ -93,7 +93,7 @@ describe('Translation Support', () => {
 
   describe('Translation Panel Component Logic', () => {
     it('should detect non-English original language', () => {
-      const originalLanguage = 'fr';
+      const originalLanguage = 'fr' as string;
       const isNonEnglish = originalLanguage !== 'en';
       expect(isNonEnglish).toBe(true);
     });
@@ -120,7 +120,7 @@ describe('Translation Support', () => {
     });
 
     it('should show indicator for non-English content', () => {
-      const originalLanguage = 'es';
+      const originalLanguage = 'es' as string;
       const translationAvailable = false;
       const shouldShow = originalLanguage !== 'en' || translationAvailable;
       expect(shouldShow).toBe(true);

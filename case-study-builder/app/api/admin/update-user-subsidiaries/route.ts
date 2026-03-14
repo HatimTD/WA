@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/auth';
+import prisma from '@/lib/prisma';
 import { waUpdateUserSubsidiaries } from '@/lib/actions/waUserSubsidiaryActions';
 
 /**
@@ -16,6 +18,16 @@ import { waUpdateUserSubsidiaries } from '@/lib/actions/waUserSubsidiaryActions'
  */
 export async function PUT(request: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { role: true } });
+    if (user?.role !== 'ADMIN') {
+      return NextResponse.json({ success: false, error: 'Forbidden: Admin access required' }, { status: 403 });
+    }
+
     const body = await request.json();
     const { userId, subsidiaryIds } = body;
 

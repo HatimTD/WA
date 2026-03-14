@@ -52,7 +52,7 @@ test.describe('Security Tests', () => {
 
     test('session cookie has secure attributes', async ({ page }) => {
       // Login to get session cookie
-      await page.goto('/dev-login');
+      await page.goto('/login');
       await page.getByLabel('Email').fill('tidihatim@gmail.com');
       await page.getByLabel('Password').fill('Godofwar@3');
       await page.getByLabel('Role').click();
@@ -137,7 +137,7 @@ test.describe('Security Tests', () => {
   test.describe('XSS Prevention', () => {
     test('search input sanitizes XSS attempts', async ({ page }) => {
       // Login first
-      await page.goto('/dev-login');
+      await page.goto('/login');
       await page.getByLabel('Email').fill('tidihatim@gmail.com');
       await page.getByLabel('Password').fill('Godofwar@3');
       await page.getByLabel('Role').click();
@@ -217,7 +217,7 @@ test.describe('Security Tests', () => {
   test.describe('SQL Injection Prevention', () => {
     test('search handles SQL injection attempts safely', async ({ page }) => {
       // Login first
-      await page.goto('/dev-login');
+      await page.goto('/login');
       await page.getByLabel('Email').fill('tidihatim@gmail.com');
       await page.getByLabel('Password').fill('Godofwar@3');
       await page.getByLabel('Role').click();
@@ -251,7 +251,7 @@ test.describe('Security Tests', () => {
   test.describe('Authorization', () => {
     test('contributor cannot access admin functions', async ({ page }) => {
       // Login as contributor
-      await page.goto('/dev-login');
+      await page.goto('/login');
       await page.getByLabel('Email').fill('tidihatim@gmail.com');
       await page.getByLabel('Password').fill('Godofwar@3');
       await page.getByLabel('Role').click();
@@ -277,7 +277,7 @@ test.describe('Security Tests', () => {
 
     test('users can only edit their own case studies', async ({ page }) => {
       // Login
-      await page.goto('/dev-login');
+      await page.goto('/login');
       await page.getByLabel('Email').fill('tidihatim@gmail.com');
       await page.getByLabel('Password').fill('Godofwar@3');
       await page.getByLabel('Role').click();
@@ -317,7 +317,7 @@ test.describe('Security Tests', () => {
   test.describe('Sensitive Data Protection', () => {
     test('passwords are not exposed in responses', async ({ page }) => {
       // Login
-      await page.goto('/dev-login');
+      await page.goto('/login');
       await page.getByLabel('Email').fill('tidihatim@gmail.com');
       await page.getByLabel('Password').fill('Godofwar@3');
       await page.getByLabel('Role').click();

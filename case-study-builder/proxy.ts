@@ -1,7 +1,7 @@
 /**
  * @fileoverview Next.js 16 Proxy with Auth, CSP Nonces, and Rate Limiting
  * @description Security proxy compliant with WA Policy V2.3
- * - Section 4.1: Security hardening (CSP with nonces, no unsafe-inline)
+ * - Section 4.1: Security hardening (CSP headers, rate limiting)
  * - Section 4.3: Rate limiting integration
  * @see https://nextjs.org/docs/app/api-reference/file-conventions/proxy
  */
@@ -19,6 +19,34 @@ interface RateLimitEntry {
 }
 
 const rateLimitStore = new Map<string, RateLimitEntry>();
+const RATE_LIMIT_MAX_ENTRIES = 10_000;
+let lastCleanup = Date.now();
+
+/**
+ * Evict expired entries from the rate limit store to prevent memory leaks.
+ * Runs at most once per minute to avoid overhead on every request.
+ */
+function cleanupRateLimitStore() {
+  const now = Date.now();
+  if (now - lastCleanup < 60_000) return; // cleanup at most every 60s
+  lastCleanup = now;
+
+  for (const [key, entry] of rateLimitStore) {
+    if (now >= entry.resetTime) {
+      rateLimitStore.delete(key);
+    }
+  }
+
+  // Hard cap: if still too large, drop oldest entries
+  if (rateLimitStore.size > RATE_LIMIT_MAX_ENTRIES) {
+    const excess = rateLimitStore.size - RATE_LIMIT_MAX_ENTRIES;
+    const keys = rateLimitStore.keys();
+    for (let i = 0; i < excess; i++) {
+      const { value } = keys.next();
+      if (value) rateLimitStore.delete(value);
+    }
+  }
+}
 
 const RATE_LIMITS = {
   auth: { maxRequests: 5, windowMs: 60000 },
@@ -27,15 +55,6 @@ const RATE_LIMITS = {
   export: { maxRequests: 5, windowMs: 60000 },
   api: { maxRequests: 100, windowMs: 60000 },
 } as const;
-
-/**
- * Generate cryptographically secure nonce for CSP
- */
-function generateNonce(): string {
-  const array = new Uint8Array(16);
-  crypto.getRandomValues(array);
-  return Buffer.from(array).toString('base64');
-}
 
 /**
  * Get client IP from request headers
@@ -49,10 +68,11 @@ function getClientIp(headers: Headers): string {
 }
 
 /**
- * Build Content Security Policy with nonce (no unsafe-inline/unsafe-eval in production)
- * In development mode, we allow unsafe-inline/unsafe-eval for HMR and Radix UI
+ * Build Content Security Policy
+ * Development: permissive for HMR and dev tools
+ * Production: restrictive with Vercel/Pusher allowlists
  */
-function buildCSP(nonce: string): string {
+function buildCSP(): string {
   const isDevelopment = process.env.NODE_ENV === 'development';
 
   if (isDevelopment) {
@@ -151,22 +171,23 @@ const MAINTENANCE_EXEMPT_PATHS = [
   '/images',
   '/fonts',
   '/login',
-  '/dev-login',
   '/auth',
 ];
 
 // Admin paths that require authentication check
 const ADMIN_PATHS = ['/dashboard/admin', '/dashboard/system-settings'];
 
+// Cache maintenance mode to avoid DB query on every page request
+let cachedMaintenanceMode: { value: boolean; lastCheck: number } = { value: false, lastCheck: 0 };
+const MAINTENANCE_CACHE_TTL_MS = 30_000; // 30 seconds
+
 export default auth(async (req) => {
   const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth;
 
-  // Generate CSP nonce for this request
-  const nonce = generateNonce();
-
   // ==== RATE LIMITING FOR API ROUTES ====
   if (pathname.startsWith('/api')) {
+    cleanupRateLimitStore();
     const clientIp = getClientIp(req.headers);
     const config = getRateLimitConfig(pathname);
     const rateLimitKey = `rate:${clientIp}:${pathname}`;
@@ -192,7 +213,6 @@ export default auth(async (req) => {
 
   // Define page types
   const isAuthPage = pathname.startsWith('/login');
-  const isDevLogin = pathname.startsWith('/dev-login');
   const isPublicPage = pathname === '/';
   const isLibraryPage = pathname.startsWith('/library');
   const isMaintenancePage = pathname === '/maintenance';
@@ -204,19 +224,26 @@ export default auth(async (req) => {
 
   // Helper to add security headers to response
   const addSecurityHeaders = (response: NextResponse) => {
-    response.headers.set('Content-Security-Policy', buildCSP(nonce));
-    response.headers.set('x-nonce', nonce);
+    response.headers.set('Content-Security-Policy', buildCSP());
     return response;
   };
 
   try {
-    // ==== MAINTENANCE MODE CHECK ====
+    // ==== MAINTENANCE MODE CHECK (cached, refreshed every 30s) ====
     if (!isExemptPath) {
-      const maintenanceConfig = await prisma.waSystemConfig.findUnique({
-        where: { key: 'maintenance_mode' },
-      });
+      const now = Date.now();
+      if (now - cachedMaintenanceMode.lastCheck > MAINTENANCE_CACHE_TTL_MS) {
+        try {
+          const maintenanceConfig = await prisma.waSystemConfig.findUnique({
+            where: { key: 'maintenance_mode' },
+          });
+          cachedMaintenanceMode = { value: maintenanceConfig?.value === 'true', lastCheck: now };
+        } catch {
+          // Keep cached value on error
+        }
+      }
 
-      const isMaintenanceMode = maintenanceConfig?.value === 'true';
+      const isMaintenanceMode = cachedMaintenanceMode.value;
 
       if (isMaintenanceMode) {
         // Check if user is admin
@@ -257,16 +284,6 @@ export default auth(async (req) => {
       return addSecurityHeaders(NextResponse.next());
     }
 
-    // ==== DEV LOGIN ACCESS ====
-    // Allow dev-login in development mode (always allow if not logged in to show the form)
-    if (isDevLogin) {
-      if (!isLoggedIn) {
-        return addSecurityHeaders(NextResponse.next());
-      }
-      // If logged in, redirect to dashboard
-      return NextResponse.redirect(new URL('/dashboard', req.url));
-    }
-
     // ==== AUTHENTICATED USER REDIRECTS ====
     // Redirect logged-in users away from login pages
     if (isLoggedIn && isAuthPage) {
@@ -293,7 +310,7 @@ export default auth(async (req) => {
 
     // ==== UNAUTHENTICATED USER REDIRECTS ====
     // Redirect unauthenticated users to login
-    if (!isLoggedIn && !isAuthPage && !isDevLogin) {
+    if (!isLoggedIn && !isAuthPage) {
       return NextResponse.redirect(new URL('/login', req.url));
     }
 

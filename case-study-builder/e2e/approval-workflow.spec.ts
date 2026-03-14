@@ -14,7 +14,7 @@ const BASE_URL = process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3010'
 
 // Login as Approver (uses admin credentials, then changes role)
 async function waLoginAsApprover(page: Page) {
-  await page.goto(`${BASE_URL}/dev-login`);
+  await page.goto(`${BASE_URL}/login`);
   await page.waitForLoadState('networkidle');
   await page.getByLabel('Email').fill('admin@weldingalloys.com');
   await page.getByLabel('Password').fill('TestPassword123');
@@ -26,7 +26,7 @@ async function waLoginAsApprover(page: Page) {
 
 // Login as Contributor (uses admin credentials, then changes role)
 async function waLoginAsContributor(page: Page) {
-  await page.goto(`${BASE_URL}/dev-login`);
+  await page.goto(`${BASE_URL}/login`);
   await page.waitForLoadState('networkidle');
   await page.getByLabel('Email').fill('admin@weldingalloys.com');
   await page.getByLabel('Password').fill('TestPassword123');

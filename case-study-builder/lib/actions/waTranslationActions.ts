@@ -340,17 +340,13 @@ export async function waAutoTranslateOnSubmit(caseStudyId: string): Promise<{
 
     // If already in English, no translation needed
     if (detectedLanguage === 'en') {
-      console.log(`[Auto-Translation] Case ${caseStudyId} is already in English, no translation needed`);
       return { success: true, originalLanguage: 'en', wasTranslated: false };
     }
-
-    console.log(`[Auto-Translation] Case ${caseStudyId} detected as ${detectedLanguage}, translating to English...`);
 
     // Translate to English
     const translateResult = await waTranslateCaseStudy(caseStudyId, 'en');
 
     if (translateResult.success) {
-      console.log(`[Auto-Translation] Case ${caseStudyId} successfully translated to English`);
       revalidatePath(`/dashboard/cases/${caseStudyId}`);
       return {
         success: true,
@@ -358,7 +354,6 @@ export async function waAutoTranslateOnSubmit(caseStudyId: string): Promise<{
         wasTranslated: true,
       };
     } else {
-      console.error(`[Auto-Translation] Failed to translate case ${caseStudyId}:`, translateResult.error);
       return {
         success: false,
         originalLanguage: detectedLanguage,

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 // Helper function to login before each test
 async function login(page: any) {
-  await page.goto('/dev-login');
+  await page.goto('/login');
   await page.getByLabel('Email').fill('admin@weldingalloys.com');
   await page.getByLabel('Password').fill('TestPassword123');
   await page.getByLabel('Role').click();

@@ -5,7 +5,7 @@ test.setTimeout(90000);
 
 // Helper function to login as admin
 async function loginAsAdmin(page: Page) {
-  await page.goto('/dev-login', { timeout: 45000 });
+  await page.goto('/login', { timeout: 45000 });
   await page.waitForLoadState('domcontentloaded');
 
   // Fill login form

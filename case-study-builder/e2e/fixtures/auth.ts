@@ -9,35 +9,45 @@ export const TEST_USER = {
   role: 'ADMIN' as const,
 };
 
-/**
- * Helper function to login as a test user
- * @param page - Playwright page object
- * @param email - User email (defaults to TEST_USER.email)
- * @param password - User password (defaults to TEST_USER.password)
- * @param role - User role (defaults to TEST_USER.role)
- */
+// TODO: Update for production auth flow
+// The dev-login page has been removed. Login now uses Google OAuth at /login.
+// For E2E tests, you will need to set up authenticated browser state
+// (e.g., via storageState or API-based auth) instead of the old credentials flow.
+//
+// export async function loginAsTestUser(
+//   page: Page,
+//   email: string = TEST_USER.email,
+//   password: string = TEST_USER.password,
+//   role: string = TEST_USER.role
+// ): Promise<void> {
+//   // Navigate to login page
+//   await page.goto('/login');
+//
+//   // Fill in credentials
+//   await page.getByLabel('Email').fill(email);
+//   await page.getByLabel('Password').fill(password);
+//
+//   // Select role
+//   await page.getByLabel('Role').click();
+//   await page.getByRole('option', { name: new RegExp(role, 'i') }).click();
+//
+//   // Submit login form
+//   await page.getByRole('button', { name: /Login/i }).click();
+//
+//   // Wait for successful navigation to dashboard
+//   await page.waitForURL(/\/dashboard/, { timeout: 15000 });
+// }
 export async function loginAsTestUser(
   page: Page,
   email: string = TEST_USER.email,
   password: string = TEST_USER.password,
   role: string = TEST_USER.role
 ): Promise<void> {
-  // Navigate to login page
-  await page.goto('/dev-login');
+  // Navigate to login page (Google OAuth)
+  await page.goto('/login');
 
-  // Fill in credentials
-  await page.getByLabel('Email').fill(email);
-  await page.getByLabel('Password').fill(password);
-
-  // Select role
-  await page.getByLabel('Role').click();
-  await page.getByRole('option', { name: new RegExp(role, 'i') }).click();
-
-  // Submit login form
-  await page.getByRole('button', { name: /Login/i }).click();
-
-  // Wait for successful navigation to dashboard
-  await page.waitForURL(/\/dashboard/, { timeout: 15000 });
+  // Wait for the login page to load
+  await page.waitForLoadState('networkidle');
 }
 
 /**

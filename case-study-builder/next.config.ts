@@ -8,7 +8,7 @@ const withSerwist = withSerwistInit({
   disable: process.env.NODE_ENV !== 'production',
   reloadOnOnline: true,
   cacheOnNavigation: true,
-  additionalPrecacheEntries: ['/dev-login'],
+  additionalPrecacheEntries: ['/login'],
 });
 
 const nextConfig: NextConfig = {

@@ -274,7 +274,6 @@ export async function sendEmailNotification({
       html: htmlContent,
     });
 
-    console.log(`[Email] Sent ${type} email to ${to}`, result);
     return { success: true, result };
   } catch (error) {
     console.error('[Email] Error sending email:', error);

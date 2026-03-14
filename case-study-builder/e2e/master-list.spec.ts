@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 // Helper function to login as admin
 async function loginAsAdmin(page: any) {
-  await page.goto('/dev-login');
+  await page.goto('/login');
   await page.waitForLoadState('networkidle');
   await page.getByLabel('Email').fill('tidihatim@gmail.com');
   await page.getByLabel('Password').fill('Godofwar@3');

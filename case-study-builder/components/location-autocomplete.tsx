@@ -199,7 +199,6 @@ export default function LocationAutocomplete({
       onPlaceSelect(result);
     }
 
-    console.log('[LocationAutocomplete] Place selected:', result);
   }, [onChange, onPlaceSelect]);
 
   // Handle manual input changes

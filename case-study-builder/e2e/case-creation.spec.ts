@@ -5,7 +5,7 @@ test.setTimeout(90000);
 
 // Helper function to login before each test
 async function login(page: Page, role: string = 'ADMIN') {
-  await page.goto('/dev-login', { timeout: 30000 });
+  await page.goto('/login', { timeout: 30000 });
   await page.waitForLoadState('domcontentloaded');
 
   await page.getByLabel('Email').fill('admin@weldingalloys.com');

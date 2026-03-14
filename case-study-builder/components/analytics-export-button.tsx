@@ -3,8 +3,6 @@
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import { toast } from 'sonner';
-import { jsPDF } from 'jspdf';
-
 interface AnalyticsExportButtonProps {
   userName: string;
   userEmail: string;
@@ -24,7 +22,7 @@ interface AnalyticsExportButtonProps {
 }
 
 export function AnalyticsExportButton(props: AnalyticsExportButtonProps) {
-  const handleExport = () => {
+  const handleExport = async () => {
     const reportDate = new Date().toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -32,6 +30,7 @@ export function AnalyticsExportButton(props: AnalyticsExportButtonProps) {
     });
 
     // Create new PDF document
+    const { jsPDF } = await import('jspdf');
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     let yPos = 20;

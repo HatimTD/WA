@@ -703,6 +703,8 @@ model WaCaseStudy {
   @@index([industry, componentWorkpiece])
   @@index([contributorId])
   @@index([icaNumber])
+  @@index([approvedAt])
+  @@index([customerName])
   @@map("CaseStudy")
 }
 

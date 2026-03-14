@@ -27,7 +27,7 @@ describe('Offline Functionality', () => {
   describe('Service Worker Registration', () => {
     it('should register service worker', async () => {
       const mockRegistration = { update: jest.fn() }
-      ;(navigator.serviceWorker.register as jest.Mock).mockResolvedValue(mockRegistration)
+      ;(navigator.serviceWorker.register as any).mockResolvedValue(mockRegistration as any)
 
       const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' })
 
@@ -37,7 +37,7 @@ describe('Offline Functionality', () => {
 
     it('should handle service worker registration failure', async () => {
       const error = new Error('Service worker registration failed')
-      ;(navigator.serviceWorker.register as jest.Mock).mockRejectedValue(error)
+      ;(navigator.serviceWorker.register as any).mockRejectedValue(error as any)
 
       await expect(
         navigator.serviceWorker.register('/sw.js', { scope: '/' })

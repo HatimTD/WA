@@ -8,13 +8,11 @@ export function ServiceWorkerRegister() {
   useEffect(() => {
     // Only run in browser and in production
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
-      console.log('[SW] Service Worker not supported');
       return;
     }
 
     // Skip in development
     if (process.env.NODE_ENV === 'development') {
-      console.log('[SW] Skipping registration in development');
       return;
     }
 
@@ -35,7 +33,6 @@ export function ServiceWorkerRegister() {
           updateViaCache: 'none'
         });
 
-        console.log('[SW] Service Worker registered:', registration.scope);
         setSwStatus('registered');
 
         // Check for updates periodically (every 60 seconds)
@@ -57,7 +54,6 @@ export function ServiceWorkerRegister() {
                 newWorker.state === 'installed' &&
                 navigator.serviceWorker.controller
               ) {
-                console.log('[SW] New version available - activating');
                 newWorker.postMessage({ type: 'SKIP_WAITING' });
               }
             });
@@ -75,13 +71,14 @@ export function ServiceWorkerRegister() {
       }
     };
 
-    registerServiceWorker();
+    let cleanupSW: (() => void) | undefined;
+    registerServiceWorker().then((cleanup) => {
+      cleanupSW = cleanup;
+    });
 
     // Listen for controller change (service worker update)
     const handleControllerChange = () => {
-      console.log('[SW] Controller changed - new version active');
-      // Optionally reload, but don't force it to avoid disruption
-      // window.location.reload();
+      // New version active after update
     };
 
     // Send sync message to service worker when online
@@ -90,7 +87,6 @@ export function ServiceWorkerRegister() {
         navigator.serviceWorker.controller.postMessage({
           type: 'SYNC_NOW',
         });
-        console.log('[SW] Online - triggering sync');
       }
     };
 
@@ -98,6 +94,7 @@ export function ServiceWorkerRegister() {
     window.addEventListener('online', handleOnline);
 
     return () => {
+      cleanupSW?.();
       navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
       window.removeEventListener('online', handleOnline);
     };

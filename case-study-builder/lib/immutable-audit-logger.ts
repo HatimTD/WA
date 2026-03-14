@@ -205,17 +205,6 @@ export async function createImmutableAuditLog(
     },
   });
 
-  // Log to console in development
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[Immutable Audit Log]', {
-      id: auditLog.id,
-      actionType: options.actionType,
-      userId: options.userId,
-      contentHash: contentHash.substring(0, 16) + '...',
-      chainedTo: previousHash ? previousHash.substring(0, 16) + '...' : 'GENESIS',
-    });
-  }
-
   return auditLog;
 }
 

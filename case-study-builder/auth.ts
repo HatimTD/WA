@@ -24,54 +24,21 @@ const providers: Provider[] = [
   }),
 ];
 
-// Add credentials provider for testing (available in production for testing purposes)
+// Credentials provider for pre-defined accounts (email + password login)
 providers.push(
     Credentials({
-      name: 'Dev Login',
+      name: 'Credentials',
       credentials: {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          console.log('[Auth Debug] Missing credentials');
           return null;
         }
 
         const email = (credentials.email as string).toLowerCase().trim();
         const password = credentials.password as string;
-
-        // Check environment-based dev credentials (development only)
-        const DEV_EMAIL = process.env.DEV_ADMIN_EMAIL;
-        const DEV_PASSWORD_HASH = process.env.DEV_ADMIN_PASSWORD_HASH;
-
-        if (process.env.NODE_ENV === 'development' && DEV_EMAIL && DEV_PASSWORD_HASH) {
-          const passwordMatch = await bcrypt.compare(password, DEV_PASSWORD_HASH);
-          if (email === DEV_EMAIL && passwordMatch) {
-            let user = await prisma.user.findUnique({
-              where: { email: DEV_EMAIL },
-            });
-
-            if (!user) {
-              user = await prisma.user.create({
-                data: {
-                  email: DEV_EMAIL,
-                  name: 'Dev Admin',
-                  role: 'ADMIN',
-                  emailVerified: new Date(),
-                },
-              });
-            }
-
-            return {
-              id: user.id,
-              email: user.email,
-              name: user.name,
-              image: user.image,
-              role: user.role,
-            };
-          }
-        }
 
         // Check database for users with credentials accounts
         const user = await prisma.user.findUnique({
@@ -117,20 +84,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: 'jwt' },
   providers,
   callbacks: {
-    async signIn({ user, account, profile }) {
-      // Allow dev admin account in development
-      const DEV_EMAIL = process.env.DEV_ADMIN_EMAIL;
-      if (process.env.NODE_ENV === 'development' && DEV_EMAIL && user.email === DEV_EMAIL) {
-        return true;
-      }
-
-      // Allow credentials provider for testing
-      if (account?.provider === 'credentials') {
-        return true;
-      }
-
-      // Domain restriction is configured in Google Cloud Console
-      // All authenticated Google users are allowed
+    async signIn() {
+      // All providers allowed (Google OAuth + credentials for pre-defined accounts)
+      // Domain restriction enforced in Google Cloud Console
       return true;
     },
     async session({ session, token }) {
@@ -187,15 +143,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               });
 
               if (nsEmployee) {
-                // Update user's ssoUid if not set (NetSuite employee ID)
+                // Build a single update for ssoUid and name if needed
+                const updateData: Record<string, string> = {};
+
                 if (!dbUser.ssoUid && nsEmployee.netsuiteInternalId) {
-                  await prisma.user.update({
-                    where: { id: dbUser.id },
-                    data: { ssoUid: nsEmployee.netsuiteInternalId },
-                  });
+                  updateData.ssoUid = nsEmployee.netsuiteInternalId;
                 }
 
-                // Update user's name from NetSuite if not set
                 if (!dbUser.name && nsEmployee.firstname) {
                   const fullName = [
                     nsEmployee.firstname,
@@ -204,13 +158,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                   ]
                     .filter(Boolean)
                     .join(' ');
+                  updateData.name = fullName;
+                  token.name = fullName;
+                }
 
+                if (Object.keys(updateData).length > 0) {
                   await prisma.user.update({
                     where: { id: dbUser.id },
-                    data: { name: fullName },
+                    data: updateData,
                   });
-
-                  token.name = fullName;
                 }
 
                 // Auto-assign subsidiary from NetSuite (only if exists)
@@ -266,27 +222,36 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token = { ...token, ...session.user };
       }
 
-      // Always refresh role and points from DB (so admin role changes take effect without re-login)
+      // Refresh role and points from DB periodically (every 60s)
+      // This ensures admin role changes take effect without re-login
+      // while avoiding a DB query on every single request
       if (token.sub && !user) {
-        try {
-          const freshUser = await prisma.user.findUnique({
-            where: { id: token.sub },
-            select: { role: true, totalPoints: true, userRoles: { select: { role: true } } },
-          });
-          if (freshUser) {
-            // Use highest priority role from userRoles (ADMIN > APPROVER > others)
-            const allRoles = freshUser.userRoles?.map(ur => ur.role) || [freshUser.role];
-            if (allRoles.includes('ADMIN')) {
-              token.role = 'ADMIN';
-            } else if (allRoles.includes('APPROVER')) {
-              token.role = 'APPROVER';
-            } else {
-              token.role = freshUser.role;
+        const now = Date.now();
+        const lastRefresh = (token.lastRoleRefresh as number) || 0;
+        const REFRESH_INTERVAL_MS = 60_000; // 60 seconds
+
+        if (now - lastRefresh > REFRESH_INTERVAL_MS) {
+          try {
+            const freshUser = await prisma.user.findUnique({
+              where: { id: token.sub },
+              select: { role: true, totalPoints: true, userRoles: { select: { role: true } } },
+            });
+            if (freshUser) {
+              // Use highest priority role from userRoles (ADMIN > APPROVER > others)
+              const allRoles = freshUser.userRoles?.map(ur => ur.role) || [freshUser.role];
+              if (allRoles.includes('ADMIN')) {
+                token.role = 'ADMIN';
+              } else if (allRoles.includes('APPROVER')) {
+                token.role = 'APPROVER';
+              } else {
+                token.role = freshUser.role;
+              }
+              token.totalPoints = freshUser.totalPoints;
+              token.lastRoleRefresh = now;
             }
-            token.totalPoints = freshUser.totalPoints;
+          } catch {
+            // Continue with cached token values
           }
-        } catch {
-          // Continue with cached token values
         }
       }
 

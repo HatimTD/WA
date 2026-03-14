@@ -29,7 +29,7 @@ describe('API Routes', () => {
         },
       ]
 
-      ;(prisma.waCaseStudy.findMany as jest.Mock).mockResolvedValue(mockCases)
+      ;(prisma.waCaseStudy.findMany as any).mockResolvedValue(mockCases as any)
 
       const cases = await prisma.waCaseStudy.findMany({
         where: { status: 'PUBLISHED' },
@@ -47,14 +47,18 @@ describe('API Routes', () => {
         status: 'DRAFT',
       }
 
-      ;(prisma.waCaseStudy.create as jest.Mock).mockResolvedValue(mockCase)
+      ;(prisma.waCaseStudy.create as any).mockResolvedValue(mockCase as any)
 
       const createdCase = await prisma.waCaseStudy.create({
         data: {
           title: 'New Case Study',
           contributorId: 'contributor-123',
           status: 'DRAFT',
-        },
+          customerName: 'Test Customer',
+          industry: 'Mining',
+          componentWorkpiece: 'Crusher',
+          workType: 'WORKSHOP',
+        } as any,
       })
 
       expect(createdCase.id).toBe('case-new')
@@ -68,7 +72,7 @@ describe('API Routes', () => {
         status: 'PUBLISHED',
       }
 
-      ;(prisma.waCaseStudy.update as jest.Mock).mockResolvedValue(mockUpdatedCase)
+      ;(prisma.waCaseStudy.update as any).mockResolvedValue(mockUpdatedCase as any)
 
       const updatedCase = await prisma.waCaseStudy.update({
         where: { id: 'case-1' },
@@ -84,7 +88,7 @@ describe('API Routes', () => {
         title: 'Deleted Case',
       }
 
-      ;(prisma.waCaseStudy.delete as jest.Mock).mockResolvedValue(mockDeletedCase)
+      ;(prisma.waCaseStudy.delete as any).mockResolvedValue(mockDeletedCase as any)
 
       const deletedCase = await prisma.waCaseStudy.delete({
         where: { id: 'case-1' },
@@ -94,7 +98,7 @@ describe('API Routes', () => {
     })
 
     it('should count total case studies', async () => {
-      ;(prisma.waCaseStudy.count as jest.Mock).mockResolvedValue(25)
+      ;(prisma.waCaseStudy.count as any).mockResolvedValue(25 as any)
 
       const count = await prisma.waCaseStudy.count({
         where: { status: 'PUBLISHED' },
@@ -112,7 +116,7 @@ describe('API Routes', () => {
         caseStudyId: 'case-1',
       }
 
-      ;(prisma.waSavedCase.create as jest.Mock).mockResolvedValue(mockSavedCase)
+      ;(prisma.waSavedCase.create as any).mockResolvedValue(mockSavedCase as any)
 
       const savedCase = await prisma.waSavedCase.create({
         data: {
@@ -131,7 +135,7 @@ describe('API Routes', () => {
         { id: 'saved-2', userId: 'user-123', caseStudyId: 'case-2' },
       ]
 
-      ;(prisma.waSavedCase.findMany as jest.Mock).mockResolvedValue(mockSavedCases)
+      ;(prisma.waSavedCase.findMany as any).mockResolvedValue(mockSavedCases as any)
 
       const savedCases = await prisma.waSavedCase.findMany({
         where: { userId: 'user-123' },
@@ -145,7 +149,7 @@ describe('API Routes', () => {
         id: 'saved-1',
       }
 
-      ;(prisma.waSavedCase.delete as jest.Mock).mockResolvedValue(mockDeletedSave)
+      ;(prisma.waSavedCase.delete as any).mockResolvedValue(mockDeletedSave as any)
 
       const deleted = await prisma.waSavedCase.delete({
         where: { id: 'saved-1' },
@@ -164,7 +168,7 @@ describe('API Routes', () => {
         caseStudyId: 'case-1',
       }
 
-      ;(prisma.waComment.create as jest.Mock).mockResolvedValue(mockComment)
+      ;(prisma.waComment.create as any).mockResolvedValue(mockComment as any)
 
       const comment = await prisma.waComment.create({
         data: {
@@ -183,7 +187,7 @@ describe('API Routes', () => {
         { id: 'comment-2', content: 'Comment 2', caseStudyId: 'case-1' },
       ]
 
-      ;(prisma.waComment.findMany as jest.Mock).mockResolvedValue(mockComments)
+      ;(prisma.waComment.findMany as any).mockResolvedValue(mockComments as any)
 
       const comments = await prisma.waComment.findMany({
         where: { caseStudyId: 'case-1' },
@@ -198,7 +202,7 @@ describe('API Routes', () => {
         content: 'Updated comment',
       }
 
-      ;(prisma.waComment.update as jest.Mock).mockResolvedValue(mockUpdatedComment)
+      ;(prisma.waComment.update as any).mockResolvedValue(mockUpdatedComment as any)
 
       const updated = await prisma.waComment.update({
         where: { id: 'comment-1' },
@@ -213,7 +217,7 @@ describe('API Routes', () => {
         id: 'comment-1',
       }
 
-      ;(prisma.waComment.delete as jest.Mock).mockResolvedValue(mockDeletedComment)
+      ;(prisma.waComment.delete as any).mockResolvedValue(mockDeletedComment as any)
 
       const deleted = await prisma.waComment.delete({
         where: { id: 'comment-1' },
@@ -230,12 +234,12 @@ describe('API Routes', () => {
         { id: 'proc-2', title: 'TIG Welding', category: 'WELDING' },
       ]
 
-      ;(prisma.waWeldingProcedure.findMany as jest.Mock).mockResolvedValue(mockProcedures)
+      ;(prisma.waWeldingProcedure.findMany as any).mockResolvedValue(mockProcedures as any)
 
       const procedures = await prisma.waWeldingProcedure.findMany()
 
       expect(procedures).toHaveLength(2)
-      expect(procedures[0].category).toBe('WELDING')
+      expect((procedures[0] as any).category).toBe('WELDING')
     })
 
     it('should create a new welding procedure (ADMIN)', async () => {
@@ -245,16 +249,15 @@ describe('API Routes', () => {
         category: 'WELDING',
       }
 
-      ;(prisma.waWeldingProcedure.create as jest.Mock).mockResolvedValue(mockProcedure)
+      ;(prisma.waWeldingProcedure.create as any).mockResolvedValue(mockProcedure as any)
 
       const created = await prisma.waWeldingProcedure.create({
         data: {
-          title: 'New Welding Procedure',
-          category: 'WELDING',
-        },
+          caseStudyId: 'case-1',
+        } as any,
       })
 
-      expect(created.title).toBe('New Welding Procedure')
+      expect((created as any).title).toBe('New Welding Procedure')
     })
   })
 
@@ -265,7 +268,7 @@ describe('API Routes', () => {
         value: 'false',
       }
 
-      ;(prisma.waSystemConfig.findUnique as jest.Mock).mockResolvedValue(mockConfig)
+      ;(prisma.waSystemConfig.findUnique as any).mockResolvedValue(mockConfig as any)
 
       const config = await prisma.waSystemConfig.findUnique({
         where: { key: 'maintenance_mode' },
@@ -280,7 +283,7 @@ describe('API Routes', () => {
         value: 'true',
       }
 
-      ;(prisma.waSystemConfig.upsert as jest.Mock).mockResolvedValue(mockConfig)
+      ;(prisma.waSystemConfig.upsert as any).mockResolvedValue(mockConfig as any)
 
       const updated = await prisma.waSystemConfig.upsert({
         where: { key: 'maintenance_mode' },
@@ -303,7 +306,7 @@ describe('API Routes', () => {
         }),
       }
 
-      ;(prisma.waSystemConfig.findUnique as jest.Mock).mockResolvedValue(mockConfig)
+      ;(prisma.waSystemConfig.findUnique as any).mockResolvedValue(mockConfig as any)
 
       const config = await prisma.waSystemConfig.findUnique({
         where: { key: 'announcement' },
@@ -323,7 +326,7 @@ describe('API Routes', () => {
         }),
       }
 
-      ;(prisma.waSystemConfig.upsert as jest.Mock).mockResolvedValue(mockConfig)
+      ;(prisma.waSystemConfig.upsert as any).mockResolvedValue(mockConfig as any)
 
       const updated = await prisma.waSystemConfig.upsert({
         where: { key: 'announcement' },
@@ -352,7 +355,7 @@ describe('API Routes', () => {
         },
       ]
 
-      ;(prisma.waNotification.findMany as jest.Mock).mockResolvedValue(mockNotifications)
+      ;(prisma.waNotification.findMany as any).mockResolvedValue(mockNotifications as any)
 
       const notifications = await prisma.waNotification.findMany({
         where: { userId: 'user-123' },
@@ -362,7 +365,7 @@ describe('API Routes', () => {
     })
 
     it('should count unread notifications', async () => {
-      ;(prisma.waNotification.count as jest.Mock).mockResolvedValue(5)
+      ;(prisma.waNotification.count as any).mockResolvedValue(5 as any)
 
       const count = await prisma.waNotification.count({
         where: { userId: 'user-123', read: false },
@@ -377,7 +380,7 @@ describe('API Routes', () => {
         read: true,
       }
 
-      ;(prisma.waNotification.update as jest.Mock).mockResolvedValue(mockUpdated)
+      ;(prisma.waNotification.update as any).mockResolvedValue(mockUpdated as any)
 
       const updated = await prisma.waNotification.update({
         where: { id: 'notif-1' },
@@ -395,7 +398,7 @@ describe('API Routes', () => {
         value: 'false',
       }
 
-      ;(prisma.waSystemConfig.findUnique as jest.Mock).mockResolvedValue(mockConfig)
+      ;(prisma.waSystemConfig.findUnique as any).mockResolvedValue(mockConfig as any)
 
       const config = await prisma.waSystemConfig.findUnique({
         where: { key: 'maintenance_mode' },

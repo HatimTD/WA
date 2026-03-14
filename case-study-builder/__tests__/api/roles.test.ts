@@ -37,7 +37,8 @@ describe('Role API Routes', () => {
     jest.clearAllMocks();
   });
 
-  describe('PUT /api/dev/switch-role', () => {
+  // Skipped: /api/dev/switch-role route has been removed (dev-login deleted)
+  describe.skip('PUT /api/dev/switch-role', () => {
     it('should validate all 6 roles', async () => {
       // Test that all roles are valid
       ALL_ROLES.forEach((role) => {

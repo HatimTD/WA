@@ -106,7 +106,7 @@ export async function waEmailCaseStudyPDF({
     };
 
     // Generate PDF
-    const doc = generateCaseStudyPDF(pdfData);
+    const doc = await generateCaseStudyPDF(pdfData);
     const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
     const pdfBase64 = pdfBuffer.toString('base64');
 
@@ -171,8 +171,6 @@ export async function waEmailCaseStudyPDF({
         },
       ],
     });
-
-    console.log(`[Email PDF] Sent case study ${caseId} to ${recipientEmail}`, result);
 
     // Check if Resend returned an error (API errors don't throw, they return in result)
     if ('error' in result && result.error) {

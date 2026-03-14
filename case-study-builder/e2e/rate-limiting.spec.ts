@@ -100,12 +100,12 @@ test.describe('Rate Limiting', () => {
     });
 
     test('app handles rate limited responses gracefully in UI', async () => {
-      // Use dev-login page since login page uses Google OAuth (no email/password inputs)
-      await page.goto('/dev-login');
+      // Use login page since login page uses Google OAuth (no email/password inputs)
+      await page.goto('/login');
       await page.waitForLoadState('networkidle');
 
       // Check page loaded
-      await expect(page).toHaveURL(/dev-login/);
+      await expect(page).toHaveURL(/login/);
 
       // Fill in dummy credentials
       const emailInput = page.getByLabel('Email');
@@ -132,7 +132,7 @@ test.describe('Rate Limiting', () => {
 
     test('search endpoint handles rapid queries', async () => {
       // Login first
-      await page.goto('/dev-login');
+      await page.goto('/login');
       await page.getByLabel('Email').fill('tidihatim@gmail.com');
       await page.getByLabel('Password').fill('Godofwar@3');
       await page.getByLabel('Role').click();

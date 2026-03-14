@@ -115,8 +115,6 @@ export type WaWpsFormData = {
 
 export async function waSaveWeldingProcedure(data: WaWpsFormData) {
   try {
-    console.log('[WPS Actions] Saving welding procedure:', data);
-
     const { caseStudyId, layers, documents, ...wpsData } = data;
 
     // Prepare data for Prisma - handle layers and documents as JSON
@@ -166,7 +164,6 @@ export async function waSaveWeldingProcedure(data: WaWpsFormData) {
         where: { caseStudyId },
         data: prismaData,
       });
-      console.log('[WPS Actions] WPS updated successfully');
     } else {
       // Create new WPS
       wps = await prisma.waWeldingProcedure.create({
@@ -175,7 +172,6 @@ export async function waSaveWeldingProcedure(data: WaWpsFormData) {
           ...prismaData,
         },
       });
-      console.log('[WPS Actions] WPS created successfully');
     }
 
     return { success: true, wps };
@@ -190,18 +186,14 @@ export async function waSaveWeldingProcedure(data: WaWpsFormData) {
 
 export async function waGetWeldingProcedure(caseStudyId: string) {
   try {
-    console.log('[WPS Actions] Fetching welding procedure for case study:', caseStudyId);
-
     const wps = await prisma.waWeldingProcedure.findUnique({
       where: { caseStudyId },
     });
 
     if (!wps) {
-      console.log('[WPS Actions] No welding procedure found');
       return { success: true, wps: null };
     }
 
-    console.log('[WPS Actions] WPS found');
     return { success: true, wps };
   } catch (error) {
     console.error('[WPS Actions] Error fetching welding procedure:', error);

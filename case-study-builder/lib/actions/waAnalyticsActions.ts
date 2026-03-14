@@ -362,6 +362,7 @@ export async function waGetApproverAnalytics(): Promise<ApproverAnalytics> {
       approvedAt: true,
       rejectedAt: true,
     },
+    take: 1000,
   });
 
   const reviewTimesByMonth = monthlyRange.map(({ label, year, month }) => {
@@ -446,6 +447,7 @@ export async function waGetViewerAnalytics(): Promise<ViewerAnalytics> {
       waProduct: true,
       country: true,
     },
+    take: 1000,
   });
 
   // Cases by industry

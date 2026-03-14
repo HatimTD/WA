@@ -38,13 +38,11 @@ export default function MaintenanceRedirect() {
           if (maintenanceMode && !isAdmin) {
             // Redirect to maintenance page if not already there
             if (pathname !== '/maintenance') {
-              console.log('[Maintenance Redirect] Redirecting to maintenance page');
               router.push('/maintenance');
             }
           }
           // If maintenance mode is OFF and user is on maintenance page
           else if (!maintenanceMode && pathname === '/maintenance') {
-            console.log('[Maintenance Redirect] Redirecting away from maintenance page');
             router.push('/dashboard');
           }
         }

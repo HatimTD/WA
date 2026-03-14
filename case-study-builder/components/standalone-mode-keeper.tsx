@@ -14,8 +14,6 @@ export function StandaloneModeKeeper() {
 
     if (!isStandalone) return;
 
-    console.log('[StandaloneModeKeeper] Active in standalone mode');
-
     // Handle all clicks and touches
     const handleNavigation = (e: Event) => {
       const target = e.target as HTMLElement;
@@ -37,7 +35,6 @@ export function StandaloneModeKeeper() {
               anchor.getAttribute('href')?.startsWith('#');
 
             if (hasJSHandler) {
-              console.log('[StandaloneModeKeeper] Link has JS handler, not intercepting');
               return;
             }
 
@@ -47,8 +44,6 @@ export function StandaloneModeKeeper() {
             e.stopImmediatePropagation();
 
             const fullPath = url.pathname + url.search + url.hash;
-            console.log('[StandaloneModeKeeper] Intercepting navigation to:', fullPath);
-
             // Use window.location.replace() for iOS compatibility
             // This method has been reported to work better for keeping standalone mode
             window.location.replace(fullPath);

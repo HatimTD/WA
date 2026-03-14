@@ -43,7 +43,6 @@ export default function MaintenanceCheckButton() {
 
       if (!maintenanceMode) {
         // Maintenance is off, redirect to home
-        console.log('[Maintenance Page] Maintenance ended, redirecting...');
         router.push('/dashboard');
       } else if (!autoRedirect) {
         // Manual check and still under maintenance

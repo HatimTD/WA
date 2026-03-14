@@ -8,7 +8,7 @@ test.setTimeout(120000);
 
 // Login helper that works with the role buttons UI
 async function waLoginAsAdmin(page: Page) {
-  await page.goto('/dev-login', { timeout: 30000 });
+  await page.goto('/login', { timeout: 30000 });
   await page.waitForLoadState('domcontentloaded');
 
   await page.getByLabel('Email').fill('admin@weldingalloys.com');

@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ExternalLink, LogIn } from 'lucide-react';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { LibrarySearch } from '@/components/library-search';
 import { LibraryFilters } from '@/components/library-filters';
 import { SaveButton } from '@/components/save-button';
@@ -167,32 +168,35 @@ export default async function PublicLibraryPage({
   const totalPages = Math.ceil(totalCount / perPage);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-wa-green-600 to-purple-600 bg-clip-text text-transparent">
                 Case Study Library
               </h1>
-              <p className="text-gray-600 mt-2">
+              <p className="text-gray-600 dark:text-gray-400 mt-2">
                 Browse {totalCount.toLocaleString()} approved industrial solutions from Welding Alloys
               </p>
             </div>
-            <Link href="/login">
-              <Button size="lg" className="gap-2">
-                <LogIn className="h-5 w-5" />
-                Sign In to Contribute
-              </Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <Link href="/login">
+                <Button size="lg" className="gap-2">
+                  <LogIn className="h-5 w-5" />
+                  Sign In to Contribute
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Dynamic Search Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        <Card role="article" className="border-2 border-wa-green-100 bg-white">
+        <Card role="article" className="border-2 border-wa-green-100 dark:border-gray-700 bg-white dark:bg-gray-900">
           <CardHeader>
             <CardTitle className="text-lg">Quick Search</CardTitle>
             <CardDescription>
@@ -246,7 +250,7 @@ export default async function PublicLibraryPage({
           <div className="lg:col-span-3">
             {/* Results Info */}
             <div className="mb-4 flex items-center justify-between">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 Showing {(page - 1) * perPage + 1}-{Math.min(page * perPage, totalCount)} of{' '}
                 {totalCount} cases
               </p>
@@ -262,61 +266,59 @@ export default async function PublicLibraryPage({
             {/* Cases Grid */}
             {cases.length === 0 ? (
               <Card role="article" className="p-12 text-center">
-                <p className="text-gray-500 text-lg mb-4">No case studies found</p>
-                <p className="text-gray-400 text-sm">Try adjusting your filters or search query</p>
+                <p className="text-gray-500 dark:text-gray-400 text-lg mb-4">No case studies found</p>
+                <p className="text-gray-400 dark:text-gray-500 text-sm">Try adjusting your filters or search query</p>
               </Card>
             ) : (
               <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {cases.map((caseStudy) => (
-                  <Card role="article"
-                    key={caseStudy.id}
-                    className="hover:shadow-lg transition-shadow cursor-pointer"
-                  >
-                    <CardHeader>
-                      <div className="flex items-start justify-between gap-2">
-                        <CardTitle className="text-lg line-clamp-2">
-                          {caseStudy.componentWorkpiece || caseStudy.industry}
-                        </CardTitle>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <SaveButton caseStudyId={caseStudy.id} variant="icon" size="sm" />
-                          <Badge
-                            variant={
-                              caseStudy.type === 'STAR'
-                                ? 'default'
-                                : caseStudy.type === 'TECH'
-                                ? 'secondary'
-                                : 'outline'
-                            }
-                          >
-                            {caseStudy.type}
-                          </Badge>
+                  <Link key={caseStudy.id} href={`/library/${caseStudy.id}`} className="block">
+                    <Card role="article"
+                      className="hover:shadow-lg transition-shadow cursor-pointer h-full"
+                    >
+                      <CardHeader>
+                        <div className="flex items-start justify-between gap-2">
+                          <CardTitle className="text-lg line-clamp-2">
+                            {caseStudy.componentWorkpiece || caseStudy.industry}
+                          </CardTitle>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Badge
+                              variant={
+                                caseStudy.type === 'STAR'
+                                  ? 'default'
+                                  : caseStudy.type === 'TECH'
+                                  ? 'secondary'
+                                  : 'outline'
+                              }
+                            >
+                              {caseStudy.type}
+                            </Badge>
+                          </div>
                         </div>
-                      </div>
-                      <CardDescription className="line-clamp-1">
-                        {caseStudy.industry} • {caseStudy.location}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="space-y-1 text-sm">
-                        <p className="text-gray-600">
-                          <span className="font-medium">Component:</span>{' '}
-                          {caseStudy.componentWorkpiece}
+                        <CardDescription className="line-clamp-1">
+                          {caseStudy.industry} • {caseStudy.location}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="space-y-1 text-sm">
+                          <p className="text-gray-600 dark:text-gray-400">
+                            <span className="font-medium">Component:</span>{' '}
+                            {caseStudy.componentWorkpiece}
+                          </p>
+                          <p className="text-gray-600 dark:text-gray-400">
+                            <span className="font-medium">Product:</span> {caseStudy.waProduct}
+                          </p>
+                        </div>
+                        <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-3">
+                          {caseStudy.problemDescription}
                         </p>
-                        <p className="text-gray-600">
-                          <span className="font-medium">Product:</span> {caseStudy.waProduct}
-                        </p>
-                      </div>
-                      <p className="text-sm text-gray-700 line-clamp-3">
-                        {caseStudy.problemDescription}
-                      </p>
-                      <Link href={`/library/${caseStudy.id}`}>
-                        <Button className="w-full gap-2 mt-4">
+                        <div className="w-full gap-2 mt-4 inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground shadow h-9 px-4 py-2 text-sm font-medium">
                           View Full Case Study
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                    </CardContent>
-                  </Card>
+                          <ExternalLink className="h-4 w-4 ml-2" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 ))}
               </div>
             )}

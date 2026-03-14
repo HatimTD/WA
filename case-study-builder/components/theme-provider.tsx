@@ -25,6 +25,13 @@ function ThemeLoader() {
 
     async function loadUserTheme() {
       try {
+        // If user already has a theme set locally (from toggle), respect it
+        const localTheme = localStorage.getItem('theme');
+        if (localTheme && localTheme !== 'system') {
+          setLoaded(true);
+          return;
+        }
+
         const response = await fetch('/api/user/preferences');
         if (response.ok) {
           const data = await response.json();
@@ -34,8 +41,8 @@ function ThemeLoader() {
             setTheme(savedTheme);
           }
         }
-      } catch (error) {
-        console.error('[ThemeProvider] Failed to load user theme preference:', error);
+      } catch {
+        // Keep current theme from localStorage
       } finally {
         setLoaded(true);
       }

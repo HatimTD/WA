@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Case Study Management', () => {
   test.beforeEach(async ({ page }) => {
     // Login before each test
-    await page.goto('/dev-login');
+    await page.goto('/login');
     await page.getByLabel('Email').fill('admin@weldingalloys.com');
     await page.getByLabel('Password').fill('TestPassword123');
     await page.getByLabel('Role').click();

@@ -31,7 +31,7 @@ class RedisCache {
       const token = process.env.UPSTASH_REDIS_REST_TOKEN;
 
       if (!url || !token) {
-        console.log('[Redis] Credentials not configured, using in-memory fallback');
+        // Redis credentials not configured, using in-memory fallback
         this.isConnected = false;
         return;
       }
@@ -42,7 +42,7 @@ class RedisCache {
       });
 
       this.isConnected = true;
-      console.log('[Redis] Connected to Upstash Redis');
+      // Redis connected successfully
     } catch (error) {
       console.error('[Redis] Connection failed:', error);
       this.isConnected = false;
@@ -61,21 +61,13 @@ class RedisCache {
         const data = await this.redis.get<T>(key);
         const elapsed = Date.now() - startTime;
 
-        if (data) {
-          console.log(`[Redis] Cache HIT - ${key} (${elapsed}ms)`);
-          return data;
-        } else {
-          console.log(`[Redis] Cache MISS - ${key}`);
-          return null;
-        }
+        return data || null;
       } else {
         const cached = this.memoryCache.get(key);
 
         if (cached && cached.expiresAt > Date.now()) {
-          console.log(`[Memory] Cache HIT - ${key}`);
           return cached.data as T;
         } else {
-          console.log(`[Memory] Cache MISS - ${key}`);
           return null;
         }
       }
@@ -95,12 +87,10 @@ class RedisCache {
 
       if (this.isConnected && this.redis) {
         await this.redis.set(key, data, { ex: actualTTL });
-        console.log(`[Redis] Cached ${key} for ${actualTTL}s`);
         return true;
       } else {
         const expiresAt = Date.now() + (actualTTL * 1000);
         this.memoryCache.set(key, { data, expiresAt });
-        console.log(`[Memory] Cached ${key} for ${actualTTL}s`);
         return true;
       }
     } catch (error) {
@@ -117,11 +107,9 @@ class RedisCache {
     try {
       if (this.isConnected && this.redis) {
         await this.redis.del(key);
-        console.log(`[Redis] Deleted ${key}`);
         return true;
       } else {
         this.memoryCache.delete(key);
-        console.log(`[Memory] Deleted ${key}`);
         return true;
       }
     } catch (error) {
@@ -141,11 +129,9 @@ class RedisCache {
         for (const key of keys) {
           await this.redis.del(key);
         }
-        console.log('[Redis] Cleared all NetSuite cache');
         return true;
       } else {
         this.memoryCache.clear();
-        console.log('[Memory] Cleared all cache');
         return true;
       }
     } catch (error) {
@@ -177,7 +163,6 @@ class RedisCache {
         chunks.push(data.slice(i, i + CHUNK_SIZE));
       }
 
-      console.log(`[Redis] Splitting ${data.length} items into ${chunks.length} chunks (~${CHUNK_SIZE} each)`);
 
       // Store metadata with chunk count
       const metaKey = `${baseKey}:meta`;
@@ -188,9 +173,6 @@ class RedisCache {
         const chunkKey = `${baseKey}:chunk:${i}`;
         const chunkData = chunks[i];
         const chunkSize = JSON.stringify(chunkData).length;
-        const chunkSizeMB = (chunkSize / (1024 * 1024)).toFixed(2);
-        console.log(`[Redis] Storing chunk ${i + 1}/${chunks.length}: ${chunkData.length} items (${chunkSizeMB} MB)`);
-
         const success = await this.set(chunkKey, chunkData, actualTTL);
         if (!success) {
           console.error(`[Redis] Failed to store chunk ${i}`);
@@ -198,7 +180,6 @@ class RedisCache {
         }
       }
 
-      console.log(`[Redis] Successfully cached ${data.length} items in ${chunks.length} chunks`);
       return true;
     } catch (error) {
       console.error(`[Redis] setChunked error:`, error);
@@ -217,11 +198,8 @@ class RedisCache {
       const meta = await this.get<{ chunkCount: number; totalItems: number }>(metaKey);
 
       if (!meta) {
-        console.log(`[Redis] No chunked data found for ${baseKey}`);
         return null;
       }
-
-      console.log(`[Redis] Found ${meta.chunkCount} chunks with ${meta.totalItems} total items`);
 
       // Retrieve all chunks in parallel for speed
       const chunkPromises: Promise<T[] | null>[] = [];
@@ -243,7 +221,6 @@ class RedisCache {
         combinedData.push(...chunk);
       }
 
-      console.log(`[Redis] Retrieved ${combinedData.length} items from ${meta.chunkCount} chunks`);
       return combinedData;
     } catch (error) {
       console.error(`[Redis] getChunked error:`, error);
@@ -270,7 +247,6 @@ class RedisCache {
 
       await this.del(metaKey);
 
-      console.log(`[Redis] Deleted ${meta.chunkCount} chunks for ${baseKey}`);
       return true;
     } catch (error) {
       console.error(`[Redis] delChunked error:`, error);

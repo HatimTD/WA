@@ -29,7 +29,7 @@ export default function CompliancePage() {
               </div>
             </IOSSafeLink>
             <IOSSafeLink
-              href="/dev-login"
+              href="/login"
               prefetch={false}
             >
               <Button className="bg-wa-green-900 hover:bg-wa-green-800">
@@ -265,7 +265,7 @@ export default function CompliancePage() {
                   </IOSSafeLink>
                 </li>
                 <li>
-                  <IOSSafeLink href="/dev-login" className="text-gray-600 hover:text-wa-green-900">
+                  <IOSSafeLink href="/login" className="text-gray-600 hover:text-wa-green-900">
                     Login
                   </IOSSafeLink>
                 </li>

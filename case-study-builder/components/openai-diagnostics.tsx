@@ -25,7 +25,6 @@ export default function OpenAIDiagnostics() {
     const testText = 'This is a test of the OpenAI API integration. We are testing if the API key is configured correctly and can successfully communicate with OpenAI servers.';
 
     // Test 1: Summarize
-    console.log('[OpenAI Diagnostics] Testing summarize...');
     try {
       const summarizeResult = await waSummarizeText(testText, 20);
       if (summarizeResult.success && summarizeResult.summary) {
@@ -34,7 +33,6 @@ export default function OpenAIDiagnostics() {
           result: summarizeResult.summary,
           error: null,
         };
-        console.log('[OpenAI Diagnostics] ✓ Summarize test passed');
       } else {
         results.tests.summarize = {
           status: 'failed',
@@ -53,7 +51,6 @@ export default function OpenAIDiagnostics() {
     }
 
     // Test 2: Improve Text
-    console.log('[OpenAI Diagnostics] Testing improve text...');
     try {
       const improveResult = await waImproveText(testText);
       if (improveResult.success && improveResult.improvedText) {
@@ -62,7 +59,6 @@ export default function OpenAIDiagnostics() {
           result: improveResult.improvedText,
           error: null,
         };
-        console.log('[OpenAI Diagnostics] ✓ Improve text test passed');
       } else {
         results.tests.improve = {
           status: 'failed',
@@ -81,7 +77,6 @@ export default function OpenAIDiagnostics() {
     }
 
     // Test 3: Translate
-    console.log('[OpenAI Diagnostics] Testing translate...');
     try {
       const translateResult = await waTranslateText(testText, 'Spanish');
       if (translateResult.success && translateResult.translatedText) {
@@ -90,7 +85,6 @@ export default function OpenAIDiagnostics() {
           result: translateResult.translatedText,
           error: null,
         };
-        console.log('[OpenAI Diagnostics] ✓ Translate test passed');
       } else {
         results.tests.translate = {
           status: 'failed',
@@ -114,7 +108,6 @@ export default function OpenAIDiagnostics() {
 
     if (allPassed) {
       results.overallStatus = 'success';
-      console.log('[OpenAI Diagnostics] ✓ All tests passed!');
     } else if (somePassed) {
       results.overallStatus = 'partial';
       console.warn('[OpenAI Diagnostics] ⚠ Some tests failed');

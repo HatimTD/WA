@@ -34,8 +34,6 @@ export interface ImproveTextResult {
  */
 export async function waSummarizeText(text: string, maxLength: number = 100): Promise<SummarizeResult> {
   try {
-    console.log('[OpenAI] Starting text summarization');
-
     if (!text || text.trim().length === 0) {
       return {
         success: false,
@@ -76,7 +74,6 @@ export async function waSummarizeText(text: string, maxLength: number = 100): Pr
       };
     }
 
-    console.log('[OpenAI] Summary generated successfully');
     return {
       success: true,
       summary,
@@ -98,8 +95,6 @@ export async function waSummarizeText(text: string, maxLength: number = 100): Pr
  */
 export async function waTranslateText(text: string, targetLanguage: string): Promise<TranslateResult> {
   try {
-    console.log('[OpenAI] Starting text translation to', targetLanguage);
-
     if (!text || text.trim().length === 0) {
       return {
         success: false,
@@ -140,7 +135,6 @@ export async function waTranslateText(text: string, targetLanguage: string): Pro
       };
     }
 
-    console.log('[OpenAI] Translation completed successfully');
     return {
       success: true,
       translatedText,
@@ -163,8 +157,6 @@ export async function waTranslateText(text: string, targetLanguage: string): Pro
  */
 export async function waImproveText(text: string, context?: string): Promise<ImproveTextResult> {
   try {
-    console.log('[OpenAI] Starting text improvement');
-
     if (!text || text.trim().length === 0) {
       return {
         success: false,
@@ -209,7 +201,6 @@ export async function waImproveText(text: string, context?: string): Promise<Imp
       };
     }
 
-    console.log('[OpenAI] Text improvement completed successfully');
     return {
       success: true,
       improvedText,
@@ -236,8 +227,6 @@ export async function waGenerateTitle(
   problemDescription: string
 ): Promise<{ success: boolean; title?: string; error?: string }> {
   try {
-    console.log('[OpenAI] Generating case study title');
-
     if (!process.env.OPENAI_API_KEY) {
       return {
         success: false,
@@ -270,7 +259,6 @@ export async function waGenerateTitle(
       };
     }
 
-    console.log('[OpenAI] Title generated successfully');
     return {
       success: true,
       title,

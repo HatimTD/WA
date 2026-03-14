@@ -52,6 +52,7 @@ export async function waGetBhagProgress() {
         waProduct: true,
         type: true,
       },
+      take: 1000,
     });
 
     // Also get ALL approved cases for total submission count
@@ -133,6 +134,7 @@ export async function waGetRegionalBhagProgress() {
         componentWorkpiece: true,
         waProduct: true,
       },
+      take: 1000,
     });
 
     // Group by region/location
@@ -190,6 +192,7 @@ export async function waGetIndustryBhagProgress() {
         componentWorkpiece: true,
         waProduct: true,
       },
+      take: 1000,
     });
 
     // Group by industry
@@ -245,6 +248,7 @@ export async function waGetQualifierTypeBhagProgress() {
         qualifierType: true,
         isTarget: true,
       },
+      take: 1000,
     });
 
     // Group by qualifier type (only the 3 valid types)
@@ -333,6 +337,7 @@ export async function waGetContributorRegionBhagProgress() {
           },
         },
       },
+      take: 1000,
     });
 
     // Group by contributor's region

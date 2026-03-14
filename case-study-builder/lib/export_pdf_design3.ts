@@ -9,7 +9,7 @@
  * - HD image annexes (one image per page)
  */
 
-import jsPDF from 'jspdf';
+import type jsPDF from 'jspdf';
 import { waFormatJobType, waFormatProductCategory, waGetProductDisplay } from './waUtils';
 
 // ============ TYPES ============
@@ -808,7 +808,7 @@ async function waDrawLogo(doc: jsPDF, x: number, y: number, width: number = 45):
       return;
     }
   } catch (e) {
-    console.log('[PDF] Could not load logo, using fallback', e);
+    // Logo load failed, using fallback
   }
 
   // Fallback: Draw WA circle logo with text
@@ -1321,13 +1321,6 @@ async function waGeneratePage1(
     { name: 'Corrosion', key: 'CORROSION' },
   ];
 
-  // DEBUG: Log wear type data
-  console.log('=== PDF EXPORT WEAR TYPE DEBUG ===');
-  console.log('wearType array from data:', data.wearType);
-  console.log('wearSeverities from data:', data.wearSeverities);
-  console.log('wearTypeOthers from data:', data.wearTypeOthers);
-  console.log('Full data object keys:', Object.keys(data));
-
   doc.setFontSize(7);
 
   // Define width for wear type progress bars
@@ -1343,12 +1336,6 @@ async function waGeneratePage1(
     const rowY = y + idx * 5.5;
     const severity = data.wearSeverities?.[wt.key] || 4;
 
-    // DEBUG: Log each wear type processing
-    console.log(`${wt.name} (${wt.key}):`, {
-      severity,
-      inArray: data.wearType.filter(w => w.toUpperCase() === wt.key),
-    });
-
     doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
     doc.setFont('helvetica', 'bold');
     doc.text(wt.name, margin, rowY + 3);
@@ -1359,8 +1346,6 @@ async function waGeneratePage1(
   if (data.wearTypeOthers && data.wearTypeOthers.length > 0) {
     data.wearTypeOthers.forEach((other, idx) => {
       const rowY = y + (selectedStandardTypes.length + idx) * 5.5;
-      console.log(`Custom wear type: ${other.name}`, { severity: other.severity });
-
       doc.setTextColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
       doc.setFont('helvetica', 'bold');
       doc.text(other.name, margin, rowY + 3);
@@ -2219,7 +2204,6 @@ async function waGenerateImageAnnexes(
           imageDimensions = await waGetImageDimensions(base64);
           // Determine if image is landscape (width > height) or portrait
           isLandscape = imageDimensions.width > imageDimensions.height;
-          console.log(`[PDF] Image ${i + 1}: ${imageDimensions.width}x${imageDimensions.height} - ${isLandscape ? 'Landscape' : 'Portrait'}`);
         }
       } catch (error) {
         console.error('[PDF] Error fetching/analyzing image:', error);
@@ -2328,6 +2312,7 @@ export async function waGenerateCaseStudyPDFAsync(
   data: CaseStudyPDFData,
   options?: PDFExportOptions
 ): Promise<jsPDF> {
+  const { default: jsPDF } = await import('jspdf');
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -2359,7 +2344,8 @@ export async function waGenerateCaseStudyPDFAsync(
   return doc;
 }
 
-export function generateCaseStudyPDF(data: CaseStudyPDFData, options?: PDFExportOptions): jsPDF {
+export async function generateCaseStudyPDF(data: CaseStudyPDFData, options?: PDFExportOptions): Promise<jsPDF> {
+  const { default: jsPDF } = await import('jspdf');
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -2400,7 +2386,7 @@ export async function downloadCaseStudyPDF(
     doc.save(fileName);
   } catch (error) {
     console.error('[PDF] Error generating PDF:', error);
-    const doc = generateCaseStudyPDF(data, options);
+    const doc = await generateCaseStudyPDF(data, options);
     // Generate filename without customer name for confidentiality
     const timestamp = new Date().toISOString().split('T')[0].replace(/-/g, '');
     const fileName = `WA_${data.type}_ICA_${timestamp}.pdf`;

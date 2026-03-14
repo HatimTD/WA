@@ -196,8 +196,6 @@ export class NetSuiteClient {
       const sanitizedQuery = this.sanitizeSearchInput(query);
       const isGetAll = sanitizedQuery.length === 0;
 
-      console.log(`[NetSuite] ${isGetAll ? 'Getting ALL customers' : `Searching customers for: "${sanitizedQuery}"`}`);
-
       // Try Redis cache first (chunked to handle Upstash 10MB limit)
       const cacheKey = 'netsuite:customers';
       let allCustomers: any[] | null = await redisCache.getChunked<any>(cacheKey);
@@ -207,12 +205,8 @@ export class NetSuiteClient {
         const fetchLockKey = 'netsuite:fetch-lock';
         const existingLock = await redisCache.get<number>(fetchLockKey);
         if (existingLock && (Date.now() - existingLock) < 180000) {
-          console.log('[NetSuite] Another instance is fetching, waiting 5s for cache...');
           await new Promise(resolve => setTimeout(resolve, 5000));
           allCustomers = await redisCache.getChunked<any>(cacheKey);
-          if (allCustomers) {
-            console.log(`[NetSuite] Cache populated by other instance: ${allCustomers.length} customers`);
-          }
         }
       }
 
@@ -230,7 +224,6 @@ export class NetSuiteClient {
         const url = `${restletUrl}&waType=customer`;
         const authHeader = this.generateOAuthHeader('GET', url);
 
-        console.log('[NetSuite] Fetching all customers from RESTlet (this may take ~35 seconds)...');
         const startTime = Date.now();
 
         const response = await fetch(url, {
@@ -248,8 +241,6 @@ export class NetSuiteClient {
         }
 
         const data = await response.json();
-        const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
-        console.log(`[NetSuite] Fetched ${Array.isArray(data) ? data.length : 0} customers in ${elapsed}s`);
 
         if (!Array.isArray(data)) {
           throw new Error('Unexpected response format from RESTlet');
@@ -281,10 +272,8 @@ export class NetSuiteClient {
         // Cache using chunked storage (splits into ~5MB chunks) for 1 week (604800 seconds)
         // Note: setChunked REPLACES the cache, doesn't append to it
         const cacheSuccess = await redisCache.setChunked(cacheKey, essentialData, 604800);
-        if (cacheSuccess) {
-          console.log(`[NetSuite] Cached ${essentialData.length} customers (chunked) in Redis`);
-        } else {
-          console.error(`[NetSuite] Failed to cache customers in Redis`);
+        if (!cacheSuccess) {
+          console.error('[NetSuite] Failed to cache customers in Redis');
         }
 
         // Release fetch lock
@@ -300,7 +289,6 @@ export class NetSuiteClient {
       if (isGetAll) {
         // Return ALL customers for client-side caching
         filteredCustomers = allCustomers;
-        console.log(`[NetSuite] Returning ALL ${filteredCustomers.length} customers for caching`);
       } else {
         // Filter based on query
         const lowerQuery = sanitizedQuery.toLowerCase();
@@ -319,17 +307,6 @@ export class NetSuiteClient {
                    industry.includes(lowerQuery);
           })
           .slice(0, 10); // Return max 10 results
-        console.log(`[NetSuite] Found ${filteredCustomers.length} matching customers`);
-      // Debug: Log first customer's data
-      if (filteredCustomers.length > 0) {
-        const first = filteredCustomers[0];
-        console.log(`[NetSuite] Sample customer data:`, {
-          companyname: first.companyname,
-          billcity: first.billcity,
-          billcountrycode: first.billcountrycode,
-          category: first.category
-        });
-      }
       }
 
       // Transform to NetSuiteCustomer format
@@ -547,7 +524,6 @@ export class NetSuiteClient {
       const result = await response.json();
 
       if (result.success) {
-        console.log(`PDF uploaded to NetSuite: fileId=${result.fileId}, customerId=${customerId}`);
         return { success: true, fileId: result.fileId };
       } else {
         return { success: false, error: result.error || 'Unknown error' };
@@ -606,8 +582,6 @@ export class NetSuiteClient {
         return [];
       }
 
-      console.log(`[NetSuite] Searching items for query: "${sanitizedQuery}"`);
-
       // Try Redis cache first (chunked to handle Upstash 10MB limit)
       const cacheKey = 'netsuite:items';
       let allItems: any[] | null = await redisCache.getChunked<any>(cacheKey);
@@ -624,7 +598,6 @@ export class NetSuiteClient {
         const url = `${restletUrl}&waType=item`;
         const authHeader = this.generateOAuthHeader('GET', url);
 
-        console.log('[NetSuite] Fetching all items from RESTlet (this may take ~50 seconds)...');
         const startTime = Date.now();
 
         const response = await fetch(url, {
@@ -641,8 +614,6 @@ export class NetSuiteClient {
         }
 
         const data = await response.json();
-        const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
-        console.log(`[NetSuite] Fetched ${Array.isArray(data) ? data.length : 0} items in ${elapsed}s`);
 
         if (!Array.isArray(data)) {
           throw new Error('Unexpected response format from RESTlet');
@@ -660,10 +631,8 @@ export class NetSuiteClient {
 
         // Cache using chunked storage (splits into ~5MB chunks) for 1 week (604800 seconds)
         const cacheSuccess = await redisCache.setChunked(cacheKey, essentialItems, 604800);
-        if (cacheSuccess) {
-          console.log(`[NetSuite] Cached ${essentialItems.length} items (chunked) in Redis`);
-        } else {
-          console.error(`[NetSuite] Failed to cache items in Redis`);
+        if (!cacheSuccess) {
+          console.error('[NetSuite] Failed to cache items in Redis');
         }
 
         allItems = essentialItems;
@@ -685,8 +654,6 @@ export class NetSuiteClient {
                  type.includes(lowerQuery);
         })
         .slice(0, 10); // Return max 10 results
-
-      console.log(`[NetSuite] Found ${filteredItems.length} matching items`);
 
       // Transform to consistent format with unique IDs
       return filteredItems.map((item: any, index: number) => {
@@ -721,8 +688,6 @@ export class NetSuiteClient {
    */
   async searchSubsidiaries(): Promise<NetSuiteSubsidiary[]> {
     try {
-      console.log('[NetSuite] Fetching ALL subsidiaries from RESTlet...');
-
       // Try Redis cache first
       const cacheKey = 'netsuite:subsidiaries';
       let allSubsidiaries: any[] | null = await redisCache.getChunked<any>(cacheKey);
@@ -737,7 +702,6 @@ export class NetSuiteClient {
         const url = `${restletUrl}&waType=subsidiary`;
         const authHeader = this.generateOAuthHeader('GET', url);
 
-        console.log('[NetSuite] Fetching subsidiaries from RESTlet...');
         const startTime = Date.now();
 
         const response = await fetch(url, {
@@ -762,8 +726,6 @@ export class NetSuiteClient {
           return [];
         }
 
-        console.log(`[NetSuite] Fetched ${Array.isArray(data) ? data.length : 0} subsidiaries in ${elapsed}s`);
-
         if (!Array.isArray(data)) {
           console.error('[NetSuite] Unexpected response format from RESTlet:', data);
           return [];
@@ -783,14 +745,9 @@ export class NetSuiteClient {
         }));
 
         // Cache for 1 week
-        const cacheSuccess = await redisCache.setChunked(cacheKey, essentialData, 604800);
-        if (cacheSuccess) {
-          console.log(`[NetSuite] Cached ${essentialData.length} subsidiaries in Redis`);
-        }
+        await redisCache.setChunked(cacheKey, essentialData, 604800);
 
         allSubsidiaries = essentialData;
-      } else {
-        console.log(`[NetSuite] Retrieved ${allSubsidiaries.length} subsidiaries from cache`);
       }
 
       return allSubsidiaries.map((s: any) => ({
@@ -822,14 +779,12 @@ export class NetSuiteClient {
 
       // Only preload if using NetSuite data source
       if (!restletUrl || dataSource === 'mock') {
-        console.log('[NetSuite] Preload skipped - using mock data or NetSuite not configured');
         return;
       }
 
       // Check if cache already exists in Redis - skip preload if so
       const existingCustomers = await redisCache.get<{ chunkCount: number }>('netsuite:customers:meta');
       if (existingCustomers) {
-        console.log(`[NetSuite] Preload skipped - cache already exists (${existingCustomers.chunkCount} chunks)`);
         return;
       }
 
@@ -837,13 +792,11 @@ export class NetSuiteClient {
       const fetchLockKey = 'netsuite:fetch-lock';
       const existingLock = await redisCache.get<number>(fetchLockKey);
       if (existingLock && (Date.now() - existingLock) < 180000) {
-        console.log('[NetSuite] Preload skipped - another instance is already fetching');
         return;
       }
       await redisCache.set(fetchLockKey, Date.now(), 180); // 3 min lock
 
       console.log('[NetSuite] Starting background cache preload...');
-      console.log('[NetSuite] This will take ~70 seconds (customers + items)');
       const totalStart = Date.now();
 
       // Preload customers
@@ -851,7 +804,6 @@ export class NetSuiteClient {
         const customerUrl = `${restletUrl}&waType=customer`;
         const customerAuthHeader = this.generateOAuthHeader('GET', customerUrl);
 
-        console.log('[NetSuite] Preloading customers...');
         const customerStart = Date.now();
 
         const customerResponse = await fetch(customerUrl, {
@@ -893,11 +845,8 @@ export class NetSuiteClient {
             // Cache using chunked storage (splits into ~5MB chunks) for 1 week
             // Note: setChunked REPLACES the cache completely, doesn't append
             const cacheSuccess = await redisCache.setChunked('netsuite:customers', essentialData, 604800);
-            const elapsed = ((Date.now() - customerStart) / 1000).toFixed(2);
-            if (cacheSuccess) {
-              console.log(`[NetSuite] ✅ Preloaded ${essentialData.length} customers in ${elapsed}s (chunked)`);
-            } else {
-              console.error(`[NetSuite] ❌ Failed to cache customers`);
+            if (!cacheSuccess) {
+              console.error('[NetSuite] Failed to cache customers during preload');
             }
           } else {
             console.error('[NetSuite] Customer preload: unexpected response format', typeof customerData);
@@ -919,7 +868,6 @@ export class NetSuiteClient {
         const itemUrl = `${restletUrl}&waType=item`;
         const itemAuthHeader = this.generateOAuthHeader('GET', itemUrl);
 
-        console.log('[NetSuite] Preloading items...');
         const itemStart = Date.now();
 
         const itemResponse = await fetch(itemUrl, {
@@ -946,11 +894,8 @@ export class NetSuiteClient {
 
             // Cache using chunked storage (splits into ~5MB chunks) for 1 week
             const cacheSuccess = await redisCache.setChunked('netsuite:items', essentialItems, 604800);
-            const elapsed = ((Date.now() - itemStart) / 1000).toFixed(2);
-            if (cacheSuccess) {
-              console.log(`[NetSuite] ✅ Preloaded ${essentialItems.length} items in ${elapsed}s (chunked)`);
-            } else {
-              console.error(`[NetSuite] ❌ Failed to cache items`);
+            if (!cacheSuccess) {
+              console.error('[NetSuite] Failed to cache items during preload');
             }
           }
         } else {
@@ -970,7 +915,6 @@ export class NetSuiteClient {
         const employeeUrl = `${restletUrl}&waType=user`;
         const employeeAuthHeader = this.generateOAuthHeader('GET', employeeUrl);
 
-        console.log('[NetSuite] Preloading employees...');
         const employeeStart = Date.now();
 
         const employeeResponse = await fetch(employeeUrl, {
@@ -1001,11 +945,8 @@ export class NetSuiteClient {
             }));
 
             const cacheSuccess = await redisCache.setChunked('netsuite:employees', essentialEmployees, 604800);
-            const elapsed = ((Date.now() - employeeStart) / 1000).toFixed(2);
-            if (cacheSuccess) {
-              console.log(`[NetSuite] Preloaded ${essentialEmployees.length} employees in ${elapsed}s (chunked)`);
-            } else {
-              console.error(`[NetSuite] Failed to cache employees`);
+            if (!cacheSuccess) {
+              console.error('[NetSuite] Failed to cache employees during preload');
             }
           }
         } else {
@@ -1025,7 +966,6 @@ export class NetSuiteClient {
         const subsidiaryUrl = `${restletUrl}&waType=subsidiary`;
         const subsidiaryAuthHeader = this.generateOAuthHeader('GET', subsidiaryUrl);
 
-        console.log('[NetSuite] Preloading subsidiaries...');
         const subsidiaryStart = Date.now();
 
         const subsidiaryResponse = await fetch(subsidiaryUrl, {
@@ -1053,11 +993,8 @@ export class NetSuiteClient {
             }));
 
             const cacheSuccess = await redisCache.setChunked('netsuite:subsidiaries', essentialSubsidiaries, 604800);
-            const elapsed = ((Date.now() - subsidiaryStart) / 1000).toFixed(2);
-            if (cacheSuccess) {
-              console.log(`[NetSuite] Preloaded ${essentialSubsidiaries.length} subsidiaries in ${elapsed}s`);
-            } else {
-              console.error(`[NetSuite] Failed to cache subsidiaries`);
+            if (!cacheSuccess) {
+              console.error('[NetSuite] Failed to cache subsidiaries during preload');
             }
           }
         } else {
@@ -1074,8 +1011,6 @@ export class NetSuiteClient {
 
       const totalElapsed = ((Date.now() - totalStart) / 1000).toFixed(2);
       console.log(`[NetSuite] Cache preload complete in ${totalElapsed}s`);
-      console.log('[NetSuite] All searches will now be instant');
-      console.log('[NetSuite] Cache valid for 1 week (customers + items + employees + subsidiaries)');
 
     } catch (error) {
       // Release fetch lock on error too
@@ -1092,8 +1027,6 @@ export class NetSuiteClient {
    */
   async searchEmployees(): Promise<NetSuiteEmployee[]> {
     try {
-      console.log('[NetSuite] Fetching ALL employees from RESTlet...');
-
       // Try Redis cache first (chunked to handle Upstash 10MB limit)
       const cacheKey = 'netsuite:employees';
       let allEmployees: any[] | null = await redisCache.getChunked<any>(cacheKey);
@@ -1110,7 +1043,6 @@ export class NetSuiteClient {
         const url = `${restletUrl}&waType=user`;
         const authHeader = this.generateOAuthHeader('GET', url);
 
-        console.log('[NetSuite] Fetching employees from RESTlet...');
         const startTime = Date.now();
 
         const response = await fetch(url, {
@@ -1133,11 +1065,8 @@ export class NetSuiteClient {
         // Check for error response (bug in RESTlet)
         if (data.status === 'error') {
           console.error(`[NetSuite] Employee fetch error: ${data.details}`);
-          console.log('[NetSuite] This is likely the currency field bug in WAICAIntegration.RL.js');
           return []; // Return empty array until bug is fixed
         }
-
-        console.log(`[NetSuite] Fetched ${Array.isArray(data) ? data.length : 0} employees in ${elapsed}s`);
 
         if (!Array.isArray(data)) {
           console.error('[NetSuite] Unexpected response format from RESTlet:', data);
@@ -1168,14 +1097,9 @@ export class NetSuiteClient {
         }));
 
         // Cache using chunked storage for 1 week (604800 seconds)
-        const cacheSuccess = await redisCache.setChunked(cacheKey, essentialData, 604800);
-        if (cacheSuccess) {
-          console.log(`[NetSuite] Cached ${essentialData.length} employees (chunked) in Redis`);
-        }
+        await redisCache.setChunked(cacheKey, essentialData, 604800);
 
         allEmployees = essentialData;
-      } else {
-        console.log(`[NetSuite] Retrieved ${allEmployees.length} employees from cache`);
       }
 
       // Transform to NetSuiteEmployee format with friendly aliases
@@ -1220,7 +1144,6 @@ export class NetSuiteClient {
       }
 
       const normalizedEmail = email.toLowerCase().trim();
-      console.log(`[NetSuite] Looking up employee by email: ${normalizedEmail}`);
 
       // Get all employees (from cache if available)
       const allEmployees = await this.searchEmployees();
@@ -1229,12 +1152,6 @@ export class NetSuiteClient {
       const employee = allEmployees.find(
         emp => emp.email?.toLowerCase().trim() === normalizedEmail
       );
-
-      if (employee) {
-        console.log(`[NetSuite] Found employee: ${employee.firstname} ${employee.lastname} (${employee.internalId})`);
-      } else {
-        console.log(`[NetSuite] No employee found for email: ${normalizedEmail}`);
-      }
 
       return employee || null;
     } catch (error) {
@@ -1257,8 +1174,6 @@ export class NetSuiteClient {
       // Build URL for specific employee
       const url = `${restletUrl}&waType=user&waId=${id}`;
       const authHeader = this.generateOAuthHeader('GET', url);
-
-      console.log(`[NetSuite] Fetching employee ${id} from RESTlet...`);
 
       const response = await fetch(url, {
         method: 'GET',
@@ -1285,11 +1200,8 @@ export class NetSuiteClient {
       const emp = Array.isArray(data) ? data[0] : data;
 
       if (!emp || !emp.internalid) {
-        console.log(`[NetSuite] Employee ${id} not found`);
         return null;
       }
-
-      console.log(`[NetSuite] Found employee ${id}: ${emp.firstname} ${emp.lastname}`);
 
       return {
         id: emp.internalid,
@@ -1374,7 +1286,6 @@ export class NetSuiteClient {
       redisCache.delChunked('netsuite:employees'),
       redisCache.delChunked('netsuite:subsidiaries'),
     ]);
-    console.log('[NetSuite] Cache cleared');
   }
 }
 

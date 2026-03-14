@@ -50,10 +50,7 @@ export interface MultiImageAnalysisResult {
  */
 export async function waAnalyzeImageForTags(imageUrl: string): Promise<ImageTagsResult> {
   try {
-    console.log('[Image Recognition] Analyzing image for tags:', imageUrl.substring(0, 50) + '...');
-
     if (!process.env.OPENAI_API_KEY) {
-      console.warn('[Image Recognition] OpenAI API key not configured');
       return {
         success: false,
         error: 'OpenAI API key not configured',
@@ -115,14 +112,12 @@ Format your response as JSON:
     });
 
     const content = response.choices[0]?.message?.content || '';
-    console.log('[Image Recognition] Raw response:', content.substring(0, 200) + '...');
 
     // Parse JSON response
     try {
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const data = JSON.parse(jsonMatch[0]);
-        console.log('[Image Recognition] Successfully extracted tags:', data.tags?.length || 0);
 
         return {
           success: true,
@@ -164,8 +159,6 @@ export async function waAnalyzeMultipleImagesForTags(
   imageUrls: string[]
 ): Promise<MultiImageAnalysisResult> {
   try {
-    console.log('[Image Recognition] Analyzing multiple images:', imageUrls.length);
-
     if (!imageUrls || imageUrls.length === 0) {
       return {
         success: false,
@@ -190,7 +183,6 @@ export async function waAnalyzeMultipleImagesForTags(
     });
 
     const combinedTags = Array.from(allTags);
-    console.log('[Image Recognition] Combined tags:', combinedTags.length);
 
     return {
       success: true,
@@ -258,8 +250,6 @@ export async function waExtractTextFromImage(
   imageUrl: string
 ): Promise<{ success: boolean; text?: string; error?: string }> {
   try {
-    console.log('[Image Recognition] Extracting text from image');
-
     if (!process.env.OPENAI_API_KEY) {
       return { success: false, error: 'OpenAI API key not configured' };
     }

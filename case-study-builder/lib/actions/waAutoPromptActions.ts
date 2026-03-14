@@ -441,8 +441,6 @@ Output only the converted prose, nothing else.`,
       };
     }
 
-    console.log('[BulletToProse] Converted:', { original: bullets.substring(0, 50), prose: prose.substring(0, 50) });
-
     return {
       success: true,
       prose,

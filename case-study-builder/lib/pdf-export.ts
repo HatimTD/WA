@@ -1,5 +1,4 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import type jsPDF from 'jspdf';
 import {
   waHasPrivilegedAccess,
   waObfuscateCustomerName,
@@ -175,7 +174,9 @@ function addWatermark(doc: jsPDF, options?: PDFExportOptions): void {
   doc.setTextColor(0, 0, 0);
 }
 
-export function generateCaseStudyPDF(caseStudy: CaseStudyPDFData, options?: PDFExportOptions): jsPDF {
+export async function generateCaseStudyPDF(caseStudy: CaseStudyPDFData, options?: PDFExportOptions): Promise<jsPDF> {
+  const { default: jsPDF } = await import('jspdf');
+  const { default: autoTable } = await import('jspdf-autotable');
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -452,8 +453,8 @@ export function generateCaseStudyPDF(caseStudy: CaseStudyPDFData, options?: PDFE
   return doc;
 }
 
-export function downloadCaseStudyPDF(caseStudy: CaseStudyPDFData, options?: PDFExportOptions): void {
-  const doc = generateCaseStudyPDF(caseStudy, options);
+export async function downloadCaseStudyPDF(caseStudy: CaseStudyPDFData, options?: PDFExportOptions): Promise<void> {
+  const doc = await generateCaseStudyPDF(caseStudy, options);
   const fileName = `${caseStudy.customerName.replace(/\s+/g, '_')}_${caseStudy.componentWorkpiece.replace(/\s+/g, '_')}_CaseStudy.pdf`;
   doc.save(fileName);
 }
@@ -547,10 +548,11 @@ function waDrawWearSeverityBars(
   }
 }
 
-export function generateComparisonPDF(
+export async function generateComparisonPDF(
   caseStudies: (ComparisonPDFData | null)[],
   options?: PDFExportOptions
-): jsPDF {
+): Promise<jsPDF> {
+  const { default: jsPDF } = await import('jspdf');
   const doc = new jsPDF('landscape');
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -960,11 +962,11 @@ export function generateComparisonPDF(
   return doc;
 }
 
-export function downloadComparisonPDF(
+export async function downloadComparisonPDF(
   caseStudies: (ComparisonPDFData | null)[],
   options?: PDFExportOptions
-): void {
-  const doc = generateComparisonPDF(caseStudies, options);
+): Promise<void> {
+  const doc = await generateComparisonPDF(caseStudies, options);
   const fileName = `Case_Study_Comparison_${new Date().toISOString().split('T')[0]}.pdf`;
   doc.save(fileName);
 }

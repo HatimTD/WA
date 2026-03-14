@@ -75,7 +75,6 @@ export default function DocumentUpload({ onDocumentsChange, existingDocuments = 
 
         if (result.success && result.url) {
           uploadedDocs.push(result.url);
-          console.log('[DocumentUpload] Document uploaded:', result.fileName);
         } else {
           toast.error(result.error || 'Failed to upload document');
           console.error('[DocumentUpload] Upload failed:', result.error);

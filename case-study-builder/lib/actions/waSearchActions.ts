@@ -283,6 +283,7 @@ export async function waGetSearchFilterOptions() {
             },
           },
         },
+        take: 500,
       }),
       // Fetch wear types from master data (admin-managed)
       prisma.waMasterList.findMany({

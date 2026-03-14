@@ -12,10 +12,6 @@ import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { User, Settings, Download, Bell, Shield, Camera, Eye, Monitor, Megaphone, Building, Globe, BadgeCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import { WA_REGIONS } from '@/lib/constants/waRegions';
-
-// All roles from Prisma schema
-const ALL_ROLES = ['VIEWER', 'CONTRIBUTOR', 'APPROVER', 'ADMIN', 'IT_DEPARTMENT', 'MARKETING'] as const;
 
 // Role display configuration
 const ROLE_CONFIG: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
@@ -33,7 +29,6 @@ type UserData = {
   email: string | null;
   image: string | null;
   role: string;
-  region: string | null;
   totalPoints: number;
 };
 
@@ -61,7 +56,6 @@ type NetSuiteEmployee = {
 
 type Props = {
   user: UserData;
-  assignedRoles?: string[];
   subsidiaries?: Subsidiary[];
   regions?: string[];
   netsuiteEmployee?: NetSuiteEmployee | null;
@@ -69,18 +63,15 @@ type Props = {
 
 export default function SettingsForm({
   user,
-  assignedRoles = [],
   subsidiaries = [],
   regions = [],
   netsuiteEmployee = null,
 }: Props) {
   const router = useRouter();
-  const { theme: currentTheme, setTheme: setNextTheme } = useTheme();
+  const { setTheme: setNextTheme } = useTheme();
   const [name, setName] = useState(user.name || '');
-  // Region removed - now computed from subsidiaries
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [isSwitchingRole, setIsSwitchingRole] = useState(false);
   const [isRequestingDeletion, setIsRequestingDeletion] = useState(false);
 
   // Avatar upload state
@@ -155,7 +146,7 @@ export default function SettingsForm({
       const response = await fetch('/api/user/update-profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name }), // Region removed - now computed from subsidiaries
+        body: JSON.stringify({ name }),
       });
 
       const result = await response.json();
@@ -242,81 +233,6 @@ export default function SettingsForm({
     }
   };
 
-  const handleRoleSwitch = async (newRole: string) => {
-    if (!confirm(`Switch to ${newRole} role? This is for development testing only.`)) {
-      return;
-    }
-
-    setIsSwitchingRole(true);
-    try {
-      const response = await fetch('/api/dev/switch-role', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: newRole }),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        toast.success(`Switched to ${newRole} role! Redirecting...`);
-        // Redirect to dashboard after role switch
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 1000);
-      } else {
-        toast.error(result.error || 'Failed to switch role');
-      }
-    } catch (error) {
-      console.error('[Settings] Role switch error:', error);
-      toast.error('An error occurred');
-    } finally {
-      setIsSwitchingRole(false);
-    }
-  };
-
-  // Handle multi-role toggle (add/remove roles)
-  const waHandleMultiRoleToggle = async (role: string) => {
-    const currentRoles = [...assignedRoles];
-    const isSelected = currentRoles.includes(role);
-
-    let newRoles: string[];
-    if (isSelected) {
-      // Remove role (but ensure at least one role remains)
-      newRoles = currentRoles.filter(r => r !== role);
-      if (newRoles.length === 0) {
-        toast.error('You must have at least one role');
-        return;
-      }
-    } else {
-      // Add role
-      newRoles = [...currentRoles, role];
-    }
-
-    setIsSwitchingRole(true);
-    try {
-      const response = await fetch('/api/dev/switch-role', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roles: newRoles }),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        toast.success(`Roles updated: ${newRoles.map(r => ROLE_CONFIG[r]?.label || r).join(', ')}`);
-        // Refresh page to update permissions
-        router.refresh();
-      } else {
-        toast.error(result.error || 'Failed to update roles');
-      }
-    } catch (error) {
-      console.error('[Settings] Multi-role toggle error:', error);
-      toast.error('An error occurred');
-    } finally {
-      setIsSwitchingRole(false);
-    }
-  };
-
   const handleExportData = async () => {
     setIsExporting(true);
     try {
@@ -363,9 +279,6 @@ export default function SettingsForm({
           { duration: 6000 }
         );
         // In development, show the verification token
-        if (process.env.NODE_ENV === 'development' && data.verificationToken) {
-          console.log('[GDPR] Verification token (dev only):', data.verificationToken);
-        }
       } else {
         const error = await response.json();
         toast.error(error.error || 'Failed to submit deletion request');
@@ -504,7 +417,7 @@ export default function SettingsForm({
             />
           </div>
 
-          {/* Region field removed - now computed from subsidiaries (see Organization Information section below) */}
+          {/* Region is computed from assigned subsidiaries */}
 
           <div className="space-y-2">
             <Label className="dark:text-foreground">Role</Label>
@@ -913,86 +826,11 @@ export default function SettingsForm({
             </div>
           </div>
 
-          <div className="bg-wa-green-50 border border-wa-green-200 rounded-lg p-4 dark:bg-accent dark:border-primary dark:text-foreground">
-            <p className="text-sm text-wa-green-800 dark:text-foreground">
-              <span className="font-semibold">Note:</span> Email notifications require the RESEND_API_KEY to be configured in your environment variables.
-              Contact your administrator if you're not receiving email notifications.
-            </p>
-          </div>
 
           <div className="pt-4">
             <Button onClick={handleSaveNotifications} disabled={isSaving}>
               {isSaving ? 'Saving...' : 'Save Notification Preferences'}
             </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Dev Role Switcher (Development Only) - Multi-Select */}
-      <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/30 dark:border-orange-800">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-orange-900 dark:text-orange-400">
-            <Shield className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-            Dev Role Switcher
-          </CardTitle>
-          <CardDescription className="text-orange-700 dark:text-orange-300">
-            Select multiple roles to have combined permissions (Development Only)
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-3">
-            <Label className="dark:text-orange-300">
-              Current Roles: {assignedRoles.length > 0 ? (
-                <span className="flex flex-wrap gap-1 mt-1">
-                  {assignedRoles.map((role) => (
-                    <span key={role} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
-                      role === 'ADMIN' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' :
-                      role === 'APPROVER' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' :
-                      role === 'CONTRIBUTOR' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' :
-                      'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
-                    }`}>
-                      {ROLE_CONFIG[role]?.icon}
-                      {ROLE_CONFIG[role]?.label || role}
-                    </span>
-                  ))}
-                </span>
-              ) : (
-                <span className={`font-bold ${ROLE_CONFIG[user.role]?.color || ''}`}>
-                  {ROLE_CONFIG[user.role]?.label || user.role}
-                </span>
-              )}
-            </Label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {ALL_ROLES.map((role) => {
-                const isSelected = assignedRoles.includes(role);
-                return (
-                  <button
-                    key={role}
-                    type="button"
-                    onClick={() => waHandleMultiRoleToggle(role)}
-                    disabled={isSwitchingRole}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-all ${
-                      isSelected
-                        ? 'border-orange-400 bg-orange-100 dark:bg-orange-900/40 dark:border-orange-600'
-                        : 'border-orange-200 bg-white dark:bg-orange-950/20 dark:border-orange-800 hover:bg-orange-50 dark:hover:bg-orange-900/30'
-                    }`}
-                  >
-                    <div className={`w-4 h-4 rounded border flex items-center justify-center ${
-                      isSelected ? 'bg-orange-500 border-orange-500' : 'border-orange-300 dark:border-orange-600'
-                    }`}>
-                      {isSelected && <span className="text-white text-xs">✓</span>}
-                    </div>
-                    <div className={`flex items-center gap-1 ${ROLE_CONFIG[role]?.color || ''}`}>
-                      {ROLE_CONFIG[role]?.icon}
-                      <span>{ROLE_CONFIG[role]?.label || role}</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-            <p className="text-xs text-orange-600 dark:text-orange-400">
-              Select multiple roles to have combined permissions. Changes are saved immediately.
-            </p>
           </div>
         </CardContent>
       </Card>

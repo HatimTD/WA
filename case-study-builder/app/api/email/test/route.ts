@@ -6,11 +6,10 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(req: NextRequest) {
   try {
-    // Temporarily disabled for testing - REMEMBER TO RE-ENABLE BEFORE PRODUCTION
-    // const session = await auth()
-    // if (!session?.user || session.user.role !== 'ADMIN') {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    // }
+    const session = await auth()
+    if (!session?.user || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const { to, html, logoUrl, templateType, subject } = await req.json()
 

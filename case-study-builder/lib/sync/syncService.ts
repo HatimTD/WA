@@ -26,7 +26,6 @@ export class SyncService {
       }
     }, 30000); // 30 seconds
 
-    console.log('[SyncService] Auto-sync started');
   }
 
   /**
@@ -36,7 +35,6 @@ export class SyncService {
     if (this.syncInterval) {
       clearInterval(this.syncInterval);
       this.syncInterval = null;
-      console.log('[SyncService] Auto-sync stopped');
     }
   }
 
@@ -45,12 +43,10 @@ export class SyncService {
    */
   async syncAll(): Promise<{ success: boolean; synced: number; errors: number }> {
     if (this.isSyncing) {
-      console.log('[SyncService] Sync already in progress');
       return { success: false, synced: 0, errors: 0 };
     }
 
     if (!navigator.onLine) {
-      console.log('[SyncService] Cannot sync - offline');
       return { success: false, synced: 0, errors: 0 };
     }
 
@@ -62,15 +58,11 @@ export class SyncService {
       await updateSyncMetadata('global', 'syncing');
 
       const pendingChanges = await getPendingChanges();
-      console.log(`[SyncService] Syncing ${pendingChanges.length} changes`);
 
       for (const change of pendingChanges) {
         try {
           // Skip if max retries exceeded
           if (change.retryCount >= MAX_RETRIES) {
-            console.error(
-              `[SyncService] Max retries exceeded for change ${change.id}`
-            );
             errorCount++;
             continue;
           }
@@ -81,12 +73,10 @@ export class SyncService {
           if (success) {
             await removePendingChange(change.id);
             syncedCount++;
-            console.log(`[SyncService] Synced change ${change.id}`);
           } else {
             throw new Error('Sync failed');
           }
         } catch (error: any) {
-          console.error(`[SyncService] Error syncing change ${change.id}:`, error);
           await updatePendingChangeRetry(
             change.id,
             error.message || 'Unknown error'
@@ -99,10 +89,6 @@ export class SyncService {
         'global',
         errorCount > 0 ? 'error' : 'idle',
         errorCount > 0 ? `${errorCount} errors occurred` : undefined
-      );
-
-      console.log(
-        `[SyncService] Sync complete: ${syncedCount} synced, ${errorCount} errors`
       );
 
       return { success: errorCount === 0, synced: syncedCount, errors: errorCount };
@@ -133,11 +119,9 @@ export class SyncService {
           return await this.syncCase(operation, data);
 
         default:
-          console.warn(`[SyncService] Unknown entity type: ${entity}`);
-          return false;
+            return false;
       }
     } catch (error) {
-      console.error(`[SyncService] Error syncing ${entity}:`, error);
       return false;
     }
   }
@@ -244,13 +228,11 @@ export const syncService = new SyncService();
 // Start auto-sync when service is loaded (if in browser)
 if (typeof window !== 'undefined') {
   window.addEventListener('online', () => {
-    console.log('[SyncService] Online - starting auto-sync');
     syncService.startAutoSync();
     syncService.syncAll();
   });
 
   window.addEventListener('offline', () => {
-    console.log('[SyncService] Offline - stopping auto-sync');
     syncService.stopAutoSync();
   });
 

@@ -467,7 +467,7 @@ export default function AIGovernancePage() {
                   </IOSSafeLink>
                 </li>
                 <li>
-                  <IOSSafeLink href="/dev-login" className="text-gray-600 hover:text-wa-green-900">
+                  <IOSSafeLink href="/login" className="text-gray-600 hover:text-wa-green-900">
                     Login
                   </IOSSafeLink>
                 </li>

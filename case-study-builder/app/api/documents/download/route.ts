@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/auth';
 import { v2 as cloudinary } from 'cloudinary';
 
 // Configure Cloudinary
@@ -22,12 +23,22 @@ if (process.env.CLOUDINARY_URL) {
  */
 export async function GET(request: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const url = searchParams.get('url');
     const filename = searchParams.get('filename') || 'document';
 
     if (!url) {
       return NextResponse.json({ error: 'URL parameter is required' }, { status: 400 });
+    }
+
+    // Validate URL is from Cloudinary domains only
+    if (!url.includes('cloudinary.com') && !url.includes('res.cloudinary.com')) {
+      return NextResponse.json({ error: 'Invalid URL: only Cloudinary domains are allowed' }, { status: 400 });
     }
 
     console.log('[DocumentProxy] Fetching document:', url);

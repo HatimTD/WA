@@ -1,7 +1,6 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { useState, Suspense } from 'react';
@@ -73,22 +72,6 @@ function LoginForm() {
         <p className="text-xs text-center text-muted-foreground">
           Sign in with your company Google account
         </p>
-
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">Or</span>
-          </div>
-        </div>
-
-        <div className="text-center">
-          <p className="text-sm text-muted-foreground mb-2">Testing the application?</p>
-          <Link href="/dev-login" className="text-blue-600 hover:underline text-sm">
-            Use Test Login →
-          </Link>
-        </div>
       </CardContent>
     </Card>
   );
@@ -96,7 +79,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-wa-green-50 to-purple-50 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-wa-green-50 to-purple-50 dark:from-gray-900 dark:to-gray-950 p-4">
       <Suspense fallback={
         <Card className="w-full max-w-md">
           <CardContent className="flex items-center justify-center p-8">

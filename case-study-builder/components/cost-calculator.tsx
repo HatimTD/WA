@@ -118,21 +118,10 @@ export default function CostCalculator({ caseStudyId, existingData, onValuesChan
   };
 
   const handleSave = async () => {
-    console.log('[CostCalculator] Save button clicked');
-    console.log('[CostCalculator] Case Study ID:', caseStudyId);
-    console.log('[CostCalculator] Current values:', values);
-    console.log('[CostCalculator] Calculated totals:', {
-      totalCostBefore,
-      totalCostAfter,
-      annualSavings,
-      savingsPercentage,
-    });
-
     setIsSaving(true);
     setSaveMessage('');
 
     try {
-      console.log('[CostCalculator] Calling waSaveCostCalculation...');
       const result = await waSaveCostCalculation({
         caseStudyId,
         ...values,
@@ -142,11 +131,8 @@ export default function CostCalculator({ caseStudyId, existingData, onValuesChan
         savingsPercentage,
       });
 
-      console.log('[CostCalculator] Result received:', result);
-
       if (result.success) {
         setSaveMessage('Cost calculation saved successfully!');
-        console.log('[CostCalculator] Save successful');
       } else {
         setSaveMessage('Error saving calculation');
         console.error('[CostCalculator] Save failed:', result);
@@ -157,7 +143,6 @@ export default function CostCalculator({ caseStudyId, existingData, onValuesChan
     } finally {
       setIsSaving(false);
       setTimeout(() => setSaveMessage(''), 3000);
-      console.log('[CostCalculator] Save operation completed');
     }
   };
 

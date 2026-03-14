@@ -48,7 +48,6 @@ import {
   type BulkImportResult,
 } from '@/lib/actions/waBulkImportActions';
 import { parseCSV, parseExcelData, type BulkImportRow, type ParseResult, type ValidationError } from '@/lib/utils/waBulkImportParser';
-import * as XLSX from 'xlsx';
 
 type WizardStep = 'upload' | 'preview' | 'configure' | 'importing' | 'complete';
 
@@ -113,12 +112,22 @@ export default function BulkImportWizard() {
         result = parseCSV(content);
       } else if (extension === 'xlsx' || extension === 'xls') {
         setFileType('excel');
+        const ExcelJS = (await import('exceljs')).default;
         const arrayBuffer = await file.arrayBuffer();
-        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
-        result = parseExcelData(jsonData as Record<string, any>[]);
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(arrayBuffer);
+        const worksheet = workbook.worksheets[0];
+        const headers = (worksheet.getRow(1).values as (string | undefined)[]).slice(1);
+        const jsonData: Record<string, any>[] = [];
+        worksheet.eachRow((row, rowNumber) => {
+          if (rowNumber === 1) return; // skip header
+          const rowData: Record<string, any> = {};
+          (row.values as any[]).slice(1).forEach((val, i) => {
+            if (headers[i]) rowData[headers[i]!] = val;
+          });
+          jsonData.push(rowData);
+        });
+        result = parseExcelData(jsonData);
       } else {
         toast.error('Unsupported file format. Please use CSV or Excel (.xlsx, .xls)');
         setIsLoading(false);
