@@ -252,7 +252,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
   // Track if WPS was skipped (for STAR cases - WPS is optional)
   // Use caseStudy prop directly (not formData state) to avoid TDZ in production builds
   const [wpsSkipped, setWpsSkipped] = useState(
-    caseStudy.type === 'STAR' && !wpsData
+    caseStudy.type === 'STAR' && (!wpsData || !waIsWpsComplete(wpsData))
   );
   const [industryLoading, setIndustryLoading] = useState(false);
   const [isCustomIndustry, setIsCustomIndustry] = useState(false);
@@ -573,8 +573,9 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
         if (!formData.images || formData.images.length < 1) missing.push('At least 1 image');
         break;
       case 'Welding Procedure':
-        // WPS is required for TECH cases
-        // WPS is optional for STAR cases, but if Next is clicked (not Skip), validate for bonus point
+        // WPS is required for TECH cases, optional for STAR
+        // If STAR and user skipped WPS, don't validate
+        if (formData.type === 'STAR' && wpsSkipped) break;
         if (formData.type === 'TECH' || formData.type === 'STAR') {
           // Base Metal Section
           if (!formData.wps?.baseMetalType) missing.push('Base Metal Type');
