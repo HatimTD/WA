@@ -249,6 +249,13 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
 
   const [currentStep, setCurrentStep] = useState(initialStep);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Track if WPS was skipped (for STAR cases - WPS is optional)
+  // Auto-detect: if case has no WPS base metal data, it was skipped
+  const [wpsSkipped, setWpsSkipped] = useState(() => {
+    if (formData.type !== 'STAR') return false;
+    // If no WPS data exists in form, it was skipped during creation
+    return !formData.wps?.baseMetalType && !formData.wps?.waProductName;
+  });
   const [industryLoading, setIndustryLoading] = useState(false);
   const [isCustomIndustry, setIsCustomIndustry] = useState(false);
   const [customIndustryText, setCustomIndustryText] = useState('');
@@ -652,6 +659,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
   const handleSkipWPS = () => {
     // Skip WPS step without validation (for STAR cases)
     // This means no bonus point (+0 instead of +1)
+    setWpsSkipped(true);
     setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
     // Scroll to top for better UX (scroll the main content area, not window)
     const mainElement = document.querySelector('main.overflow-y-auto');
@@ -861,6 +869,9 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
     // Validate all required steps and collect missing fields
     const allMissingFields: string[] = [];
     for (let i = 1; i <= STEPS.length; i++) {
+      // Skip WPS validation if user clicked "Skip" (STAR cases - WPS is optional)
+      const stepData = STEPS.find(s => s.number === i);
+      if (stepData?.title === 'Welding Procedure' && wpsSkipped) continue;
       const stepMissing = getMissingFields(i);
       allMissingFields.push(...stepMissing);
     }
@@ -894,8 +905,8 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
 
       await waUpdateCaseStudy(caseStudy.id, updateData);
 
-      // If TECH or STAR and WPS data exists, save WPS
-      if (hasWPS && formData.wps) {
+      // If TECH or STAR and WPS data exists (and not skipped), save WPS
+      if (hasWPS && !wpsSkipped && formData.wps) {
         // Upload documents to Cloudinary and get URLs
         const uploadedDocs = await waUploadWpsDocuments(formData.wps.documents);
 
