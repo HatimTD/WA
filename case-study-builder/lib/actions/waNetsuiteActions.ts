@@ -118,15 +118,12 @@ export async function waSearchNetSuiteCustomers(
       });
     }
 
-    // Enrich with case study data from our database
-    const enrichedCustomers = await Promise.all(
-      customers.map(async (customer) => {
-        const caseStudies = await prisma.waCaseStudy.findMany({
+    // Batch-fetch case studies for all matching customers in a single query
+    const customerNames = customers.map((c) => c.companyName).filter(Boolean);
+    const allCaseStudies = customerNames.length > 0
+      ? await prisma.waCaseStudy.findMany({
           where: {
-            customerName: {
-              equals: customer.companyName,
-              mode: 'insensitive',
-            },
+            customerName: { in: customerNames, mode: 'insensitive' },
           },
           select: {
             id: true,
@@ -134,18 +131,29 @@ export async function waSearchNetSuiteCustomers(
             type: true,
             status: true,
             createdAt: true,
+            customerName: true,
           },
           orderBy: { createdAt: 'desc' },
-          take: 3,
-        });
+        })
+      : [];
 
-        return {
-          ...customer,
-          caseStudyCount: caseStudies.length,
-          recentCaseStudies: caseStudies,
-        };
-      })
-    );
+    // Group case studies by customer name (case-insensitive)
+    const caseStudiesByCustomer = new Map<string, typeof allCaseStudies>();
+    for (const cs of allCaseStudies) {
+      const key = cs.customerName.toLowerCase();
+      const existing = caseStudiesByCustomer.get(key) || [];
+      if (existing.length < 3) existing.push(cs); // keep top 3 per customer
+      caseStudiesByCustomer.set(key, existing);
+    }
+
+    const enrichedCustomers = customers.map((customer) => {
+      const studies = caseStudiesByCustomer.get(customer.companyName?.toLowerCase() || '') || [];
+      return {
+        ...customer,
+        caseStudyCount: studies.length,
+        recentCaseStudies: studies,
+      };
+    });
 
     return { success: true, customers: enrichedCustomers };
   } catch (error) {
@@ -277,7 +285,6 @@ export async function waPushCaseStudyToNetSuite(
         },
       });
 
-      console.log(`Case study ${caseStudyId} pushed to NetSuite: fileId=${result.fileId}`);
     }
 
     return result;

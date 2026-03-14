@@ -107,7 +107,6 @@ export default function VoiceInputDiagnostics() {
           };
 
           testRecognition.onstart = () => {
-            console.log('[Diagnostics] Speech API test started successfully');
           };
 
           try {

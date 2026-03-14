@@ -758,40 +758,30 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
 
   // Helper to upload WPS documents to Cloudinary and get URLs
   const waUploadWpsDocuments = async (documents: any[] | undefined): Promise<{ name: string; size?: number; type?: string; url: string }[]> => {
-    console.log('[WPS Upload] Starting upload, documents:', documents?.length || 0);
     if (!documents || documents.length === 0) return [];
 
     const uploadedDocs: { name: string; size?: number; type?: string; url: string }[] = [];
 
     for (const doc of documents) {
-      console.log('[WPS Upload] Processing doc:', doc.name, 'hasUrl:', !!doc.url, 'hasFile:', !!doc.file, 'isFile:', doc.file instanceof File);
-
       // Skip if document already has a URL (already uploaded)
       if (doc.url) {
-        console.log('[WPS Upload] Doc already has URL, skipping upload');
         uploadedDocs.push({ name: doc.name, size: doc.size, type: doc.type, url: doc.url });
         continue;
       }
 
       // Upload if document has a File object
       if (doc.file instanceof File) {
-        console.log('[WPS Upload] Uploading file:', doc.file.name, 'size:', doc.file.size, 'type:', doc.file.type);
         const formDataUpload = new FormData();
         formDataUpload.append('file', doc.file);
 
         const result = await waUploadDocument(formDataUpload);
-        console.log('[WPS Upload] Upload result:', result.success, result.url || result.error);
         if (result.success && result.url) {
           uploadedDocs.push({ name: doc.name, size: doc.size, type: doc.type, url: result.url });
         } else {
           console.error('[WPS Upload] Failed to upload document:', doc.name, result.error);
         }
-      } else {
-        console.warn('[WPS Upload] Doc has no file and no URL, skipping:', doc.name);
       }
     }
-
-    console.log('[WPS Upload] Final uploaded docs:', uploadedDocs.length);
     return uploadedDocs;
   };
 

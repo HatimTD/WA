@@ -64,7 +64,6 @@ export default function VoiceInput({ onTranscript, currentValue = '', language =
       recognition.maxAlternatives = 1;
 
       recognition.onstart = () => {
-        console.log('[VoiceInput] Speech recognition started');
         setIsListening(true);
         // Don't set interimTranscriptRef here - it will be set in toggleListening
       };
@@ -91,7 +90,6 @@ export default function VoiceInput({ onTranscript, currentValue = '', language =
 
           interimTranscriptRef.current = newText;
           onTranscriptRef.current(newText); // Use ref instead of prop
-          console.log('[VoiceInput] Final transcript:', finalTranscript);
         }
       };
 
@@ -129,7 +127,6 @@ export default function VoiceInput({ onTranscript, currentValue = '', language =
           setIsListening(false);
         } else if (event.error === 'aborted') {
           // Aborted errors are usually fine, just user stopping
-          console.log('[VoiceInput] Recognition aborted');
           setIsListening(false);
         } else if (event.error === 'audio-capture') {
           toast.error('Microphone error. Check that your microphone is connected and working.');
@@ -144,7 +141,6 @@ export default function VoiceInput({ onTranscript, currentValue = '', language =
       };
 
       recognition.onend = () => {
-        console.log('[VoiceInput] Speech recognition ended');
         setIsListening(false);
       };
 
@@ -189,7 +185,6 @@ export default function VoiceInput({ onTranscript, currentValue = '', language =
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             // Stop the stream immediately - we only needed it to trigger permission request
             stream.getTracks().forEach(track => track.stop());
-            console.log('[VoiceInput] Microphone permission granted');
           } catch (permError: any) {
             console.error('[VoiceInput] Microphone permission denied:', permError);
             toast.error('Please allow microphone access to use voice input', { duration: 5000 });

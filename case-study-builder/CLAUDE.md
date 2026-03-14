@@ -91,9 +91,8 @@ case-study-builder/
 │   │   ├── approvals/        # Approval workflow
 │   │   ├── admin/            # Admin panel
 │   │   └── break-glass/      # Emergency admin access
-│   ├── login/                # Login page
-│   ├── dev-login/            # Dev credentials login
-│   └── (public)/             # Public pages (landing)
+│   ├── login/                # Login page (Google OAuth)
+│   └── (public)/             # Public pages (landing, compliance)
 ├── components/               # React components
 │   ├── case-study-form/      # Multi-step form (StepOne-Five, WPS, Cost Calculator)
 │   ├── admin/                # Admin-specific components
@@ -149,10 +148,11 @@ All custom models use `Wa` prefix (PascalCase):
 Standard NextAuth models (`User`, `Account`, `Session`) do NOT use the `Wa` prefix.
 
 #### 4. Authentication Flow
-- **Production**: Google OAuth (enforced via domain restriction in Google Console)
-- **Development**: Credentials provider with `DEV_ADMIN_EMAIL` and `DEV_ADMIN_PASSWORD_HASH`
+- **Primary**: Google OAuth (enforced via domain restriction in Google Console)
+- **Secondary**: Credentials provider for pre-defined accounts (email + password in DB)
+- **Default Role**: CONTRIBUTOR (new users via Google OAuth)
 - **Middleware**: `middleware.ts` protects `/dashboard/*` routes
-- **Roles**: CONTRIBUTOR, APPROVER, ADMIN (enum in Prisma schema)
+- **Roles**: CONTRIBUTOR, APPROVER, ADMIN, VIEWER, IT_DEPARTMENT, MARKETING (enum in Prisma schema)
 - **Break-Glass**: Emergency admin access at `/dashboard/break-glass`
 
 #### 5. Offline Support

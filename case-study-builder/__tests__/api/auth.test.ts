@@ -23,7 +23,7 @@ describe('Authentication API', () => {
         },
       }
 
-      ;(auth as jest.MockedFunction<typeof auth>).mockResolvedValue(mockSession as any)
+      ;(auth as jest.MockedFunction<typeof auth>).mockResolvedValue(mockSession as any as never)
 
       const session = await auth()
       expect(session).toBeDefined()
@@ -32,7 +32,7 @@ describe('Authentication API', () => {
     })
 
     it('should return null for unauthenticated user', async () => {
-      ;(auth as jest.MockedFunction<typeof auth>).mockResolvedValue(null)
+      ;(auth as jest.MockedFunction<typeof auth>).mockResolvedValue(null as any as never)
 
       const session = await auth()
       expect(session).toBeNull()
@@ -47,7 +47,7 @@ describe('Authentication API', () => {
         role: 'ADMIN',
       }
 
-      ;(prisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser)
+      ;(prisma.user.findUnique as any).mockResolvedValue(mockUser as any)
 
       const user = await prisma.user.findUnique({
         where: { id: 'admin-123' },
@@ -63,7 +63,7 @@ describe('Authentication API', () => {
         role: 'CONTRIBUTOR',
       }
 
-      ;(prisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser)
+      ;(prisma.user.findUnique as any).mockResolvedValue(mockUser as any)
 
       const user = await prisma.user.findUnique({
         where: { id: 'contributor-123' },
@@ -79,7 +79,7 @@ describe('Authentication API', () => {
         role: 'VIEWER',
       }
 
-      ;(prisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser)
+      ;(prisma.user.findUnique as any).mockResolvedValue(mockUser as any)
 
       const user = await prisma.user.findUnique({
         where: { id: 'viewer-123' },

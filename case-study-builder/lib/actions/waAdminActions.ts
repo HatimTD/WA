@@ -69,6 +69,7 @@ export async function waGetAllUsers() {
       orderBy: {
         createdAt: 'desc',
       },
+      take: 500,
     });
 
     return { success: true, users };

@@ -179,12 +179,7 @@ export async function waCreateCaseStudy(data: WaCreateCaseStudyInput) {
     // Translation runs synchronously so it's ready when user views the case
     if (data.status === 'SUBMITTED') {
       try {
-        const translationResult = await waAutoTranslateOnSubmit(caseStudy.id);
-        if (translationResult.wasTranslated) {
-          console.log(`[Case Study] Auto-translated case ${caseStudy.id} from ${translationResult.originalLanguage} to English`);
-        } else if (translationResult.originalLanguage !== 'en') {
-          console.log(`[Case Study] Detected ${translationResult.originalLanguage} but translation not performed`);
-        }
+        await waAutoTranslateOnSubmit(caseStudy.id);
       } catch (err) {
         console.error(`[Case Study] Auto-translation failed for ${caseStudy.id}:`, err);
         // Don't fail the submission if translation fails
@@ -233,7 +228,6 @@ export async function waCreateCaseStudy(data: WaCreateCaseStudyInput) {
       code: error.code,
       meta: error.meta
     });
-    console.error('Error creating case study:', error);
 
     // Check for unique constraint violation
     if (error.code === 'P2002') {
@@ -402,12 +396,7 @@ export async function waUpdateCaseStudy(id: string, data: any) {
     // Translation runs synchronously so it's ready when user views the case
     if (data.status === 'SUBMITTED' && caseStudy.status !== 'SUBMITTED') {
       try {
-        const translationResult = await waAutoTranslateOnSubmit(id);
-        if (translationResult.wasTranslated) {
-          console.log(`[Case Study] Auto-translated case ${id} from ${translationResult.originalLanguage} to English`);
-        } else if (translationResult.originalLanguage !== 'en') {
-          console.log(`[Case Study] Detected ${translationResult.originalLanguage} but translation not performed`);
-        }
+        await waAutoTranslateOnSubmit(id);
       } catch (err) {
         console.error(`[Case Study] Auto-translation failed for ${id}:`, err);
         // Don't fail the update if translation fails
@@ -453,7 +442,6 @@ export async function waUpdateCaseStudy(id: string, data: any) {
       caseId: id,
       error: error.message
     });
-    console.error('Error updating case study:', error);
     throw new Error('Failed to update case study');
   }
 }
@@ -497,7 +485,6 @@ export async function waDeleteCaseStudy(id: string) {
       caseId: id,
       error: error.message
     });
-    console.error('Error deleting case study:', error);
     throw new Error('Failed to delete case study');
   }
 }
@@ -549,7 +536,7 @@ export async function waGetCustomerIndustry(customerName: string): Promise<{
       industries: uniqueIndustries,
     };
   } catch (error) {
-    console.error('Error fetching customer industry:', error);
+    console.error('[Case Study] Error fetching customer industry:', error);
     return { success: false, error: 'Failed to fetch customer industry' };
   }
 }

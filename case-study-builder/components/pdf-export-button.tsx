@@ -31,8 +31,6 @@ export default function PDFExportButton({
   const handleExport = async () => {
     try {
       setIsGenerating(true);
-      console.log('[PDFExport] Generating professional PDF (Design v3) for case study:', caseStudy.id, 'Type:', caseStudy.type);
-
       // BRD 5.4.3 - Generate PDF with personalized watermark
       const pdfOptions: PDFExportOptions = {
         exportedByName: userName,
@@ -42,7 +40,6 @@ export default function PDFExportButton({
       // Async PDF generation with real images
       await downloadCaseStudyPDF(caseStudy, pdfOptions);
 
-      console.log('[PDFExport] PDF generated successfully for:', userName);
       toast.success('PDF exported successfully!');
     } catch (error) {
       console.error('[PDFExport] Error generating PDF:', error);

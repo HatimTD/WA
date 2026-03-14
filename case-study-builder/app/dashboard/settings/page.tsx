@@ -30,7 +30,6 @@ export default async function SettingsPage() {
       email: true,
       image: true,
       role: true,
-      region: true,
       totalPoints: true,
       ssoUid: true, // NetSuite employee ID
     },
@@ -38,18 +37,6 @@ export default async function SettingsPage() {
 
   if (!user) {
     redirect('/login');
-  }
-
-  // Fetch user's assigned roles from WaUserRole table
-  const userRoles = await prisma.waUserRole.findMany({
-    where: { userId: session.user.id },
-    select: { role: true },
-  });
-
-  // Get list of assigned role strings (always include current role)
-  const assignedRoles = userRoles.map((ur) => ur.role);
-  if (!assignedRoles.includes(user.role)) {
-    assignedRoles.push(user.role);
   }
 
   // Fetch user's subsidiaries
@@ -115,7 +102,6 @@ export default async function SettingsPage() {
 
       <SettingsForm
         user={user}
-        assignedRoles={assignedRoles}
         subsidiaries={subsidiaries}
         regions={regions}
         netsuiteEmployee={netsuiteEmployee}

@@ -57,7 +57,7 @@ test.describe('Accessibility Tests (WCAG 2.1 AA)', () => {
   test.describe('Authenticated Pages', () => {
     test.beforeEach(async ({ page }) => {
       // Login first
-      await page.goto('/dev-login');
+      await page.goto('/login');
       await page.waitForLoadState('networkidle');
       await page.getByLabel('Email').fill('tidihatim@gmail.com');
       await page.getByLabel('Password').fill('Godofwar@3');
@@ -190,7 +190,7 @@ test.describe('Accessibility Tests (WCAG 2.1 AA)', () => {
 
     test('page should have proper heading hierarchy (WCAG 1.3.1)', async ({ page }) => {
       // Login first
-      await page.goto('/dev-login');
+      await page.goto('/login');
       await page.getByLabel('Email').fill('tidihatim@gmail.com');
       await page.getByLabel('Password').fill('Godofwar@3');
       await page.getByLabel('Role').click();
@@ -259,7 +259,7 @@ test.describe('Accessibility Tests (WCAG 2.1 AA)', () => {
 
     test('page should have proper ARIA landmarks (WCAG 1.3.1)', async ({ page }) => {
       // Login first
-      await page.goto('/dev-login');
+      await page.goto('/login');
       await page.getByLabel('Email').fill('tidihatim@gmail.com');
       await page.getByLabel('Password').fill('Godofwar@3');
       await page.getByLabel('Role').click();
@@ -301,7 +301,7 @@ test.describe('Accessibility Tests (WCAG 2.1 AA)', () => {
       for (const pageConfig of pages) {
         if (pageConfig.requiresAuth && !isLoggedIn) {
           // Login once for all authenticated pages
-          await page.goto('/dev-login');
+          await page.goto('/login');
           await page.waitForLoadState('networkidle');
           await page.getByLabel('Email').fill('tidihatim@gmail.com');
           await page.getByLabel('Password').fill('Godofwar@3');

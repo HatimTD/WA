@@ -19,7 +19,6 @@ export function PWABackButton() {
   const hideOnPaths = [
     '/dashboard',
     '/login',
-    '/dev-login',
     '/',
   ];
 

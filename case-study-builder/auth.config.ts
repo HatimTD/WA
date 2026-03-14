@@ -9,11 +9,10 @@ export const authConfig = {
       const isLoggedIn = !!auth?.user;
       const isOnDashboard = nextUrl.pathname.startsWith('/dashboard');
       const isOnLogin = nextUrl.pathname.startsWith('/login');
-      const isOnDevLogin = nextUrl.pathname.startsWith('/dev-login');
       const isOnBreakGlass = nextUrl.pathname.startsWith('/break-glass');
 
-      // Allow dev-login, dev-register, and break-glass pages (WA Policy Section 3.1)
-      if (isOnDevLogin || nextUrl.pathname.startsWith('/dev-register') || isOnBreakGlass) {
+      // Allow break-glass emergency access (WA Policy Section 3.1)
+      if (isOnBreakGlass) {
         return true;
       }
 

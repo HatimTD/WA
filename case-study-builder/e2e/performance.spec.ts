@@ -46,7 +46,7 @@ test.describe('Performance Tests', () => {
 
     test('dashboard should load within acceptable time after login', async ({ page }) => {
       // Login
-      await page.goto('/dev-login');
+      await page.goto('/login');
       await page.getByLabel('Email').fill('tidihatim@gmail.com');
       await page.getByLabel('Password').fill('Godofwar@3');
       await page.getByLabel('Role').click();
@@ -99,8 +99,8 @@ test.describe('Performance Tests', () => {
     });
 
     test('measure First Input Delay simulation (FID)', async ({ page }) => {
-      // Use dev-login page since login page uses Google OAuth (no email input)
-      await page.goto('/dev-login');
+      // Use login page (Google OAuth) - no email/password inputs available for FID testing
+      await page.goto('/login');
       await page.waitForLoadState('networkidle');
 
       // Simulate FID by measuring time to first interaction
@@ -244,7 +244,7 @@ test.describe('Performance Tests', () => {
   test.describe('Memory Usage', () => {
     test('page should not have memory leaks during navigation', async ({ page }) => {
       // Login
-      await page.goto('/dev-login');
+      await page.goto('/login');
       await page.getByLabel('Email').fill('tidihatim@gmail.com');
       await page.getByLabel('Password').fill('Godofwar@3');
       await page.getByLabel('Role').click();

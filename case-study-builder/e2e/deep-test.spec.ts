@@ -6,7 +6,7 @@ let consoleWarnings: string[] = [];
 
 // Helper function to login as admin
 async function loginAsAdmin(page: Page) {
-  await page.goto('/dev-login', { timeout: 30000 });
+  await page.goto('/login', { timeout: 30000 });
   await page.waitForLoadState('domcontentloaded');
   await page.getByLabel('Email').fill('admin@weldingalloys.com');
   await page.getByLabel('Password').fill('TestPassword123');

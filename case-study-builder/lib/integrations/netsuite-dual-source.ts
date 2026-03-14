@@ -52,19 +52,16 @@ function waIsNetSuiteConfigured(): boolean {
  */
 async function waAutoDetectSource(): Promise<'netsuite' | 'mock'> {
   if (!waIsNetSuiteConfigured()) {
-    console.log('[NetSuite Dual-Source] Not configured, using mock data');
     return 'mock';
   }
 
   // Check if we have mock data available
   const mockCount = await prisma.waMockCustomer.count();
   if (mockCount === 0) {
-    console.log('[NetSuite Dual-Source] No mock data, attempting NetSuite');
     return 'netsuite';
   }
 
   // Default to mock for safety during testing
-  console.log('[NetSuite Dual-Source] Auto-detected: using mock data (safe default)');
   return 'mock';
 }
 
@@ -77,12 +74,9 @@ export async function waSearchCustomers(query: string): Promise<NetSuiteCustomer
     ? await waAutoDetectSource()
     : configuredSource as 'netsuite' | 'mock';
 
-  console.log(`[NetSuite Dual-Source] Searching customers with source: ${actualSource}`);
-
   if (actualSource === 'netsuite') {
     try {
       const results = await netsuiteClient.searchCustomers(query);
-      console.log(`[NetSuite] Found ${results.length} customers`);
       return results;
     } catch (error) {
       console.error('[NetSuite] Search failed, falling back to mock data:', error);
@@ -92,7 +86,6 @@ export async function waSearchCustomers(query: string): Promise<NetSuiteCustomer
 
   // Use mock data - require query for mock (no "get all" support for mock)
   if (!query || query.length < 2) {
-    console.log('[Mock DB] Empty query - returning empty array (mock does not support get all)');
     return [];
   }
 
@@ -110,8 +103,6 @@ export async function waSearchCustomers(query: string): Promise<NetSuiteCustomer
     take: 10,
     orderBy: { companyName: 'asc' },
   });
-
-  console.log(`[Mock DB] Found ${mockCustomers.length} customers`);
 
   // Transform to NetSuiteCustomer format
   return mockCustomers.map((customer) => ({
@@ -136,13 +127,10 @@ export async function waGetCustomer(id: string): Promise<NetSuiteCustomer | null
     ? await waAutoDetectSource()
     : configuredSource as 'netsuite' | 'mock';
 
-  console.log(`[NetSuite Dual-Source] Getting customer ${id} from source: ${actualSource}`);
-
   if (actualSource === 'netsuite') {
     try {
       const result = await netsuiteClient.getCustomer(id);
       if (result) {
-        console.log(`[NetSuite] Found customer ${id}`);
         return result;
       }
     } catch (error) {
@@ -157,11 +145,8 @@ export async function waGetCustomer(id: string): Promise<NetSuiteCustomer | null
   });
 
   if (!mockCustomer) {
-    console.log(`[Mock DB] Customer ${id} not found`);
     return null;
   }
-
-  console.log(`[Mock DB] Found customer ${id}`);
 
   return {
     id: mockCustomer.netsuiteId,
@@ -185,11 +170,8 @@ export async function waSearchItems(query: string): Promise<NetSuiteItem[]> {
     ? await waAutoDetectSource()
     : configuredSource as 'netsuite' | 'mock';
 
-  console.log(`[NetSuite Dual-Source] Searching items with source: ${actualSource}`);
-
   if (actualSource === 'netsuite') {
     // TODO: Implement NetSuite item search when RESTlet is working
-    console.log('[NetSuite] Item search not yet implemented, using mock data');
     actualSource = 'mock';
   }
 
@@ -212,8 +194,6 @@ export async function waSearchItems(query: string): Promise<NetSuiteItem[]> {
     take: 10,
     orderBy: { itemName: 'asc' },
   });
-
-  console.log(`[Mock DB] Found ${mockItems.length} items`);
 
   return mockItems.map((item) => ({
     id: item.netsuiteId,
@@ -241,11 +221,8 @@ export async function waGetItem(id: string): Promise<NetSuiteItem | null> {
     ? await waAutoDetectSource()
     : configuredSource as 'netsuite' | 'mock';
 
-  console.log(`[NetSuite Dual-Source] Getting item ${id} from source: ${actualSource}`);
-
   if (actualSource === 'netsuite') {
     // TODO: Implement NetSuite item get when RESTlet is working
-    console.log('[NetSuite] Item get not yet implemented, using mock data');
     actualSource = 'mock';
   }
 
@@ -255,11 +232,8 @@ export async function waGetItem(id: string): Promise<NetSuiteItem | null> {
   });
 
   if (!mockItem) {
-    console.log(`[Mock DB] Item ${id} not found`);
     return null;
   }
-
-  console.log(`[Mock DB] Found item ${id}`);
 
   return {
     id: mockItem.netsuiteId,

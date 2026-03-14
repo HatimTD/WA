@@ -65,10 +65,9 @@ export function OfflineSettings() {
         }
       } else if (response.status === 403) {
         // User is not an admin, use default config
-        console.log('[OfflineSettings] User is not admin, using default config');
+        // User is not an admin, use default config
       } else if (response.status === 401) {
         // User is not authenticated
-        console.log('[OfflineSettings] User not authenticated');
       }
     } catch (error) {
       console.error('[OfflineSettings] Error loading config:', error);

@@ -293,7 +293,6 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
   };
 
   const handleSubsidiariesChange = async (userId: string, newSubsidiaryIds: string[]) => {
-    console.log('[handleSubsidiariesChange] Starting update:', { userId, newSubsidiaryIds });
     setIsUpdating(userId);
     try {
       const response = await fetch('/api/admin/update-user-subsidiaries', {
@@ -303,22 +302,14 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
       });
 
       const result = await response.json();
-      console.log('[handleSubsidiariesChange] API response:', result);
 
       if (result.success) {
         // Update local state with new subsidiaries
         const updatedSubsidiaries: Array<{ id: string; name: string; region: string; source: string }> = result.subsidiaries || [];
         const updatedRegions: string[] = Array.from(new Set(updatedSubsidiaries.map(s => s.region)));
 
-        console.log('[handleSubsidiariesChange] Updating state with:', { updatedSubsidiaries, updatedRegions });
-
         // Update ref IMMEDIATELY (before React re-renders)
         latestSubsidiariesRef.current.set(userId, updatedSubsidiaries);
-        console.log('[handleSubsidiariesChange] Ref updated. Ref now contains:', {
-          userId,
-          refSubsidiaries: latestSubsidiariesRef.current.get(userId),
-          allRefEntries: Array.from(latestSubsidiariesRef.current.entries())
-        });
 
         setUsers((prev) =>
           prev.map((u) =>
@@ -347,18 +338,11 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
   const waToggleSubsidiary = (userId: string, subsidiaryId: string) => {
     // Prevent rapid clicks while update is in progress
     if (isUpdating === userId) {
-      console.log('[waToggleSubsidiary] Update already in progress, ignoring click');
       return;
     }
 
     // Get FRESH state from ref (updated immediately, not waiting for React re-render)
     const currentSubsidiaries = latestSubsidiariesRef.current.get(userId) || [];
-    console.log('[waToggleSubsidiary] Reading from ref:', {
-      userId,
-      currentSubsidiaries,
-      refSize: latestSubsidiariesRef.current.size,
-      hasUserId: latestSubsidiariesRef.current.has(userId)
-    });
 
     // Only toggle MANUAL subsidiaries (cannot toggle NETSUITE-sourced)
     const manualSubsidiaries = currentSubsidiaries.filter(s => s.source === 'MANUAL');
@@ -370,14 +354,6 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
 
     // Send only MANUAL subsidiary IDs to API
     const newSubsidiaryIds = newManualSubsidiaries.map(s => s.id);
-
-    console.log('[waToggleSubsidiary] Toggling subsidiary:', {
-      userId,
-      subsidiaryId,
-      currentManual: manualSubsidiaries.map(s => s.id),
-      newManual: newSubsidiaryIds,
-      isSelected
-    });
 
     handleSubsidiariesChange(userId, newSubsidiaryIds);
   };

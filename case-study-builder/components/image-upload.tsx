@@ -46,11 +46,9 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
         const formData = new FormData();
         formData.append('file', file);
 
-        console.log('[ImageUpload] Uploading file:', file.name);
         const result = await waUploadImage(formData);
 
         if (result.success && result.url && result.publicId) {
-          console.log('[ImageUpload] Upload successful:', result.url);
           return {
             url: result.url,
             publicId: result.publicId,
@@ -82,8 +80,6 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
     const imageToRemove = images[index];
 
     try {
-      console.log('[ImageUpload] Removing image:', imageToRemove.publicId);
-
       // Only delete from Cloudinary if it's not an existing image
       if (!existingImages.includes(imageToRemove.url)) {
         await waDeleteImage(imageToRemove.publicId);

@@ -5,11 +5,10 @@ import { NotificationEmail } from '@/emails/notification-email'
 
 export async function POST(req: NextRequest) {
   try {
-    // Temporarily disabled for testing - REMEMBER TO RE-ENABLE BEFORE PRODUCTION
-    // const session = await auth()
-    // if (!session?.user || session.user.role !== 'ADMIN') {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    // }
+    const session = await auth()
+    if (!session?.user || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const { html, logoUrl, templateType } = await req.json()
 

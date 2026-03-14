@@ -367,7 +367,6 @@ export function getSecretsByCategory(): Record<string, SecretHealth[]> {
  */
 export function markSecretRotated(secretName: string): void {
   secretRotationDates.set(secretName, new Date());
-  console.log(`[Secrets Manager] Secret ${secretName} marked as rotated`);
 }
 
 /**

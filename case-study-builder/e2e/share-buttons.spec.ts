@@ -10,7 +10,7 @@ test.describe('Share Buttons', () => {
   test.beforeEach(async ({ page: testPage }) => {
     page = testPage;
     // Login before each test
-    await page.goto('/dev-login');
+    await page.goto('/login');
     await page.getByLabel('Email').fill('tidihatim@gmail.com');
     await page.getByLabel('Password').fill('Godofwar@3');
     await page.getByLabel('Role').click();
@@ -57,7 +57,7 @@ test.describe('Share Buttons', () => {
         await expect(teamsBtn).toBeVisible({ timeout: 5000 });
       }
     } else {
-      test.skip('No case studies available to view');
+      test.skip(true, 'No case studies available to view');
     }
   });
 
@@ -88,7 +88,7 @@ test.describe('Share Buttons', () => {
         }
       }
     } else {
-      test.skip('No case studies available');
+      test.skip(true, 'No case studies available');
     }
   });
 
@@ -118,7 +118,7 @@ test.describe('Share Buttons', () => {
         }
       }
     } else {
-      test.skip('No case studies available');
+      test.skip(true, 'No case studies available');
     }
   });
 
@@ -148,7 +148,7 @@ test.describe('Share Buttons', () => {
         }
       }
     } else {
-      test.skip('No case studies available');
+      test.skip(true, 'No case studies available');
     }
   });
 
@@ -178,7 +178,7 @@ test.describe('Share Buttons', () => {
         });
       }
     } else {
-      test.skip('No case studies available');
+      test.skip(true, 'No case studies available');
     }
   });
 
@@ -202,7 +202,7 @@ test.describe('Share Buttons', () => {
         }
       }
     } else {
-      test.skip('No case studies available');
+      test.skip(true, 'No case studies available');
     }
   });
 });

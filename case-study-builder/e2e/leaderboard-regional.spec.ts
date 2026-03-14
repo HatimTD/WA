@@ -8,7 +8,7 @@ import { test, expect, Page } from '@playwright/test';
 test.setTimeout(60000);
 
 async function waLoginAsAdmin(page: Page) {
-  await page.goto('/dev-login', { timeout: 30000 });
+  await page.goto('/login', { timeout: 30000 });
   await page.waitForLoadState('domcontentloaded');
 
   await page.getByLabel('Email').fill('admin@weldingalloys.com');

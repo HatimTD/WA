@@ -42,20 +42,11 @@ type WaCostCalculationData = {
 };
 
 export async function waSaveCostCalculation(data: WaCostCalculationData) {
-  console.log('waSaveCostCalculation called with data:', {
-    caseStudyId: data.caseStudyId,
-    materialCostBefore: data.materialCostBefore,
-    totalCostBefore: data.totalCostBefore,
-    annualSavings: data.annualSavings,
-  });
-
   try {
     // Check if calculation already exists
     const existing = await prisma.waCostCalculator.findUnique({
       where: { caseStudyId: data.caseStudyId },
     });
-
-    console.log('Existing calculation:', existing ? 'Found' : 'Not found');
 
     let calculation;
 
@@ -105,7 +96,6 @@ export async function waSaveCostCalculation(data: WaCostCalculationData) {
           ...granularLifetimeData,
         },
       });
-      console.log('Calculation updated successfully');
     } else {
       // Create new calculation
       calculation = await prisma.waCostCalculator.create({
@@ -138,7 +128,6 @@ export async function waSaveCostCalculation(data: WaCostCalculationData) {
           ...granularLifetimeData,
         },
       });
-      console.log('Calculation created successfully');
     }
 
     return {

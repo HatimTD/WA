@@ -103,9 +103,9 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between mb-4">
             <Link href="/library">
@@ -126,8 +126,8 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
           </div>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{caseStudy.componentWorkpiece || caseStudy.industry}</h1>
-              <p className="text-gray-600 mt-2">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{caseStudy.componentWorkpiece || caseStudy.industry}</h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-2">
                 {caseStudy.industry} • {caseStudy.location}
               </p>
             </div>
@@ -158,29 +158,29 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
               <div className="flex items-start gap-3">
                 <MapPin className="h-5 w-5 text-wa-green-600 mt-0.5" />
                 <div>
-                  <p className="font-medium text-sm text-gray-600">Location</p>
-                  <p className="text-gray-900">{caseStudy.location}, {caseStudy.country}</p>
+                  <p className="font-medium text-sm text-gray-600 dark:text-gray-400">Location</p>
+                  <p className="text-gray-900 dark:text-gray-100">{caseStudy.location}, {caseStudy.country}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <Building2 className="h-5 w-5 text-wa-green-600 mt-0.5" />
                 <div>
-                  <p className="font-medium text-sm text-gray-600">Industry</p>
-                  <p className="text-gray-900">{caseStudy.industry}</p>
+                  <p className="font-medium text-sm text-gray-600 dark:text-gray-400">Industry</p>
+                  <p className="text-gray-900 dark:text-gray-100">{caseStudy.industry}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <Package className="h-5 w-5 text-wa-green-600 mt-0.5" />
                 <div>
-                  <p className="font-medium text-sm text-gray-600">Component/Workpiece</p>
-                  <p className="text-gray-900">{caseStudy.componentWorkpiece}</p>
+                  <p className="font-medium text-sm text-gray-600 dark:text-gray-400">Component/Workpiece</p>
+                  <p className="text-gray-900 dark:text-gray-100">{caseStudy.componentWorkpiece}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <Wrench className="h-5 w-5 text-wa-green-600 mt-0.5" />
                 <div>
-                  <p className="font-medium text-sm text-gray-600">Business Type</p>
-                  <p className="text-gray-900">{({
+                  <p className="font-medium text-sm text-gray-600 dark:text-gray-400">Business Type</p>
+                  <p className="text-gray-900 dark:text-gray-100">{({
                     'INTEGRA_WORKSHOP': 'Integra - Workshop',
                     'INTEGRA_ON_SITE': 'Integra - On Site',
                     'INTEGRA_COMBINATION': 'Integra - Combination',
@@ -195,8 +195,8 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
                 <div className="flex items-start gap-3">
                   <Wrench className="h-5 w-5 text-wa-green-600 mt-0.5" />
                   <div>
-                    <p className="font-medium text-sm text-gray-600">Job Type</p>
-                    <p className="text-gray-900">
+                    <p className="font-medium text-sm text-gray-600 dark:text-gray-400">Job Type</p>
+                    <p className="text-gray-900 dark:text-gray-100">
                       {waFormatJobType(caseStudy.jobType, caseStudy.jobTypeOther)}
                     </p>
                   </div>
@@ -206,8 +206,8 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
                 <div className="flex items-start gap-3">
                   <Package className="h-5 w-5 text-wa-green-600 mt-0.5" />
                   <div>
-                    <p className="font-medium text-sm text-gray-600">OEM</p>
-                    <p className="text-gray-900">{caseStudy.oem}</p>
+                    <p className="font-medium text-sm text-gray-600 dark:text-gray-400">OEM</p>
+                    <p className="text-gray-900 dark:text-gray-100">{caseStudy.oem}</p>
                   </div>
                 </div>
               )}
@@ -215,7 +215,7 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
                 <div className="flex items-start gap-3 md:col-span-2">
                   <FileText className="h-5 w-5 text-wa-green-600 mt-0.5" />
                   <div className="flex-1">
-                    <p className="font-medium text-sm text-gray-600 mb-2">Wear Types</p>
+                    <p className="font-medium text-sm text-gray-600 dark:text-gray-400 mb-2">Wear Types</p>
                     <WearTypeStarsDisplay
                       wearTypes={caseStudy.wearType}
                       wearSeverities={caseStudy.wearSeverities as Record<string, number> | null}
@@ -228,8 +228,8 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
               <div className="flex items-start gap-3 md:col-span-2">
                 <Calendar className="h-5 w-5 text-wa-green-600 mt-0.5" />
                 <div>
-                  <p className="font-medium text-sm text-gray-600">Approved</p>
-                  <p className="text-gray-900">
+                  <p className="font-medium text-sm text-gray-600 dark:text-gray-400">Approved</p>
+                  <p className="text-gray-900 dark:text-gray-100">
                     {caseStudy.approvedAt
                       ? new Date(caseStudy.approvedAt).toLocaleDateString('en-US', {
                           year: 'numeric',
@@ -250,7 +250,7 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
             <CardTitle>Problem Description</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-700 whitespace-pre-wrap">{displayContent.problemDescription}</p>
+            <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{displayContent.problemDescription}</p>
           </CardContent>
         </Card>
 
@@ -260,15 +260,15 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
               <CardTitle>Previous Solution</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-700 whitespace-pre-wrap">{displayContent.previousSolution}</p>
+              <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{displayContent.previousSolution}</p>
               {caseStudy.previousServiceLife && (
-                <p className="text-sm text-gray-600 mt-2">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                   <span className="font-medium">Previous Service Life:</span>{' '}
                   {caseStudy.previousServiceLife}
                 </p>
               )}
               {caseStudy.competitorName && (
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                   <span className="font-medium">Competitor:</span> {caseStudy.competitorName}
                 </p>
               )}
@@ -304,12 +304,12 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
             </div>
             <div>
               <p className="font-medium text-sm text-green-700 mb-2">Solution Description</p>
-              <p className="text-gray-700 whitespace-pre-wrap">{displayContent.waSolution}</p>
+              <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{displayContent.waSolution}</p>
             </div>
             {displayContent.technicalAdvantages && (
               <div>
                 <p className="font-medium text-sm text-green-700 mb-2">Technical Advantages</p>
-                <p className="text-gray-700 whitespace-pre-wrap">
+                <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
                   {displayContent.technicalAdvantages}
                 </p>
               </div>
@@ -335,7 +335,7 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
                 years: caseStudy.expectedServiceLifeYears,
               })) && (
                 <div>
-                  <p className="font-medium text-sm text-gray-600 mb-1">Service Life</p>
+                  <p className="font-medium text-sm text-gray-600 dark:text-gray-400 mb-1">Service Life</p>
                   <p className="text-2xl font-bold text-wa-green-600">
                     {waFormatExpandedServiceLife({
                       hours: caseStudy.expectedServiceLifeHours,
@@ -349,7 +349,7 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
               )}
               {caseStudy.solutionValueRevenue && (
                 <div>
-                  <p className="font-medium text-sm text-gray-600 mb-1">Solution Revenue</p>
+                  <p className="font-medium text-sm text-gray-600 dark:text-gray-400 mb-1">Solution Revenue</p>
                   <p className="text-2xl font-bold text-green-600">
                     ${parseFloat(caseStudy.solutionValueRevenue.toString()).toLocaleString()}
                   </p>
@@ -357,7 +357,7 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
               )}
               {caseStudy.customerSavingsAmount && (
                 <div>
-                  <p className="font-medium text-sm text-gray-600 mb-1">Customer Savings</p>
+                  <p className="font-medium text-sm text-gray-600 dark:text-gray-400 mb-1">Customer Savings</p>
                   <p className="text-2xl font-bold text-orange-600">
                     ${parseFloat(caseStudy.customerSavingsAmount.toString()).toLocaleString()}
                   </p>
@@ -410,38 +410,38 @@ export default async function PublicCaseDetailPage({ params }: { params: Promise
               <div className="grid md:grid-cols-2 gap-6 text-sm">
                 {caseStudy.wps.baseMetalType && (
                   <div>
-                    <p className="font-medium text-gray-600">Base Metal Type</p>
-                    <p className="text-gray-900">{caseStudy.wps.baseMetalType}</p>
+                    <p className="font-medium text-gray-600 dark:text-gray-400">Base Metal Type</p>
+                    <p className="text-gray-900 dark:text-gray-100">{caseStudy.wps.baseMetalType}</p>
                   </div>
                 )}
                 {caseStudy.wps.weldingProcess && (
                   <div>
-                    <p className="font-medium text-gray-600">Welding Process</p>
-                    <p className="text-gray-900">{caseStudy.wps.weldingProcess}</p>
+                    <p className="font-medium text-gray-600 dark:text-gray-400">Welding Process</p>
+                    <p className="text-gray-900 dark:text-gray-100">{caseStudy.wps.weldingProcess}</p>
                   </div>
                 )}
                 {caseStudy.wps.shieldingGas && (
                   <div>
-                    <p className="font-medium text-gray-600">Shielding Gas</p>
-                    <p className="text-gray-900">{caseStudy.wps.shieldingGas}</p>
+                    <p className="font-medium text-gray-600 dark:text-gray-400">Shielding Gas</p>
+                    <p className="text-gray-900 dark:text-gray-100">{caseStudy.wps.shieldingGas}</p>
                   </div>
                 )}
                 {caseStudy.wps.currentType && (
                   <div>
-                    <p className="font-medium text-gray-600">Current Type</p>
-                    <p className="text-gray-900">{caseStudy.wps.currentType}</p>
+                    <p className="font-medium text-gray-600 dark:text-gray-400">Current Type</p>
+                    <p className="text-gray-900 dark:text-gray-100">{caseStudy.wps.currentType}</p>
                   </div>
                 )}
                 {caseStudy.wps.voltage && (
                   <div>
-                    <p className="font-medium text-gray-600">Voltage</p>
-                    <p className="text-gray-900">{caseStudy.wps.voltage}</p>
+                    <p className="font-medium text-gray-600 dark:text-gray-400">Voltage</p>
+                    <p className="text-gray-900 dark:text-gray-100">{caseStudy.wps.voltage}</p>
                   </div>
                 )}
                 {caseStudy.wps.intensity && (
                   <div>
-                    <p className="font-medium text-gray-600">Current/Intensity</p>
-                    <p className="text-gray-900">{caseStudy.wps.intensity}</p>
+                    <p className="font-medium text-gray-600 dark:text-gray-400">Current/Intensity</p>
+                    <p className="text-gray-900 dark:text-gray-100">{caseStudy.wps.intensity}</p>
                   </div>
                 )}
               </div>

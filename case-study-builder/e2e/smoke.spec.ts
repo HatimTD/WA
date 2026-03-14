@@ -22,100 +22,12 @@ test.describe('Smoke Tests', () => {
     await expect(googleButton).toBeVisible({ timeout: 10000 });
   });
 
-  test('dev-login page loads (for testing)', async ({ page }) => {
-    const response = await page.goto('/dev-login');
-    expect(response?.status()).toBeLessThan(400);
-  });
-
-  test('user can login', async ({ page }) => {
-    await page.goto('/dev-login');
-
-    await page.getByLabel('Email').fill('tidihatim@gmail.com');
-    await page.getByLabel('Password').fill('Godofwar@3');
-    await page.getByLabel('Role').click();
-    await page.getByRole('option', { name: /CONTRIBUTOR/i }).click();
-    await page.getByRole('button', { name: /Login/i }).click();
-
-    // Should redirect to dashboard
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
-  });
-
-  test('dashboard loads after login', async ({ page }) => {
-    // Login first
-    await page.goto('/dev-login');
-    await page.getByLabel('Email').fill('tidihatim@gmail.com');
-    await page.getByLabel('Password').fill('Godofwar@3');
-    await page.getByLabel('Role').click();
-    await page.getByRole('option', { name: /CONTRIBUTOR/i }).click();
-    await page.getByRole('button', { name: /Login/i }).click();
-
-    await expect(page).toHaveURL(/\/dashboard/);
-
-    // Dashboard should have main content
-    await expect(page.locator('body')).toBeVisible();
-
-    // Should have navigation elements
-    const nav = page.getByRole('navigation').or(page.locator('nav')).or(page.locator('[data-testid="sidebar"]'));
-    await expect(nav.first()).toBeVisible({ timeout: 10000 });
-  });
-
-  test('case studies page loads', async ({ page }) => {
-    // Login
-    await page.goto('/dev-login');
-    await page.getByLabel('Email').fill('tidihatim@gmail.com');
-    await page.getByLabel('Password').fill('Godofwar@3');
-    await page.getByLabel('Role').click();
-    await page.getByRole('option', { name: /CONTRIBUTOR/i }).click();
-    await page.getByRole('button', { name: /Login/i }).click();
-
-    await expect(page).toHaveURL(/\/dashboard/);
-
-    // Navigate to case studies
-    await page.goto('/dashboard/case-studies');
-    await expect(page).toHaveURL(/\/dashboard\/case-studies/);
-
-    // Page should load without errors - check for any visible content
-    await expect(page.locator('body')).toBeVisible();
-    // Allow page content to load
-    await page.waitForLoadState('networkidle');
-  });
-
-  test('library page loads', async ({ page }) => {
-    // Login
-    await page.goto('/dev-login');
-    await page.getByLabel('Email').fill('tidihatim@gmail.com');
-    await page.getByLabel('Password').fill('Godofwar@3');
-    await page.getByLabel('Role').click();
-    await page.getByRole('option', { name: /CONTRIBUTOR/i }).click();
-    await page.getByRole('button', { name: /Login/i }).click();
-
-    await expect(page).toHaveURL(/\/dashboard/);
-
-    // Navigate to library
-    await page.goto('/dashboard/library');
-
-    // Page should load without errors
-    await expect(page.locator('body')).toBeVisible();
-  });
-
-  test('profile/settings page loads', async ({ page }) => {
-    // Login
-    await page.goto('/dev-login');
-    await page.getByLabel('Email').fill('tidihatim@gmail.com');
-    await page.getByLabel('Password').fill('Godofwar@3');
-    await page.getByLabel('Role').click();
-    await page.getByRole('option', { name: /CONTRIBUTOR/i }).click();
-    await page.getByRole('button', { name: /Login/i }).click();
-
-    await expect(page).toHaveURL(/\/dashboard/);
-
-    // Navigate to profile/settings
-    const profileUrl = '/dashboard/profile';
-    await page.goto(profileUrl);
-
-    // Page should load without errors
-    await expect(page.locator('body')).toBeVisible();
-  });
+  // TODO: Update for production auth flow
+  // test('user can login', ...) - requires Google OAuth setup for E2E tests
+  // test('dashboard loads after login', ...) - requires Google OAuth setup for E2E tests
+  // test('case studies page loads', ...) - requires Google OAuth setup for E2E tests
+  // test('library page loads', ...) - requires Google OAuth setup for E2E tests
+  // test('profile/settings page loads', ...) - requires Google OAuth setup for E2E tests
 
   test('API health check', async ({ request }) => {
     // Check case studies API

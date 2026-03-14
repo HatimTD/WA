@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Navigation', () => {
   test.beforeEach(async ({ page }) => {
     // Login before each test
-    await page.goto('/dev-login');
+    await page.goto('/login');
     await page.waitForLoadState('networkidle');
     await page.getByLabel('Email').fill('tidihatim@gmail.com');
     await page.getByLabel('Password').fill('Godofwar@3');

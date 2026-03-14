@@ -50,6 +50,7 @@ export async function waGetLeaderboardData(region?: string | null) {
       orderBy: {
         totalPoints: 'desc',
       },
+      take: 100,
     });
 
     const leaderboardUsers: LeaderboardUser[] = users.map((user) => ({

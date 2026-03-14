@@ -116,7 +116,6 @@ export default function NetSuiteCustomerSearch({
       try {
         // Wait for user subsidiaries to load before filtering
         if (userSubsidiaries === null) {
-          console.log('[Customer Search] Waiting for user subsidiaries to load...');
           setIsLoading(false);
           return;
         }
@@ -140,23 +139,15 @@ export default function NetSuiteCustomerSearch({
 
             // If less than 80% have subsidiary data, consider it stale
             if (percentageWithData < 80) {
-              console.log('[Hybrid Cache] ⚠️ STALE CACHE DETECTED - Low subsidiary data quality');
-              console.log(`[Hybrid Cache] Only ${percentageWithData.toFixed(1)}% have subsidiary data`);
-              console.log('[Hybrid Cache] Clearing old cache and refetching from server...');
               await indexedDBCache.del(cacheKey);
               allCustomers = null; // Force refetch
-            } else {
-              console.log(`[Hybrid Cache] IndexedDB HIT - ${allCustomers.length} customers (${percentageWithData.toFixed(1)}% have subsidiary data)`);
             }
           }
 
           if (!allCustomers || allCustomers.length === 0) {
             // 2. Not in IndexedDB or stale cache, fetch from server
             if (allCustomers && allCustomers.length === 0) {
-              console.log('[Hybrid Cache] IndexedDB has empty data, clearing and refetching...');
               await indexedDBCache.del(cacheKey);
-            } else {
-              console.log('[Hybrid Cache] IndexedDB MISS, fetching from server...');
             }
 
             // Deduplicate: if a fetch is already in progress, wait for it
@@ -170,8 +161,6 @@ export default function NetSuiteCustomerSearch({
               }).finally(() => {
                 fetchInProgressRef.current = null;
               });
-            } else {
-              console.log('[Hybrid Cache] Server fetch already in progress, waiting...');
             }
 
             const fetchedCustomers = await fetchInProgressRef.current;
@@ -180,11 +169,9 @@ export default function NetSuiteCustomerSearch({
               cacheHadData = true;
               // 3. Cache in IndexedDB for 1 week
               await indexedDBCache.set(cacheKey, allCustomers, 604800000);
-              console.log(`[Hybrid Cache] Cached ${allCustomers.length} customers in IndexedDB (with subsidiary data)`);
             }
           } else {
             cacheHadData = true;
-            console.log(`[Hybrid Cache] IndexedDB HIT - ${allCustomers.length} customers`);
           }
 
           // 4. Filter customers client-side based on search query AND subsidiaries
@@ -221,15 +208,6 @@ export default function NetSuiteCustomerSearch({
               })
               .slice(0, 10);
 
-            // DIAGNOSTIC: Show what passed the filter
-            if (userSubsidiaries?.shouldFilter && filteredCustomers.length > 0) {
-              console.log(`[Filter DEBUG] === CUSTOMERS THAT PASSED FILTER (${filteredCustomers.length} total) ===`);
-              filteredCustomers.forEach((c, i) => {
-                console.log(`  ${i + 1}. "${c.companyName}" | Subsidiary: "${c.subsidiarynohierarchy}" | Country: ${c.country}`);
-              });
-              console.log('[Filter DEBUG] Your subsidiary IDs:', userSubsidiaries.subsidiaryIds);
-              console.log('[Filter DEBUG] shouldFilter:', userSubsidiaries.shouldFilter);
-            }
           }
         } catch (cacheError) {
           console.warn('[Hybrid Cache] Failed:', cacheError);
@@ -238,11 +216,9 @@ export default function NetSuiteCustomerSearch({
         // FALLBACK: Only trigger when cache was genuinely empty (not loaded),
         // NOT when search simply returned 0 matches from a populated cache.
         if (!cacheHadData && filteredCustomers.length === 0) {
-          console.log('[Fallback] Cache is empty, using direct NetSuite search...');
           const fallbackResult = await waSearchNetSuiteCustomers(searchQuery);
           if (fallbackResult.success && fallbackResult.customers) {
             filteredCustomers = fallbackResult.customers;
-            console.log(`[Fallback] Got ${filteredCustomers.length} customers from direct search`);
           }
         }
 

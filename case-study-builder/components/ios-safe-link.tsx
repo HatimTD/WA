@@ -33,7 +33,6 @@ export function IOSSafeLink({ children, href, className, prefetch, ...props }: I
       e.stopPropagation();
 
       const url = typeof href === 'string' ? href : href.pathname || '/';
-      console.log('[IOSSafeLink] Navigating to:', url);
 
       // Use window.location.replace for iOS standalone mode
       // This maintains standalone mode better than router.push()

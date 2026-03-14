@@ -12,7 +12,7 @@ test.setTimeout(90000);
 
 // Helper function to login
 async function waLoginAsAdmin(page: Page) {
-  await page.goto('/dev-login', { timeout: 30000 });
+  await page.goto('/login', { timeout: 30000 });
   await page.waitForLoadState('domcontentloaded');
 
   await page.getByLabel('Email').fill('admin@weldingalloys.com');

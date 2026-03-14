@@ -162,16 +162,6 @@ export async function waLogAuditTrail(
       },
     });
 
-    // Also log to console in development for debugging
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[WA Audit Log]', {
-        actionType,
-        userId,
-        userEmail,
-        resourceId: options.resourceId,
-        timestamp: auditEntry.timestamp,
-      });
-    }
   } catch (error) {
     // Audit logging should never break the application flow
     // Log the error but don't throw

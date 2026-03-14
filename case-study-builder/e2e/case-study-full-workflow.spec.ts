@@ -17,7 +17,7 @@ const TEST_USER = {
 
 // Helper: Login as admin
 async function waLoginAsAdmin(page: Page) {
-  await page.goto(`${BASE_URL}/dev-login`);
+  await page.goto(`${BASE_URL}/login`);
   await page.waitForLoadState('networkidle');
   await page.getByLabel('Email').fill(TEST_USER.email);
   await page.getByLabel('Password').fill(TEST_USER.password);

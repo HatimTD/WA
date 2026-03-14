@@ -38,7 +38,7 @@ test.describe('PWA Offline Functionality', () => {
   test.describe('Offline Indicator', () => {
     test('should show offline indicator when offline', async ({ page, context }) => {
       // Navigate to dashboard first while online
-      await page.goto('/dev-login');
+      await page.goto('/login');
       await page.waitForLoadState('networkidle');
 
       // Go offline
@@ -55,7 +55,7 @@ test.describe('PWA Offline Functionality', () => {
 
     test('should show online indicator when coming back online', async ({ page, context }) => {
       // Start online
-      await page.goto('/dev-login');
+      await page.goto('/login');
       await page.waitForLoadState('networkidle');
 
       // Go offline
@@ -132,7 +132,7 @@ test.describe('PWA Offline Functionality', () => {
       // Set mobile viewport
       await page.setViewportSize({ width: 375, height: 667 });
 
-      await page.goto('/dev-login');
+      await page.goto('/login');
       await page.waitForLoadState('networkidle');
 
       await page.goto('/dashboard/leaderboard');
@@ -148,7 +148,7 @@ test.describe('PWA Offline Functionality', () => {
     test('analytics page should be responsive on mobile', async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 667 });
 
-      await page.goto('/dev-login');
+      await page.goto('/login');
       await page.waitForLoadState('networkidle');
 
       await page.goto('/dashboard/analytics');
@@ -165,7 +165,7 @@ test.describe('PWA Offline Functionality', () => {
     test('compare page should be responsive on mobile', async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 667 });
 
-      await page.goto('/dev-login');
+      await page.goto('/login');
       await page.waitForLoadState('networkidle');
 
       await page.goto('/dashboard/compare');

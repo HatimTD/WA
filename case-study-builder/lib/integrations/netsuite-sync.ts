@@ -48,8 +48,6 @@ export async function runNetSuiteSync(): Promise<SyncResult> {
     },
   });
 
-  console.log('[NetSuite Sync] Starting sync job:', job.id);
-
   let totalRecords = 0;
   let newRecords = 0;
   let updatedRecords = 0;
@@ -61,7 +59,6 @@ export async function runNetSuiteSync(): Promise<SyncResult> {
     const customers = await fetchAllNetSuiteCustomers();
 
     totalRecords = customers.length;
-    console.log('[NetSuite Sync] Fetched customers:', totalRecords);
 
     // Process each customer
     for (const customer of customers) {
@@ -92,7 +89,6 @@ export async function runNetSuiteSync(): Promise<SyncResult> {
     });
 
     const duration = Date.now() - startTime;
-    console.log('[NetSuite Sync] Sync completed in', duration, 'ms');
 
     return {
       success: true,
@@ -143,7 +139,6 @@ async function fetchAllNetSuiteCustomers(): Promise<NetSuiteCustomer[]> {
   try {
     // Check if NetSuite is configured
     if (!process.env.NETSUITE_ACCOUNT_ID || !process.env.NETSUITE_REST_URL) {
-      console.log('[NetSuite Sync] NetSuite not configured, using mock data');
       return getMockCustomersForSync();
     }
 
@@ -316,16 +311,11 @@ export async function waSyncNetSuiteEmployees(): Promise<{
   let updatedEmployees = 0;
 
   try {
-    console.log('[NetSuite Employee Sync] Starting employee sync...');
-
     // Fetch all employees from NetSuite (uses Redis cache if available)
     const employees = await netsuiteClient.searchEmployees();
     totalEmployees = employees.length;
 
-    console.log(`[NetSuite Employee Sync] Fetched ${totalEmployees} employees`);
-
     if (totalEmployees === 0) {
-      console.log('[NetSuite Employee Sync] No employees returned (likely RESTlet bug)');
       return {
         success: false,
         totalEmployees: 0,
@@ -341,7 +331,6 @@ export async function waSyncNetSuiteEmployees(): Promise<{
         // Use email as unique identifier (NetSuite RESTlet doesn't return internalId for bulk employee fetch)
         const email = (employee.email || '').toLowerCase().trim();
         if (!email || email.length < 3) {
-          console.log(`[NetSuite Employee Sync] Skipping employee without valid email: ${employee.firstname} ${employee.lastname}`);
           continue;
         }
 
@@ -397,9 +386,6 @@ export async function waSyncNetSuiteEmployees(): Promise<{
       }
     }
 
-    const duration = Date.now() - startTime;
-    console.log(`[NetSuite Employee Sync] Completed in ${duration}ms - ${newEmployees} new, ${updatedEmployees} updated`);
-
     return {
       success: true,
       totalEmployees,
@@ -433,17 +419,12 @@ export async function waSyncNetSuiteItems(): Promise<{
   const startTime = Date.now();
 
   try {
-    console.log('[NetSuite Items Sync] Starting items sync...');
-
     // Clear existing items cache first
     await netsuiteClient.clearCache();
 
     // Fetch fresh items by triggering a search (which will repopulate the cache)
     const items = await netsuiteClient.searchItems('');
     const totalItems = items.length;
-
-    const duration = Date.now() - startTime;
-    console.log(`[NetSuite Items Sync] Completed in ${duration}ms - ${totalItems} items cached`);
 
     return {
       success: true,
@@ -480,12 +461,8 @@ export async function waSyncNetSuiteSubsidiaries(): Promise<{
   let updatedSubsidiaries = 0;
 
   try {
-    console.log('[NetSuite Subsidiary Sync] Starting subsidiary sync...');
-
     const subsidiaries = await netsuiteClient.searchSubsidiaries();
     totalSubsidiaries = subsidiaries.length;
-
-    console.log(`[NetSuite Subsidiary Sync] Fetched ${totalSubsidiaries} subsidiaries`);
 
     if (totalSubsidiaries === 0) {
       return {
@@ -542,9 +519,6 @@ export async function waSyncNetSuiteSubsidiaries(): Promise<{
         console.error(`[NetSuite Subsidiary Sync] Error upserting subsidiary ${sub.internalid}:`, error);
       }
     }
-
-    const duration = Date.now() - startTime;
-    console.log(`[NetSuite Subsidiary Sync] Completed in ${duration}ms - ${newSubsidiaries} new, ${updatedSubsidiaries} updated`);
 
     return {
       success: true,

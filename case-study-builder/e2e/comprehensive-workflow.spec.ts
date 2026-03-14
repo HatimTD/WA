@@ -21,7 +21,7 @@ const TEST_USER = {
 
 // Helper function to login as admin
 async function waLoginAsAdmin(page: Page) {
-  await page.goto(`${BASE_URL}/dev-login`);
+  await page.goto(`${BASE_URL}/login`);
   await page.waitForLoadState('networkidle');
 
   // Fill in email
@@ -43,7 +43,7 @@ async function waLoginAsAdmin(page: Page) {
 
 // Helper function to login as contributor
 async function waLoginAsContributor(page: Page) {
-  await page.goto(`${BASE_URL}/dev-login`);
+  await page.goto(`${BASE_URL}/login`);
   await page.waitForLoadState('networkidle');
 
   // Fill in email
