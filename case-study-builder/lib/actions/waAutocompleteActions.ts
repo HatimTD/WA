@@ -1,6 +1,7 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/auth';
 
 export async function waGetSearchSuggestions(query: string) {
   if (!query || query.length < 2) {
@@ -11,6 +12,9 @@ export async function waGetSearchSuggestions(query: string) {
   }
 
   try {
+    const session = await auth();
+    const canSeeCustomerName = session?.user?.role === 'ADMIN' || session?.user?.role === 'APPROVER';
+
     // Search approved case studies for autocomplete (including title)
     const results = await prisma.waCaseStudy.findMany({
       where: {
@@ -22,12 +26,13 @@ export async function waGetSearchSuggestions(query: string) {
               mode: 'insensitive',
             },
           },
-          {
+          // Only search by customerName for ADMIN/APPROVER
+          ...(canSeeCustomerName ? [{
             customerName: {
               contains: query,
-              mode: 'insensitive',
+              mode: 'insensitive' as const,
             },
-          },
+          }] : []),
           {
             industry: {
               contains: query,
@@ -70,10 +75,10 @@ export async function waGetSearchSuggestions(query: string) {
       },
     });
 
-    // Create unique suggestions (use title if available, otherwise fallback to customer - component)
+    // Create unique suggestions - hide customerName for non-ADMIN/APPROVER
     const suggestions = results.map((r) => ({
       id: r.id,
-      title: r.title || `${r.customerName} - ${r.componentWorkpiece}`,
+      title: r.title || (canSeeCustomerName ? `${r.customerName} - ${r.componentWorkpiece}` : r.componentWorkpiece),
       industry: r.industry,
       location: r.location,
       product: r.waProduct,

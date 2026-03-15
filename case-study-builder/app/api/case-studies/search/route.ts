@@ -172,10 +172,13 @@ export async function GET(request: NextRequest) {
     suggestions.push(...products.map((p) => p.waProduct));
 
     // Transform cases to flatten currency from costCalculator
+    // Strip customerName from response for non-ADMIN/APPROVER roles (server-side protection)
     const transformedCases = cases.map(caseStudy => {
-      const { costCalculator, ...rest } = caseStudy;
+      const { costCalculator, customerName, ...rest } = caseStudy;
       return {
         ...rest,
+        // Only include customerName for ADMIN/APPROVER
+        ...(canSeeCustomerName ? { customerName } : { customerName: '' }),
         // Use costCalculator currency if available, otherwise use case study currency, default to EUR
         currency: costCalculator?.currency || rest.currency || 'EUR',
       };

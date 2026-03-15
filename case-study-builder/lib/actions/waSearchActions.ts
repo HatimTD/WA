@@ -231,8 +231,10 @@ export async function waSearchCaseStudies(filters: WaSearchFilters) {
     });
 
     // Convert Decimal fields to numbers for client components
+    // Strip customerName from response for non-ADMIN/APPROVER roles (server-side protection)
     const serializedCaseStudies = caseStudies.map(cs => ({
       ...cs,
+      customerName: canSearchByCustomer ? cs.customerName : '',
       solutionValueRevenue: cs.solutionValueRevenue ? Number(cs.solutionValueRevenue) : null,
       annualPotentialRevenue: cs.annualPotentialRevenue ? Number(cs.annualPotentialRevenue) : null,
       customerSavingsAmount: cs.customerSavingsAmount ? Number(cs.customerSavingsAmount) : null,
