@@ -77,9 +77,13 @@ export async function GET(
     }
 
     // Transform to flatten currency from costCalculator or revenueCurrency
-    const { costCalculator, wps, ...rest } = caseStudy;
+    // Strip customerName from response for non-ADMIN/APPROVER roles (server-side protection)
+    const canSeeCustomerName = session?.user?.role === 'ADMIN' || session?.user?.role === 'APPROVER';
+    const { costCalculator, wps, customerName, ...rest } = caseStudy;
     const transformedCase = {
       ...rest,
+      // Only include customerName for ADMIN/APPROVER
+      ...(canSeeCustomerName ? { customerName } : { customerName: '' }),
       // Use costCalculator currency (STAR) if available, otherwise use revenueCurrency (APPLICATION), default to EUR
       currency: costCalculator?.currency || rest.revenueCurrency || rest.currency || 'EUR',
       // Flag to indicate if WPS is filled (for STAR +4 bonus point display)

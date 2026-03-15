@@ -17,13 +17,10 @@ import {
   Package,
   Wrench,
   DollarSign,
-  Loader2,
   ChevronDown,
   ChevronUp,
   ArrowLeftRight,
-  Download,
   Filter,
-  Trophy,
   TrendingUp,
   Eye,
   EyeOff,
@@ -34,7 +31,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { downloadComparisonPDF, type ComparisonPDFData } from '@/lib/pdf-export';
 import { WearTypeStarsDisplay } from '@/components/wear-type-progress-bar';
 import { waFormatJobType } from '@/lib/waUtils';
 
@@ -133,7 +129,6 @@ export default function ComparePage() {
   );
   const [showFilter, setShowFilter] = useState(false);
   const [hiddenFields, setHiddenFields] = useState<Set<string>>(new Set());
-  const [isPrintMode, setIsPrintMode] = useState(false);
 
   // Currency symbols mapping
   const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -256,70 +251,6 @@ export default function ComparePage() {
     setHiddenFields(newHidden);
   };
 
-  const handleExport = () => {
-    // BRD 3.4F - Side-by-side comparison PDF with highlighted metrics
-    const pdfCases = selectedCases.map(cs => {
-      if (!cs) return null;
-      return {
-        id: cs.id,
-        type: cs.type,
-        customerName: canSeeCustomerName ? cs.customerName : cs.componentWorkpiece,
-        industry: cs.industry,
-        location: cs.location,
-        country: cs.country,
-        componentWorkpiece: cs.componentWorkpiece,
-        workType: cs.workType,
-        wearType: cs.wearType,
-        wearSeverities: cs.wearSeverities,
-        wearTypeOthers: cs.wearTypeOthers,
-        problemDescription: cs.problemDescription,
-        previousSolution: cs.previousSolution,
-        baseMetal: cs.baseMetal,
-        generalDimensions: cs.generalDimensions,
-        waSolution: cs.waSolution,
-        waProduct: cs.waProduct,
-        waProductDiameter: cs.waProductDiameter,
-        technicalAdvantages: cs.technicalAdvantages,
-        expectedServiceLife: waFormatExpandedServiceLife({
-          hours: cs.expectedServiceLifeHours,
-          days: cs.expectedServiceLifeDays,
-          weeks: cs.expectedServiceLifeWeeks,
-          months: cs.expectedServiceLifeMonths,
-          years: cs.expectedServiceLifeYears,
-        }) || cs.expectedServiceLife,
-        previousServiceLife: waFormatExpandedServiceLife({
-          hours: cs.previousServiceLifeHours,
-          days: cs.previousServiceLifeDays,
-          weeks: cs.previousServiceLifeWeeks,
-          months: cs.previousServiceLifeMonths,
-          years: cs.previousServiceLifeYears,
-        }) || cs.previousServiceLife,
-        solutionValueRevenue: cs.solutionValueRevenue,
-        annualPotentialRevenue: cs.annualPotentialRevenue,
-        customerSavingsAmount: cs.customerSavingsAmount,
-        jobType: cs.jobType,
-        jobTypeOther: cs.jobTypeOther,
-        oem: cs.oem,
-        jobDurationHours: cs.jobDurationHours,
-        jobDurationDays: cs.jobDurationDays,
-        jobDurationWeeks: cs.jobDurationWeeks,
-        approvedAt: cs.approvedAt,
-        currency: cs.currency,
-      } as ComparisonPDFData;
-    });
-
-    downloadComparisonPDF(pdfCases);
-    toast.success('Comparison PDF downloaded');
-  };
-
-  const handlePrint = () => {
-    setIsPrintMode(true);
-    setTimeout(() => {
-      window.print();
-      setIsPrintMode(false);
-    }, 100);
-  };
-
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'APPLICATION':
@@ -332,45 +263,6 @@ export default function ComparePage() {
         return 'bg-gray-500 text-white';
     }
   };
-
-  const getTypePoints = (type: string, hasWps: boolean = false) => {
-    switch (type) {
-      case 'APPLICATION': return 1;
-      case 'TECH': return 2;
-      case 'STAR': return hasWps ? 4 : 3; // STAR with WPS = 4 pts, without = 3 pts
-      default: return 0;
-    }
-  };
-
-  // Calculate winner based on multiple metrics
-  const calculateWinner = (): number | null => {
-    const validCases = selectedCases.filter(c => c !== null);
-    if (validCases.length < 2) return null;
-
-    const scores = selectedCases.map((caseStudy, index) => {
-      if (!caseStudy) return { index, score: 0 };
-
-      let score = 0;
-
-      // Type points (STAR with WPS=4, STAR=3, TECH=2, APPLICATION=1)
-      score += getTypePoints(caseStudy.type, caseStudy.hasWps) * 100;
-
-      // Financial metrics
-      if (caseStudy.solutionValueRevenue) score += caseStudy.solutionValueRevenue / 1000;
-      if (caseStudy.annualPotentialRevenue) score += caseStudy.annualPotentialRevenue / 1000;
-      if (caseStudy.customerSavingsAmount) score += caseStudy.customerSavingsAmount / 1000;
-
-      return { index, score };
-    });
-
-    const maxScore = Math.max(...scores.map(s => s.score));
-    if (maxScore === 0) return null;
-
-    const winner = scores.find(s => s.score === maxScore);
-    return winner ? winner.index : null;
-  };
-
-  const winnerIndex = calculateWinner();
 
   // Get better/worse indicators for numeric values
   const getValueIndicator = (values: (number | null)[], currentIndex: number) => {
@@ -520,23 +412,7 @@ export default function ComparePage() {
   };
 
   return (
-    <div className={`max-w-7xl mx-auto space-y-6 ${isPrintMode ? 'print-mode' : ''}`}>
-      {/* Print Styles */}
-      <style jsx global>{`
-        @media print {
-          .no-print {
-            display: none !important;
-          }
-          .print-mode {
-            max-width: 100% !important;
-          }
-          body {
-            print-color-adjust: exact;
-            -webkit-print-color-adjust: exact;
-          }
-        }
-      `}</style>
-
+    <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between no-print">
         <div className="flex items-center gap-3">
@@ -583,12 +459,6 @@ export default function ComparePage() {
                     <Badge className={`${getTypeColor(selectedCases[position]!.type)} text-xs font-semibold`}>
                       {selectedCases[position]!.type}
                     </Badge>
-                    {winnerIndex === position && (
-                      <div className="flex items-center gap-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 px-2 py-1 rounded-full">
-                        <Trophy className="h-3 w-3" />
-                        <span className="text-xs font-bold">Winner</span>
-                      </div>
-                    )}
                   </div>
                   <Button
                     variant="ghost"
@@ -711,24 +581,6 @@ export default function ComparePage() {
               <ChevronUp className="h-4 w-4" />
               Collapse All
             </Button>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={handleExport}
-              className="gap-2 bg-wa-green-600 hover:bg-wa-green-700"
-            >
-              <Download className="h-4 w-4" />
-              Download PDF
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePrint}
-              className="gap-2"
-            >
-              <FileText className="h-4 w-4" />
-              Print
-            </Button>
           </div>
         </div>
       )}
@@ -748,7 +600,7 @@ export default function ComparePage() {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {[
-                { key: 'customer', label: 'Customer Name' },
+                ...(canSeeCustomerName ? [{ key: 'customer', label: 'Customer Name' }] : []),
                 { key: 'industry', label: 'Industry' },
                 { key: 'location', label: 'Location' },
                 { key: 'component', label: 'Component' },
@@ -994,37 +846,6 @@ export default function ComparePage() {
             )}
           </div>
 
-          {/* Winner Summary */}
-          {winnerIndex !== null && (
-            <Card role="article" className="bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 border-2 border-yellow-300 dark:border-yellow-700 shadow-lg no-print">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-yellow-900 dark:text-yellow-400">
-                  <Trophy className="h-6 w-6 text-yellow-600 dark:text-yellow-500" />
-                  Winner Analysis
-                </CardTitle>
-                <CardDescription className="text-yellow-800 dark:text-yellow-500">
-                  Based on case type, financial metrics, and overall value
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-white dark:bg-card rounded-lg p-4 border-2 border-yellow-200 dark:border-yellow-800">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-foreground mb-2">
-                    Position {winnerIndex + 1} leads with the highest combined score:
-                  </p>
-                  <div className="flex items-center gap-4 text-sm text-gray-700 dark:text-muted-foreground">
-                    <div>
-                      <span className="font-medium dark:text-foreground">{canSeeCustomerName ? 'Customer:' : 'Component:'}</span> {canSeeCustomerName ? selectedCases[winnerIndex]?.customerName : selectedCases[winnerIndex]?.componentWorkpiece}
-                    </div>
-                    <div>
-                      <Badge className={getTypeColor(selectedCases[winnerIndex]!.type)}>
-                        {selectedCases[winnerIndex]?.type}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </div>
       )}
 

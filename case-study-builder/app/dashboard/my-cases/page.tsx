@@ -35,6 +35,8 @@ export default async function MyCasesPage({
     redirect('/login');
   }
 
+  const canSeeCustomerName = session?.user?.role === 'ADMIN' || session?.user?.role === 'APPROVER';
+
   const caseStudies = await prisma.waCaseStudy.findMany({
     where: {
       contributorId: session.user.id,
@@ -162,9 +164,9 @@ export default async function MyCasesPage({
             />
           </div>
           <h3 className="font-semibold text-lg text-gray-900 dark:text-foreground">
-            {caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`}
+            {caseStudy.title || (canSeeCustomerName ? `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}` : caseStudy.componentWorkpiece)}
           </h3>
-          {caseStudy.title && caseStudy.customerName && (
+          {canSeeCustomerName && caseStudy.title && caseStudy.customerName && (
             <p className="text-sm text-gray-700 dark:text-gray-300 mt-0.5">
               {caseStudy.customerName}
             </p>

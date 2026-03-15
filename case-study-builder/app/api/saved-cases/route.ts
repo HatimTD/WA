@@ -14,6 +14,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const canSeeCustomerName = session?.user?.role === 'ADMIN' || session?.user?.role === 'APPROVER';
+
     const savedCases = await prisma.waSavedCase.findMany({
       where: {
         userId: session.user.id,
@@ -53,7 +55,16 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ savedCases });
+    // Strip customerName from response for non-ADMIN/APPROVER roles (server-side protection)
+    const protectedSavedCases = savedCases.map(sc => ({
+      ...sc,
+      caseStudy: {
+        ...sc.caseStudy,
+        customerName: canSeeCustomerName ? sc.caseStudy.customerName : '',
+      },
+    }));
+
+    return NextResponse.json({ savedCases: protectedSavedCases });
   } catch (error) {
     console.error('[API] Get saved cases error:', error);
     return NextResponse.json(
