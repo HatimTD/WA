@@ -1,0 +1,111 @@
+import { auth } from '@/auth';
+import { redirect } from 'next/navigation';
+import { prisma } from '@/lib/prisma';
+import SettingsForm from '@/components/settings-form';
+import type { Metadata } from 'next';
+
+
+export const metadata: Metadata = {
+  title: 'Settings',
+  description: 'Manage your account settings and preferences',
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
+
+export default async function SettingsPage() {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    redirect('/login');
+  }
+
+  // Fetch user data with assigned roles and subsidiaries
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+      role: true,
+      totalPoints: true,
+      ssoUid: true, // NetSuite employee ID
+    },
+  });
+
+  if (!user) {
+    redirect('/login');
+  }
+
+  // Fetch user's subsidiaries
+  const userSubsidiaries = await prisma.waUserSubsidiary.findMany({
+    where: { userId: session.user.id },
+    select: {
+      source: true,
+      assignedAt: true,
+      subsidiary: {
+        select: {
+          id: true,
+          name: true,
+          region: true,
+        },
+      },
+    },
+    orderBy: {
+      source: 'asc', // MANUAL first, then NETSUITE
+    },
+  });
+
+  // Fetch NetSuite employee data if exists
+  let netsuiteEmployee = null;
+  if (user.ssoUid) {
+    netsuiteEmployee = await prisma.waNetsuiteEmployee.findUnique({
+      where: { netsuiteInternalId: user.ssoUid },
+      select: {
+        netsuiteInternalId: true,
+        email: true,
+        firstname: true,
+        middlename: true,
+        lastname: true,
+        phone: true,
+        subsidiarynohierarchy: true,
+        subsidiarynohierarchyname: true,
+        department: true,
+        location: true,
+        syncedAt: true,
+      },
+    });
+  }
+
+  // Map subsidiaries
+  const subsidiaries = userSubsidiaries.map((us) => ({
+    id: us.subsidiary.id,
+    name: us.subsidiary.name,
+    region: us.subsidiary.region,
+    source: us.source,
+    assignedAt: us.assignedAt.toISOString(),
+  }));
+
+  // Compute unique regions
+  const regions = [...new Set(subsidiaries.map((s) => s.region))];
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">Settings</h1>
+        <p className="text-gray-600 dark:text-muted-foreground mt-2">
+          Manage your account settings and preferences
+        </p>
+      </div>
+
+      <SettingsForm
+        user={user}
+        subsidiaries={subsidiaries}
+        regions={regions}
+        netsuiteEmployee={netsuiteEmployee}
+      />
+    </div>
+  );
+}

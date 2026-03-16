@@ -1,0 +1,352 @@
+'use server';
+
+import { netsuiteClient, NetSuiteCustomer } from '@/lib/integrations/netsuite';
+import { waSearchCustomers, waGetCustomer } from '@/lib/integrations/netsuite-dual-source';
+import { prisma } from '@/lib/prisma';
+import { auth } from '@/auth';
+
+// Extended customer type with case study info
+export type NetSuiteCustomerWithCases = NetSuiteCustomer & {
+  caseStudyCount: number;
+  recentCaseStudies: Array<{
+    id: string;
+    title: string | null;
+    type: string;
+    status: string;
+    createdAt: Date;
+  }>;
+};
+
+/**
+ * Get ALL customers for client-side caching (without enrichment)
+ * Much faster than enriched search since it skips case study lookups
+ */
+export async function waGetAllCustomersForCache(): Promise<{
+  success: boolean;
+  customers?: NetSuiteCustomer[];
+  error?: string;
+}> {
+  try {
+    // Get all customers from Redis cache (or NetSuite if not cached)
+    // Pass empty query to get all from cache
+    const customers = await waSearchCustomers('');
+
+    return { success: true, customers };
+  } catch (error) {
+    console.error('[waGetAllCustomersForCache] Failed:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch customers',
+    };
+  }
+}
+
+export async function waSearchNetSuiteCustomers(
+  query: string
+): Promise<{ success: boolean; customers?: NetSuiteCustomerWithCases[]; error?: string }> {
+  try {
+
+    if (!query || query.length < 2) {
+      return { success: true, customers: [] };
+    }
+
+    // Get current user session for subsidiary filtering
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    // Fetch user with roles and subsidiaries
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        role: true,
+        userRoles: {
+          select: { role: true },
+        },
+        userSubsidiaries: {
+          select: {
+            subsidiary: {
+              select: {
+                integrationId: true, // NetSuite subsidiary ID
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      return { success: false, error: 'User not found' };
+    }
+
+    // Get all user roles (primary + assigned)
+    const allRoles = user.userRoles.length > 0
+      ? user.userRoles.map((ur) => ur.role)
+      : [user.role];
+
+    // Check if user has ADMIN or APPROVER role (bypass filtering)
+    const hasAdminOrApprover = allRoles.some(
+      (role) => role === 'ADMIN' || role === 'APPROVER'
+    );
+
+    // Use dual-source service (automatically uses NetSuite or mock data based on config)
+    let customers = await waSearchCustomers(query);
+
+    // Filter by subsidiary if user is CONTRIBUTOR only (not ADMIN or APPROVER)
+    if (!hasAdminOrApprover) {
+      // Get user's subsidiary integration IDs (NetSuite subsidiary IDs)
+      const userSubsidiaryIds = user.userSubsidiaries.map(
+        (us) => us.subsidiary.integrationId
+      );
+
+      if (userSubsidiaryIds.length === 0) {
+        // User has no subsidiaries assigned - return empty results
+        return { success: true, customers: [] };
+      }
+
+      // Filter customers by subsidiarynohierarchy matching user's subsidiaries
+      customers = customers.filter((customer) => {
+        // If customer has no subsidiary field, exclude them
+        if (!customer.subsidiarynohierarchy) {
+          return false;
+        }
+
+        // Check if customer's subsidiary matches any of user's subsidiaries
+        return userSubsidiaryIds.includes(customer.subsidiarynohierarchy);
+      });
+    }
+
+    // Batch-fetch case studies for all matching customers in a single query
+    const customerNames = customers.map((c) => c.companyName).filter(Boolean);
+    const allCaseStudies = customerNames.length > 0
+      ? await prisma.waCaseStudy.findMany({
+          where: {
+            customerName: { in: customerNames, mode: 'insensitive' },
+          },
+          select: {
+            id: true,
+            title: true,
+            type: true,
+            status: true,
+            createdAt: true,
+            customerName: true,
+          },
+          orderBy: { createdAt: 'desc' },
+        })
+      : [];
+
+    // Group case studies by customer name (case-insensitive)
+    const caseStudiesByCustomer = new Map<string, typeof allCaseStudies>();
+    for (const cs of allCaseStudies) {
+      const key = cs.customerName.toLowerCase();
+      const existing = caseStudiesByCustomer.get(key) || [];
+      if (existing.length < 3) existing.push(cs); // keep top 3 per customer
+      caseStudiesByCustomer.set(key, existing);
+    }
+
+    const enrichedCustomers = customers.map((customer) => {
+      const studies = caseStudiesByCustomer.get(customer.companyName?.toLowerCase() || '') || [];
+      return {
+        ...customer,
+        caseStudyCount: studies.length,
+        recentCaseStudies: studies,
+      };
+    });
+
+    return { success: true, customers: enrichedCustomers };
+  } catch (error) {
+    console.error('NetSuite search failed:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to search customers',
+    };
+  }
+}
+
+export async function waGetNetSuiteCustomer(
+  customerId: string
+): Promise<{ success: boolean; customer?: NetSuiteCustomer; error?: string }> {
+  try {
+    if (!customerId) {
+      return { success: false, error: 'Customer ID is required' };
+    }
+
+    // Use dual-source service (automatically uses NetSuite or mock data based on config)
+    const customer = await waGetCustomer(customerId);
+
+    if (!customer) {
+      return { success: false, error: 'Customer not found' };
+    }
+
+    return { success: true, customer };
+  } catch (error) {
+    console.error('NetSuite get customer failed:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch customer details',
+    };
+  }
+}
+
+export async function waSyncCustomerToNetSuite(
+  caseStudyId: string,
+  netsuiteCustomerId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { prisma } = await import('@/lib/prisma');
+
+    await prisma.waCaseStudy.update({
+      where: { id: caseStudyId },
+      data: {
+        netsuiteCustomerId,
+        netsuiteSyncedAt: new Date(),
+      },
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to sync customer to NetSuite:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to sync customer',
+    };
+  }
+}
+
+/**
+ * Push published case study PDF to NetSuite customer record
+ * Called when a case study is published (status = PUBLISHED)
+ */
+export async function waPushCaseStudyToNetSuite(
+  caseStudyId: string
+): Promise<{ success: boolean; fileId?: string; error?: string }> {
+  try {
+    const { prisma } = await import('@/lib/prisma');
+
+    // Fetch case study with all required data
+    const caseStudy = await prisma.waCaseStudy.findUnique({
+      where: { id: caseStudyId },
+      include: {
+        contributor: { select: { name: true, email: true } },
+      },
+    });
+
+    if (!caseStudy) {
+      return { success: false, error: 'Case study not found' };
+    }
+
+    if (!caseStudy.netsuiteCustomerId) {
+      return { success: false, error: 'No NetSuite customer linked to this case study' };
+    }
+
+    // Generate PDF URL (case studies don't store pdfUrl - PDF is generated on demand)
+    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const pdfApiUrl = `${baseUrl}/api/pdf/${caseStudyId}`;
+
+    // Fetch the PDF file from the API
+    const pdfResponse = await fetch(pdfApiUrl);
+    if (!pdfResponse.ok) {
+      return { success: false, error: 'Failed to generate/fetch PDF file' };
+    }
+
+    const pdfBuffer = Buffer.from(await pdfResponse.arrayBuffer());
+
+    // Generate filename with fallback for null title
+    const displayTitle = caseStudy.title || `${caseStudy.customerName}_${caseStudy.componentWorkpiece}`;
+    const sanitizedTitle = displayTitle
+      .replace(/[^a-zA-Z0-9\s-]/g, '')
+      .replace(/\s+/g, '_')
+      .substring(0, 50);
+    const fileName = `CaseStudy_${sanitizedTitle}_${caseStudy.id.substring(0, 8)}.pdf`;
+
+    // Upload to NetSuite
+    const result = await netsuiteClient.waUploadPdfToCustomer(
+      caseStudy.netsuiteCustomerId,
+      pdfBuffer,
+      fileName,
+      {
+        caseStudyId: caseStudy.id,
+        caseStudyTitle: displayTitle,
+        caseType: caseStudy.type,
+        publishedAt: caseStudy.approvedAt?.toISOString() || new Date().toISOString(),
+        createdBy: caseStudy.contributor?.name || caseStudy.contributor?.email || 'Unknown',
+      }
+    );
+
+    if (result.success) {
+      // Update case study with NetSuite file reference
+      await prisma.waCaseStudy.update({
+        where: { id: caseStudyId },
+        data: {
+          netsuiteFileId: result.fileId,
+          netsuiteSyncedAt: new Date(),
+        },
+      });
+
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Failed to push case study to NetSuite:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to push to NetSuite',
+    };
+  }
+}
+
+/**
+ * Update NetSuite customer record with case study metadata
+ * Alternative to file upload - just updates custom fields
+ */
+export async function waUpdateNetSuiteCustomerMetadata(
+  caseStudyId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { prisma } = await import('@/lib/prisma');
+
+    const caseStudy = await prisma.waCaseStudy.findUnique({
+      where: { id: caseStudyId },
+    });
+
+    if (!caseStudy) {
+      return { success: false, error: 'Case study not found' };
+    }
+
+    if (!caseStudy.netsuiteCustomerId) {
+      return { success: false, error: 'No NetSuite customer linked' };
+    }
+
+    // Generate URL for the case study
+    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const caseStudyUrl = `${baseUrl}/dashboard/cases/${caseStudy.id}`;
+    const displayTitle = caseStudy.title || `${caseStudy.customerName} - ${caseStudy.componentWorkpiece}`;
+
+    const result = await netsuiteClient.waUpdateCustomerCaseStudyMetadata(
+      caseStudy.netsuiteCustomerId,
+      {
+        caseStudyId: caseStudy.id,
+        caseStudyTitle: displayTitle,
+        caseStudyUrl: caseStudyUrl,
+        publishedAt: caseStudy.approvedAt?.toISOString() || new Date().toISOString(),
+      }
+    );
+
+    if (result.success) {
+      await prisma.waCaseStudy.update({
+        where: { id: caseStudyId },
+        data: { netsuiteSyncedAt: new Date() },
+      });
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Failed to update NetSuite metadata:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to update metadata',
+    };
+  }
+}

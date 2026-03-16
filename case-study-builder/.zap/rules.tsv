@@ -1,0 +1,85 @@
+# ZAP Baseline Scan Rules Configuration
+# Format: rule_id	action	description
+# Actions: IGNORE, WARN, FAIL
+# WA Policy V2.3 Section 4.1 Compliance
+
+# Cross-Site Scripting - Critical
+10012	FAIL	Cross Site Scripting (Reflected)
+10015	FAIL	Cross Site Scripting (DOM)
+40012	FAIL	Cross Site Scripting (Reflected)
+40014	FAIL	Cross Site Scripting (Persistent)
+40016	FAIL	Cross Site Scripting (Persistent) - Prime
+40017	FAIL	Cross Site Scripting (Persistent) - Spider
+
+# SQL Injection - Critical
+40018	FAIL	SQL Injection
+40019	FAIL	SQL Injection - MySQL
+40020	FAIL	SQL Injection - Hypersonic SQL
+40021	FAIL	SQL Injection - Oracle
+40022	FAIL	SQL Injection - PostgreSQL
+40024	FAIL	SQL Injection - SQLite
+
+# Security Headers - Important
+10015	WARN	Incomplete or No Cache-control and Pragma HTTP Header Set
+10016	FAIL	Web Browser XSS Protection Not Enabled
+10017	WARN	Cross-Domain JavaScript Source File Inclusion
+10019	FAIL	Content-Type Header Missing
+10020	FAIL	X-Frame-Options Header Not Set
+10021	FAIL	X-Content-Type-Options Header Missing
+10023	WARN	Information Disclosure - Debug Error Messages
+10024	WARN	Information Disclosure - Sensitive Information in URL
+10025	WARN	Information Disclosure - Sensitive Information in HTTP Referrer Header
+10027	WARN	Information Disclosure - Suspicious Comments
+10028	WARN	Open Redirect
+10029	WARN	Cookie Poisoning
+10030	WARN	User Controllable Charset
+10031	WARN	User Controllable HTML Element Attribute (Potential XSS)
+10032	WARN	Viewstate Scanner
+10033	WARN	Directory Browsing
+10034	FAIL	Heartbleed OpenSSL Vulnerability
+10035	FAIL	Strict-Transport-Security Header Not Set
+10036	WARN	Server Leaks Version Information via "Server" HTTP Response Header Field
+10037	WARN	Server Leaks Information via "X-Powered-By" HTTP Response Header Field(s)
+10038	FAIL	Content Security Policy (CSP) Header Not Set
+10039	WARN	X-Backend-Server Header Information Leak
+10040	FAIL	Secure Pages Include Mixed Content
+10041	WARN	HTTP to HTTPS Insecure Transition in Form Post
+10042	WARN	HTTPS to HTTP Insecure Transition in Form Post
+10043	WARN	User Controllable JavaScript Event (XSS)
+10044	FAIL	Big Redirect Detected (Potential Sensitive Information Leak)
+10045	WARN	Source Code Disclosure - /WEB-INF folder
+10048	FAIL	Remote Code Execution - Shell Shock
+10049	WARN	Non-Storable Content
+10050	WARN	Retrieved from Cache
+10052	FAIL	X-ChromeLogger-Data (XCOLD) Header Information Leak
+10054	FAIL	Cookie Without SameSite Attribute
+10055	FAIL	CSP: Wildcard Directive
+10056	FAIL	CSP: script-src unsafe-inline
+10057	FAIL	CSP: style-src unsafe-inline
+10058	FAIL	GET for POST
+10061	WARN	X-AspNet-Version Response Header Scanner
+10062	WARN	PII Disclosure
+10063	WARN	Feature Policy Header Not Set
+10096	WARN	Timestamp Disclosure - Unix
+10097	WARN	Hash Disclosure - MD5 Ciphers
+10098	WARN	Cross-Domain Misconfiguration
+10099	WARN	Source Code Disclosure - SQL
+10105	FAIL	Weak Authentication Method
+10106	WARN	HTTP Only Site
+10107	WARN	Httpoxy - Proxy Header Misuse
+10108	WARN	Reverse Tabnabbing
+
+# Information Disclosure - Moderate
+10109	WARN	Modern Web Application
+10110	WARN	Dangerous JS Functions
+10202	WARN	Absence of Anti-CSRF Tokens
+
+# Authentication Issues
+10010	FAIL	Cookie No HttpOnly Flag
+10011	FAIL	Cookie Without Secure Flag
+
+# Specific rules for Next.js apps
+90001	WARN	Insecure JSF ViewState
+90011	WARN	Charset Mismatch (Header Versus Meta Content-Type Charset)
+90022	WARN	Application Error Disclosure
+90033	WARN	Loosely Scoped Cookie

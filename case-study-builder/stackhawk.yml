@@ -1,0 +1,136 @@
+# StackHawk Configuration
+# Dynamic Application Security Testing (DAST)
+#
+# Prerequisites:
+# 1. Create account at https://app.stackhawk.com
+# 2. Create application and get API key
+# 3. Set HAWK_API_KEY environment variable
+# 4. Install StackHawk CLI: brew install stackhawk/tap/hawk
+#
+# Usage:
+# hawk scan --api-key $HAWK_API_KEY
+#
+# CI/CD Integration:
+# See .github/workflows/security.yml for GitHub Actions example
+
+app:
+  applicationId: ${HAWK_APP_ID} # Set in StackHawk dashboard
+  env: ${HAWK_ENV:-Development} # Development, Staging, Production
+  host: ${TARGET_URL:-http://localhost:3000}
+
+hawk:
+  # Scanner configuration
+  spider:
+    maxDurationMinutes: 5
+    maxChildren: 10
+    maxDepth: 10
+
+  # AJAX Spider for JavaScript-heavy applications
+  ajaxSpider:
+    maxDurationMinutes: 5
+    browserId: chrome-headless
+    maxCrawlDepth: 10
+
+  # Active scanning configuration
+  activeScanning:
+    maxRulesDurationInMinutes: 5
+    maxScanDurationInMinutes: 30
+    scanPolicyName: "Default Policy"
+
+  # Authentication configuration
+  authentication:
+    loggedInIndicator: "dashboard"
+    loggedOutIndicator: "Sign in"
+
+    # Form-based authentication
+    usernameField: "email"
+    passwordField: "password"
+
+    # Test user credentials (use environment variables in CI/CD)
+    testUsername: ${TEST_USER_EMAIL:-test@example.com}
+    testPassword: ${TEST_USER_PASSWORD}
+
+    # Login page configuration
+    loginUrl: ${TARGET_URL:-http://localhost:3000}/dev-login
+    loginRequestData: "email={%username%}&password={%password%}"
+
+  # Cookie-based session management
+  sessionManagement:
+    type: cookie
+
+# OpenAPI/Swagger integration (if available)
+# openApi:
+#   path: /api/openapi.json
+#   apiKey: ${API_KEY}
+
+# GraphQL integration (if available)
+# graphql:
+#   enabled: false
+#   endpoint: /api/graphql
+
+# Custom headers
+customHeaders:
+  - name: "X-Custom-Header"
+    value: "stackhawk-scan"
+  - name: "User-Agent"
+    value: "StackHawk Security Scanner"
+
+# Scan configuration
+scan:
+  # URLs to include in scan
+  includePaths:
+    - ${TARGET_URL:-http://localhost:3000}/.*
+
+  # URLs to exclude from scan
+  excludePaths:
+    - .*\.js$
+    - .*\.css$
+    - .*\.png$
+    - .*\.jpg$
+    - .*\.gif$
+    - .*\.svg$
+    - .*\.woff2?$
+    - .*/_next/static/.*
+    - .*/logout.*
+    - .*/signout.*
+
+# Alert severity thresholds
+# Block deployment if any of these are found
+severityThreshold: Medium
+
+# Vulnerability findings configuration
+findings:
+  # Alert filters to reduce false positives
+  alertFilters:
+    # CSP warnings (handled separately)
+    - alertRef: "10038"
+      risk: Informational
+    # Cookie same-site (handled by NextAuth)
+    - alertRef: "10054"
+      risk: Informational
+
+  # Critical findings that should fail the build
+  failOnFindings:
+    - alertRef: "40018" # SQL Injection
+      risk: High
+    - alertRef: "40012" # XSS
+      risk: High
+    - alertRef: "90019" # Server Side Include
+      risk: High
+    - alertRef: "90020" # Remote OS Command Injection
+      risk: High
+
+# SARIF report for GitHub Security tab
+sarif:
+  enabled: true
+  outputPath: results/stackhawk.sarif
+
+# JSON report for custom processing
+jsonReport:
+  enabled: true
+  outputPath: results/stackhawk-results.json
+
+# HTML report for humans
+htmlReport:
+  enabled: true
+  outputPath: results/stackhawk-report.html
