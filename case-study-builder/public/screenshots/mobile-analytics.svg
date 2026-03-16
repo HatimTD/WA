@@ -1,0 +1,39 @@
+<svg width="750" height="1334" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background -->
+    <rect width="750" height="1334" fill="#111827"/>
+
+    <!-- Header -->
+    <rect x="0" y="0" width="750" height="60" fill="#1f2937"/>
+
+    <!-- Logo and Title -->
+    <rect x="20" y="15" width="30" height="30" rx="4" fill="#006838"/>
+    <text x="65" y="37" fill="#ffffff" font-family="Arial, sans-serif" font-size="18" font-weight="bold">Case Study Builder</text>
+
+    <!-- Main Title -->
+    <text x="20" y="120" fill="#ffffff" font-family="Arial, sans-serif" font-size="28" font-weight="bold">Analytics</text>
+    <text x="20" y="150" fill="#9ca3af" font-family="Arial, sans-serif" font-size="16">Visualize performance and trends</text>
+
+    <!-- Content Cards -->
+    
+      <!-- Card 1 -->
+      <rect x="20" y="200" width="710" height="120" rx="8" fill="#1f2937"/>
+      <rect x="40" y="220" width="670" height="20" rx="4" fill="#374151"/>
+      <rect x="40" y="250" width="630" height="12" rx="3" fill="#4b5563"/>
+      <rect x="40" y="270" width="590" height="12" rx="3" fill="#4b5563"/>
+    
+      <!-- Card 2 -->
+      <rect x="20" y="340" width="710" height="120" rx="8" fill="#1f2937"/>
+      <rect x="40" y="360" width="670" height="20" rx="4" fill="#374151"/>
+      <rect x="40" y="390" width="630" height="12" rx="3" fill="#4b5563"/>
+      <rect x="40" y="410" width="590" height="12" rx="3" fill="#4b5563"/>
+    
+      <!-- Card 3 -->
+      <rect x="20" y="480" width="710" height="120" rx="8" fill="#1f2937"/>
+      <rect x="40" y="500" width="670" height="20" rx="4" fill="#374151"/>
+      <rect x="40" y="530" width="630" height="12" rx="3" fill="#4b5563"/>
+      <rect x="40" y="550" width="590" height="12" rx="3" fill="#4b5563"/>
+    
+
+    <!-- Navigation (Mobile Bottom, Desktop Sidebar) -->
+    <rect x="0" y="1264" width="750" height="70" fill="#1f2937"/><rect x="138" y="1287" width="24" height="24" rx="4" fill="#6b7280"/><rect x="288" y="1287" width="24" height="24" rx="4" fill="#6b7280"/><rect x="438" y="1287" width="24" height="24" rx="4" fill="#6b7280"/><rect x="588" y="1287" width="24" height="24" rx="4" fill="#6b7280"/>
+  </svg>
