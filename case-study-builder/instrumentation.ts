@@ -24,10 +24,12 @@ export async function register() {
       console.log('[Server] Background cache preload started');
     }
 
-    // Always sync employees to DB (needed for login auto-assign).
-    // This is lightweight (~418 records) and ensures the waNetsuiteEmployee
-    // table is populated even if the daily cron hasn't run yet.
-    const { waSyncNetSuiteEmployees } = await import('./lib/integrations/netsuite-sync');
+    // Always sync employees and subsidiaries to DB on startup.
+    // Employees: needed for login auto-assign (~418 records)
+    // Subsidiaries: needed for admin user management dropdown (~30 records)
+    // Both are lightweight and ensure DB is populated even if cron hasn't run yet.
+    const { waSyncNetSuiteEmployees, waSyncNetSuiteSubsidiaries } = await import('./lib/integrations/netsuite-sync');
+
     waSyncNetSuiteEmployees().then((result) => {
       if (result.success) {
         console.log(`[Server] Employee DB sync: ${result.totalEmployees} employees (${result.newEmployees} new, ${result.updatedEmployees} updated)`);
@@ -36,6 +38,16 @@ export async function register() {
       }
     }).catch((error) => {
       console.error('[Server] Employee DB sync failed:', error);
+    });
+
+    waSyncNetSuiteSubsidiaries().then((result) => {
+      if (result.success) {
+        console.log(`[Server] Subsidiary DB sync: ${result.totalSubsidiaries} subsidiaries (${result.newSubsidiaries} new, ${result.updatedSubsidiaries} updated)`);
+      } else {
+        console.log(`[Server] Subsidiary DB sync skipped: ${result.error || 'no data'}`);
+      }
+    }).catch((error) => {
+      console.error('[Server] Subsidiary DB sync failed:', error);
     });
 
     console.log('[Server] Server is ready to accept requests');

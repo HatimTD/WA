@@ -18,7 +18,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { runNetSuiteSync, getSyncStats, waSyncNetSuiteEmployees, waSyncNetSuiteItems } from '@/lib/integrations/netsuite-sync';
+import { runNetSuiteSync, getSyncStats, waSyncNetSuiteEmployees, waSyncNetSuiteItems, waSyncNetSuiteSubsidiaries } from '@/lib/integrations/netsuite-sync';
 
 /**
  * Verify the request is from Vercel Cron
@@ -82,8 +82,13 @@ export async function POST(request: NextRequest) {
     const itemsResult = await waSyncNetSuiteItems();
     console.log('[NetSuite Cron] Items sync completed:', itemsResult);
 
+    // Run subsidiary sync (populate Subsidiary table for admin dropdown)
+    console.log('[NetSuite Cron] Starting subsidiary sync...');
+    const subsidiaryResult = await waSyncNetSuiteSubsidiaries();
+    console.log('[NetSuite Cron] Subsidiary sync completed:', subsidiaryResult);
+
     // Combine results
-    const overallSuccess = customerResult.success && employeeResult.success && itemsResult.success;
+    const overallSuccess = customerResult.success && employeeResult.success && itemsResult.success && subsidiaryResult.success;
 
     return NextResponse.json({
       success: overallSuccess,
@@ -107,6 +112,13 @@ export async function POST(request: NextRequest) {
         success: itemsResult.success,
         totalItems: itemsResult.totalItems,
         error: itemsResult.error,
+      },
+      subsidiaries: {
+        success: subsidiaryResult.success,
+        totalSubsidiaries: subsidiaryResult.totalSubsidiaries,
+        newSubsidiaries: subsidiaryResult.newSubsidiaries,
+        updatedSubsidiaries: subsidiaryResult.updatedSubsidiaries,
+        error: subsidiaryResult.error,
       },
     });
   } catch (error) {
