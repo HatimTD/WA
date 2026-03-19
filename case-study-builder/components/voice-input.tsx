@@ -22,7 +22,7 @@ export default function VoiceInput({ onTranscript, currentValue = '', language =
   const [isSupported, setIsSupported] = useState(true);
   const [isSecureContext, setIsSecureContext] = useState(true);
   const recognitionRef = useRef<any>(null);
-  const interimTranscriptRef = useRef('');
+  const baseTextRef = useRef(''); // Text that existed BEFORE voice recording started
   const restartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const onTranscriptRef = useRef(onTranscript);
   const currentValueRef = useRef(currentValue);
@@ -69,27 +69,25 @@ export default function VoiceInput({ onTranscript, currentValue = '', language =
       };
 
       recognition.onresult = (event: any) => {
-        let interimTranscript = '';
-        let finalTranscript = '';
+        // Rebuild full transcript from ALL results each time.
+        // On mobile Chrome (Samsung, Android), event.resultIndex is unreliable
+        // and accumulating only new finals causes cascading duplication.
+        let fullTranscript = '';
 
-        for (let i = event.resultIndex; i < event.results.length; i++) {
+        for (let i = 0; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript;
-
+          fullTranscript += transcript;
           if (event.results[i].isFinal) {
-            finalTranscript += transcript + ' ';
-          } else {
-            interimTranscript += transcript;
+            fullTranscript += ' ';
           }
         }
 
-        if (finalTranscript) {
-          // Append final transcript to existing content
-          const newText = interimTranscriptRef.current
-            ? `${interimTranscriptRef.current} ${finalTranscript.trim()}`
-            : finalTranscript.trim();
-
-          interimTranscriptRef.current = newText;
-          onTranscriptRef.current(newText); // Use ref instead of prop
+        const trimmed = fullTranscript.trim();
+        if (trimmed) {
+          const newText = baseTextRef.current
+            ? `${baseTextRef.current} ${trimmed}`
+            : trimmed;
+          onTranscriptRef.current(newText);
         }
       };
 
@@ -192,7 +190,7 @@ export default function VoiceInput({ onTranscript, currentValue = '', language =
           }
         }
 
-        interimTranscriptRef.current = currentValueRef.current; // Use ref instead of prop
+        baseTextRef.current = currentValueRef.current; // Text before voice started - never updated during recording
         recognitionRef.current.start();
         toast.success('Voice input started - speak now');
       } catch (error) {
