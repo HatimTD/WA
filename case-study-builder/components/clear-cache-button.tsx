@@ -29,29 +29,20 @@ export default function ClearCacheButton() {
   const handleClearAndResync = async () => {
     setIsSyncing(true);
     try {
-      // Step 1: Clear cache
-      const clearRes = await fetch('/api/admin/netsuite/clear-cache', { method: 'POST' });
-      const clearResult = await clearRes.json();
-      if (!clearResult.success) {
-        toast.error(clearResult.error || 'Failed to clear cache');
-        return;
-      }
-      toast.success('Cache cleared, starting fresh sync...');
-
-      // Step 2: Trigger sync (fetches fresh from NetSuite since cache is empty)
-      const syncRes = await fetch('/api/cron/netsuite-sync');
-      const syncResult = await syncRes.json();
-      if (syncResult.success) {
-        const sub = syncResult.subsidiaries;
-        const emp = syncResult.employees;
+      // Admin-authenticated endpoint: clears cache + syncs fresh from NetSuite
+      const response = await fetch('/api/admin/netsuite/resync', { method: 'POST' });
+      const result = await response.json();
+      if (result.success) {
+        const sub = result.subsidiaries;
+        const emp = result.employees;
         toast.success(
-          `Sync complete: ${sub?.totalSubsidiaries || 0} subsidiaries, ${emp?.totalEmployees || 0} employees`
+          `Resync complete: ${sub?.totalSubsidiaries || 0} subsidiaries (${sub?.newSubsidiaries || 0} new), ${emp?.totalEmployees || 0} employees`
         );
       } else {
-        toast.error(syncResult.error || 'Sync failed');
+        toast.error(result.error || 'Resync failed');
       }
     } catch (error) {
-      toast.error('Failed to sync');
+      toast.error('Failed to resync');
     } finally {
       setIsSyncing(false);
     }
