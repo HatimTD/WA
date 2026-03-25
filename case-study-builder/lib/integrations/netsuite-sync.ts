@@ -382,7 +382,35 @@ export async function waSyncNetSuiteEmployees(): Promise<{
           updatedEmployees++;
         }
       } catch (error) {
-        console.error(`[NetSuite Employee Sync] Error upserting employee ${employee.email}:`, error);
+        // Retry once after 1 second (handles Neon cold start connection failures)
+        try {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          const email = (employee.email || '').toLowerCase().trim();
+          await prisma.waNetsuiteEmployee.upsert({
+            where: { email },
+            update: {
+              firstname: employee.firstname, lastname: employee.lastname, phone: employee.phone,
+              subsidiarynohierarchy: employee.subsidiarynohierarchy,
+              subsidiarynohierarchyname: employee.subsidiarynohierarchyname,
+            },
+            create: {
+              netsuiteInternalId: email, email,
+              firstname: employee.firstname, middlename: employee.middlename, lastname: employee.lastname,
+              phone: employee.phone,
+              subsidiarynohierarchy: employee.subsidiarynohierarchy,
+              subsidiarynohierarchyname: employee.subsidiarynohierarchyname,
+              departmentnohierarchy: employee.departmentnohierarchy,
+              departmentnohierarchyname: employee.departmentnohierarchyname,
+              department: employee.departmentnohierarchyname,
+              locationnohierarchy: employee.locationnohierarchy,
+              locationnohierarchyname: employee.locationnohierarchyname,
+              location: employee.locationnohierarchyname,
+            },
+          });
+          updatedEmployees++;
+        } catch (retryError) {
+          console.error(`[NetSuite Employee Sync] Retry failed for ${employee.email}:`, retryError);
+        }
       }
     }
 
@@ -516,7 +544,32 @@ export async function waSyncNetSuiteSubsidiaries(): Promise<{
           updatedSubsidiaries++;
         }
       } catch (error) {
-        console.error(`[NetSuite Subsidiary Sync] Error upserting subsidiary ${sub.internalid}:`, error);
+        // Retry once after 1 second (handles Neon cold start connection failures)
+        try {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          const region = sub.reportingRegionName || 'Unknown';
+          const currencyCode = waDeriveCurrencyCode(sub.currencyname);
+          await prisma.waSubsidiary.upsert({
+            where: { integrationId: sub.internalid },
+            update: {
+              name: sub.namenohierarchy || sub.name, region, currencyCode,
+              country: sub.country || null, countryname: sub.countryname || null,
+              reportingRegionId: sub.reportingRegionId || null,
+              reportingRegionName: sub.reportingRegionName || null,
+            },
+            create: {
+              integrationId: sub.internalid,
+              name: sub.namenohierarchy || sub.name, region, currencyCode,
+              country: sub.country || null, countryname: sub.countryname || null,
+              reportingRegionId: sub.reportingRegionId || null,
+              reportingRegionName: sub.reportingRegionName || null,
+              isActive: true,
+            },
+          });
+          updatedSubsidiaries++;
+        } catch (retryError) {
+          console.error(`[NetSuite Subsidiary Sync] Retry failed for ${sub.internalid}:`, retryError);
+        }
       }
     }
 

@@ -24,6 +24,11 @@ export async function register() {
       console.log('[Server] Background cache preload started');
     }
 
+    // Wait 5 seconds before syncing to allow Neon DB to warm up on cold start.
+    // Without this delay, the first few DB calls can fail with "Can't reach database server"
+    // because Neon serverless suspends compute after inactivity.
+    await new Promise(resolve => setTimeout(resolve, 5000));
+
     // Always sync employees and subsidiaries to DB on startup.
     // Employees: needed for login auto-assign (~418 records)
     // Subsidiaries: needed for admin user management dropdown (~30 records)
