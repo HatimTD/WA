@@ -520,6 +520,21 @@ export async function waSyncNetSuiteSubsidiaries(): Promise<{
       }
     }
 
+    // Deactivate subsidiaries in DB that are no longer in NetSuite response
+    // This handles subsidiaries removed from NetSuite or filtered out by IT manager
+    const netsuiteIntegrationIds = subsidiaries.map(s => s.internalid);
+    const deactivated = await prisma.waSubsidiary.updateMany({
+      where: {
+        integrationId: { notIn: netsuiteIntegrationIds },
+        isActive: true,
+      },
+      data: { isActive: false },
+    });
+
+    if (deactivated.count > 0) {
+      console.log(`[NetSuite Subsidiary Sync] Deactivated ${deactivated.count} subsidiaries no longer in NetSuite`);
+    }
+
     return {
       success: true,
       totalSubsidiaries,

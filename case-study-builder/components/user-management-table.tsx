@@ -71,16 +71,8 @@ type Props = {
   users: User[];
 };
 
-// WA Regions for dropdown
-const WA_REGIONS = [
-  'CORPORATE',
-  'EUROPE',
-  'NORTH AMERICA',
-  'SOUTH AMERICA',
-  'ASIA PACIFIC',
-  'MIDDLE EAST',
-  'AFRICA',
-];
+// WA Regions derived from DB subsidiaries (no longer hardcoded)
+// Populated dynamically from subsidiariesByRegion state after fetch
 
 export default function UserManagementTable({ users: initialUsers }: Props) {
   const [users, setUsers] = useState(initialUsers);
@@ -469,7 +461,7 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
                     </SelectTrigger>
                     <SelectContent className="dark:bg-popover dark:border-border">
                       <SelectItem value="NONE">No region</SelectItem>
-                      {WA_REGIONS.map((region) => (
+                      {Object.keys(subsidiariesByRegion).sort().map((region) => (
                         <SelectItem key={region} value={region}>
                           {region}
                         </SelectItem>
