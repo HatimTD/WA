@@ -36,32 +36,15 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // Delete NetSuite customer cache (including all chunks)
-    const baseKey = 'netsuite:customers:all';
-    const keysToDelete = [baseKey];
+    // Clear ALL NetSuite caches (customers, employees, subsidiaries, items)
+    const { netsuiteClient } = await import('@/lib/integrations/netsuite');
+    await netsuiteClient.clearCache();
 
-    // Delete all chunks (try up to 20 chunks to be safe)
-    for (let i = 0; i < 20; i++) {
-      keysToDelete.push(`${baseKey}:chunk:${i}`);
-    }
-
-    let deletedCount = 0;
-    for (const key of keysToDelete) {
-      try {
-        await redisCache.del(key);
-        deletedCount++;
-      } catch (err) {
-        // Ignore errors for non-existent keys
-      }
-    }
-
-    console.log(`[Clear Cache] Deleted ${deletedCount} NetSuite cache keys (including all chunks)`);
+    console.log('[Clear Cache] Cleared ALL NetSuite caches (customers, employees, subsidiaries, items)');
 
     return NextResponse.json({
       success: true,
-      message: `Cleared ${deletedCount} cache keys. Next customer search will fetch fresh data from NetSuite.`,
-      deletedKeys: deletedCount,
-      note: 'Cleared base key + up to 20 chunks'
+      message: 'All NetSuite caches cleared. Next sync/search will fetch fresh data from NetSuite.',
     });
   } catch (error) {
     console.error('[Clear Cache] Error:', error);

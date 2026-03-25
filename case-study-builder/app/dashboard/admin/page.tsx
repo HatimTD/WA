@@ -19,6 +19,7 @@ import {
   List,
 } from 'lucide-react';
 import Link from 'next/link';
+import ClearCacheButton from '@/components/clear-cache-button';
 
 export default async function AdminDashboardPage() {
   const session = await auth();
@@ -137,25 +138,30 @@ export default async function AdminDashboardPage() {
           </p>
         </div>
         {user.role === 'ADMIN' && (
-          <div className="flex gap-3 flex-wrap">
-            <Link href="/dashboard/admin/users">
-              <Button variant="outline" className="gap-2 dark:border-border dark:text-foreground dark:hover:bg-background">
-                <Users className="h-4 w-4" />
-                User Management
-              </Button>
-            </Link>
-            <Link href="/dashboard/system-settings">
-              <Button variant="outline" className="gap-2 dark:border-border dark:text-foreground dark:hover:bg-background">
-                <Settings className="h-4 w-4" />
-                System Settings
-              </Button>
-            </Link>
-            <Link href="/dashboard/admin/netsuite-test">
-              <Button variant="outline" className="gap-2 dark:border-border dark:text-foreground dark:hover:bg-background">
-                <Database className="h-4 w-4" />
-                NetSuite Test
-              </Button>
-            </Link>
+          <div>
+            <div className="flex gap-3 flex-wrap">
+              <Link href="/dashboard/admin/users">
+                <Button variant="outline" className="gap-2 dark:border-border dark:text-foreground dark:hover:bg-background">
+                  <Users className="h-4 w-4" />
+                  User Management
+                </Button>
+              </Link>
+              <Link href="/dashboard/system-settings">
+                <Button variant="outline" className="gap-2 dark:border-border dark:text-foreground dark:hover:bg-background">
+                  <Settings className="h-4 w-4" />
+                  System Settings
+                </Button>
+              </Link>
+              <Link href="/dashboard/admin/netsuite-test">
+                <Button variant="outline" className="gap-2 dark:border-border dark:text-foreground dark:hover:bg-background">
+                  <Database className="h-4 w-4" />
+                  NetSuite Test
+                </Button>
+              </Link>
+            </div>
+            <div className="mt-3">
+              <ClearCacheButton />
+            </div>
           </div>
         )}
       </div>
