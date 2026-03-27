@@ -465,13 +465,7 @@ export default function NewCaseStudyPage() {
           if (!formData.productDescription) missing.push('Product Description');
         }
 
-        // Job duration validation - at least one time unit must have a value
-        const hasJobDuration = formData.jobDurationHours ||
-          formData.jobDurationDays ||
-          formData.jobDurationWeeks ||
-          formData.jobDurationMonths ||
-          formData.jobDurationYears;
-        if (!hasJobDuration) missing.push('Job Duration');
+        // Job duration is optional (not mandatory)
         if (!formData.technicalAdvantages) missing.push('Technical Advantages');
         if (!formData.images || formData.images.length < 1) missing.push('At least 1 image');
         break;
