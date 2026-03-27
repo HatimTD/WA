@@ -578,7 +578,6 @@ export default function StepFour({ formData, updateFormData, highlightedFields }
         <p className="text-xs text-muted-foreground">How long did it take to provide the completed solution?</p>
         <ServiceLifePicker
           label="Job Duration"
-          required
           value={{
             hours: parseInt(formData.jobDurationHours || '0') || 0,
             days: parseInt(formData.jobDurationDays || '0') || 0,
