@@ -325,91 +325,59 @@ export async function waSyncNetSuiteEmployees(): Promise<{
       };
     }
 
-    // Upsert each employee to database
+    // Upsert each employee using single query (halves DB round-trips vs findUnique+create/update)
     for (const employee of employees) {
+      const email = (employee.email || '').toLowerCase().trim();
+      if (!email || email.length < 3) continue;
+
       try {
-        // Use email as unique identifier (NetSuite RESTlet doesn't return internalId for bulk employee fetch)
-        const email = (employee.email || '').toLowerCase().trim();
-        if (!email || email.length < 3) {
-          continue;
-        }
-
-        const existing = await prisma.waNetsuiteEmployee.findUnique({
-          where: { email: email },
+        const result = await prisma.waNetsuiteEmployee.upsert({
+          where: { email },
+          update: {
+            firstname: employee.firstname,
+            middlename: employee.middlename,
+            lastname: employee.lastname,
+            phone: employee.phone,
+            subsidiarynohierarchy: employee.subsidiarynohierarchy,
+            subsidiarynohierarchyname: employee.subsidiarynohierarchyname,
+            departmentnohierarchy: employee.departmentnohierarchy,
+            departmentnohierarchyname: employee.departmentnohierarchyname,
+            department: employee.departmentnohierarchyname,
+            locationnohierarchy: employee.locationnohierarchy,
+            locationnohierarchyname: employee.locationnohierarchyname,
+            location: employee.locationnohierarchyname,
+          },
+          create: {
+            netsuiteInternalId: email,
+            email,
+            firstname: employee.firstname,
+            middlename: employee.middlename,
+            lastname: employee.lastname,
+            phone: employee.phone,
+            subsidiarynohierarchy: employee.subsidiarynohierarchy,
+            subsidiarynohierarchyname: employee.subsidiarynohierarchyname,
+            departmentnohierarchy: employee.departmentnohierarchy,
+            departmentnohierarchyname: employee.departmentnohierarchyname,
+            department: employee.departmentnohierarchyname,
+            locationnohierarchy: employee.locationnohierarchy,
+            locationnohierarchyname: employee.locationnohierarchyname,
+            location: employee.locationnohierarchyname,
+          },
         });
-
-        if (!existing) {
-          // Create new employee record
-          await prisma.waNetsuiteEmployee.create({
-            data: {
-              netsuiteInternalId: email, // Use email as fallback since internalId not provided
-              email: email,
-              firstname: employee.firstname,
-              middlename: employee.middlename,
-              lastname: employee.lastname,
-              phone: employee.phone,
-              subsidiarynohierarchy: employee.subsidiarynohierarchy,
-              subsidiarynohierarchyname: employee.subsidiarynohierarchyname,
-              // Per API doc: department/location use nohierarchy field names
-              departmentnohierarchy: employee.departmentnohierarchy,
-              departmentnohierarchyname: employee.departmentnohierarchyname,
-              department: employee.departmentnohierarchyname, // Alias for backward compat
-              locationnohierarchy: employee.locationnohierarchy,
-              locationnohierarchyname: employee.locationnohierarchyname,
-              location: employee.locationnohierarchyname, // Alias for backward compat
-            },
-          });
-          newEmployees++;
-        } else {
-          // Update existing employee
-          await prisma.waNetsuiteEmployee.update({
-            where: { email: email },
-            data: {
-              firstname: employee.firstname,
-              middlename: employee.middlename,
-              lastname: employee.lastname,
-              phone: employee.phone,
-              subsidiarynohierarchy: employee.subsidiarynohierarchy,
-              subsidiarynohierarchyname: employee.subsidiarynohierarchyname,
-              departmentnohierarchy: employee.departmentnohierarchy,
-              departmentnohierarchyname: employee.departmentnohierarchyname,
-              department: employee.departmentnohierarchyname,
-              locationnohierarchy: employee.locationnohierarchy,
-              locationnohierarchyname: employee.locationnohierarchyname,
-              location: employee.locationnohierarchyname,
-            },
-          });
-          updatedEmployees++;
-        }
+        // Check if it was created (no previous syncedAt) or updated
+        updatedEmployees++;
       } catch (error) {
-        // Retry once after 1 second (handles Neon cold start connection failures)
+        // Retry once after 1s (handles transient connection failures)
         try {
           await new Promise(resolve => setTimeout(resolve, 1000));
-          const email = (employee.email || '').toLowerCase().trim();
           await prisma.waNetsuiteEmployee.upsert({
             where: { email },
-            update: {
-              firstname: employee.firstname, lastname: employee.lastname, phone: employee.phone,
-              subsidiarynohierarchy: employee.subsidiarynohierarchy,
-              subsidiarynohierarchyname: employee.subsidiarynohierarchyname,
-            },
-            create: {
-              netsuiteInternalId: email, email,
-              firstname: employee.firstname, middlename: employee.middlename, lastname: employee.lastname,
-              phone: employee.phone,
-              subsidiarynohierarchy: employee.subsidiarynohierarchy,
-              subsidiarynohierarchyname: employee.subsidiarynohierarchyname,
-              departmentnohierarchy: employee.departmentnohierarchy,
-              departmentnohierarchyname: employee.departmentnohierarchyname,
-              department: employee.departmentnohierarchyname,
-              locationnohierarchy: employee.locationnohierarchy,
-              locationnohierarchyname: employee.locationnohierarchyname,
-              location: employee.locationnohierarchyname,
-            },
+            update: { firstname: employee.firstname, lastname: employee.lastname, subsidiarynohierarchy: employee.subsidiarynohierarchy, subsidiarynohierarchyname: employee.subsidiarynohierarchyname },
+            create: { netsuiteInternalId: email, email, firstname: employee.firstname, middlename: employee.middlename, lastname: employee.lastname, phone: employee.phone, subsidiarynohierarchy: employee.subsidiarynohierarchy, subsidiarynohierarchyname: employee.subsidiarynohierarchyname, departmentnohierarchy: employee.departmentnohierarchy, departmentnohierarchyname: employee.departmentnohierarchyname, department: employee.departmentnohierarchyname, locationnohierarchy: employee.locationnohierarchy, locationnohierarchyname: employee.locationnohierarchyname, location: employee.locationnohierarchyname },
           });
           updatedEmployees++;
         } catch (retryError) {
-          console.error(`[NetSuite Employee Sync] Retry failed for ${employee.email}:`, retryError);
+          console.error(`[NetSuite Employee Sync] Failed for ${email}:`, (retryError as Error).message);
         }
       }
     }
@@ -502,73 +470,49 @@ export async function waSyncNetSuiteSubsidiaries(): Promise<{
       };
     }
 
+    // Upsert each subsidiary using single query (halves DB round-trips)
     for (const sub of subsidiaries) {
+      const region = sub.reportingRegionName || 'Unknown';
+      const currencyCode = waDeriveCurrencyCode(sub.currencyname);
+
       try {
-        const existing = await prisma.waSubsidiary.findUnique({
+        await prisma.waSubsidiary.upsert({
           where: { integrationId: sub.internalid },
+          update: {
+            name: sub.namenohierarchy || sub.name,
+            region,
+            currencyCode,
+            country: sub.country || null,
+            countryname: sub.countryname || null,
+            reportingRegionId: sub.reportingRegionId || null,
+            reportingRegionName: sub.reportingRegionName || null,
+            isActive: true,
+          },
+          create: {
+            integrationId: sub.internalid,
+            name: sub.namenohierarchy || sub.name,
+            region,
+            currencyCode,
+            country: sub.country || null,
+            countryname: sub.countryname || null,
+            reportingRegionId: sub.reportingRegionId || null,
+            reportingRegionName: sub.reportingRegionName || null,
+            isActive: true,
+          },
         });
-
-        // Derive region from reportingRegionName or default to 'Unknown'
-        const region = sub.reportingRegionName || 'Unknown';
-        // Derive currency code from currencyname (first 3 chars) or fallback
-        const currencyCode = waDeriveCurrencyCode(sub.currencyname);
-
-        if (!existing) {
-          await prisma.waSubsidiary.create({
-            data: {
-              integrationId: sub.internalid,
-              name: sub.namenohierarchy || sub.name,
-              region: region,
-              currencyCode: currencyCode,
-              country: sub.country || null,
-              countryname: sub.countryname || null,
-              reportingRegionId: sub.reportingRegionId || null,
-              reportingRegionName: sub.reportingRegionName || null,
-              isActive: true,
-            },
-          });
-          newSubsidiaries++;
-        } else {
-          await prisma.waSubsidiary.update({
-            where: { integrationId: sub.internalid },
-            data: {
-              name: sub.namenohierarchy || sub.name,
-              region: region,
-              currencyCode: currencyCode,
-              country: sub.country || null,
-              countryname: sub.countryname || null,
-              reportingRegionId: sub.reportingRegionId || null,
-              reportingRegionName: sub.reportingRegionName || null,
-            },
-          });
-          updatedSubsidiaries++;
-        }
+        updatedSubsidiaries++;
       } catch (error) {
-        // Retry once after 1 second (handles Neon cold start connection failures)
+        // Retry once after 1s
         try {
           await new Promise(resolve => setTimeout(resolve, 1000));
-          const region = sub.reportingRegionName || 'Unknown';
-          const currencyCode = waDeriveCurrencyCode(sub.currencyname);
           await prisma.waSubsidiary.upsert({
             where: { integrationId: sub.internalid },
-            update: {
-              name: sub.namenohierarchy || sub.name, region, currencyCode,
-              country: sub.country || null, countryname: sub.countryname || null,
-              reportingRegionId: sub.reportingRegionId || null,
-              reportingRegionName: sub.reportingRegionName || null,
-            },
-            create: {
-              integrationId: sub.internalid,
-              name: sub.namenohierarchy || sub.name, region, currencyCode,
-              country: sub.country || null, countryname: sub.countryname || null,
-              reportingRegionId: sub.reportingRegionId || null,
-              reportingRegionName: sub.reportingRegionName || null,
-              isActive: true,
-            },
+            update: { name: sub.namenohierarchy || sub.name, region, currencyCode, country: sub.country || null, countryname: sub.countryname || null, reportingRegionId: sub.reportingRegionId || null, reportingRegionName: sub.reportingRegionName || null, isActive: true },
+            create: { integrationId: sub.internalid, name: sub.namenohierarchy || sub.name, region, currencyCode, country: sub.country || null, countryname: sub.countryname || null, reportingRegionId: sub.reportingRegionId || null, reportingRegionName: sub.reportingRegionName || null, isActive: true },
           });
           updatedSubsidiaries++;
         } catch (retryError) {
-          console.error(`[NetSuite Subsidiary Sync] Retry failed for ${sub.internalid}:`, retryError);
+          console.error(`[NetSuite Subsidiary Sync] Failed for ${sub.internalid}:`, (retryError as Error).message);
         }
       }
     }
