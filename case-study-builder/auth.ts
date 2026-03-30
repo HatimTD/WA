@@ -185,44 +185,69 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const userSsoUid = dbUser.ssoUid;
           const userName = dbUser.name;
 
-          if (userEmail) {
-            // Fire and forget - don't await
+          // Auto-assign subsidiary from NetSuite if user has none
+          if (userEmail && subsidiaries.length === 0) {
+            // Only run when user has no subsidiaries - avoids unnecessary work
+            try {
+              const nsEmployee = await prisma.waNetsuiteEmployee.findUnique({
+                where: { email: userEmail.toLowerCase().trim() },
+                select: {
+                  netsuiteInternalId: true,
+                  firstname: true,
+                  middlename: true,
+                  lastname: true,
+                  subsidiarynohierarchy: true,
+                },
+              });
+
+              if (nsEmployee) {
+                const updateData: Record<string, string> = {};
+                if (!userSsoUid && nsEmployee.netsuiteInternalId) {
+                  updateData.ssoUid = nsEmployee.netsuiteInternalId;
+                }
+                if (!userName && nsEmployee.firstname) {
+                  updateData.name = [nsEmployee.firstname, nsEmployee.middlename, nsEmployee.lastname]
+                    .filter(Boolean).join(' ');
+                }
+                if (Object.keys(updateData).length > 0) {
+                  await prisma.user.update({ where: { id: userId }, data: updateData });
+                }
+                if (nsEmployee.netsuiteInternalId && nsEmployee.subsidiarynohierarchy) {
+                  const assignResult = await waAutoAssignSubsidiaryFromNetSuite(userId, nsEmployee.netsuiteInternalId);
+                  if (assignResult.success && assignResult.subsidiary) {
+                    // Update token with the newly assigned subsidiary
+                    token.subsidiaries = [assignResult.subsidiary];
+                    token.regions = [assignResult.subsidiary.region];
+                    console.log('[auth] Auto-assigned subsidiary', assignResult.subsidiary.name, 'to', userEmail);
+                  }
+                }
+              }
+            } catch (syncError) {
+              console.error('[auth] Subsidiary auto-assign failed for', userEmail, syncError);
+            }
+          } else if (userEmail && subsidiaries.length > 0) {
+            // User already has subsidiaries - just sync metadata in background
             (async () => {
               try {
                 const nsEmployee = await prisma.waNetsuiteEmployee.findUnique({
                   where: { email: userEmail.toLowerCase().trim() },
-                  select: {
-                    netsuiteInternalId: true,
-                    firstname: true,
-                    middlename: true,
-                    lastname: true,
-                    subsidiarynohierarchy: true,
-                  },
+                  select: { netsuiteInternalId: true, firstname: true, middlename: true, lastname: true },
                 });
-
                 if (nsEmployee) {
                   const updateData: Record<string, string> = {};
-                  if (!userSsoUid && nsEmployee.netsuiteInternalId) {
-                    updateData.ssoUid = nsEmployee.netsuiteInternalId;
-                  }
+                  if (!userSsoUid && nsEmployee.netsuiteInternalId) updateData.ssoUid = nsEmployee.netsuiteInternalId;
                   if (!userName && nsEmployee.firstname) {
-                    updateData.name = [nsEmployee.firstname, nsEmployee.middlename, nsEmployee.lastname]
-                      .filter(Boolean).join(' ');
+                    updateData.name = [nsEmployee.firstname, nsEmployee.middlename, nsEmployee.lastname].filter(Boolean).join(' ');
                   }
                   if (Object.keys(updateData).length > 0) {
                     await prisma.user.update({ where: { id: userId }, data: updateData });
                   }
-                  if (nsEmployee.netsuiteInternalId && nsEmployee.subsidiarynohierarchy) {
-                    await waAutoAssignSubsidiaryFromNetSuite(userId, nsEmployee.netsuiteInternalId);
-                  }
                 }
               } catch {
-                // Non-critical - sync will happen on next login
+                // Metadata sync is non-critical
               }
             })();
           }
-
-          // Subsidiaries already fetched in parallel above
         }
       }
 

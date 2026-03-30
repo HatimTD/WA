@@ -19,6 +19,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { runNetSuiteSync, getSyncStats, waSyncNetSuiteEmployees, waSyncNetSuiteItems, waSyncNetSuiteSubsidiaries } from '@/lib/integrations/netsuite-sync';
+import { waAutoAssignSubsidiaryFromNetSuite } from '@/lib/actions/waUserSubsidiaryActions';
+import prisma from '@/lib/prisma';
 
 /**
  * Verify the request is from Vercel Cron
@@ -87,6 +89,38 @@ export async function POST(request: NextRequest) {
     const subsidiaryResult = await waSyncNetSuiteSubsidiaries();
     console.log('[NetSuite Cron] Subsidiary sync completed:', subsidiaryResult);
 
+    // Re-assign subsidiaries for users who are missing them
+    console.log('[NetSuite Cron] Checking for users missing subsidiary assignment...');
+    let subsidiaryAssignCount = 0;
+    try {
+      // Find users with no subsidiary assigned
+      const usersWithoutSub = await prisma.user.findMany({
+        where: {
+          userSubsidiaries: { none: {} },
+          email: { not: undefined },
+        },
+        select: { id: true, email: true },
+      });
+
+      for (const user of usersWithoutSub) {
+        if (!user.email) continue;
+        const nsEmployee = await prisma.waNetsuiteEmployee.findUnique({
+          where: { email: user.email.toLowerCase().trim() },
+          select: { netsuiteInternalId: true, subsidiarynohierarchy: true },
+        });
+        if (nsEmployee?.netsuiteInternalId && nsEmployee?.subsidiarynohierarchy) {
+          const result = await waAutoAssignSubsidiaryFromNetSuite(user.id, nsEmployee.netsuiteInternalId);
+          if (result.success && result.subsidiary) {
+            subsidiaryAssignCount++;
+            console.log(`[NetSuite Cron] Auto-assigned subsidiary "${result.subsidiary.name}" to ${user.email}`);
+          }
+        }
+      }
+      console.log(`[NetSuite Cron] Subsidiary re-assignment: ${subsidiaryAssignCount} users fixed out of ${usersWithoutSub.length} missing`);
+    } catch (assignError) {
+      console.error('[NetSuite Cron] Subsidiary re-assignment failed:', assignError);
+    }
+
     // Combine results
     const overallSuccess = customerResult.success && employeeResult.success && itemsResult.success && subsidiaryResult.success;
 
@@ -119,6 +153,9 @@ export async function POST(request: NextRequest) {
         newSubsidiaries: subsidiaryResult.newSubsidiaries,
         updatedSubsidiaries: subsidiaryResult.updatedSubsidiaries,
         error: subsidiaryResult.error,
+      },
+      subsidiaryAssignments: {
+        usersFixed: subsidiaryAssignCount,
       },
     });
   } catch (error) {
