@@ -25,14 +25,15 @@ import {
   FileText,
   Globe,
   Languages,
-  AlertCircle,
-  Layers,
   Image as ImageIcon,
   User,
 } from 'lucide-react';
 import Image from 'next/image';
-import type { WpsLayer } from '@/lib/actions/waWpsActions';
 import { waFormatJobType, waFormatProductCategory, waGetProductDisplay } from '@/lib/waUtils';
+import WeldingProcedureForm from '@/components/welding-procedure-form';
+import { waGetWeldingProcedure } from '@/lib/actions/waWpsActions';
+import TranslationPanel from '@/components/translation-panel';
+import { TagColleagues } from '@/components/tag-colleagues';
 
 // PDF EXPORT DISABLED - Dynamic import for PDF export
 // const PDFExportButton = dynamic(() => import('@/components/pdf-export-button'), {
@@ -63,12 +64,6 @@ const languageNames: Record<string, string> = {
 
 function getLanguageName(code: string): string {
   return languageNames[code.toLowerCase()] || code.toUpperCase();
-}
-
-// Helper to display value or placeholder
-function waDisplayValue(value: string | number | undefined | null, placeholder = '-'): string {
-  if (value === undefined || value === null || value === '') return placeholder;
-  return String(value);
 }
 
 // Helper to format expanded service life (hours, days, weeks, months, years)
@@ -170,9 +165,13 @@ export default async function PublicCaseDetailPage({
     canSeeCustomerName = roles.includes('ADMIN') || roles.includes('APPROVER');
   }
 
-  // Fetch comments for the case study
-  const commentsResult = await waGetComments(id);
+  // Fetch comments and WPS data
+  const [commentsResult, wpsResult] = await Promise.all([
+    waGetComments(id),
+    waGetWeldingProcedure(id),
+  ]);
   const comments = commentsResult.comments || [];
+  const existingWPS = wpsResult.wps;
 
   // PDF EXPORT DISABLED - Prepare PDF export data (same as cases detail page for consistency)
   // const pdfData: CaseStudyPDFData = {
@@ -698,370 +697,77 @@ export default async function PublicCaseDetailPage({
           />
         )}
 
-        {/* Welding Procedure (TECH/STAR cases) */}
-        {caseStudy.wps && (
+        {/* Welding Procedure Specification - matching dashboard/cases design */}
+        {(caseStudy.type === 'TECH' || caseStudy.type === 'STAR') && (
+          <WeldingProcedureForm
+            caseStudyId={caseStudy.id}
+            existingData={existingWPS ? {
+              baseMetalType: existingWPS.baseMetalType || undefined,
+              baseMetalGrade: existingWPS.baseMetalGrade || undefined,
+              baseMetalThickness: existingWPS.baseMetalThickness || undefined,
+              surfacePreparation: existingWPS.surfacePreparation || undefined,
+              surfacePreparationOther: (existingWPS as any).surfacePreparationOther || undefined,
+              layers: (existingWPS as any).layers || undefined,
+              waProductName: existingWPS.waProductName || undefined,
+              waProductDiameter: existingWPS.waProductDiameter || undefined,
+              shieldingGas: existingWPS.shieldingGas || undefined,
+              shieldingFlowRate: existingWPS.shieldingFlowRate || undefined,
+              flux: existingWPS.flux || undefined,
+              standardDesignation: existingWPS.standardDesignation || undefined,
+              weldingProcess: existingWPS.weldingProcess || undefined,
+              currentType: existingWPS.currentType || undefined,
+              currentModeSynergy: existingWPS.currentModeSynergy || undefined,
+              wireFeedSpeed: existingWPS.wireFeedSpeed || undefined,
+              intensity: existingWPS.intensity || undefined,
+              voltage: existingWPS.voltage || undefined,
+              heatInput: existingWPS.heatInput || undefined,
+              weldingPosition: existingWPS.weldingPosition || undefined,
+              torchAngle: existingWPS.torchAngle || undefined,
+              stickOut: existingWPS.stickOut || undefined,
+              travelSpeed: existingWPS.travelSpeed || undefined,
+              oscillationWidth: existingWPS.oscillationWidth || undefined,
+              oscillationSpeed: existingWPS.oscillationSpeed || undefined,
+              oscillationStepOver: existingWPS.oscillationStepOver || undefined,
+              oscillationTempo: existingWPS.oscillationTempo || undefined,
+              preheatingTemp: (existingWPS as any).preheatingTemp || undefined,
+              interpassTemp: (existingWPS as any).interpassTemp || undefined,
+              postheatingTemp: (existingWPS as any).postheatingTemp || undefined,
+              pwhtRequired: (existingWPS as any).pwhtRequired || undefined,
+              pwhtHeatingRate: (existingWPS as any).pwhtHeatingRate || undefined,
+              pwhtTempHoldingTime: (existingWPS as any).pwhtTempHoldingTime || undefined,
+              pwhtCoolingRate: (existingWPS as any).pwhtCoolingRate || undefined,
+              preheatTemperature: existingWPS.preheatTemperature || undefined,
+              interpassTemperature: existingWPS.interpassTemperature || undefined,
+              postheatTemperature: existingWPS.postheatTemperature || undefined,
+              pwhtDetails: existingWPS.pwhtDetails || undefined,
+              documents: (existingWPS as any).documents || undefined,
+              layerNumbers: existingWPS.layerNumbers || undefined,
+              hardness: existingWPS.hardness || undefined,
+              defectsObserved: existingWPS.defectsObserved || undefined,
+              additionalNotes: existingWPS.additionalNotes || undefined,
+            } : undefined}
+          />
+        )}
+
+        {/* Translation Panel */}
+        <TranslationPanel
+          caseStudyId={caseStudy.id}
+          originalLanguage={caseStudy.originalLanguage}
+          translationAvailable={caseStudy.translationAvailable}
+          translatedText={caseStudy.translatedText}
+        />
+
+        {/* Tag Colleagues */}
+        {session?.user && (
           <Card role="article" className="dark:bg-card dark:border-border">
             <CardHeader>
-              <CardTitle className="dark:text-foreground">Welding Procedure Specification</CardTitle>
+              <CardTitle className="dark:text-foreground">Collaborate</CardTitle>
               <CardDescription className="dark:text-muted-foreground">
-                {(caseStudy.wps.layers as WpsLayer[] | undefined)?.length
-                  ? `${(caseStudy.wps.layers as WpsLayer[]).length} layer(s) documented`
-                  : 'Welding parameters and specifications'}
+                Tag colleagues to notify them about this case study
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Base Metal Section */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground border-b dark:border-border pb-2">Base Metal</h3>
-                <div className="grid md:grid-cols-2 gap-4 text-sm">
-                  {caseStudy.wps.baseMetalType && (
-                    <div>
-                      <p className="font-medium text-gray-600 dark:text-muted-foreground">Base Metal Type</p>
-                      <p className="text-gray-900 dark:text-foreground">{caseStudy.wps.baseMetalType}</p>
-                    </div>
-                  )}
-                  {caseStudy.wps.surfacePreparation && (
-                    <div>
-                      <p className="font-medium text-gray-600 dark:text-muted-foreground">Surface Preparation</p>
-                      <p className="text-gray-900 dark:text-foreground">
-                        {caseStudy.wps.surfacePreparation}
-                        {caseStudy.wps.surfacePreparationOther && ` - ${caseStudy.wps.surfacePreparationOther}`}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Welding Layers Section */}
-              {(caseStudy.wps.layers as WpsLayer[] | undefined)?.length ? (
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground border-b dark:border-border pb-2 flex items-center gap-2">
-                    <Layers className="h-5 w-5" />
-                    Welding Layers
-                  </h3>
-                  {(caseStudy.wps.layers as WpsLayer[]).map((layer, index) => (
-                    <div key={layer.id || index} className="border border-border rounded-lg p-4 space-y-4">
-                      <h4 className="font-semibold text-wa-green-600 dark:text-primary">
-                        Layer {index + 1}
-                        {layer.waProductName && ` - ${layer.waProductName}`}
-                      </h4>
-
-                      {/* WA Consumables */}
-                      <div className="space-y-2">
-                        <h5 className="font-medium text-sm text-gray-700 dark:text-gray-300">WA Consumables</h5>
-                        <div className="grid md:grid-cols-3 gap-3 text-sm">
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-muted-foreground">Product Name</p>
-                            <p className="font-medium text-gray-900 dark:text-foreground">{waDisplayValue(layer.waProductName)}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-muted-foreground">Diameter</p>
-                            <p className="font-medium text-gray-900 dark:text-foreground">{waDisplayValue(layer.waProductDiameter)} {layer.waProductDiameter && 'mm'}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-muted-foreground">Process</p>
-                            <p className="font-medium text-gray-900 dark:text-foreground">
-                              {waDisplayValue(layer.weldingProcess)}
-                              {layer.weldingProcessOther && ` - ${layer.weldingProcessOther}`}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-muted-foreground">Technique</p>
-                            <p className="font-medium text-gray-900 dark:text-foreground">
-                              {waDisplayValue(layer.technique)}
-                              {layer.techniqueOther && ` - ${layer.techniqueOther}`}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-muted-foreground">Welding Position</p>
-                            <p className="font-medium text-gray-900 dark:text-foreground">
-                              {waDisplayValue(layer.weldingPosition)}
-                              {layer.weldingPositionOther && ` - ${layer.weldingPositionOther}`}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-muted-foreground">Torch Position</p>
-                            <p className="font-medium text-gray-900 dark:text-foreground">{waDisplayValue(layer.torchAngle)}</p>
-                          </div>
-                          {/* Shielding Gas - Only show for FCAW, GTAW, or Other processes */}
-                          {(layer.weldingProcess === 'FCAW' || layer.weldingProcess === 'GTAW' || layer.weldingProcess === 'Other') && layer.shieldingGas && (
-                            <div>
-                              <p className="text-xs text-gray-500 dark:text-muted-foreground">Shielding Gas</p>
-                              <p className="font-medium text-gray-900 dark:text-foreground">
-                                {waDisplayValue(layer.shieldingGas)}
-                                {layer.shieldingGasOther && ` - ${layer.shieldingGasOther}`}
-                              </p>
-                            </div>
-                          )}
-                          {/* Flow Rate - Only show when shielding gas is selected and not self-shielded */}
-                          {layer.shieldingFlowRate && layer.shieldingGas && layer.shieldingGas !== 'Self shielded' && (
-                            <div>
-                              <p className="text-xs text-gray-500 dark:text-muted-foreground">Flow Rate (L/min)</p>
-                              <p className="font-medium text-gray-900 dark:text-foreground">{layer.shieldingFlowRate}</p>
-                            </div>
-                          )}
-                          {layer.flux && (
-                            <div>
-                              <p className="text-xs text-gray-500 dark:text-muted-foreground">Flux</p>
-                              <p className="font-medium text-gray-900 dark:text-foreground">
-                                {layer.flux}
-                                {layer.fluxOther && ` - ${layer.fluxOther}`}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* WA Parameters */}
-                      <div className="space-y-2">
-                        <h5 className="font-medium text-sm text-gray-700 dark:text-gray-300">WA Parameters</h5>
-                        <div className="grid md:grid-cols-4 gap-3 text-sm">
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-muted-foreground">Stick-out</p>
-                            <p className="font-medium text-gray-900 dark:text-foreground">{waDisplayValue(layer.stickOut)} {layer.stickOut && 'mm'}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-muted-foreground">Type of Current</p>
-                            <p className="font-medium text-gray-900 dark:text-foreground">
-                              {waDisplayValue(layer.currentType)}
-                              {layer.currentTypeOther && ` - ${layer.currentTypeOther}`}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-muted-foreground">Welding Mode</p>
-                            <p className="font-medium text-gray-900 dark:text-foreground">
-                              {waDisplayValue(layer.currentModeSynergy)}
-                              {layer.currentModeSynergyOther && ` - ${layer.currentModeSynergyOther}`}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-muted-foreground">Wire Feed Speed</p>
-                            <p className="font-medium text-gray-900 dark:text-foreground">{waDisplayValue(layer.wireFeedSpeed)} {layer.wireFeedSpeed && 'm/min'}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-muted-foreground">Intensity</p>
-                            <p className="font-medium text-gray-900 dark:text-foreground">{waDisplayValue(layer.intensity)} {layer.intensity && 'A'}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-muted-foreground">Voltage</p>
-                            <p className="font-medium text-gray-900 dark:text-foreground">{waDisplayValue(layer.voltage)} {layer.voltage && 'V'}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-muted-foreground">Welding Speed</p>
-                            <p className="font-medium text-gray-900 dark:text-foreground">{waDisplayValue(layer.travelSpeed)} {layer.travelSpeed && 'cm/min'}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Oscillation Details */}
-                      {(layer.oscillationAmplitude || layer.oscillationPeriod || layer.oscillationTempos) && (
-                        <div className="space-y-2">
-                          <h5 className="font-medium text-sm text-gray-700 dark:text-gray-300">Oscillation Details</h5>
-                          <div className="grid md:grid-cols-3 gap-3 text-sm">
-                            {layer.oscillationAmplitude && (
-                              <div>
-                                <p className="text-xs text-gray-500 dark:text-muted-foreground">Amplitude</p>
-                                <p className="font-medium text-gray-900 dark:text-foreground">{layer.oscillationAmplitude} mm</p>
-                              </div>
-                            )}
-                            {layer.oscillationPeriod && (
-                              <div>
-                                <p className="text-xs text-gray-500 dark:text-muted-foreground">Period</p>
-                                <p className="font-medium text-gray-900 dark:text-foreground">{layer.oscillationPeriod} s</p>
-                              </div>
-                            )}
-                            {layer.oscillationTempos && (
-                              <div>
-                                <p className="text-xs text-gray-500 dark:text-muted-foreground">Dwell Time</p>
-                                <p className="font-medium text-gray-900 dark:text-foreground">{layer.oscillationTempos} s</p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Per-Layer Heating Procedure */}
-                      {(layer.preheatingTemp || layer.interpassTemp || layer.postheatingTemp) && (
-                        <div className="space-y-2">
-                          <h5 className="font-medium text-sm text-gray-700 dark:text-gray-300">Heating Procedure</h5>
-                          <div className="grid md:grid-cols-3 gap-3 text-sm">
-                            {layer.preheatingTemp && (
-                              <div>
-                                <p className="text-xs text-gray-500 dark:text-muted-foreground">Preheating Temperature</p>
-                                <p className="font-medium text-gray-900 dark:text-foreground">{layer.preheatingTemp} °C</p>
-                              </div>
-                            )}
-                            {layer.interpassTemp && (
-                              <div>
-                                <p className="text-xs text-gray-500 dark:text-muted-foreground">Interpass Temperature</p>
-                                <p className="font-medium text-gray-900 dark:text-foreground">{layer.interpassTemp} °C</p>
-                              </div>
-                            )}
-                            {layer.postheatingTemp && (
-                              <div>
-                                <p className="text-xs text-gray-500 dark:text-muted-foreground">Postheating Temperature & Holding Time</p>
-                                <p className="font-medium text-gray-900 dark:text-foreground">{layer.postheatingTemp}</p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                /* Legacy WPS Display */
-                <div className="grid md:grid-cols-2 gap-6 text-sm">
-                  {caseStudy.wps.weldingProcess && (
-                    <div>
-                      <p className="font-medium text-gray-600 dark:text-muted-foreground">Welding Process</p>
-                      <p className="text-gray-900 dark:text-foreground">{caseStudy.wps.weldingProcess}</p>
-                    </div>
-                  )}
-                  {caseStudy.wps.shieldingGas && (
-                    <div>
-                      <p className="font-medium text-gray-600 dark:text-muted-foreground">Shielding Gas</p>
-                      <p className="text-gray-900 dark:text-foreground">{caseStudy.wps.shieldingGas}</p>
-                    </div>
-                  )}
-                  {caseStudy.wps.currentType && (
-                    <div>
-                      <p className="font-medium text-gray-600 dark:text-muted-foreground">Current Type</p>
-                      <p className="text-gray-900 dark:text-foreground">{caseStudy.wps.currentType}</p>
-                    </div>
-                  )}
-                  {caseStudy.wps.voltage && (
-                    <div>
-                      <p className="font-medium text-gray-600 dark:text-muted-foreground">Voltage</p>
-                      <p className="text-gray-900 dark:text-foreground">{caseStudy.wps.voltage}</p>
-                    </div>
-                  )}
-                  {caseStudy.wps.intensity && (
-                    <div>
-                      <p className="font-medium text-gray-600 dark:text-muted-foreground">Current/Intensity</p>
-                      <p className="text-gray-900 dark:text-foreground">{caseStudy.wps.intensity}</p>
-                    </div>
-                  )}
-                  {caseStudy.wps.wireFeedSpeed && (
-                    <div>
-                      <p className="font-medium text-gray-600 dark:text-muted-foreground">Wire Feed Speed</p>
-                      <p className="text-gray-900 dark:text-foreground">{caseStudy.wps.wireFeedSpeed}</p>
-                    </div>
-                  )}
-                  {caseStudy.wps.travelSpeed && (
-                    <div>
-                      <p className="font-medium text-gray-600 dark:text-muted-foreground">Travel Speed</p>
-                      <p className="text-gray-900 dark:text-foreground">{caseStudy.wps.travelSpeed}</p>
-                    </div>
-                  )}
-                  {caseStudy.wps.weldingPosition && (
-                    <div>
-                      <p className="font-medium text-gray-600 dark:text-muted-foreground">Welding Position</p>
-                      <p className="text-gray-900 dark:text-foreground">{caseStudy.wps.weldingPosition}</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Heating Procedure Section */}
-              {(caseStudy.wps.preheatingTemp || caseStudy.wps.interpassTemp || caseStudy.wps.postheatingTemp ||
-                caseStudy.wps.preheatTemperature || caseStudy.wps.interpassTemperature || caseStudy.wps.postheatTemperature) && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground border-b dark:border-border pb-2">Heating Procedure</h3>
-                  <div className="grid md:grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <p className="font-medium text-gray-600 dark:text-muted-foreground">Preheating Temperature</p>
-                      <p className="text-gray-900 dark:text-foreground">
-                        {waDisplayValue(caseStudy.wps.preheatingTemp || caseStudy.wps.preheatTemperature)} {(caseStudy.wps.preheatingTemp || caseStudy.wps.preheatTemperature) && '°C'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-600 dark:text-muted-foreground">Interpass Temperature</p>
-                      <p className="text-gray-900 dark:text-foreground">
-                        {waDisplayValue(caseStudy.wps.interpassTemp || caseStudy.wps.interpassTemperature)} {(caseStudy.wps.interpassTemp || caseStudy.wps.interpassTemperature) && '°C'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-600 dark:text-muted-foreground">Postheating Temperature & Holding Time</p>
-                      <p className="text-gray-900 dark:text-foreground">
-                        {waDisplayValue(caseStudy.wps.postheatingTemp || caseStudy.wps.postheatTemperature)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* PWHT Section */}
-              {caseStudy.wps.pwhtRequired === 'Y' && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground border-b dark:border-border pb-2">Post Weld Heat Treatment (PWHT)</h3>
-                  <div className="grid md:grid-cols-3 gap-4 text-sm">
-                    {caseStudy.wps.pwhtHeatingRate && (
-                      <div>
-                        <p className="font-medium text-gray-600 dark:text-muted-foreground">Heating Rate</p>
-                        <p className="text-gray-900 dark:text-foreground">{caseStudy.wps.pwhtHeatingRate} °C/h</p>
-                      </div>
-                    )}
-                    {caseStudy.wps.pwhtTempHoldingTime && (
-                      <div>
-                        <p className="font-medium text-gray-600 dark:text-muted-foreground">Temperature & Holding Time</p>
-                        <p className="text-gray-900 dark:text-foreground">{caseStudy.wps.pwhtTempHoldingTime}</p>
-                      </div>
-                    )}
-                    {caseStudy.wps.pwhtCoolingRate && (
-                      <div>
-                        <p className="font-medium text-gray-600 dark:text-muted-foreground">Cooling Rate</p>
-                        <p className="text-gray-900 dark:text-foreground">{caseStudy.wps.pwhtCoolingRate} °C/h</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Legacy PWHT Details */}
-              {caseStudy.wps.pwhtDetails && !caseStudy.wps.pwhtRequired && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground border-b dark:border-border pb-2">PWHT Details</h3>
-                  <p className="text-gray-900 dark:text-foreground text-sm">{caseStudy.wps.pwhtDetails}</p>
-                </div>
-              )}
-
-              {/* Documents Section */}
-              {caseStudy.wps.documents && (caseStudy.wps.documents as any[]).length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground border-b dark:border-border pb-2">Supporting Documents</h3>
-                  <div className="space-y-2">
-                    {(caseStudy.wps.documents as any[]).map((doc: any, index: number) => {
-                      const isImage = doc.type?.startsWith('image/') || /\.(png|jpg|jpeg|gif|webp)$/i.test(doc.name);
-                      return (
-                        <div key={index} className="flex items-center gap-2 p-2 bg-muted/50 dark:bg-muted/20 rounded-lg">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium text-gray-900 dark:text-foreground">{doc.name}</span>
-                          {doc.url && (
-                            <a
-                              href={doc.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              download={doc.name}
-                              className="text-sm text-wa-green-600 dark:text-primary hover:underline ml-auto"
-                            >
-                              {isImage ? 'View' : 'Download'}
-                            </a>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Additional Notes Section */}
-              {caseStudy.wps.additionalNotes && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground border-b dark:border-border pb-2">Additional Notes</h3>
-                  <p className="text-gray-900 dark:text-foreground text-sm whitespace-pre-wrap">{caseStudy.wps.additionalNotes}</p>
-                </div>
-              )}
+            <CardContent>
+              <TagColleagues caseStudyId={caseStudy.id} />
             </CardContent>
           </Card>
         )}
