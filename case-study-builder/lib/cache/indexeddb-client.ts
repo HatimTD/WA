@@ -40,7 +40,7 @@ const db = new NetsuiteCacheDB();
  * Provides simple get/set interface for browser-side caching
  */
 class IndexedDBCache {
-  private cacheTTL = 604800000; // 1 week in milliseconds
+  private cacheTTL = 86400000; // 1 day in milliseconds
 
   /**
    * Get cached data from IndexedDB

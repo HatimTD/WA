@@ -10,7 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { User, Settings, Download, Bell, Shield, Camera, Eye, Monitor, Megaphone, Building, Globe, BadgeCheck } from 'lucide-react';
+import { User, Settings, Download, Bell, Shield, Camera, Eye, Monitor, Megaphone, Building, Globe, BadgeCheck, RefreshCw } from 'lucide-react';
+import { indexedDBCache } from '@/lib/cache/indexeddb-client';
 import { toast } from 'sonner';
 
 // Role display configuration
@@ -73,6 +74,7 @@ export default function SettingsForm({
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isRequestingDeletion, setIsRequestingDeletion] = useState(false);
+  const [isClearingCache, setIsClearingCache] = useState(false);
 
   // Avatar upload state
   const [avatarUrl, setAvatarUrl] = useState(user.image || '');
@@ -338,6 +340,23 @@ export default function SettingsForm({
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+    }
+  };
+
+  const handleClearCache = async () => {
+    setIsClearingCache(true);
+    try {
+      const success = await indexedDBCache.clear();
+      if (success) {
+        toast.success('Customer data cache cleared successfully. Fresh data will be loaded on next use.');
+      } else {
+        toast.error('Failed to clear cache. Please try again.');
+      }
+    } catch (error) {
+      console.error('[Settings] Clear cache error:', error);
+      toast.error('An error occurred while clearing the cache.');
+    } finally {
+      setIsClearingCache(false);
     }
   };
 
@@ -832,6 +851,35 @@ export default function SettingsForm({
               {isSaving ? 'Saving...' : 'Save Notification Preferences'}
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Refresh Customer Data */}
+      <Card className="dark:bg-card dark:border-border">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 dark:text-foreground">
+            <RefreshCw className="h-5 w-5 text-wa-green-600 dark:text-primary" />
+            Refresh Customer Data
+          </CardTitle>
+          <CardDescription className="dark:text-muted-foreground">
+            Clear the locally cached customer and item data so it is fetched fresh from NetSuite on next use
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-gray-500 mb-3 dark:text-muted-foreground">
+            If customer or item lists appear outdated, use this button to clear your browser&apos;s local cache.
+            The next time you open a case study form, the latest data will be downloaded automatically.
+            If data is still stale after clearing, contact your administrator to refresh the server cache.
+          </p>
+          <Button
+            variant="outline"
+            onClick={handleClearCache}
+            disabled={isClearingCache}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isClearingCache ? 'animate-spin' : ''}`} />
+            {isClearingCache ? 'Clearing...' : 'Clear Cached Data'}
+          </Button>
         </CardContent>
       </Card>
 

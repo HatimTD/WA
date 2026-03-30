@@ -269,9 +269,9 @@ export class NetSuiteClient {
           wacountryid: c.custentity_wa_country_customer || '',
         }));
 
-        // Cache using chunked storage (splits into ~5MB chunks) for 1 week (604800 seconds)
+        // Cache using chunked storage (splits into ~5MB chunks) for 1 day (86400 seconds)
         // Note: setChunked REPLACES the cache, doesn't append to it
-        const cacheSuccess = await redisCache.setChunked(cacheKey, essentialData, 604800);
+        const cacheSuccess = await redisCache.setChunked(cacheKey, essentialData, 86400);
         if (!cacheSuccess) {
           console.error('[NetSuite] Failed to cache customers in Redis');
         }
@@ -629,8 +629,8 @@ export class NetSuiteClient {
           baseprice: i.baseprice || '',
         }));
 
-        // Cache using chunked storage (splits into ~5MB chunks) for 1 week (604800 seconds)
-        const cacheSuccess = await redisCache.setChunked(cacheKey, essentialItems, 604800);
+        // Cache using chunked storage (splits into ~5MB chunks) for 1 day (86400 seconds)
+        const cacheSuccess = await redisCache.setChunked(cacheKey, essentialItems, 86400);
         if (!cacheSuccess) {
           console.error('[NetSuite] Failed to cache items in Redis');
         }
@@ -744,8 +744,8 @@ export class NetSuiteClient {
           reportingRegionName: s.custrecord_wag_reportingregionname || '',
         }));
 
-        // Cache for 1 week
-        await redisCache.setChunked(cacheKey, essentialData, 604800);
+        // Cache for 1 day
+        await redisCache.setChunked(cacheKey, essentialData, 86400);
 
         allSubsidiaries = essentialData;
       }
@@ -842,9 +842,9 @@ export class NetSuiteClient {
               wacountryid: c.custentity_wa_country_customer || '',
             }));
 
-            // Cache using chunked storage (splits into ~5MB chunks) for 1 week
+            // Cache using chunked storage (splits into ~5MB chunks) for 1 day
             // Note: setChunked REPLACES the cache completely, doesn't append
-            const cacheSuccess = await redisCache.setChunked('netsuite:customers', essentialData, 604800);
+            const cacheSuccess = await redisCache.setChunked('netsuite:customers', essentialData, 86400);
             if (!cacheSuccess) {
               console.error('[NetSuite] Failed to cache customers during preload');
             }
@@ -892,8 +892,8 @@ export class NetSuiteClient {
               baseprice: i.baseprice || '',
             }));
 
-            // Cache using chunked storage (splits into ~5MB chunks) for 1 week
-            const cacheSuccess = await redisCache.setChunked('netsuite:items', essentialItems, 604800);
+            // Cache using chunked storage (splits into ~5MB chunks) for 1 day
+            const cacheSuccess = await redisCache.setChunked('netsuite:items', essentialItems, 86400);
             if (!cacheSuccess) {
               console.error('[NetSuite] Failed to cache items during preload');
             }
@@ -944,7 +944,7 @@ export class NetSuiteClient {
               locationnohierarchyname: e.locationnohierarchyname || '',
             }));
 
-            const cacheSuccess = await redisCache.setChunked('netsuite:employees', essentialEmployees, 604800);
+            const cacheSuccess = await redisCache.setChunked('netsuite:employees', essentialEmployees, 86400);
             if (!cacheSuccess) {
               console.error('[NetSuite] Failed to cache employees during preload');
             }
@@ -992,7 +992,7 @@ export class NetSuiteClient {
               reportingRegionName: s.custrecord_wag_reportingregionname || '',
             }));
 
-            const cacheSuccess = await redisCache.setChunked('netsuite:subsidiaries', essentialSubsidiaries, 604800);
+            const cacheSuccess = await redisCache.setChunked('netsuite:subsidiaries', essentialSubsidiaries, 86400);
             if (!cacheSuccess) {
               console.error('[NetSuite] Failed to cache subsidiaries during preload');
             }
@@ -1096,8 +1096,8 @@ export class NetSuiteClient {
           locationnohierarchyname: emp.locationnohierarchyname || null,
         }));
 
-        // Cache using chunked storage for 1 week (604800 seconds)
-        await redisCache.setChunked(cacheKey, essentialData, 604800);
+        // Cache using chunked storage for 1 day (86400 seconds)
+        await redisCache.setChunked(cacheKey, essentialData, 86400);
 
         allEmployees = essentialData;
       }

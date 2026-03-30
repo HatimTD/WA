@@ -13,7 +13,7 @@ class RedisCache {
   private redis: Redis | null = null;
   private isConnected = false;
   private connectionAttempted = false;
-  private cacheTTL = 604800; // 1 week in seconds
+  private cacheTTL = 86400; // 1 day in seconds
 
   // Fallback in-memory cache if Redis unavailable
   private memoryCache: Map<string, { data: any; expiresAt: number }> = new Map();

@@ -72,9 +72,9 @@ describe('Offline Functionality', () => {
       expect(cacheDuration).toBe(expectedDuration)
     })
 
-    it('should validate cache duration for library content (7 days)', () => {
-      const cacheDuration = 7 * 24 * 60 * 60 * 1000 // 7 days in milliseconds
-      const expectedDuration = 604800000 // 7 days
+    it('should validate cache duration for library content (1 day)', () => {
+      const cacheDuration = 1 * 24 * 60 * 60 * 1000 // 1 day in milliseconds
+      const expectedDuration = 86400000 // 1 day
       expect(cacheDuration).toBe(expectedDuration)
     })
 

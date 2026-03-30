@@ -167,8 +167,8 @@ export default function NetSuiteCustomerSearch({
             if (fetchedCustomers && fetchedCustomers.length > 0) {
               allCustomers = fetchedCustomers;
               cacheHadData = true;
-              // 3. Cache in IndexedDB for 1 week
-              await indexedDBCache.set(cacheKey, allCustomers, 604800000);
+              // 3. Cache in IndexedDB for 1 day
+              await indexedDBCache.set(cacheKey, allCustomers, 86400000);
             }
           } else {
             cacheHadData = true;
