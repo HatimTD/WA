@@ -648,6 +648,74 @@ export default async function PublicCaseDetailPage({
           </CardContent>
         </Card>
 
+        {/* Images Gallery */}
+        {caseStudy.images && caseStudy.images.length > 0 && (
+          <Card role="article" className="dark:bg-card dark:border-border">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 dark:text-foreground">
+                <ImageIcon className="h-5 w-5 text-wa-green-600 dark:text-primary" />
+                Images ({caseStudy.images.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {caseStudy.images.map((imageUrl, index) => (
+                  <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-border bg-gray-100 dark:bg-gray-800">
+                    <Image
+                      src={imageUrl}
+                      alt={`Case study image ${index + 1}`}
+                      fill
+                      className="object-cover hover:scale-105 transition-transform duration-200"
+                      sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Supporting Documents */}
+        {caseStudy.supportingDocs && caseStudy.supportingDocs.length > 0 && (
+          <Card role="article" className="dark:bg-card dark:border-border">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 dark:text-foreground">
+                <FileText className="h-5 w-5 text-purple-600" />
+                Supporting Documents ({caseStudy.supportingDocs.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 gap-3">
+                {caseStudy.supportingDocs.map((docUrl, index) => {
+                  const fileName = decodeURIComponent(docUrl.split('/').pop()?.split('?')[0] || 'Document');
+                  const extension = fileName.split('.').pop()?.toLowerCase();
+                  return (
+                    <a
+                      key={index}
+                      href={docUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-4 p-4 border border-gray-200 dark:border-border rounded-lg hover:bg-gray-50 dark:hover:bg-card hover:border-wa-green-300 dark:hover:border-primary transition-all"
+                    >
+                      <FileText className={`h-8 w-8 flex-shrink-0 ${
+                        extension === 'pdf' ? 'text-red-500' :
+                        extension === 'doc' || extension === 'docx' ? 'text-wa-green-500 dark:text-primary' :
+                        extension === 'xls' || extension === 'xlsx' ? 'text-green-500' :
+                        extension === 'ppt' || extension === 'pptx' ? 'text-orange-500' :
+                        'text-gray-500 dark:text-gray-400'
+                      }`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-wa-green-600 dark:text-primary hover:underline truncate">{fileName}</p>
+                        <p className="text-xs text-gray-500 dark:text-muted-foreground mt-1">Click to view or download</p>
+                      </div>
+                    </a>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Financial Impact - Only for APPLICATION and TECH cases */}
         {(caseStudy.type === 'APPLICATION' || caseStudy.type === 'TECH') && (caseStudy.solutionValueRevenue || caseStudy.customerSavingsAmount) && (
           <Card role="article" className="dark:bg-card dark:border-border">
@@ -785,74 +853,6 @@ export default async function PublicCaseDetailPage({
             </CardHeader>
             <CardContent>
               <TagColleagues caseStudyId={caseStudy.id} />
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Images Gallery */}
-        {caseStudy.images && caseStudy.images.length > 0 && (
-          <Card role="article" className="dark:bg-card dark:border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 dark:text-foreground">
-                <ImageIcon className="h-5 w-5 text-wa-green-600 dark:text-primary" />
-                Images ({caseStudy.images.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {caseStudy.images.map((imageUrl, index) => (
-                  <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-border bg-gray-100 dark:bg-gray-800">
-                    <Image
-                      src={imageUrl}
-                      alt={`Case study image ${index + 1}`}
-                      fill
-                      className="object-cover hover:scale-105 transition-transform duration-200"
-                      sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                    />
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Supporting Documents */}
-        {caseStudy.supportingDocs && caseStudy.supportingDocs.length > 0 && (
-          <Card role="article" className="dark:bg-card dark:border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 dark:text-foreground">
-                <FileText className="h-5 w-5 text-purple-600" />
-                Supporting Documents ({caseStudy.supportingDocs.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 gap-3">
-                {caseStudy.supportingDocs.map((docUrl, index) => {
-                  const fileName = decodeURIComponent(docUrl.split('/').pop()?.split('?')[0] || 'Document');
-                  const extension = fileName.split('.').pop()?.toLowerCase();
-                  return (
-                    <a
-                      key={index}
-                      href={docUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-4 p-4 border border-gray-200 dark:border-border rounded-lg hover:bg-gray-50 dark:hover:bg-card hover:border-wa-green-300 dark:hover:border-primary transition-all"
-                    >
-                      <FileText className={`h-8 w-8 flex-shrink-0 ${
-                        extension === 'pdf' ? 'text-red-500' :
-                        extension === 'doc' || extension === 'docx' ? 'text-wa-green-500 dark:text-primary' :
-                        extension === 'xls' || extension === 'xlsx' ? 'text-green-500' :
-                        extension === 'ppt' || extension === 'pptx' ? 'text-orange-500' :
-                        'text-gray-500 dark:text-gray-400'
-                      }`} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-wa-green-600 dark:text-primary hover:underline truncate">{fileName}</p>
-                        <p className="text-xs text-gray-500 dark:text-muted-foreground mt-1">Click to view or download</p>
-                      </div>
-                    </a>
-                  );
-                })}
-              </div>
             </CardContent>
           </Card>
         )}

@@ -3,6 +3,7 @@ import { SAML, ValidateInResponseTo } from '@node-saml/node-saml';
 import { encode } from '@auth/core/jwt';
 import prisma from '@/lib/prisma';
 import { waAutoAssignSubsidiaryFromNetSuite } from '@/lib/actions/waUserSubsidiaryActions';
+import { createImmutableAuditLog } from '@/lib/immutable-audit-logger';
 
 /**
  * SAML SSO ACS (Assertion Consumer Service) Endpoint
@@ -156,6 +157,21 @@ export async function POST(request: NextRequest) {
     });
 
     console.log('[SAML] Login successful for', email, '→ redirecting to', redirectUrl);
+
+    // 8. Audit log for SAML SSO login (ISO 27001 compliance)
+    try {
+      await createImmutableAuditLog({
+        actionType: 'LOGIN',
+        userId: user.id,
+        userEmail: email,
+        metadata: {
+          additionalData: { method: 'SAML_SSO', issuer: profile.issuer },
+        },
+      });
+    } catch (auditError) {
+      // Never block login if audit logging fails
+      console.error('[SAML] Audit log failed for', email, auditError);
+    }
 
     return response;
   } catch (error) {
