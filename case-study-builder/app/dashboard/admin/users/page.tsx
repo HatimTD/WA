@@ -22,6 +22,9 @@ export default async function UserManagementPage() {
 
   // Fetch all users with their statistics, multiple roles, and subsidiaries
   const users = await prisma.user.findMany({
+    where: {
+      status: 'ACTIVE',
+    },
     select: {
       id: true,
       name: true,

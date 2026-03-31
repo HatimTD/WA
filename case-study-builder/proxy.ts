@@ -211,6 +211,13 @@ export default auth(async (req) => {
     }
   }
 
+  // SAML SSO: Forward POST /login to /api/auth/saml
+  // Google Workspace may send SAML POST to /login if ACS URL hasn't been updated
+  if (pathname === '/login' && req.method === 'POST') {
+    const samlUrl = new URL('/api/auth/saml', req.nextUrl.origin);
+    return NextResponse.rewrite(samlUrl);
+  }
+
   // Define page types
   const isAuthPage = pathname.startsWith('/login');
   const isPublicPage = pathname === '/';

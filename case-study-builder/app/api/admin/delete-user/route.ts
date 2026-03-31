@@ -52,16 +52,28 @@ export async function DELETE(request: NextRequest) {
       select: { email: true, role: true },
     });
 
-    // Delete user and all related data (cascade delete)
-    // Note: This will also delete:
-    // - All case studies created by the user
-    // - All comments by the user
-    // - All reactions by the user
-    // - All accounts linked to the user
-    // - All sessions for the user
-    await prisma.user.delete({
+    // Soft delete: deactivate user instead of hard delete
+    // Preserves case study relationships (foreign key constraints)
+    // Anonymizes name and email to comply with data privacy
+    const inactiveCount = await prisma.user.count({ where: { status: 'INACTIVE' } });
+    const anonymizedName = `Inactive User ${inactiveCount + 1}`;
+
+    await prisma.user.update({
       where: { id: userId },
+      data: {
+        status: 'INACTIVE',
+        name: anonymizedName,
+        email: `inactive-${userId}@deactivated.local`,
+        image: null,
+      },
     });
+
+    // Remove subsidiary assignments and role assignments
+    await prisma.waUserSubsidiary.deleteMany({ where: { userId } });
+    await prisma.waUserRole.deleteMany({ where: { userId } });
+
+    // Remove auth accounts so the user cannot log in
+    await prisma.account.deleteMany({ where: { userId } });
 
     // Audit log — must never block deletion response
     try {
@@ -79,7 +91,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'User deleted successfully',
+      message: 'User deactivated successfully',
     });
   } catch (error) {
     console.error('[API] Delete user error:', error);

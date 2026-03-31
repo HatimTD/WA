@@ -46,6 +46,13 @@ export async function POST(request: NextRequest) {
     const SAMLResponse = formData.get('SAMLResponse') as string;
     const RelayState = formData.get('RelayState') as string | null;
 
+    // Debug: log all received form fields for IT manager
+    const formFields: string[] = [];
+    formData.forEach((value, key) => formFields.push(`${key}=${typeof value === 'string' ? value.substring(0, 50) + '...' : '[file]'}`));
+    console.log('[SAML] Received POST with fields:', formFields.join(', ') || '(empty)');
+    console.log('[SAML] SAMLResponse present:', !!SAMLResponse, SAMLResponse ? `(${SAMLResponse.length} chars)` : '');
+    console.log('[SAML] RelayState:', RelayState || '(none)');
+
     if (!SAMLResponse) {
       console.error('[SAML] Missing SAMLResponse in POST body');
       return NextResponse.redirect(new URL('/login?error=saml_missing_response', appUrl));

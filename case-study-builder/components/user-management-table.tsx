@@ -171,7 +171,7 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
   };
 
   const handleDeleteUser = async (userId: string, userEmail: string | null) => {
-    if (!confirm(`Are you sure you want to delete user ${userEmail}? This action cannot be undone.`)) {
+    if (!confirm(`Are you sure you want to deactivate user ${userEmail}? The user will be marked as inactive and will no longer be able to log in. Their case studies will be preserved.`)) {
       return;
     }
 
@@ -188,7 +188,7 @@ export default function UserManagementTable({ users: initialUsers }: Props) {
       if (result.success) {
         // Remove from local state
         setUsers((prev) => prev.filter((u) => u.id !== userId));
-        toast.success('User deleted successfully');
+        toast.success('User deactivated successfully');
       } else {
         toast.error(result.error || 'Failed to delete user');
       }
