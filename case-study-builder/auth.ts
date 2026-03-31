@@ -8,6 +8,8 @@ import type { Role } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import type { Provider } from 'next-auth/providers';
 import { waAutoAssignSubsidiaryFromNetSuite } from '@/lib/actions/waUserSubsidiaryActions';
+import { createImmutableAuditLog } from '@/lib/immutable-audit-logger';
+import { AuditActionType } from '@prisma/client';
 
 const providers: Provider[] = [
   Google({
@@ -166,6 +168,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         ]);
 
         if (dbUser) {
+          // Fire-and-forget audit log for successful login — must never block JWT callback
+          try {
+            createImmutableAuditLog({
+              actionType: AuditActionType.LOGIN,
+              userId: dbUser.id,
+              userEmail: dbUser.email || '',
+              resourceId: dbUser.id,
+              resourceType: 'User',
+            }).catch(() => { /* audit log failure must not surface */ });
+          } catch {
+            // Audit logging must never block login
+          }
+
           token.role = dbUser.role;
           token.region = dbUser.region;
           token.totalPoints = dbUser.totalPoints;

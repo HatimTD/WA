@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { createImmutableAuditLog, AuditActionType } from '@/lib/immutable-audit-logger';
 
 export async function DELETE(request: NextRequest) {
   try {
@@ -45,6 +46,12 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    // Look up the user being deleted so we can log their email
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, role: true },
+    });
+
     // Delete user and all related data (cascade delete)
     // Note: This will also delete:
     // - All case studies created by the user
@@ -55,6 +62,20 @@ export async function DELETE(request: NextRequest) {
     await prisma.user.delete({
       where: { id: userId },
     });
+
+    // Audit log — must never block deletion response
+    try {
+      await createImmutableAuditLog({
+        actionType: AuditActionType.USER_DELETED,
+        userId: session.user.id,
+        userEmail: session.user.email || '',
+        resourceId: userId,
+        resourceType: 'User',
+        metadata: { additionalData: { deletedEmail: targetUser?.email, deletedRole: targetUser?.role } },
+      });
+    } catch {
+      // Audit logging must never block the main action
+    }
 
     return NextResponse.json({
       success: true,

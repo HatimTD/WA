@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { Role } from '@prisma/client';
+import { createImmutableAuditLog, AuditActionType } from '@/lib/immutable-audit-logger';
 
 const VALID_ROLES: Role[] = ['VIEWER', 'CONTRIBUTOR', 'APPROVER', 'ADMIN', 'IT_DEPARTMENT', 'MARKETING'];
 
@@ -90,6 +91,20 @@ export async function PUT(request: NextRequest) {
         });
       });
 
+      // Audit log — fire-and-forget, must never block the response
+      try {
+        await createImmutableAuditLog({
+          actionType: AuditActionType.USER_ROLE_CHANGED,
+          userId: session.user.id,
+          userEmail: session.user.email || '',
+          resourceId: userId,
+          resourceType: 'User',
+          metadata: { additionalData: { newRoles: roles } },
+        });
+      } catch {
+        // Audit logging must never block the main action
+      }
+
       return NextResponse.json({
         success: true,
         message: `User roles updated to: ${roles.join(', ')}`,
@@ -133,6 +148,20 @@ export async function PUT(request: NextRequest) {
         },
       });
     });
+
+    // Audit log — fire-and-forget, must never block the response
+    try {
+      await createImmutableAuditLog({
+        actionType: AuditActionType.USER_ROLE_CHANGED,
+        userId: session.user.id,
+        userEmail: session.user.email || '',
+        resourceId: userId,
+        resourceType: 'User',
+        metadata: { additionalData: { newRole: role } },
+      });
+    } catch {
+      // Audit logging must never block the main action
+    }
 
     return NextResponse.json({
       success: true,

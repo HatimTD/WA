@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { createImmutableAuditLog, AuditActionType } from '@/lib/immutable-audit-logger';
 
 /**
  * POST /api/admin/create-user
@@ -102,6 +103,20 @@ export async function POST(request: NextRequest) {
           skipDuplicates: true,
         });
       }
+    }
+
+    // Audit log — must never block user creation response
+    try {
+      await createImmutableAuditLog({
+        actionType: AuditActionType.USER_CREATED,
+        userId: session.user.id,
+        userEmail: session.user.email || '',
+        resourceId: newUser.id,
+        resourceType: 'User',
+        metadata: { additionalData: { createdEmail: newUser.email, role: primaryRole } },
+      });
+    } catch {
+      // Audit logging must never block the main action
     }
 
     return NextResponse.json({
