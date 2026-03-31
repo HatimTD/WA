@@ -447,17 +447,40 @@ export default async function PublicCaseDetailPage({ params, searchParams }: Pro
               </div>
             )}
 
-            <div className="pt-4 border-t dark:border-border">
-              <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">WA Product Used</p>
-              <p className="text-lg font-semibold text-wa-green-600 dark:text-primary">
-                {waGetProductDisplay({
-                  productCategory: (caseStudy as any).productCategory,
-                  waProduct: caseStudy.waProduct,
-                  waProductDiameter: caseStudy.waProductDiameter,
-                  productDescription: (caseStudy as any).productDescription,
-                })}
-              </p>
-            </div>
+            {(caseStudy as any).productCategory === 'CONSUMABLES' ? (
+              <>
+                <div className="pt-4 border-t dark:border-border">
+                  <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">WA Product Used</p>
+                  <p className="text-lg font-semibold text-wa-green-600 dark:text-primary">{caseStudy.waProduct}</p>
+                </div>
+                {caseStudy.waProductDiameter && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Diameter</p>
+                    <p className="text-base dark:text-foreground">{caseStudy.waProductDiameter} mm</p>
+                  </div>
+                )}
+              </>
+            ) : (caseStudy as any).productCategory === 'COMPOSITE_WEAR_PLATES' ? (
+              <>
+                <div className="pt-4 border-t dark:border-border">
+                  <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Product Name</p>
+                  <p className="text-lg font-semibold text-wa-green-600 dark:text-primary">{caseStudy.waProduct}</p>
+                </div>
+                {(caseStudy as any).productDescription && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Thickness</p>
+                    <p className="text-base dark:text-foreground">{(caseStudy as any).productDescription}</p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="pt-4 border-t dark:border-border">
+                <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Product Description</p>
+                <p className="text-lg font-semibold text-wa-green-600 dark:text-primary">
+                  {(caseStudy as any).productDescription || caseStudy.waProduct || ''}
+                </p>
+              </div>
+            )}
 
             {waFormatExpandedServiceLife({
               hours: caseStudy.jobDurationHours,
@@ -523,7 +546,7 @@ export default async function PublicCaseDetailPage({ params, searchParams }: Pro
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {caseStudy.images.map((imageUrl, index) => (
-                  <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-border bg-gray-100 dark:bg-gray-800">
+                  <a key={index} href={imageUrl} target="_blank" rel="noopener noreferrer" className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-border bg-gray-100 dark:bg-gray-800 cursor-pointer block">
                     <Image
                       src={imageUrl}
                       alt={`Case study image ${index + 1}`}
@@ -531,7 +554,7 @@ export default async function PublicCaseDetailPage({ params, searchParams }: Pro
                       className="object-cover hover:scale-105 transition-transform duration-200"
                       sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                     />
-                  </div>
+                  </a>
                 ))}
               </div>
             </CardContent>
