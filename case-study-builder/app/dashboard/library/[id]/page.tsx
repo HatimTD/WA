@@ -19,11 +19,9 @@ import {
   Building2,
   Package,
   Wrench,
-  TrendingUp,
   DollarSign,
   Calendar,
   FileText,
-  Globe,
   Languages,
   Image as ImageIcon,
   User,
@@ -400,7 +398,7 @@ export default async function PublicCaseDetailPage({
         {/* Key Information */}
         <Card role="article" className="dark:bg-card dark:border-border">
           <CardHeader>
-            <CardTitle className="dark:text-foreground">Case Study Overview</CardTitle>
+            <CardTitle className="dark:text-foreground">Basic Information</CardTitle>
           </CardHeader>
           <CardContent>
             {/* General Description - Overview (translated if available) */}
@@ -476,65 +474,77 @@ export default async function PublicCaseDetailPage({
                   </div>
                 </div>
               )}
-              {caseStudy.wearType && caseStudy.wearType.length > 0 && (
-                <div className="flex items-start gap-3 md:col-span-2">
-                  <FileText className="h-5 w-5 text-wa-green-600 dark:text-primary mt-0.5" />
-                  <div>
-                    <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground mb-2">Wear Types</p>
-                    <WearTypeStarsDisplay
-                      wearTypes={caseStudy.wearType}
-                      wearSeverities={caseStudy.wearSeverities as Record<string, number> | null}
-                      wearTypeOthers={caseStudy.wearTypeOthers as { name: string; severity: number }[] | null}
-                      showOnlySelected
-                    />
-                  </div>
-                </div>
-              )}
-              <div className="flex items-start gap-3 md:col-span-2">
-                <Calendar className="h-5 w-5 text-wa-green-600 dark:text-primary mt-0.5" />
-                <div>
-                  <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground">Approved</p>
-                  <p className="text-gray-900 dark:text-foreground">
-                    {caseStudy.approvedAt
-                      ? new Date(caseStudy.approvedAt).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })
-                      : 'N/A'}
-                  </p>
+            </div>
+
+            <div className="md:col-span-2">
+              <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-2">Type of Wear</p>
+              <WearTypeStarsDisplay
+                wearTypes={caseStudy.wearType}
+                wearSeverities={caseStudy.wearSeverities as Record<string, number> | null}
+                wearTypeOthers={caseStudy.wearTypeOthers as { name: string; severity: number }[] | null}
+                showOnlySelected
+              />
+            </div>
+
+            {(caseStudy.tags as string[])?.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-2">Tags</p>
+                <div className="flex flex-wrap gap-2">
+                  {(caseStudy.tags as string[]).map((tag) => (
+                    <Badge key={tag} variant="outline" className="bg-wa-green-50 text-wa-green-700 border-wa-green-200 dark:bg-wa-green-900/20 dark:text-wa-green-400 dark:border-wa-green-800">
+                      {tag}
+                    </Badge>
+                  ))}
                 </div>
               </div>
-            </div>
+            )}
+
+            {caseStudy.baseMetal && (
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Base Metal</p>
+                <p className="text-base dark:text-foreground">{caseStudy.baseMetal}</p>
+              </div>
+            )}
+
+            {caseStudy.generalDimensions && (
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">
+                  General Dimensions ({(caseStudy as any).unitSystem === 'IMPERIAL' ? 'inches' : 'mm'})
+                </p>
+                <p className="text-base dark:text-foreground">{caseStudy.generalDimensions}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Problem & Solution */}
+        {/* Problem Description */}
         <Card role="article" className="dark:bg-card dark:border-border">
           <CardHeader>
             <CardTitle className="dark:text-foreground">Problem Description</CardTitle>
+            <CardDescription className="dark:text-muted-foreground">The challenge the customer was facing</CardDescription>
           </CardHeader>
-          <CardContent>
-            <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{displayProblemDescription}</p>
-          </CardContent>
-        </Card>
+          <CardContent className="space-y-4">
+            <div className="prose max-w-none dark:prose-invert">
+              <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{displayProblemDescription}</p>
+            </div>
 
-        {caseStudy.previousSolution && (
-          <Card role="article" className="dark:bg-card dark:border-border">
-            <CardHeader>
-              <CardTitle className="dark:text-foreground">Previous Solution</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{displayPreviousSolution}</p>
-              {(caseStudy.previousServiceLife || waFormatExpandedServiceLife({
-                hours: caseStudy.previousServiceLifeHours,
-                days: caseStudy.previousServiceLifeDays,
-                weeks: caseStudy.previousServiceLifeWeeks,
-                months: caseStudy.previousServiceLifeMonths,
-                years: caseStudy.previousServiceLifeYears,
-              })) && (
-                <p className="text-sm text-gray-600 dark:text-muted-foreground mt-2">
-                  <span className="font-medium">Previous Service Life:</span>{' '}
+            {displayPreviousSolution && (
+              <div className="pt-4 border-t dark:border-border">
+                <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Previous Solution</p>
+                <p className="text-base dark:text-foreground">{displayPreviousSolution}</p>
+              </div>
+            )}
+
+            {(caseStudy.previousServiceLife || waFormatExpandedServiceLife({
+              hours: caseStudy.previousServiceLifeHours,
+              days: caseStudy.previousServiceLifeDays,
+              weeks: caseStudy.previousServiceLifeWeeks,
+              months: caseStudy.previousServiceLifeMonths,
+              years: caseStudy.previousServiceLifeYears,
+            })) && (
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Previous Service Life</p>
+                <p className="text-base dark:text-foreground">
                   {waFormatExpandedServiceLife({
                     hours: caseStudy.previousServiceLifeHours,
                     days: caseStudy.previousServiceLifeDays,
@@ -543,126 +553,133 @@ export default async function PublicCaseDetailPage({
                     years: caseStudy.previousServiceLifeYears,
                   }) || caseStudy.previousServiceLife}
                 </p>
-              )}
-              {caseStudy.competitorName && (
-                <p className="text-sm text-gray-600 dark:text-muted-foreground mt-1">
-                  <span className="font-medium">Competitor:</span> {caseStudy.competitorName}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        )}
+              </div>
+            )}
 
-        <Card role="article" className="border-2 border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-800">
+            {caseStudy.competitorName && (
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Competitor</p>
+                <p className="text-base dark:text-foreground">{caseStudy.competitorName}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* WA Solution */}
+        <Card role="article" className="dark:bg-card dark:border-border">
           <CardHeader>
-            <CardTitle className="text-green-800 dark:text-green-400">Welding Alloys Solution</CardTitle>
+            <CardTitle className="dark:text-foreground">Welding Alloys Solution</CardTitle>
+            <CardDescription className="dark:text-muted-foreground">How WA solved the challenge</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              {(caseStudy as any).productCategory && (
-                <div>
-                  <p className="font-medium text-sm text-green-700 dark:text-green-300 mb-2">Product Category</p>
-                  <p className="text-gray-900 dark:text-foreground text-lg font-semibold">
-                    {waFormatProductCategory((caseStudy as any).productCategory, (caseStudy as any).productCategoryOther)}
-                  </p>
-                </div>
-              )}
+            <div className="prose max-w-none dark:prose-invert">
+              <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{displayWaSolution}</p>
+            </div>
+
+            {(caseStudy as any).productCategory && (
+              <div className="pt-4 border-t dark:border-border">
+                <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Product Category</p>
+                <p className="text-base font-semibold dark:text-foreground">
+                  {waFormatProductCategory((caseStudy as any).productCategory, (caseStudy as any).productCategoryOther)}
+                </p>
+              </div>
+            )}
+
+            <div className="pt-4 border-t dark:border-border">
+              <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">WA Product Used</p>
+              <p className="text-lg font-semibold text-wa-green-600 dark:text-primary">
+                {waGetProductDisplay({
+                  productCategory: (caseStudy as any).productCategory,
+                  waProduct: caseStudy.waProduct,
+                  waProductDiameter: caseStudy.waProductDiameter,
+                  productDescription: (caseStudy as any).productDescription,
+                })}
+              </p>
+            </div>
+
+            {waFormatExpandedServiceLife({
+              hours: caseStudy.jobDurationHours,
+              days: caseStudy.jobDurationDays,
+              weeks: caseStudy.jobDurationWeeks,
+              months: (caseStudy as any).jobDurationMonths,
+              years: (caseStudy as any).jobDurationYears,
+            }) && (
               <div>
-                <p className="font-medium text-sm text-green-700 dark:text-green-300 mb-2">WA Product Used</p>
-                <p className="text-gray-900 dark:text-foreground text-lg font-semibold">
-                  {waGetProductDisplay({
-                    productCategory: (caseStudy as any).productCategory,
-                    waProduct: caseStudy.waProduct,
-                    waProductDiameter: caseStudy.waProductDiameter,
-                    productDescription: (caseStudy as any).productDescription,
+                <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Job Duration</p>
+                <p className="text-base dark:text-foreground">
+                  {waFormatExpandedServiceLife({
+                    hours: caseStudy.jobDurationHours,
+                    days: caseStudy.jobDurationDays,
+                    weeks: caseStudy.jobDurationWeeks,
+                    months: (caseStudy as any).jobDurationMonths,
+                    years: (caseStudy as any).jobDurationYears,
                   })}
                 </p>
               </div>
-              {waFormatExpandedServiceLife({
-                hours: caseStudy.jobDurationHours,
-                days: caseStudy.jobDurationDays,
-                weeks: caseStudy.jobDurationWeeks,
-                months: (caseStudy as any).jobDurationMonths,
-                years: (caseStudy as any).jobDurationYears,
-              }) && (
-                <div>
-                  <p className="font-medium text-sm text-green-700 dark:text-green-300 mb-2">Job Duration</p>
-                  <p className="text-gray-900 dark:text-foreground text-lg font-semibold">
-                    {waFormatExpandedServiceLife({
-                      hours: caseStudy.jobDurationHours,
-                      days: caseStudy.jobDurationDays,
-                      weeks: caseStudy.jobDurationWeeks,
-                      months: (caseStudy as any).jobDurationMonths,
-                      years: (caseStudy as any).jobDurationYears,
-                    })}
-                  </p>
-                </div>
-              )}
-            </div>
-            <div>
-              <p className="font-medium text-sm text-green-700 dark:text-green-300 mb-2">Solution Description</p>
-              <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{displayWaSolution}</p>
-            </div>
-            {caseStudy.technicalAdvantages && (
+            )}
+
+            {displayTechnicalAdvantages && (
               <div>
-                <p className="font-medium text-sm text-green-700 dark:text-green-300 mb-2">Technical Advantages</p>
-                <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">
-                  {displayTechnicalAdvantages}
+                <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Technical Advantages</p>
+                <p className="text-base dark:text-foreground whitespace-pre-wrap">{displayTechnicalAdvantages}</p>
+              </div>
+            )}
+
+            {(caseStudy.expectedServiceLife || waFormatExpandedServiceLife({
+              hours: caseStudy.expectedServiceLifeHours,
+              days: caseStudy.expectedServiceLifeDays,
+              weeks: caseStudy.expectedServiceLifeWeeks,
+              months: caseStudy.expectedServiceLifeMonths,
+              years: caseStudy.expectedServiceLifeYears,
+            })) && (
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-1">Service Life</p>
+                <p className="text-base dark:text-foreground">
+                  {waFormatExpandedServiceLife({
+                    hours: caseStudy.expectedServiceLifeHours,
+                    days: caseStudy.expectedServiceLifeDays,
+                    weeks: caseStudy.expectedServiceLifeWeeks,
+                    months: caseStudy.expectedServiceLifeMonths,
+                    years: caseStudy.expectedServiceLifeYears,
+                  }) || caseStudy.expectedServiceLife}
                 </p>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Results & Benefits */}
-        <Card role="article" className="dark:bg-card dark:border-border">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 dark:text-foreground">
-              <TrendingUp className="h-5 w-5 text-wa-green-600" />
-              Results & Benefits
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-2 gap-6">
-              {(caseStudy.expectedServiceLife || waFormatExpandedServiceLife({
-                hours: caseStudy.expectedServiceLifeHours,
-                days: caseStudy.expectedServiceLifeDays,
-                weeks: caseStudy.expectedServiceLifeWeeks,
-                months: caseStudy.expectedServiceLifeMonths,
-                years: caseStudy.expectedServiceLifeYears,
-              })) && (
-                <div>
-                  <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground mb-1">Service Life</p>
-                  <p className="text-2xl font-bold text-wa-green-600 dark:text-primary">
-                    {waFormatExpandedServiceLife({
-                      hours: caseStudy.expectedServiceLifeHours,
-                      days: caseStudy.expectedServiceLifeDays,
-                      weeks: caseStudy.expectedServiceLifeWeeks,
-                      months: caseStudy.expectedServiceLifeMonths,
-                      years: caseStudy.expectedServiceLifeYears,
-                    }) || caseStudy.expectedServiceLife}
-                  </p>
-                </div>
-              )}
-              {caseStudy.solutionValueRevenue && (
-                <div>
-                  <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground mb-1">Solution Revenue</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {getCurrencySymbol(caseStudy.revenueCurrency)}{parseFloat(caseStudy.solutionValueRevenue.toString()).toLocaleString()}
-                  </p>
-                </div>
-              )}
-              {caseStudy.customerSavingsAmount && (
-                <div>
-                  <p className="font-medium text-sm text-gray-600 dark:text-muted-foreground mb-1">Customer Savings</p>
-                  <p className="text-2xl font-bold text-orange-600">
-                    {getCurrencySymbol(caseStudy.revenueCurrency)}{parseFloat(caseStudy.customerSavingsAmount.toString()).toLocaleString()}
-                  </p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Financial Impact - Only for APPLICATION and TECH cases */}
+        {(caseStudy.type === 'APPLICATION' || caseStudy.type === 'TECH') && (caseStudy.solutionValueRevenue || caseStudy.customerSavingsAmount) && (
+          <Card role="article" className="dark:bg-card dark:border-border">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 dark:text-foreground">
+                <DollarSign className="h-5 w-5 text-green-600" />
+                Financial Impact
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-2 gap-4">
+                {caseStudy.solutionValueRevenue && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Solution Revenue</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      {getCurrencySymbol(caseStudy.revenueCurrency)}{Number(caseStudy.solutionValueRevenue).toLocaleString()}
+                    </p>
+                  </div>
+                )}
+
+                {caseStudy.customerSavingsAmount && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Customer Savings</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      {getCurrencySymbol(caseStudy.revenueCurrency)}{Number(caseStudy.customerSavingsAmount).toLocaleString()}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Cost Reduction Analysis (STAR cases) */}
         {caseStudy.costCalculator && (
@@ -843,37 +860,67 @@ export default async function PublicCaseDetailPage({
         {/* Submission Details */}
         <Card role="article" className="dark:bg-card dark:border-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 dark:text-foreground">
-              <User className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-              Submission Details
-            </CardTitle>
+            <CardTitle className="dark:text-foreground">Submission Details</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-2 gap-4 text-sm">
+          <CardContent className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-4">
               {caseStudy.contributor?.name && (
-                <div>
-                  <p className="font-medium text-gray-500 dark:text-muted-foreground">Contributed By</p>
-                  <p className="text-gray-900 dark:text-foreground">{caseStudy.contributor.name}</p>
+                <div className="flex items-start gap-3">
+                  <User className="h-5 w-5 text-gray-400 dark:text-gray-500 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Contributor</p>
+                    <p className="text-base font-semibold dark:text-foreground">{caseStudy.contributor.name}</p>
+                    {caseStudy.contributor.email && (
+                      <p className="text-sm text-gray-600 dark:text-muted-foreground">{caseStudy.contributor.email}</p>
+                    )}
+                  </div>
                 </div>
               )}
-              <div>
-                <p className="font-medium text-gray-500 dark:text-muted-foreground">Created</p>
-                <p className="text-gray-900 dark:text-foreground">
-                  {new Date(caseStudy.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                </p>
-              </div>
-              {caseStudy.approvedAt && (
+
+              <div className="flex items-start gap-3">
+                <Calendar className="h-5 w-5 text-gray-400 dark:text-gray-500 mt-0.5" />
                 <div>
-                  <p className="font-medium text-gray-500 dark:text-muted-foreground">Approved</p>
-                  <p className="text-gray-900 dark:text-foreground">
-                    {new Date(caseStudy.approvedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                  <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Created</p>
+                  <p className="text-base font-semibold dark:text-foreground">
+                    {new Date(caseStudy.createdAt).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
                   </p>
                 </div>
+              </div>
+
+              {caseStudy.submittedAt && (
+                <div className="flex items-start gap-3">
+                  <Calendar className="h-5 w-5 text-gray-400 dark:text-gray-500 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Submitted</p>
+                    <p className="text-base font-semibold dark:text-foreground">
+                      {new Date(caseStudy.submittedAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </p>
+                  </div>
+                </div>
               )}
-              {caseStudy.approver?.name && (
-                <div>
-                  <p className="font-medium text-gray-500 dark:text-muted-foreground">Approved By</p>
-                  <p className="text-gray-900 dark:text-foreground">{caseStudy.approver.name}</p>
+
+              {caseStudy.approvedAt && caseStudy.approver && (
+                <div className="flex items-start gap-3">
+                  <User className="h-5 w-5 text-gray-400 dark:text-gray-500 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Approved By</p>
+                    <p className="text-base font-semibold dark:text-foreground">{caseStudy.approver.name}</p>
+                    <p className="text-sm text-gray-600 dark:text-muted-foreground">
+                      {new Date(caseStudy.approvedAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </p>
+                  </div>
                 </div>
               )}
             </div>

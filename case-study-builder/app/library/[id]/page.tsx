@@ -24,6 +24,8 @@ import {
 import { WearTypeStarsDisplay } from '@/components/wear-type-progress-bar';
 import { waFormatJobType, waFormatProductCategory, waGetProductDisplay } from '@/lib/waUtils';
 import LanguageIndicator from '@/components/language-indicator';
+import WeldingProcedureForm from '@/components/welding-procedure-form';
+import { waGetWeldingProcedure } from '@/lib/actions/waWpsActions';
 
 // Language names for display
 const LANGUAGE_NAMES: Record<string, string> = {
@@ -153,6 +155,10 @@ export default async function PublicCaseDetailPage({ params, searchParams }: Pro
   if (!caseStudy || caseStudy.status !== 'APPROVED') {
     notFound();
   }
+
+  // Fetch WPS data
+  const wpsResult = await waGetWeldingProcedure(id);
+  const existingWPS = wpsResult.wps;
 
   // BRD: Show translated content (English) by default for public library
   const hasTranslation = Boolean(caseStudy.translationAvailable && caseStudy.translatedText);
@@ -645,54 +651,56 @@ export default async function PublicCaseDetailPage({ params, searchParams }: Pro
           />
         )}
 
-        {/* Welding Procedure (TECH/STAR cases) */}
-        {caseStudy.wps && (
-          <Card role="article" className="dark:bg-card dark:border-border">
-            <CardHeader>
-              <CardTitle className="dark:text-foreground">Welding Procedure Specification</CardTitle>
-              <CardDescription className="dark:text-muted-foreground">Welding parameters and procedures used</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-6 text-sm">
-                {caseStudy.wps.baseMetalType && (
-                  <div>
-                    <p className="font-medium text-gray-500 dark:text-muted-foreground">Base Metal Type</p>
-                    <p className="text-gray-900 dark:text-foreground">{caseStudy.wps.baseMetalType}</p>
-                  </div>
-                )}
-                {caseStudy.wps.weldingProcess && (
-                  <div>
-                    <p className="font-medium text-gray-500 dark:text-muted-foreground">Welding Process</p>
-                    <p className="text-gray-900 dark:text-foreground">{caseStudy.wps.weldingProcess}</p>
-                  </div>
-                )}
-                {caseStudy.wps.shieldingGas && (
-                  <div>
-                    <p className="font-medium text-gray-500 dark:text-muted-foreground">Shielding Gas</p>
-                    <p className="text-gray-900 dark:text-foreground">{caseStudy.wps.shieldingGas}</p>
-                  </div>
-                )}
-                {caseStudy.wps.currentType && (
-                  <div>
-                    <p className="font-medium text-gray-500 dark:text-muted-foreground">Current Type</p>
-                    <p className="text-gray-900 dark:text-foreground">{caseStudy.wps.currentType}</p>
-                  </div>
-                )}
-                {caseStudy.wps.voltage && (
-                  <div>
-                    <p className="font-medium text-gray-500 dark:text-muted-foreground">Voltage</p>
-                    <p className="text-gray-900 dark:text-foreground">{caseStudy.wps.voltage}</p>
-                  </div>
-                )}
-                {caseStudy.wps.intensity && (
-                  <div>
-                    <p className="font-medium text-gray-500 dark:text-muted-foreground">Current/Intensity</p>
-                    <p className="text-gray-900 dark:text-foreground">{caseStudy.wps.intensity}</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+        {/* Welding Procedure Specification - matching dashboard/cases design */}
+        {(caseStudy.type === 'TECH' || caseStudy.type === 'STAR') && (
+          <WeldingProcedureForm
+            caseStudyId={caseStudy.id}
+            existingData={existingWPS ? {
+              baseMetalType: existingWPS.baseMetalType || undefined,
+              baseMetalGrade: existingWPS.baseMetalGrade || undefined,
+              baseMetalThickness: existingWPS.baseMetalThickness || undefined,
+              surfacePreparation: existingWPS.surfacePreparation || undefined,
+              surfacePreparationOther: (existingWPS as any).surfacePreparationOther || undefined,
+              layers: (existingWPS as any).layers || undefined,
+              waProductName: existingWPS.waProductName || undefined,
+              waProductDiameter: existingWPS.waProductDiameter || undefined,
+              shieldingGas: existingWPS.shieldingGas || undefined,
+              shieldingFlowRate: existingWPS.shieldingFlowRate || undefined,
+              flux: existingWPS.flux || undefined,
+              standardDesignation: existingWPS.standardDesignation || undefined,
+              weldingProcess: existingWPS.weldingProcess || undefined,
+              currentType: existingWPS.currentType || undefined,
+              currentModeSynergy: existingWPS.currentModeSynergy || undefined,
+              wireFeedSpeed: existingWPS.wireFeedSpeed || undefined,
+              intensity: existingWPS.intensity || undefined,
+              voltage: existingWPS.voltage || undefined,
+              heatInput: existingWPS.heatInput || undefined,
+              weldingPosition: existingWPS.weldingPosition || undefined,
+              torchAngle: existingWPS.torchAngle || undefined,
+              stickOut: existingWPS.stickOut || undefined,
+              travelSpeed: existingWPS.travelSpeed || undefined,
+              oscillationWidth: existingWPS.oscillationWidth || undefined,
+              oscillationSpeed: existingWPS.oscillationSpeed || undefined,
+              oscillationStepOver: existingWPS.oscillationStepOver || undefined,
+              oscillationTempo: existingWPS.oscillationTempo || undefined,
+              preheatingTemp: (existingWPS as any).preheatingTemp || undefined,
+              interpassTemp: (existingWPS as any).interpassTemp || undefined,
+              postheatingTemp: (existingWPS as any).postheatingTemp || undefined,
+              pwhtRequired: (existingWPS as any).pwhtRequired || undefined,
+              pwhtHeatingRate: (existingWPS as any).pwhtHeatingRate || undefined,
+              pwhtTempHoldingTime: (existingWPS as any).pwhtTempHoldingTime || undefined,
+              pwhtCoolingRate: (existingWPS as any).pwhtCoolingRate || undefined,
+              preheatTemperature: existingWPS.preheatTemperature || undefined,
+              interpassTemperature: existingWPS.interpassTemperature || undefined,
+              postheatTemperature: existingWPS.postheatTemperature || undefined,
+              pwhtDetails: existingWPS.pwhtDetails || undefined,
+              documents: (existingWPS as any).documents || undefined,
+              layerNumbers: existingWPS.layerNumbers || undefined,
+              hardness: existingWPS.hardness || undefined,
+              defectsObserved: existingWPS.defectsObserved || undefined,
+              additionalNotes: existingWPS.additionalNotes || undefined,
+            } : undefined}
+          />
         )}
 
         {/* Submission Details */}
@@ -707,6 +715,9 @@ export default async function PublicCaseDetailPage({ params, searchParams }: Pro
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Contributor</p>
                   <p className="text-base font-semibold dark:text-foreground">{caseStudy.contributor.name}</p>
+                  {caseStudy.contributor.email && (
+                    <p className="text-sm text-gray-600 dark:text-muted-foreground">{caseStudy.contributor.email}</p>
+                  )}
                 </div>
               </div>
 
@@ -724,13 +735,13 @@ export default async function PublicCaseDetailPage({ params, searchParams }: Pro
                 </div>
               </div>
 
-              {caseStudy.approvedAt && (
+              {caseStudy.submittedAt && (
                 <div className="flex items-start gap-3">
                   <Calendar className="h-5 w-5 text-gray-400 dark:text-gray-500 mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Approved</p>
+                    <p className="text-sm font-medium text-gray-500 dark:text-muted-foreground">Submitted</p>
                     <p className="text-base font-semibold dark:text-foreground">
-                      {new Date(caseStudy.approvedAt).toLocaleDateString('en-US', {
+                      {new Date(caseStudy.submittedAt).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',
