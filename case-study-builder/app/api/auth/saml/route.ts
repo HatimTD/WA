@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 
     if (!SAMLResponse) {
       console.error('[SAML] Missing SAMLResponse in POST body');
-      return NextResponse.redirect(new URL('/login?error=saml_missing_response', appUrl));
+      return NextResponse.redirect(new URL('/login?error=saml_missing_response', appUrl), 303);
     }
 
     // 2. Validate the SAML response against Google's certificate
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
 
     if (!profile || !profile.nameID) {
       console.error('[SAML] No profile or nameID in validated response');
-      return NextResponse.redirect(new URL('/login?error=saml_no_profile', appUrl));
+      return NextResponse.redirect(new URL('/login?error=saml_no_profile', appUrl), 303);
     }
 
     const email = profile.nameID.toLowerCase().trim();
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       console.warn('[SAML] User not found in database:', email);
-      return NextResponse.redirect(new URL('/login?error=saml_user_not_found', appUrl));
+      return NextResponse.redirect(new URL('/login?error=saml_user_not_found', appUrl), 303);
     }
 
     // 4. Fetch subsidiaries for the token
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
     const secret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
     if (!secret) {
       console.error('[SAML] No AUTH_SECRET configured');
-      return NextResponse.redirect(new URL('/login?error=saml_config_error', appUrl));
+      return NextResponse.redirect(new URL('/login?error=saml_config_error', appUrl), 303);
     }
 
     // Cookie name matches what NextAuth uses
@@ -153,7 +153,9 @@ export async function POST(request: NextRequest) {
 
     // 7. Set the session cookie and redirect to dashboard
     const redirectUrl = RelayState || '/dashboard';
-    const response = NextResponse.redirect(new URL(redirectUrl, appUrl));
+    // Use 303 See Other (not 307) so the browser follows with GET instead of POST
+    // 307 preserves POST method → dashboard gets POST → middleware rejects → redirect loop
+    const response = NextResponse.redirect(new URL(redirectUrl, appUrl), 303);
 
     response.cookies.set(cookieName, token, {
       httpOnly: true,
@@ -164,6 +166,8 @@ export async function POST(request: NextRequest) {
     });
 
     console.log('[SAML] Login successful for', email, '→ redirecting to', redirectUrl);
+    console.log('[SAML] Cookie set:', cookieName, '| secure:', isSecure, '| token length:', token.length);
+    console.log('[SAML] App URL:', appUrl, '| isSecure:', isSecure);
 
     // 8. Audit log for SAML SSO login (ISO 27001 compliance)
     try {
@@ -183,6 +187,6 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     console.error('[SAML] Validation error:', error);
-    return NextResponse.redirect(new URL('/login?error=saml_validation_failed', appUrl));
+    return NextResponse.redirect(new URL('/login?error=saml_validation_failed', appUrl), 303);
   }
 }

@@ -218,6 +218,15 @@ export default auth(async (req) => {
     return NextResponse.rewrite(samlUrl);
   }
 
+  // Debug: log auth state for dashboard redirects (temporary for SAML debugging)
+  if (pathname.startsWith('/dashboard') && !isLoggedIn) {
+    const cookies = req.cookies.getAll().map(c => c.name);
+    console.log('[Proxy Debug] Dashboard access denied - not logged in. Cookies present:', cookies.join(', ') || '(none)');
+    console.log('[Proxy Debug] Looking for: __Secure-authjs.session-token or authjs.session-token');
+    const hasAuthCookie = cookies.some(c => c.includes('session-token'));
+    console.log('[Proxy Debug] Has session-token cookie:', hasAuthCookie);
+  }
+
   // Define page types
   const isAuthPage = pathname.startsWith('/login');
   const isPublicPage = pathname === '/';
