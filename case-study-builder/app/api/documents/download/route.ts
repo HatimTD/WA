@@ -109,12 +109,17 @@ export async function GET(request: NextRequest) {
     // Approach 2: Try with Cloudinary Admin API to get resource details
     if (publicId) {
       try {
-        // For raw resources, try both with and without extension
-        const publicIdForApi = resourceType === 'raw' ? publicId : publicId;
-        console.log('[DocumentProxy] Trying Admin API for:', publicIdForApi, 'type:', resourceType);
-        const resource = await cloudinary.api.resource(publicIdForApi, {
-          resource_type: resourceType,
-        });
+        console.log('[DocumentProxy] Trying Admin API for:', publicId, 'type:', resourceType);
+        let resource;
+        try {
+          // Try with full publicId first (including extension for raw files)
+          resource = await cloudinary.api.resource(publicId, { resource_type: resourceType });
+        } catch {
+          // Try without extension
+          const publicIdNoExt = publicId.replace(/\.[^.]+$/, '');
+          console.log('[DocumentProxy] Retrying Admin API without extension:', publicIdNoExt);
+          resource = await cloudinary.api.resource(publicIdNoExt, { resource_type: resourceType });
+        }
 
         console.log('[DocumentProxy] Got resource from Admin API:', resource.secure_url);
 
