@@ -83,7 +83,9 @@ export default function TranslationPanel({
       const result = await waDetectCaseStudyLanguage(caseStudyId);
       if (result.success && result.detectedLanguage) {
         setDetectedLanguage(result.detectedLanguage);
-        toast.success(`Detected language: ${LANGUAGE_NAMES[result.detectedLanguage] || result.detectedLanguage}`);
+        toast.success(`Detected language: ${LANGUAGE_NAMES[result.detectedLanguage] || result.detectedLanguage}. Reloading...`);
+        // Reload the page to reflect the updated language and cleared translations
+        setTimeout(() => window.location.reload(), 1000);
       } else {
         toast.error(result.error || 'Failed to detect language');
       }
@@ -195,56 +197,53 @@ export default function TranslationPanel({
           </div>
         )}
 
-        {/* Translation Controls — only show if no English translation exists yet */}
+        {/* Translation Controls */}
         {translationAvailable && currentTranslation?.language === 'en' ? (
+          /* Already translated to English — show info only */
           <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-border">
             <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
             <span className="text-sm text-gray-600 dark:text-muted-foreground">
               Auto-translated to English. Use the toggle above to switch between original and translated content.
             </span>
           </div>
-        ) : (
+        ) : detectedLanguage === 'en' && !translationAvailable ? (
+          /* Original is English, no translation needed */
+          <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-border">
+            <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <span className="text-sm text-gray-600 dark:text-muted-foreground">
+              Original content is in English. No translation needed.
+            </span>
+          </div>
+        ) : detectedLanguage !== 'en' && !translationAvailable ? (
+          /* Non-English without translation — offer English translation only */
           <div className="flex items-center gap-2">
-            <Select value={targetLanguage} onValueChange={setTargetLanguage}>
-              <SelectTrigger className="flex-1 dark:bg-input dark:border-border dark:text-foreground">
-                <SelectValue placeholder="Select language" />
-              </SelectTrigger>
-              <SelectContent className="dark:bg-popover dark:border-border">
-                <SelectItem value="en">English (recommended)</SelectItem>
-                {Object.entries(LANGUAGE_NAMES)
-                  .filter(([code]) => code !== 'en' && code !== detectedLanguage)
-                  .map(([code, name]) => (
-                    <SelectItem key={code} value={code}>
-                      {name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
             <Button
-              onClick={handleTranslate}
-              disabled={isTranslating || targetLanguage === detectedLanguage}
-              className="gap-2"
+              onClick={() => { setTargetLanguage('en'); handleTranslate(); }}
+              disabled={isTranslating}
+              className="gap-2 w-full"
             >
               {isTranslating ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Translating...
+                  Translating to English...
                 </>
               ) : (
                 <>
                   <Languages className="h-4 w-4" />
-                  Translate
+                  Translate to English
                 </>
               )}
             </Button>
           </div>
-        )}
+        ) : null}
 
         {/* Info Text */}
         <p className="text-xs text-gray-500 dark:text-muted-foreground">
           {translationAvailable
             ? 'Translation is shared across all users. Original content is always preserved.'
-            : 'Translation uses AI to convert case study text. English is recommended for company-wide access.'}
+            : detectedLanguage === 'en'
+              ? 'Content is in English. Click Detect if the language was identified incorrectly.'
+              : 'Translate to English so all users can access the content. Per-user translations coming in V2.'}
         </p>
       </CardContent>
     </Card>

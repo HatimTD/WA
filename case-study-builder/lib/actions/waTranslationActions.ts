@@ -265,11 +265,37 @@ export async function waDetectCaseStudyLanguage(caseStudyId: string): Promise<{
 
     const result = await translationService.detectLanguage(allText);
 
-    if (result.success) {
+    if (result.success && result.detectedLanguage) {
       // Update the case study with detected language
+      const updateData: Record<string, any> = {
+        originalLanguage: result.detectedLanguage,
+      };
+
+      // Clear redundant or wrong translations after re-detection
+      const existing = await prisma.waCaseStudy.findUnique({
+        where: { id: caseStudyId },
+        select: { translatedText: true, translationAvailable: true },
+      });
+      if (existing?.translationAvailable && existing.translatedText) {
+        try {
+          const parsed = JSON.parse(existing.translatedText);
+          // Clear if: original=en and translated to en (pointless)
+          // Or: translated to the same language as detected (e.g., fr→fr)
+          // Or: original=en and translated to something else (wrong — old panel let users do this)
+          if (
+            parsed.language === result.detectedLanguage || // same language translation (pointless)
+            (result.detectedLanguage === 'en' && parsed.language === 'en') || // en→en
+            (result.detectedLanguage === 'en' && parsed.language !== 'en') // en original wrongly translated to non-en
+          ) {
+            updateData.translationAvailable = false;
+            updateData.translatedText = null;
+          }
+        } catch {}
+      }
+
       await prisma.waCaseStudy.update({
         where: { id: caseStudyId },
-        data: { originalLanguage: result.detectedLanguage },
+        data: updateData,
       });
     }
 
