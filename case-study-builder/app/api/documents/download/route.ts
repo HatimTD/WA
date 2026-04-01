@@ -56,6 +56,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Collect errors from each approach for debugging
+    const debugErrors: string[] = [];
+
     // Try multiple approaches to get the document
 
     // Approach 1: Try direct fetch first (might work for public files)
@@ -88,8 +91,10 @@ export async function GET(request: NextRequest) {
           },
         });
       }
+      debugErrors.push(`Direct fetch: ${directResponse.status} ${directResponse.statusText}`);
       console.log('[DocumentProxy] Direct fetch failed:', directResponse.status, directResponse.statusText);
     } catch (directError: any) {
+      debugErrors.push(`Direct fetch error: ${directError?.message}`);
       console.log('[DocumentProxy] Direct fetch error:', directError?.message);
     }
 
@@ -128,6 +133,7 @@ export async function GET(request: NextRequest) {
           });
         }
       } catch (adminError: any) {
+        debugErrors.push(`Admin API: ${adminError?.message || adminError}`);
         console.log('[DocumentProxy] Admin API error:', adminError?.message || adminError);
       }
 
@@ -199,15 +205,16 @@ export async function GET(request: NextRequest) {
             },
           });
         }
-      } catch (signedError) {
+      } catch (signedError: any) {
+        debugErrors.push(`Signed URL: ${signedError?.message || signedError}`);
         console.log('[DocumentProxy] Signed URL error:', signedError);
       }
     }
 
     // All approaches failed
-    console.error('[DocumentProxy] All fetch approaches failed');
+    console.error('[DocumentProxy] All fetch approaches failed:', debugErrors);
     return NextResponse.json(
-      { error: 'Failed to fetch document. Please check Cloudinary settings.' },
+      { error: 'Failed to fetch document. Please check Cloudinary settings.', debug: debugErrors, publicId, resourceType },
       { status: 502 }
     );
   } catch (error) {
