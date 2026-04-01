@@ -2,13 +2,12 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Trash2, Loader2, RefreshCw, Languages } from 'lucide-react';
+import { Trash2, Loader2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ClearCacheButton() {
   const [isClearing, setIsClearing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [isFixingTranslations, setIsFixingTranslations] = useState(false);
 
   const handleClearCache = async () => {
     setIsClearing(true);
@@ -49,25 +48,6 @@ export default function ClearCacheButton() {
     }
   };
 
-  const handleFixTranslations = async () => {
-    setIsFixingTranslations(true);
-    try {
-      const response = await fetch('/api/admin/fix-translations', { method: 'POST' });
-      const result = await response.json();
-      if (result.success) {
-        toast.success(
-          `Fixed ${result.fixed} language detections, cleared ${result.cleared} corrupted translations (${result.alreadyCorrect} already correct)`
-        );
-      } else {
-        toast.error(result.error || 'Failed to fix translations');
-      }
-    } catch (error) {
-      toast.error('Failed to fix translations');
-    } finally {
-      setIsFixingTranslations(false);
-    }
-  };
-
   return (
     <div className="flex gap-2 flex-wrap">
       <Button
@@ -87,15 +67,6 @@ export default function ClearCacheButton() {
       >
         {isSyncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
         {isSyncing ? 'Syncing...' : 'Resync NetSuite'}
-      </Button>
-      <Button
-        variant="outline"
-        className="gap-2 dark:border-border dark:text-foreground dark:hover:bg-background"
-        onClick={handleFixTranslations}
-        disabled={isFixingTranslations}
-      >
-        {isFixingTranslations ? <Loader2 className="h-4 w-4 animate-spin" /> : <Languages className="h-4 w-4" />}
-        {isFixingTranslations ? 'Fixing...' : 'Fix All Translations'}
       </Button>
     </div>
   );

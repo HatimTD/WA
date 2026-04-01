@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import ClearCacheButton from '@/components/clear-cache-button';
+import FixTranslationsButton from '@/components/fix-translations-button';
 
 export default async function AdminDashboardPage() {
   const session = await auth();
@@ -159,8 +160,9 @@ export default async function AdminDashboardPage() {
                 </Button>
               </Link>
             </div>
-            <div className="mt-3">
+            <div className="mt-3 flex gap-3 flex-wrap">
               <ClearCacheButton />
+              <FixTranslationsButton />
             </div>
           </div>
         )}
