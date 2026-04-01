@@ -88,16 +88,18 @@ export async function GET(request: NextRequest) {
           },
         });
       }
-      console.log('[DocumentProxy] Direct fetch failed:', directResponse.status);
-    } catch (directError) {
-      console.log('[DocumentProxy] Direct fetch error:', directError);
+      console.log('[DocumentProxy] Direct fetch failed:', directResponse.status, directResponse.statusText);
+    } catch (directError: any) {
+      console.log('[DocumentProxy] Direct fetch error:', directError?.message);
     }
 
     // Approach 2: Try with Cloudinary Admin API to get resource details
     if (publicId) {
       try {
-        console.log('[DocumentProxy] Trying Admin API for:', publicId);
-        const resource = await cloudinary.api.resource(publicId, {
+        // For raw resources, try both with and without extension
+        const publicIdForApi = resourceType === 'raw' ? publicId : publicId;
+        console.log('[DocumentProxy] Trying Admin API for:', publicIdForApi, 'type:', resourceType);
+        const resource = await cloudinary.api.resource(publicIdForApi, {
           resource_type: resourceType,
         });
 
@@ -125,8 +127,8 @@ export async function GET(request: NextRequest) {
             },
           });
         }
-      } catch (adminError) {
-        console.log('[DocumentProxy] Admin API error:', adminError);
+      } catch (adminError: any) {
+        console.log('[DocumentProxy] Admin API error:', adminError?.message || adminError);
       }
 
       // Approach 3: Generate a signed URL
@@ -136,10 +138,12 @@ export async function GET(request: NextRequest) {
 
         // For raw files, use private_download_url
         if (resourceType === 'raw') {
-          // Extract format from filename or default to empty
+          // Extract format and remove extension from publicId
+          // private_download_url expects publicId WITHOUT extension
           const format = publicId.split('.').pop() || '';
+          const publicIdWithoutExt = publicId.replace(/\.[^.]+$/, '');
 
-          const signedUrl = cloudinary.utils.private_download_url(publicId, format, {
+          const signedUrl = cloudinary.utils.private_download_url(publicIdWithoutExt, format, {
             resource_type: 'raw',
             expires_at: expiresAt,
           });
