@@ -195,43 +195,56 @@ export default function TranslationPanel({
           </div>
         )}
 
-        {/* Translation Controls */}
-        <div className="flex items-center gap-2">
-          <Select value={targetLanguage} onValueChange={setTargetLanguage}>
-            <SelectTrigger className="flex-1 dark:bg-input dark:border-border dark:text-foreground">
-              <SelectValue placeholder="Select language" />
-            </SelectTrigger>
-            <SelectContent className="dark:bg-popover dark:border-border">
-              {Object.entries(LANGUAGE_NAMES).map(([code, name]) => (
-                <SelectItem key={code} value={code} disabled={code === detectedLanguage}>
-                  {name}
-                  {code === detectedLanguage && ' (Original)'}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            onClick={handleTranslate}
-            disabled={isTranslating || targetLanguage === detectedLanguage}
-            className="gap-2"
-          >
-            {isTranslating ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Translating...
-              </>
-            ) : (
-              <>
-                <Languages className="h-4 w-4" />
-                Translate
-              </>
-            )}
-          </Button>
-        </div>
+        {/* Translation Controls — only show if no English translation exists yet */}
+        {translationAvailable && currentTranslation?.language === 'en' ? (
+          <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-border">
+            <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <span className="text-sm text-gray-600 dark:text-muted-foreground">
+              Auto-translated to English. Use the toggle above to switch between original and translated content.
+            </span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Select value={targetLanguage} onValueChange={setTargetLanguage}>
+              <SelectTrigger className="flex-1 dark:bg-input dark:border-border dark:text-foreground">
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent className="dark:bg-popover dark:border-border">
+                <SelectItem value="en">English (recommended)</SelectItem>
+                {Object.entries(LANGUAGE_NAMES)
+                  .filter(([code]) => code !== 'en' && code !== detectedLanguage)
+                  .map(([code, name]) => (
+                    <SelectItem key={code} value={code}>
+                      {name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+            <Button
+              onClick={handleTranslate}
+              disabled={isTranslating || targetLanguage === detectedLanguage}
+              className="gap-2"
+            >
+              {isTranslating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Translating...
+                </>
+              ) : (
+                <>
+                  <Languages className="h-4 w-4" />
+                  Translate
+                </>
+              )}
+            </Button>
+          </div>
+        )}
 
         {/* Info Text */}
         <p className="text-xs text-gray-500 dark:text-muted-foreground">
-          Translation uses AI to convert case study text fields. Original content is preserved.
+          {translationAvailable
+            ? 'Translation is shared across all users. Original content is always preserved.'
+            : 'Translation uses AI to convert case study text. English is recommended for company-wide access.'}
         </p>
       </CardContent>
     </Card>

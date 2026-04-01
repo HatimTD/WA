@@ -38,7 +38,7 @@ export default async function ActivityFeed({ limit = 10 }: Props) {
       },
     },
     orderBy: [
-      { updatedAt: 'desc' },
+      { approvedAt: { sort: 'desc', nulls: 'last' } },
     ],
     take: limit,
   });
@@ -115,7 +115,9 @@ export default async function ActivityFeed({ limit = 10 }: Props) {
                       <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">PUBLISHED</Badge>
                     )}
                     <span className="text-xs text-gray-500 dark:text-muted-foreground">
-                      {getTimeAgo(caseStudy.approvedAt || caseStudy.updatedAt)}
+                      {(caseStudy.approvedAt || caseStudy.updatedAt)
+                        ? new Date(caseStudy.approvedAt || caseStudy.updatedAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                        : ''}
                     </span>
                   </div>
                   <h4 className="font-semibold text-sm mb-1 truncate dark:text-foreground">
