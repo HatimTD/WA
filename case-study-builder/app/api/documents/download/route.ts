@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
       api_secret: cloudConfig.api_secret ? 'set' : '(missing)',
     });
 
-    console.log('[DocumentProxy] v3 - Fetching document:', url);
+    console.log('[DocumentProxy] v4 - Fetching document:', url);
 
     // Extract public_id from URL for Cloudinary API access
     let publicId: string | null = null;
@@ -106,24 +106,26 @@ export async function GET(request: NextRequest) {
       console.log('[DocumentProxy] Direct fetch error:', directError?.message);
     }
 
-    // Approach 2: Generate a signed CDN URL (bypasses Strict Transformations)
+    // Approach 2: private_download_url — hits Cloudinary API (not CDN), bypasses delivery restrictions
     if (publicId) {
       try {
-        console.log('[DocumentProxy] Generating signed URL for:', publicId);
-        const signedUrl = cloudinary.url(publicId, {
+        const ext = publicId.split('.').pop() || 'pdf';
+        console.log('[DocumentProxy] Trying private_download_url for:', publicId, 'format:', ext);
+
+        const privateUrl = cloudinary.utils.private_download_url(publicId, ext, {
           resource_type: resourceType,
           type: 'upload',
-          sign_url: true,
-          secure: true,
+          expires_at: Math.floor(Date.now() / 1000) + 300,
+          attachment: true,
         });
-        console.log('[DocumentProxy] Signed URL:', signedUrl);
+        console.log('[DocumentProxy] Private download URL:', privateUrl);
 
-        const signedResponse = await fetch(signedUrl);
-        if (signedResponse.ok) {
-          console.log('[DocumentProxy] Signed URL fetch successful');
-          const buffer = await signedResponse.arrayBuffer();
-          const contentType = signedResponse.headers.get('content-type') || 'application/octet-stream';
-          const downloadFilename = filename.includes('.') ? filename : filename + '.pdf';
+        const privateResponse = await fetch(privateUrl);
+        if (privateResponse.ok) {
+          console.log('[DocumentProxy] Private download successful');
+          const buffer = await privateResponse.arrayBuffer();
+          const contentType = privateResponse.headers.get('content-type') || 'application/octet-stream';
+          const downloadFilename = filename.includes('.') ? filename : `${filename}.${ext}`;
 
           return new NextResponse(buffer, {
             status: 200,
@@ -134,48 +136,11 @@ export async function GET(request: NextRequest) {
             },
           });
         }
-        debugErrors.push(`Signed URL: ${signedResponse.status} ${signedResponse.statusText}`);
-        console.log('[DocumentProxy] Signed URL fetch failed:', signedResponse.status);
-      } catch (signedError: any) {
-        debugErrors.push(`Signed URL error: ${signedError?.message}`);
-        console.log('[DocumentProxy] Signed URL error:', signedError?.message);
-      }
-
-      // Approach 3: Try Admin API to get resource, then fetch with auth header
-      try {
-        console.log('[DocumentProxy] Trying Admin API for:', publicId);
-        const resource = await cloudinary.api.resource(publicId, { resource_type: resourceType });
-        console.log('[DocumentProxy] Admin API returned secure_url:', resource.secure_url);
-
-        // Generate a signed version of the secure_url
-        const signedSecureUrl = cloudinary.url(publicId, {
-          resource_type: resourceType,
-          type: 'upload',
-          sign_url: true,
-          secure: true,
-          version: resource.version,
-        });
-
-        const adminResponse = await fetch(signedSecureUrl);
-        if (adminResponse.ok) {
-          console.log('[DocumentProxy] Admin signed URL fetch successful');
-          const buffer = await adminResponse.arrayBuffer();
-          const contentType = adminResponse.headers.get('content-type') || 'application/octet-stream';
-          const downloadFilename = filename.includes('.') ? filename : filename + '.pdf';
-
-          return new NextResponse(buffer, {
-            status: 200,
-            headers: {
-              'Content-Type': contentType,
-              'Content-Disposition': `attachment; filename="${downloadFilename}"`,
-              'Content-Length': buffer.byteLength.toString(),
-            },
-          });
-        }
-        debugErrors.push(`Admin API signed fetch: ${adminResponse.status}`);
-      } catch (adminError: any) {
-        debugErrors.push(`Admin API: ${adminError?.message}`);
-        console.log('[DocumentProxy] Admin API error:', adminError?.message);
+        debugErrors.push(`Private download: ${privateResponse.status} ${privateResponse.statusText}`);
+        console.log('[DocumentProxy] Private download failed:', privateResponse.status);
+      } catch (privateError: any) {
+        debugErrors.push(`Private download error: ${privateError?.message}`);
+        console.log('[DocumentProxy] Private download error:', privateError?.message);
       }
     }
 
@@ -184,7 +149,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         error: 'Failed to fetch document. Please check Cloudinary settings.',
-        version: 'v3',
+        version: 'v4',
         debug: debugErrors,
         publicId,
         resourceType,
