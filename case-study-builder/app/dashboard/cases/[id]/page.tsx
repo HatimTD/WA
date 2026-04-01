@@ -941,11 +941,13 @@ export default async function CaseStudyDetailPage({ params, searchParams }: Prop
               {caseStudy.supportingDocs.map((docUrl, index) => {
                 const fileName = decodeURIComponent(docUrl.split('/').pop()?.split('?')[0] || 'Document');
                 const extension = fileName.split('.').pop()?.toLowerCase();
+                const isImage = ['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(extension || '');
+                const downloadUrl = isImage ? docUrl : `/api/documents/download?url=${encodeURIComponent(docUrl)}&filename=${encodeURIComponent(fileName)}`;
 
                 return (
                   <a
                     key={index}
-                    href={docUrl}
+                    href={downloadUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-4 p-4 border border-gray-200 dark:border-border rounded-lg hover:bg-gray-50 dark:hover:bg-card hover:border-wa-green-300 dark:hover:border-primary transition-all"
