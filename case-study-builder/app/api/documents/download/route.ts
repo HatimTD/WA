@@ -41,6 +41,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid URL: only Cloudinary domains are allowed' }, { status: 400 });
     }
 
+    // Debug: check Cloudinary config
+    const cloudConfig = cloudinary.config();
+    console.log('[DocumentProxy] Cloudinary config:', {
+      cloud_name: cloudConfig.cloud_name || '(missing)',
+      api_key: cloudConfig.api_key ? 'set' : '(missing)',
+      api_secret: cloudConfig.api_secret ? 'set' : '(missing)',
+    });
+
     console.log('[DocumentProxy] Fetching document:', url);
 
     // Extract public_id from URL for Cloudinary API access
@@ -214,7 +222,17 @@ export async function GET(request: NextRequest) {
     // All approaches failed
     console.error('[DocumentProxy] All fetch approaches failed:', debugErrors);
     return NextResponse.json(
-      { error: 'Failed to fetch document. Please check Cloudinary settings.', debug: debugErrors, publicId, resourceType },
+      {
+        error: 'Failed to fetch document. Please check Cloudinary settings.',
+        debug: debugErrors,
+        publicId,
+        resourceType,
+        cloudinaryConfig: {
+          cloud_name: cloudConfig.cloud_name || '(missing)',
+          api_key: cloudConfig.api_key ? 'configured' : '(missing)',
+          api_secret: cloudConfig.api_secret ? 'configured' : '(missing)',
+        },
+      },
       { status: 502 }
     );
   } catch (error) {
