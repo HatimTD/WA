@@ -19,7 +19,8 @@ if (process.env.CLOUDINARY_URL) {
 
 /**
  * API route to proxy document downloads from Cloudinary
- * This bypasses any public access restrictions by fetching server-side
+ * Handles restricted raw file delivery by using Cloudinary's private download API
+ * Requires authentication — only logged-in users can download documents
  */
 export async function GET(request: NextRequest) {
   try {
@@ -41,16 +42,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid URL: only Cloudinary domains are allowed' }, { status: 400 });
     }
 
-    // Debug: check Cloudinary config
-    const cloudConfig = cloudinary.config();
-    console.log('[DocumentProxy] Cloudinary config:', {
-      cloud_name: cloudConfig.cloud_name || '(missing)',
-      api_key: cloudConfig.api_key ? 'set' : '(missing)',
-      api_secret: cloudConfig.api_secret ? 'set' : '(missing)',
-    });
-
-    console.log('[DocumentProxy] v4 - Fetching document:', url);
-
     // Extract public_id from URL for Cloudinary API access
     let publicId: string | null = null;
     let resourceType: 'raw' | 'image' = 'raw';
@@ -60,27 +51,19 @@ export async function GET(request: NextRequest) {
       if (match) {
         resourceType = match[1] as 'raw' | 'image';
         publicId = match[2];
-        console.log('[DocumentProxy] Extracted publicId:', publicId, 'resourceType:', resourceType);
       }
     }
 
-    // Collect errors from each approach for debugging
-    const debugErrors: string[] = [];
-
-    // Try multiple approaches to get the document
-
-    // Approach 1: Try direct fetch first (might work for public files)
+    // Approach 1: Try direct fetch (works when raw delivery is not restricted)
     try {
       const directResponse = await fetch(url, {
         headers: { 'Accept': '*/*' },
       });
 
       if (directResponse.ok) {
-        console.log('[DocumentProxy] Direct fetch successful');
         const buffer = await directResponse.arrayBuffer();
         const contentType = directResponse.headers.get('content-type') || 'application/octet-stream';
 
-        // Determine file extension from content type or filename
         let ext = '';
         if (contentType.includes('pdf')) ext = '.pdf';
         else if (contentType.includes('word') || contentType.includes('document')) ext = '.docx';
@@ -99,18 +82,15 @@ export async function GET(request: NextRequest) {
           },
         });
       }
-      debugErrors.push(`Direct fetch: ${directResponse.status} ${directResponse.statusText}`);
-      console.log('[DocumentProxy] Direct fetch failed:', directResponse.status, directResponse.statusText);
-    } catch (directError: any) {
-      debugErrors.push(`Direct fetch error: ${directError?.message}`);
-      console.log('[DocumentProxy] Direct fetch error:', directError?.message);
+    } catch {
+      // Direct fetch failed — fall through to private download
     }
 
-    // Approach 2: private_download_url — hits Cloudinary API (not CDN), bypasses delivery restrictions
+    // Approach 2: Private download URL — bypasses CDN delivery restrictions
+    // Uses Cloudinary API endpoint (not CDN) with API key + signature authentication
     if (publicId) {
       try {
         const ext = publicId.split('.').pop() || 'pdf';
-        console.log('[DocumentProxy] Trying private_download_url for:', publicId, 'format:', ext);
 
         const privateUrl = cloudinary.utils.private_download_url(publicId, ext, {
           resource_type: resourceType,
@@ -118,11 +98,9 @@ export async function GET(request: NextRequest) {
           expires_at: Math.floor(Date.now() / 1000) + 300,
           attachment: true,
         });
-        console.log('[DocumentProxy] Private download URL:', privateUrl);
 
         const privateResponse = await fetch(privateUrl);
         if (privateResponse.ok) {
-          console.log('[DocumentProxy] Private download successful');
           const buffer = await privateResponse.arrayBuffer();
           const contentType = privateResponse.headers.get('content-type') || 'application/octet-stream';
           const downloadFilename = filename.includes('.') ? filename : `${filename}.${ext}`;
@@ -136,29 +114,14 @@ export async function GET(request: NextRequest) {
             },
           });
         }
-        debugErrors.push(`Private download: ${privateResponse.status} ${privateResponse.statusText}`);
-        console.log('[DocumentProxy] Private download failed:', privateResponse.status);
-      } catch (privateError: any) {
-        debugErrors.push(`Private download error: ${privateError?.message}`);
-        console.log('[DocumentProxy] Private download error:', privateError?.message);
+      } catch {
+        // Private download failed
       }
     }
 
     // All approaches failed
-    console.error('[DocumentProxy] All fetch approaches failed:', debugErrors);
     return NextResponse.json(
-      {
-        error: 'Failed to fetch document. Please check Cloudinary settings.',
-        version: 'v4',
-        debug: debugErrors,
-        publicId,
-        resourceType,
-        cloudinaryConfig: {
-          cloud_name: cloudConfig.cloud_name || '(missing)',
-          api_key: cloudConfig.api_key ? 'configured' : '(missing)',
-          api_secret: cloudConfig.api_secret ? 'configured' : '(missing)',
-        },
-      },
+      { error: 'Failed to fetch document. Please check Cloudinary settings.' },
       { status: 502 }
     );
   } catch (error) {
