@@ -27,7 +27,10 @@ export async function waGetLeaderboardData(region?: string | null) {
     }
 
     // Build where clause for regional filtering
-    const whereClause = region && region !== 'all' ? { region } : {};
+    // Regions are derived from User → WaUserSubsidiary → WaSubsidiary.region
+    const whereClause = region && region !== 'all'
+      ? { userSubsidiaries: { some: { subsidiary: { region } } } }
+      : {};
 
     // Get all users ranked by points
     const users = await prisma.user.findMany({
@@ -38,7 +41,13 @@ export async function waGetLeaderboardData(region?: string | null) {
         email: true,
         totalPoints: true,
         badges: true,
-        region: true,
+        userSubsidiaries: {
+          select: {
+            subsidiary: {
+              select: { region: true },
+            },
+          },
+        },
         _count: {
           select: {
             caseStudies: {
@@ -53,15 +62,19 @@ export async function waGetLeaderboardData(region?: string | null) {
       take: 100,
     });
 
-    const leaderboardUsers: LeaderboardUser[] = users.map((user) => ({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      totalPoints: user.totalPoints,
-      badges: user.badges as BadgeType[],
-      region: user.region,
-      approvedCases: user._count.caseStudies,
-    }));
+    const leaderboardUsers: LeaderboardUser[] = users.map((user) => {
+      // Derive region from subsidiaries (take first unique region)
+      const regions = [...new Set(user.userSubsidiaries.map((us) => us.subsidiary.region))];
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        totalPoints: user.totalPoints,
+        badges: user.badges as BadgeType[],
+        region: regions.length > 0 ? regions.join(', ') : null,
+        approvedCases: user._count.caseStudies,
+      };
+    });
 
     // Find current user's rank in the filtered list
     const currentUserRank = leaderboardUsers.findIndex((u) => u.id === session.user.id) + 1;
