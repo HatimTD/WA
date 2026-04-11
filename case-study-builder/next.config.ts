@@ -1,5 +1,6 @@
 import type { NextConfig } from 'next';
 import withSerwistInit from '@serwist/next';
+import { withSentryConfig } from '@sentry/nextjs';
 
 const withSerwist = withSerwistInit({
   swSrc: 'app/sw.ts',
@@ -73,6 +74,19 @@ const nextConfig: NextConfig = {
   },
 };
 
-// Apply Serwist wrapper (handles service worker generation)
-// Note: Sentry is disabled to avoid build complexity - enable if needed
-export default withSerwist(nextConfig);
+// Sentry webpack plugin options — source maps upload only runs when
+// SENTRY_AUTH_TOKEN is set during build. The runtime init is in
+// sentry.{client,server,edge}.config.ts and instrumentation.ts.
+const sentryWebpackPluginOptions = {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  silent: !process.env.CI,
+  widenClientFileUpload: true,
+  hideSourceMaps: true,
+  disableLogger: true,
+  automaticVercelMonitors: false,
+};
+
+// Apply Serwist wrapper first (service worker), then Sentry wrapper
+export default withSentryConfig(withSerwist(nextConfig), sentryWebpackPluginOptions);
