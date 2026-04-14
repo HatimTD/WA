@@ -111,11 +111,14 @@ export async function waSearchCaseStudies(filters: WaSearchFilters) {
       where.contributorId = filters.contributorId;
     }
 
-    // Region filter (filters by contributor's region)
+    // Region filter — via legacy User.region OR subsidiary assignment
     if (filters.region) {
       where.contributor = {
         ...((where.contributor as object) || {}),
-        region: filters.region,
+        OR: [
+          { region: filters.region },
+          { userSubsidiaries: { some: { subsidiary: { region: filters.region } } } },
+        ],
       };
     }
 

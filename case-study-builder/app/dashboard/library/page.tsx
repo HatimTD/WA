@@ -115,10 +115,13 @@ export default async function LibraryPage({
     where.country = { contains: countryFilter, mode: 'insensitive' };
   }
 
-  // Region filter (contributor's region)
+  // Region filter (contributor's region — via legacy User.region OR subsidiary assignment)
   if (regionFilter) {
     where.contributor = {
-      region: regionFilter,
+      OR: [
+        { region: regionFilter },
+        { userSubsidiaries: { some: { subsidiary: { region: regionFilter } } } },
+      ],
     };
   }
 
