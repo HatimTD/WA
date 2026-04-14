@@ -27,9 +27,14 @@ export async function waGetLeaderboardData(region?: string | null) {
     }
 
     // Build where clause for regional filtering
-    // Regions are derived from User → WaUserSubsidiary → WaSubsidiary.region
+    // Regions come from legacy User.region OR WaUserSubsidiary → WaSubsidiary.region
     const whereClause = region && region !== 'all'
-      ? { userSubsidiaries: { some: { subsidiary: { region } } } }
+      ? {
+          OR: [
+            { region },
+            { userSubsidiaries: { some: { subsidiary: { region } } } },
+          ],
+        }
       : {};
 
     // Get all users ranked by points
