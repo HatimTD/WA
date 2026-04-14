@@ -1,11 +1,22 @@
 /**
  * Next.js Instrumentation - Runs on server startup
- * Used to preload NetSuite cache in background
+ * - Loads Sentry configuration for the active runtime
+ * - Preloads NetSuite cache in background (nodejs runtime only)
  * https://nextjs.org/docs/app/building-your-application/optimizing/instrumentation
  */
 
+import type { Instrumentation } from 'next';
+
 export async function register() {
-  // Only run on server side
+  // Load Sentry for the active runtime
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    await import('./sentry.server.config');
+  }
+  if (process.env.NEXT_RUNTIME === 'edge') {
+    await import('./sentry.edge.config');
+  }
+
+  // Only run NetSuite preload on server side
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     console.log('[Server] Initializing...');
 
@@ -62,3 +73,12 @@ export async function register() {
     })();
   }
 }
+
+export const onRequestError: Instrumentation.onRequestError = async (
+  err,
+  request,
+  context
+) => {
+  const Sentry = await import('@sentry/nextjs');
+  Sentry.captureRequestError(err, request, context);
+};
