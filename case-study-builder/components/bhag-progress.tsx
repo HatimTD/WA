@@ -51,19 +51,19 @@ export default async function BHAGProgress() {
         {/* Breakdown by Type */}
         <div>
           <p className="text-sm font-medium mb-3 dark:text-white">Breakdown by Type (Unique)</p>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-wa-green-50 border border-wa-green-200 rounded-lg p-3 text-center dark:bg-green-950/50 dark:border-green-700">
-              <Badge className="bg-wa-green-100 text-wa-green-700 mb-1 dark:bg-green-800 dark:text-green-200 dark:border-green-600 dark:border">APPLICATION</Badge>
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <div className="bg-wa-green-50 border border-wa-green-200 rounded-lg p-2 sm:p-3 text-center dark:bg-green-950/50 dark:border-green-700">
+              <Badge className="bg-wa-green-100 text-wa-green-700 mb-1 text-[10px] sm:text-xs px-1.5 sm:px-2.5 dark:bg-green-800 dark:text-green-200 dark:border-green-600 dark:border">APPLICATION</Badge>
               <p className="text-2xl font-bold text-wa-green-600 dark:text-white">{byType.APPLICATION}</p>
               <p className="text-xs text-gray-600 dark:text-white/70">unique cases*</p>
             </div>
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-center dark:bg-purple-950/50 dark:border-purple-700">
-              <Badge className="bg-purple-100 text-purple-700 mb-1 dark:bg-purple-800 dark:text-purple-200 dark:border-purple-600 dark:border">TECH</Badge>
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-2 sm:p-3 text-center dark:bg-purple-950/50 dark:border-purple-700">
+              <Badge className="bg-purple-100 text-purple-700 mb-1 text-[10px] sm:text-xs px-1.5 sm:px-2.5 dark:bg-purple-800 dark:text-purple-200 dark:border-purple-600 dark:border">TECH</Badge>
               <p className="text-2xl font-bold text-purple-600 dark:text-white">{byType.TECH}</p>
               <p className="text-xs text-gray-600 dark:text-white/70">unique cases*</p>
             </div>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center dark:bg-yellow-950/50 dark:border-yellow-700">
-              <Badge className="bg-yellow-100 text-yellow-700 mb-1 dark:bg-yellow-800 dark:text-yellow-200 dark:border-yellow-600 dark:border">STAR</Badge>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 sm:p-3 text-center dark:bg-yellow-950/50 dark:border-yellow-700">
+              <Badge className="bg-yellow-100 text-yellow-700 mb-1 text-[10px] sm:text-xs px-1.5 sm:px-2.5 dark:bg-yellow-800 dark:text-yellow-200 dark:border-yellow-600 dark:border">STAR</Badge>
               <p className="text-2xl font-bold text-yellow-700 dark:text-white">{byType.STAR}</p>
               <p className="text-xs text-gray-600 dark:text-white/70">unique cases*</p>
             </div>

@@ -148,7 +148,7 @@ export function DashboardNav({ user, isCollapsed, onNavigate }: DashboardNavProp
 
   return (
     <aside role="navigation" aria-label="Main navigation" className={cn(
-      "flex flex-col h-screen bg-white dark:bg-card border-r border-gray-200 dark:border-border transition-all duration-300 z-30",
+      "flex flex-col h-full lg:h-screen bg-white dark:bg-card border-r border-gray-200 dark:border-border transition-all duration-300 z-30",
       isCollapsed ? "w-20" : "w-64"
     )}>
       {/* TOP SECTION: Logo + Brand Name */}
@@ -179,7 +179,7 @@ export function DashboardNav({ user, isCollapsed, onNavigate }: DashboardNavProp
       </div>
 
       {/* MIDDLE SECTION: Navigation (flex-1 to push content down) */}
-      <nav aria-label="Primary navigation" className="flex-1 overflow-y-auto py-4 px-2">
+      <nav aria-label="Primary navigation" className="flex-1 min-h-0 overflow-y-auto py-4 px-2">
         <TooltipProvider>
           <div className="space-y-1">
             {/* Main Navigation Items */}
