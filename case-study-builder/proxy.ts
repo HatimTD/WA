@@ -229,8 +229,6 @@ export default auth(async (req) => {
 
   // Define page types
   const isAuthPage = pathname.startsWith('/login');
-  const isPublicPage = pathname === '/';
-  const isLibraryPage = pathname.startsWith('/library');
   const isMaintenancePage = pathname === '/maintenance';
 
   // Check if path is exempt from maintenance checks
@@ -294,11 +292,12 @@ export default auth(async (req) => {
       }
     }
 
-    // ==== PUBLIC PAGE ACCESS ====
-    // Allow public pages
-    if (isPublicPage || isLibraryPage) {
-      return addSecurityHeaders(NextResponse.next());
-    }
+    // ==== NO PUBLIC PAGES ====
+    // Previously "/" and "/library/*" bypassed authentication entirely. They no
+    // longer do: every page requires a session. Unauthenticated visitors are
+    // redirected to /login by the deny-by-default check below. The library is
+    // served from /dashboard/library and is reachable by every authenticated
+    // role (including VIEWER) - no role gate is applied here.
 
     // ==== AUTHENTICATED USER REDIRECTS ====
     // Redirect logged-in users away from login pages
@@ -333,7 +332,12 @@ export default auth(async (req) => {
     return addSecurityHeaders(NextResponse.next());
   } catch (error) {
     console.error('[Proxy] Error:', error);
-    // On error, still apply security headers
+    // Fail CLOSED for unauthenticated visitors: a database/error condition must
+    // never expose a protected page to an anonymous user. Authenticated users
+    // pass through so a transient error does not log everyone out.
+    if (!isLoggedIn && !isAuthPage && !isMaintenancePage) {
+      return NextResponse.redirect(new URL('/login', req.url));
+    }
     return addSecurityHeaders(NextResponse.next());
   }
 });

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { waUploadImage } from '@/lib/actions/waImageUploadActions';
+import { validateUpload } from '@/lib/file-validation';
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,23 +25,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
+    // Validate by real content (magic bytes) + extension - images only.
+    const validation = await validateUpload(file, ['image']);
+    if (!validation.ok) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Invalid file type. Only JPEG, PNG, and WebP are allowed.',
-        },
+        { success: false, error: validation.error },
         { status: 400 }
       );
     }
 
-    // Validate file size (max 5MB for avatars)
+    // Avatars additionally keep a tighter 5 MB cap.
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
       return NextResponse.json(
-        { success: false, error: 'File size exceeds 5MB limit.' },
+        { success: false, error: 'Avatar exceeds the 5MB limit.' },
         { status: 400 }
       );
     }

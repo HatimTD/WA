@@ -1,6 +1,8 @@
 'use server';
 
 import { v2 as cloudinary } from 'cloudinary';
+import { auth } from '@/auth';
+import { validateUpload, type FileCategory } from '@/lib/file-validation';
 
 // Configure Cloudinary - prefer CLOUDINARY_URL if available
 if (process.env.CLOUDINARY_URL) {
@@ -30,8 +32,18 @@ export interface DocumentUploadResult {
  * @param formData - FormData containing the document file
  * @returns DocumentUploadResult with URL or error
  */
-export async function waUploadDocument(formData: FormData): Promise<DocumentUploadResult> {
+export async function waUploadDocument(
+  formData: FormData,
+  allowed: FileCategory[] = ['pdf']
+): Promise<DocumentUploadResult> {
   try {
+    // Server Actions are directly invokable POST endpoints - never trust that
+    // the caller went through an authenticated UI.
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
     const file = formData.get('file') as File;
 
     if (!file) {
@@ -41,39 +53,17 @@ export async function waUploadDocument(formData: FormData): Promise<DocumentUplo
       };
     }
 
-    // Validate file type - allow common document formats and images
-    const validTypes = [
-      'application/pdf',
-      'application/msword', // .doc
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
-      'application/vnd.ms-excel', // .xls
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-      'application/vnd.ms-powerpoint', // .ppt
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
-      'text/plain', // .txt
-      'image/png', // .png
-      'image/jpeg', // .jpg, .jpeg
-      'image/webp', // .webp
-    ];
-
-    // Check if it's an image type (for different Cloudinary handling)
-    const isImage = file.type.startsWith('image/');
-
-    if (!validTypes.includes(file.type)) {
-      return {
-        success: false,
-        error: 'Invalid file type. Only PDF, Word, Excel, PowerPoint, TXT, and image files are allowed.',
-      };
+    // Documents are restricted to PDF only (Word/Excel/PowerPoint/TXT removed).
+    // Validation is by real content (magic bytes) + extension + size (1 GB),
+    // and the PDF is scanned for active/dangerous content before it is stored.
+    const validation = await validateUpload(file, allowed);
+    if (!validation.ok) {
+      return { success: false, error: validation.error };
     }
 
-    // Validate file size (max 20MB for documents)
-    const maxSize = 20 * 1024 * 1024; // 20MB
-    if (file.size > maxSize) {
-      return {
-        success: false,
-        error: 'File size exceeds 20MB limit.',
-      };
-    }
+    // Images (allowed for WPS attachments) go to Cloudinary as 'image';
+    // PDFs are stored as 'raw'.
+    const isImage = validation.category === 'image';
 
     // Convert file to buffer
     const bytes = await file.arrayBuffer();

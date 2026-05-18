@@ -1116,7 +1116,7 @@ export default function StepWPS({ formData, updateFormData, highlightedFields }:
               <input
                 type="file"
                 className="hidden"
-                accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) {

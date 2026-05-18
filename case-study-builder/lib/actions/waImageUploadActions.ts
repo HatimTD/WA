@@ -1,6 +1,8 @@
 'use server';
 
 import { v2 as cloudinary } from 'cloudinary';
+import { auth } from '@/auth';
+import { validateUpload } from '@/lib/file-validation';
 
 // Configure Cloudinary - prefer CLOUDINARY_URL if available
 if (process.env.CLOUDINARY_URL) {
@@ -31,6 +33,13 @@ export interface UploadResult {
  */
 export async function waUploadImage(formData: FormData): Promise<UploadResult> {
   try {
+    // Server Actions are directly invokable POST endpoints - never trust that
+    // the caller went through an authenticated UI.
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
     const file = formData.get('file') as File;
 
     if (!file) {
@@ -41,22 +50,11 @@ export async function waUploadImage(formData: FormData): Promise<UploadResult> {
       };
     }
 
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-    if (!validTypes.includes(file.type)) {
-      return {
-        success: false,
-        error: 'Invalid file type. Only JPEG, PNG, WebP, and GIF are allowed.',
-      };
-    }
-
-    // Validate file size (max 10MB)
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
-      return {
-        success: false,
-        error: 'File size exceeds 10MB limit.',
-      };
+    // Validate by real content (magic bytes) + extension + size, not the
+    // spoofable client MIME string. Images only here (1 GB cap).
+    const validation = await validateUpload(file, ['image']);
+    if (!validation.ok) {
+      return { success: false, error: validation.error };
     }
 
     // Convert file to buffer

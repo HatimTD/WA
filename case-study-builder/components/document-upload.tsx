@@ -128,7 +128,7 @@ export default function DocumentUpload({ onDocumentsChange, existingDocuments = 
             type="file"
             id="document-upload"
             className="hidden"
-            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
+            accept="application/pdf,.pdf"
             multiple
             onChange={handleFileSelect}
             disabled={uploading || documents.length >= maxDocuments}
@@ -146,7 +146,7 @@ export default function DocumentUpload({ onDocumentsChange, existingDocuments = 
           </label>
 
           <p className="text-xs text-muted-foreground">
-            PDF, Word, Excel, PowerPoint, TXT (max 20MB each)
+            PDF only (max 1GB each). PDFs with active content are rejected.
           </p>
           <p className="text-xs text-muted-foreground">
             {documents.length} / {maxDocuments} documents uploaded

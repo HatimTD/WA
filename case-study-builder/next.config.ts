@@ -29,7 +29,12 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     serverActions: {
-      bodySizeLimit: '10mb',
+      // Application ceiling for uploads (PDF/image/video) is 1 GB, enforced in
+      // lib/file-validation.ts. NOTE: on Vercel the serverless platform caps the
+      // request body well below this (~4.5 MB), so genuinely large files/videos
+      // must be uploaded directly to Cloudinary (signed upload) - tracked as a
+      // separate follow-up. This limit governs dev/self-hosted.
+      bodySizeLimit: '1024mb',
     },
   },
   // Security headers for production

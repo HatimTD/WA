@@ -691,7 +691,8 @@ export default function NewCaseStudyPage() {
         const formDataUpload = new FormData();
         formDataUpload.append('file', doc.file);
 
-        const result = await waUploadDocument(formDataUpload);
+        // WPS attachments may be PDF or image (still magic-byte validated).
+        const result = await waUploadDocument(formDataUpload, ['pdf', 'image']);
         if (result.success && result.url) {
           uploadedDocs.push({ name: doc.name, size: doc.size, type: doc.type, url: result.url });
         } else {
