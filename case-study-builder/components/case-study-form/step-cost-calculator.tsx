@@ -58,6 +58,11 @@ export default function StepCostCalculator({ formData, updateFormData, subsidiar
   // visually aligned when a STAR user first arrives at this step.
   const effectiveCurrency = formData.costCalculator?.currency || formData.revenueCurrency || 'EUR';
   const currencySymbol = CURRENCY_SYMBOLS[effectiveCurrency] || '€';
+  // Width of the absolute-positioned currency prefix scales with char count:
+  // 1-char symbols like $/€ fit in pl-9/pl-12, but 3-char codes like MAD/AED/CHF
+  // overflow into the input's placeholder/value area unless we bump to pl-14.
+  const prefixPad = currencySymbol.length <= 1 ? 'pl-9' : 'pl-14';
+  const prefixPadLg = currencySymbol.length <= 1 ? 'pl-12' : 'pl-14';
   // Helper functions for ServiceLifePicker integration
   const waGetOldLifetimeValue = (): ServiceLifeValue => {
     const cc = formData.costCalculator;
@@ -338,7 +343,7 @@ export default function StepCostCalculator({ formData, updateFormData, subsidiar
                   value={formData.costCalculator?.costOfPart || ''}
                   onChange={(e) => waUpdateCostCalculator('costOfPart', e.target.value)}
                   placeholder="Cost per unit with the previous solution."
-                  className="pl-12 dark:bg-input dark:border-border dark:text-foreground"
+                  className={`${prefixPadLg} dark:bg-input dark:border-border dark:text-foreground`}
                   required
                 />
               </div>
@@ -361,7 +366,7 @@ export default function StepCostCalculator({ formData, updateFormData, subsidiar
                   value={formData.costCalculator?.costOfWaSolution || ''}
                   onChange={(e) => waUpdateCostCalculator('costOfWaSolution', e.target.value)}
                   placeholder="Cost per unit with the WA solution."
-                  className="pl-12 dark:bg-input dark:border-border dark:text-foreground"
+                  className={`${prefixPadLg} dark:bg-input dark:border-border dark:text-foreground`}
                   required
                 />
               </div>
@@ -511,7 +516,7 @@ export default function StepCostCalculator({ formData, updateFormData, subsidiar
                   value={formData.costCalculator?.maintenanceCostPerEvent || ''}
                   onChange={(e) => waUpdateCostCalculator('maintenanceCostPerEvent', e.target.value)}
                   placeholder="0"
-                  className="pl-9 dark:bg-input dark:border-border dark:text-foreground"
+                  className={`${prefixPad} dark:bg-input dark:border-border dark:text-foreground`}
                 />
               </div>
               <p className="text-xs text-muted-foreground">
@@ -531,7 +536,7 @@ export default function StepCostCalculator({ formData, updateFormData, subsidiar
                   value={formData.costCalculator?.disassemblyAssemblyCost || ''}
                   onChange={(e) => waUpdateCostCalculator('disassemblyAssemblyCost', e.target.value)}
                   placeholder="0"
-                  className="pl-9 dark:bg-input dark:border-border dark:text-foreground"
+                  className={`${prefixPad} dark:bg-input dark:border-border dark:text-foreground`}
                 />
               </div>
               <p className="text-xs text-muted-foreground">
@@ -551,7 +556,7 @@ export default function StepCostCalculator({ formData, updateFormData, subsidiar
                   value={formData.costCalculator?.downtimeCostPerEvent || ''}
                   onChange={(e) => waUpdateCostCalculator('downtimeCostPerEvent', e.target.value)}
                   placeholder="0"
-                  className="pl-9 dark:bg-input dark:border-border dark:text-foreground"
+                  className={`${prefixPad} dark:bg-input dark:border-border dark:text-foreground`}
                 />
               </div>
               <p className="text-xs text-muted-foreground">
