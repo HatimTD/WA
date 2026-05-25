@@ -17,9 +17,25 @@ type Props = {
   formData: CaseStudyFormData;
   updateFormData: (data: Partial<CaseStudyFormData>) => void;
   highlightedFields?: string[];
+  /** User's subsidiary currency (e.g. "GBP"). Drives the "Based on your
+   * subsidiary..." hint under the picker. Optional - omitted when unknown. */
+  subsidiaryCurrency?: string | null;
+  /** Subsidiary display name for the hint (e.g. "WA France"). */
+  subsidiaryName?: string | null;
 };
 
-export default function StepFive({ formData, updateFormData, highlightedFields }: Props) {
+export default function StepFive({ formData, updateFormData, highlightedFields, subsidiaryCurrency, subsidiaryName }: Props) {
+  // Auto-sync: changing currency here also updates the cost-calculator's
+  // currency (STAR cases) so the two pickers can't drift apart. Non-STAR
+  // cases ignore the cost-calc state on save, so this is harmless there.
+  const waSetCurrency = (value: string) => {
+    updateFormData({
+      revenueCurrency: value as any,
+      ...(formData.costCalculator
+        ? { costCalculator: { ...formData.costCalculator, currency: value as any } }
+        : {}),
+    });
+  };
   const [isGeneratingTags, setIsGeneratingTags] = useState(false);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
@@ -171,7 +187,7 @@ export default function StepFive({ formData, updateFormData, highlightedFields }
               <select
                 id="revenueCurrency"
                 value={formData.revenueCurrency || 'EUR'}
-                onChange={(e) => updateFormData({ revenueCurrency: e.target.value as any })}
+                onChange={(e) => waSetCurrency(e.target.value)}
                 className="w-full h-10 px-3 rounded-md border border-border bg-input text-foreground dark:bg-input dark:border-border dark:text-foreground"
               >
                 <option value="EUR">EUR (€)</option>
@@ -184,6 +200,11 @@ export default function StepFive({ formData, updateFormData, highlightedFields }
                 <option value="JPY">JPY (¥)</option>
                 <option value="CNY">CNY (¥)</option>
               </select>
+              {subsidiaryCurrency && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Based on your subsidiary{subsidiaryName ? ` (${subsidiaryName})` : ''}: <span className="font-semibold">{subsidiaryCurrency}</span>. Change above if needed.
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">

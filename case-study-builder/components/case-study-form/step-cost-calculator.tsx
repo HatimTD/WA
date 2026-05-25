@@ -12,6 +12,10 @@ import type { CaseStudyFormData } from '@/app/dashboard/new/page';
 type Props = {
   formData: CaseStudyFormData;
   updateFormData: (data: Partial<CaseStudyFormData>) => void;
+  /** User's subsidiary currency for the "Based on your subsidiary..." hint. */
+  subsidiaryCurrency?: string | null;
+  /** Subsidiary display name for the hint. */
+  subsidiaryName?: string | null;
 };
 
 // Currency symbols map
@@ -27,7 +31,7 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   MAD: 'MAD',
 };
 
-export default function StepCostCalculator({ formData, updateFormData }: Props) {
+export default function StepCostCalculator({ formData, updateFormData, subsidiaryCurrency, subsidiaryName }: Props) {
   const waUpdateCostCalculator = (field: string, value: string) => {
     updateFormData({
       costCalculator: {
@@ -37,8 +41,23 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
     });
   };
 
-  // Get the currency symbol for display
-  const currencySymbol = CURRENCY_SYMBOLS[formData.costCalculator?.currency || 'EUR'] || '€';
+  // Auto-sync: changing the cost-calc currency also updates the case-level
+  // revenueCurrency so the Solution step and Cost step never disagree.
+  const waSetCurrency = (value: string) => {
+    updateFormData({
+      revenueCurrency: value as any,
+      costCalculator: {
+        ...formData.costCalculator,
+        currency: value as any,
+      },
+    });
+  };
+
+  // Effective currency: cost-calc's own value, else the case-level
+  // revenueCurrency (set in Solution step), else EUR. Keeps the two pickers
+  // visually aligned when a STAR user first arrives at this step.
+  const effectiveCurrency = formData.costCalculator?.currency || formData.revenueCurrency || 'EUR';
+  const currencySymbol = CURRENCY_SYMBOLS[effectiveCurrency] || '€';
   // Helper functions for ServiceLifePicker integration
   const waGetOldLifetimeValue = (): ServiceLifeValue => {
     const cc = formData.costCalculator;
@@ -262,8 +281,8 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
               Select Currency <span className="text-red-500 dark:text-red-400">*</span>
             </Label>
             <Select
-              value={formData.costCalculator?.currency || 'EUR'}
-              onValueChange={(value) => waUpdateCostCalculator('currency', value)}
+              value={effectiveCurrency}
+              onValueChange={(value) => waSetCurrency(value)}
             >
               <SelectTrigger className="w-48 dark:bg-input dark:border-border dark:text-foreground">
                 <SelectValue placeholder="Select currency" />
@@ -283,6 +302,11 @@ export default function StepCostCalculator({ formData, updateFormData }: Props) 
             <p className="text-xs text-muted-foreground">
               All cost values will be in this currency
             </p>
+            {subsidiaryCurrency && (
+              <p className="text-xs text-muted-foreground">
+                Based on your subsidiary{subsidiaryName ? ` (${subsidiaryName})` : ''}: <span className="font-semibold">{subsidiaryCurrency}</span>. Change above if needed.
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>

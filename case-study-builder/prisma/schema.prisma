@@ -667,6 +667,10 @@ model WaCaseStudy {
   prevServiceUnitId String?
 
   // Financial Fields (from Cost Calculator inline)
+  // LEGACY — no UI writes these. Case-level currency is `revenueCurrency`
+  // (line 45); STAR cost-calc currency lives on WaCostCalculator. Kept for
+  // backwards compatibility / historical NetSuite sync. DO NOT WRITE from the
+  // form actions — see lib/actions/waCaseStudyActions.ts.
   currency        String?     @db.Char(3)
   exchangeRate    Decimal?    @db.Decimal(10, 4)
   lifeStatus      LifeStatus?

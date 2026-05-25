@@ -9,6 +9,7 @@ import { LibraryFilters } from '@/components/library-filters';
 import { SaveButton } from '@/components/save-button';
 import LanguageIndicator from '@/components/language-indicator';
 import { waGetProductDisplay } from '@/lib/waUtils';
+import { getCurrencySymbol } from '@/lib/utils';
 
 // Fallback wear types if master data not available
 const FALLBACK_WEAR_TYPES = ['ABRASION', 'IMPACT', 'CORROSION', 'TEMPERATURE', 'COMBINATION'];
@@ -167,6 +168,7 @@ export default async function LibraryPage({
         originalLanguage: true,
         translationAvailable: true,
         solutionValueRevenue: true,
+        revenueCurrency: true,
         contributor: {
           select: { id: true, name: true },
         },
@@ -455,7 +457,7 @@ export default async function LibraryPage({
                       </div>
                       {caseStudy.solutionValueRevenue && (
                         <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                          ${Number(caseStudy.solutionValueRevenue).toLocaleString('en-US')}
+                          {getCurrencySymbol(caseStudy.revenueCurrency)}{Number(caseStudy.solutionValueRevenue).toLocaleString('en-US')}
                         </Badge>
                       )}
                     </div>

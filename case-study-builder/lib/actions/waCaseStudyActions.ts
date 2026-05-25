@@ -97,8 +97,26 @@ export async function waCreateCaseStudy(data: WaCreateCaseStudyInput) {
     const normalizedWearType = (data.wearType || [])
       .map((wt: string) => wt.toUpperCase());
 
+    // Persist the contributor's subsidiary on the case study (column exists but
+    // was never written). Used for subsidiary-aware reporting and to anchor
+    // the currency the case was created in. Primary subsidiary first, else the
+    // user's first multi-assignment, else null.
+    const userForSubsidiary = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { subsidiaryId: true },
+    });
+    let resolvedSubsidiaryId: string | null = userForSubsidiary?.subsidiaryId || null;
+    if (!resolvedSubsidiaryId) {
+      const firstMulti = await prisma.waUserSubsidiary.findFirst({
+        where: { userId: session.user.id },
+        select: { subsidiaryId: true },
+      });
+      resolvedSubsidiaryId = firstMulti?.subsidiaryId || null;
+    }
+
     const caseStudy = await prisma.waCaseStudy.create({
       data: {
+        ...(resolvedSubsidiaryId ? { subsidiaryId: resolvedSubsidiaryId } : {}),
         type: data.type,
         title: data.title || null,
         generalDescription: data.generalDescription || null,
@@ -291,6 +309,25 @@ export async function waUpdateCaseStudy(id: string, data: any) {
     delete updateData.customerSelected;
     delete updateData.qualifierCompleted;
     delete updateData.industryOther;
+
+    // Back-fill subsidiaryId from the contributor's subsidiary when the case
+    // doesn't already carry one (existing rows from before this change). New
+    // create writes it directly; this keeps old drafts catching up on first edit.
+    if (!caseStudy.subsidiaryId) {
+      const userForSub = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { subsidiaryId: true },
+      });
+      let backfillSub: string | null = userForSub?.subsidiaryId || null;
+      if (!backfillSub) {
+        const firstMulti = await prisma.waUserSubsidiary.findFirst({
+          where: { userId: session.user.id },
+          select: { subsidiaryId: true },
+        });
+        backfillSub = firstMulti?.subsidiaryId || null;
+      }
+      if (backfillSub) updateData.subsidiaryId = backfillSub;
+    }
 
     // Handle wearType array conversion if present - normalize to uppercase (accepts any string from master data)
     if (data.wearType) {

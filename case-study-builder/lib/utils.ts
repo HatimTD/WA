@@ -5,11 +5,47 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount);
+/**
+ * ISO-4217 currency code → display symbol. Anything not in the map falls
+ * back to the code itself (e.g. "PLN").
+ */
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  EUR: '€',
+  USD: '$',
+  GBP: '£',
+  AUD: 'A$',
+  CAD: 'C$',
+  CHF: 'CHF',
+  JPY: '¥',
+  CNY: '¥',
+  MAD: 'MAD',
+  PLN: 'zł',
+};
+
+/** Return the display symbol for a currency code, with safe fallbacks. */
+export function getCurrencySymbol(currency: string | null | undefined): string {
+  if (!currency) return '€';
+  const code = currency.toUpperCase();
+  return CURRENCY_SYMBOLS[code] || code;
+}
+
+/**
+ * Format an amount with the given currency. Defaults to EUR (the application
+ * default) when no code is supplied. Previously hard-coded USD which silently
+ * mis-rendered every caller; pass the case study's `revenueCurrency` or the
+ * cost calculator's `currency` explicitly.
+ */
+export function formatCurrency(amount: number, currency: string | null | undefined = 'EUR'): string {
+  const code = (currency || 'EUR').toUpperCase();
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: code,
+    }).format(amount);
+  } catch {
+    // Unknown ISO code - fall back to symbol + number formatting.
+    return `${getCurrencySymbol(code)}${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
 }
 
 export function formatDate(date: Date | string): string {

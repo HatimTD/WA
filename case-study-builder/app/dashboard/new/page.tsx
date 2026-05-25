@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import StepWPS from '@/components/case-study-form/step-wps';
 import StepCostCalculator from '@/components/case-study-form/step-cost-calculator';
 import ChallengeQualifier, { type QualifierResult } from '@/components/case-study-form/challenge-qualifier';
 import { waCreateCaseStudy, waGetCustomerIndustry } from '@/lib/actions/waCaseStudyActions';
+import { waGetUserDefaultCurrency } from '@/lib/actions/waCurrencyActions';
 import { waSaveWeldingProcedure } from '@/lib/actions/waWpsActions';
 import { waSaveCostCalculation } from '@/lib/actions/waCostCalculatorActions';
 import { waUploadDocument } from '@/lib/actions/waDocumentUploadActions';
@@ -347,6 +348,33 @@ export default function NewCaseStudyPage() {
     wps: undefined,
     costCalculator: undefined,
   });
+
+  // Pre-fill the currency picker from the contributor's subsidiary (e.g. WA
+  // France → EUR, WA Ltd → GBP). Runs once on mount; only overrides the form
+  // default ('EUR') so a user who has already started picking isn't reset.
+  const [subsidiaryDefault, setSubsidiaryDefault] = useState<{ currency: string; subsidiaryName: string | null } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await waGetUserDefaultCurrency();
+        if (cancelled) return;
+        setSubsidiaryDefault({ currency: res.currency, subsidiaryName: res.subsidiaryName });
+        // Only apply when the form is still at its initial 'EUR' and user
+        // hasn't otherwise picked - avoids clobbering a user-chosen value on
+        // re-render. (We don't track a "touched" flag yet; running once with
+        // [] deps + checking equality is a sufficient heuristic for new cases.)
+        setFormData((prev) =>
+          prev.revenueCurrency === 'EUR' && res.currency !== 'EUR'
+            ? { ...prev, revenueCurrency: res.currency as any }
+            : prev
+        );
+      } catch (err) {
+        console.error('[new/page] failed to fetch subsidiary default currency:', err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   // Dynamic steps based on case type (BRD 3.3)
   const STEPS = useMemo(() => {
@@ -1131,10 +1159,10 @@ export default function NewCaseStudyPage() {
             </>
           )}
           {STEPS[currentStep - 1]?.title === 'Cost Reduction Analysis' && (
-            <StepCostCalculator formData={formData} updateFormData={updateFormData} />
+            <StepCostCalculator formData={formData} updateFormData={updateFormData} subsidiaryCurrency={subsidiaryDefault?.currency} subsidiaryName={subsidiaryDefault?.subsidiaryName} />
           )}
           {STEPS[currentStep - 1]?.title === 'Finalise' && (
-            <StepFive formData={formData} updateFormData={updateFormData} highlightedFields={highlightedFields} />
+            <StepFive formData={formData} updateFormData={updateFormData} highlightedFields={highlightedFields} subsidiaryCurrency={subsidiaryDefault?.currency} subsidiaryName={subsidiaryDefault?.subsidiaryName} />
           )}
         </CardContent>
       </Card>

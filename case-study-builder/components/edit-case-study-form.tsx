@@ -20,6 +20,7 @@ import ChallengeQualifier, { QualifierResult } from '@/components/case-study-for
 import NetSuiteCustomerSearch from '@/components/netsuite-customer-search';
 import { NetSuiteCustomer } from '@/lib/integrations/netsuite';
 import { waUpdateCaseStudy, waGetCustomerIndustry } from '@/lib/actions/waCaseStudyActions';
+import { waGetUserDefaultCurrency } from '@/lib/actions/waCurrencyActions';
 import { waSaveWeldingProcedure } from '@/lib/actions/waWpsActions';
 import { waSaveCostCalculation } from '@/lib/actions/waCostCalculatorActions';
 import { waUploadDocument } from '@/lib/actions/waDocumentUploadActions';
@@ -463,6 +464,24 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
       .filter(Boolean);
     setHighlightedFields(fieldIds);
   };
+
+  // Resolve user's subsidiary currency for the picker hint. We DO NOT
+  // auto-override the case's saved currency on edit (the value was already
+  // chosen or accepted on create); the hint just informs the user what their
+  // subsidiary uses, so they can correct mismatches deliberately.
+  const [subsidiaryDefault, setSubsidiaryDefault] = useState<{ currency: string; subsidiaryName: string | null } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await waGetUserDefaultCurrency();
+        if (!cancelled) setSubsidiaryDefault({ currency: res.currency, subsidiaryName: res.subsidiaryName });
+      } catch (err) {
+        console.error('[edit-form] failed to fetch subsidiary default currency:', err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   // Detect custom industry on load (industry not in master list)
   useEffect(() => {
@@ -1291,13 +1310,20 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
             </>
           )}
           {STEPS[currentStep - 1]?.title === 'Cost Reduction Analysis' && (
-            <StepCostCalculator formData={formData} updateFormData={updateFormData} />
+            <StepCostCalculator
+              formData={formData}
+              updateFormData={updateFormData}
+              subsidiaryCurrency={subsidiaryDefault?.currency}
+              subsidiaryName={subsidiaryDefault?.subsidiaryName}
+            />
           )}
           {STEPS[currentStep - 1]?.title === 'Finalise' && (
             <StepFive
               formData={formData}
               updateFormData={updateFormData}
               highlightedFields={highlightedFields}
+              subsidiaryCurrency={subsidiaryDefault?.currency}
+              subsidiaryName={subsidiaryDefault?.subsidiaryName}
             />
           )}
         </CardContent>
