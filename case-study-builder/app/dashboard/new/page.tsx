@@ -352,14 +352,14 @@ export default function NewCaseStudyPage() {
   // Pre-fill the currency picker from the contributor's subsidiary (e.g. WA
   // France → EUR, WA Ltd → GBP). Runs once on mount; only overrides the form
   // default ('EUR') so a user who has already started picking isn't reset.
-  const [subsidiaryDefault, setSubsidiaryDefault] = useState<{ currency: string; subsidiaryName: string | null } | null>(null);
+  const [subsidiaryDefault, setSubsidiaryDefault] = useState<{ currency: string; subsidiaryName: string | null; source: 'primary' | 'multi' | 'fallback' } | null>(null);
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const res = await waGetUserDefaultCurrency();
         if (cancelled) return;
-        setSubsidiaryDefault({ currency: res.currency, subsidiaryName: res.subsidiaryName });
+        setSubsidiaryDefault({ currency: res.currency, subsidiaryName: res.subsidiaryName, source: res.source });
         // Only apply when the form is still at its initial 'EUR' and user
         // hasn't otherwise picked - avoids clobbering a user-chosen value on
         // re-render. (We don't track a "touched" flag yet; running once with
@@ -1159,10 +1159,10 @@ export default function NewCaseStudyPage() {
             </>
           )}
           {STEPS[currentStep - 1]?.title === 'Cost Reduction Analysis' && (
-            <StepCostCalculator formData={formData} updateFormData={updateFormData} subsidiaryCurrency={subsidiaryDefault?.currency} subsidiaryName={subsidiaryDefault?.subsidiaryName} />
+            <StepCostCalculator formData={formData} updateFormData={updateFormData} subsidiaryCurrency={subsidiaryDefault?.currency} subsidiaryName={subsidiaryDefault?.subsidiaryName} subsidiarySource={subsidiaryDefault?.source} />
           )}
           {STEPS[currentStep - 1]?.title === 'Finalise' && (
-            <StepFive formData={formData} updateFormData={updateFormData} highlightedFields={highlightedFields} subsidiaryCurrency={subsidiaryDefault?.currency} subsidiaryName={subsidiaryDefault?.subsidiaryName} />
+            <StepFive formData={formData} updateFormData={updateFormData} highlightedFields={highlightedFields} subsidiaryCurrency={subsidiaryDefault?.currency} subsidiaryName={subsidiaryDefault?.subsidiaryName} subsidiarySource={subsidiaryDefault?.source} />
           )}
         </CardContent>
       </Card>

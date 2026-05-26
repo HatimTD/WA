@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Calculator, Clock, Settings, Sparkles, Wrench, AlertCircle, TrendingDown } from 'lucide-react';
 import { ServiceLifePicker, ServiceLifeValue, DEFAULT_SERVICE_LIFE } from '@/components/ui/service-life-picker';
 import type { CaseStudyFormData } from '@/app/dashboard/new/page';
+import { CURRENCY_OPTIONS, getCurrencySymbol } from '@/lib/utils';
 
 type Props = {
   formData: CaseStudyFormData;
@@ -16,22 +17,12 @@ type Props = {
   subsidiaryCurrency?: string | null;
   /** Subsidiary display name for the hint. */
   subsidiaryName?: string | null;
+  /** Where the default came from. 'fallback' means the user has no
+   * subsidiary on their account so the hint copy switches to flag that. */
+  subsidiarySource?: 'primary' | 'multi' | 'fallback' | null;
 };
 
-// Currency symbols map
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  EUR: '€',
-  USD: '$',
-  GBP: '£',
-  AUD: 'A$',
-  CAD: 'C$',
-  CHF: 'CHF',
-  JPY: '¥',
-  CNY: '¥',
-  MAD: 'MAD',
-};
-
-export default function StepCostCalculator({ formData, updateFormData, subsidiaryCurrency, subsidiaryName }: Props) {
+export default function StepCostCalculator({ formData, updateFormData, subsidiaryCurrency, subsidiaryName, subsidiarySource }: Props) {
   const waUpdateCostCalculator = (field: string, value: string) => {
     updateFormData({
       costCalculator: {
@@ -57,7 +48,7 @@ export default function StepCostCalculator({ formData, updateFormData, subsidiar
   // revenueCurrency (set in Solution step), else EUR. Keeps the two pickers
   // visually aligned when a STAR user first arrives at this step.
   const effectiveCurrency = formData.costCalculator?.currency || formData.revenueCurrency || 'EUR';
-  const currencySymbol = CURRENCY_SYMBOLS[effectiveCurrency] || '€';
+  const currencySymbol = getCurrencySymbol(effectiveCurrency);
   // Width of the absolute-positioned currency prefix scales with char count:
   // 1-char symbols like $/€ fit in pl-9/pl-12, but 3-char codes like MAD/AED/CHF
   // overflow into the input's placeholder/value area unless we bump to pl-14.
@@ -293,23 +284,24 @@ export default function StepCostCalculator({ formData, updateFormData, subsidiar
                 <SelectValue placeholder="Select currency" />
               </SelectTrigger>
               <SelectContent className="dark:bg-popover dark:border-border">
-                <SelectItem value="EUR">EUR (Euro)</SelectItem>
-                <SelectItem value="USD">USD (US Dollar)</SelectItem>
-                <SelectItem value="GBP">GBP (British Pound)</SelectItem>
-                <SelectItem value="AUD">AUD (Australian Dollar)</SelectItem>
-                <SelectItem value="CAD">CAD (Canadian Dollar)</SelectItem>
-                <SelectItem value="CHF">CHF (Swiss Franc)</SelectItem>
-                <SelectItem value="JPY">JPY (Japanese Yen)</SelectItem>
-                <SelectItem value="CNY">CNY (Chinese Yuan)</SelectItem>
-                <SelectItem value="MAD">MAD (Moroccan Dirham)</SelectItem>
+                {CURRENCY_OPTIONS.map((c) => (
+                  <SelectItem key={c.code} value={c.code}>
+                    {c.code} ({c.name})
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
               All cost values will be in this currency
             </p>
-            {subsidiaryCurrency && (
+            {subsidiaryCurrency && subsidiarySource !== 'fallback' && (
               <p className="text-xs text-muted-foreground">
                 Based on your subsidiary{subsidiaryName ? ` (${subsidiaryName})` : ''}: <span className="font-semibold">{subsidiaryCurrency}</span>. Change above if needed.
+              </p>
+            )}
+            {subsidiarySource === 'fallback' && (
+              <p className="text-xs text-muted-foreground">
+                No subsidiary on your account &mdash; defaulting to <span className="font-semibold">EUR</span>. Pick the right currency above before saving.
               </p>
             )}
           </div>

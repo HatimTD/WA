@@ -6,21 +6,60 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * ISO-4217 currency code → display symbol. Anything not in the map falls
- * back to the code itself (e.g. "PLN").
+ * Single source of truth for the currency picker on the Solution (step 5) and
+ * Cost Calculator (step 7) wizard steps. Covers every `currencyCode` actually
+ * used by a `Subsidiary` row in production so auto-fill from a user's
+ * subsidiary never silently drops back to EUR. Symbols are the common glyph
+ * where one exists; otherwise the 3-letter ISO code is used as the prefix
+ * (the cost-calc step widens its input padding when symbol.length > 1).
+ *
+ * Keep ordered: the major reserve currencies first (EUR/USD/GBP/etc.) for the
+ * common case, then the rest alphabetised by code so users can scan quickly.
  */
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  EUR: '€',
-  USD: '$',
-  GBP: '£',
-  AUD: 'A$',
-  CAD: 'C$',
-  CHF: 'CHF',
-  JPY: '¥',
-  CNY: '¥',
-  MAD: 'MAD',
-  PLN: 'zł',
-};
+export const CURRENCY_OPTIONS: ReadonlyArray<{
+  code: string;
+  name: string;
+  symbol: string;
+}> = [
+  { code: 'EUR', name: 'Euro', symbol: '€' },
+  { code: 'USD', name: 'US Dollar', symbol: '$' },
+  { code: 'GBP', name: 'British Pound', symbol: '£' },
+  { code: 'AUD', name: 'Australian Dollar', symbol: 'A$' },
+  { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$' },
+  { code: 'CHF', name: 'Swiss Franc', symbol: 'CHF' },
+  { code: 'JPY', name: 'Japanese Yen', symbol: '¥' },
+  { code: 'CNY', name: 'Chinese Yuan', symbol: '¥' },
+  // Remaining codes used by Subsidiary rows, alphabetised.
+  { code: 'AED', name: 'UAE Dirham', symbol: 'AED' },
+  { code: 'ARS', name: 'Argentine Peso', symbol: 'ARS' },
+  { code: 'BRL', name: 'Brazilian Real', symbol: 'R$' },
+  { code: 'CLP', name: 'Chilean Peso', symbol: 'CLP' },
+  { code: 'GTQ', name: 'Guatemalan Quetzal', symbol: 'Q' },
+  { code: 'INR', name: 'Indian Rupee', symbol: '₹' },
+  { code: 'MAD', name: 'Moroccan Dirham', symbol: 'MAD' },
+  { code: 'MXP', name: 'Mexican Peso', symbol: 'MXP' },
+  { code: 'MYR', name: 'Malaysian Ringgit', symbol: 'RM' },
+  { code: 'PEN', name: 'Peruvian Sol', symbol: 'S/' },
+  { code: 'PLN', name: 'Polish Zloty', symbol: 'zł' },
+  { code: 'RUB', name: 'Russian Ruble', symbol: '₽' },
+  { code: 'SEK', name: 'Swedish Krona', symbol: 'kr' },
+  { code: 'SGD', name: 'Singapore Dollar', symbol: 'S$' },
+  { code: 'THB', name: 'Thai Baht', symbol: '฿' },
+  { code: 'TRY', name: 'Turkish Lira', symbol: '₺' },
+  { code: 'TWD', name: 'Taiwan Dollar', symbol: 'NT$' },
+  { code: 'VND', name: 'Vietnamese Dong', symbol: '₫' },
+  { code: 'ZAR', name: 'South African Rand', symbol: 'R' },
+  { code: 'ZMW', name: 'Zambian Kwacha', symbol: 'ZK' },
+];
+
+/**
+ * ISO-4217 currency code → display symbol. Derived from CURRENCY_OPTIONS so
+ * the picker and the input-prefix renderer can never drift apart. Anything
+ * not in the map falls back to the code itself (e.g. an unrecognised code).
+ */
+const CURRENCY_SYMBOLS: Record<string, string> = Object.fromEntries(
+  CURRENCY_OPTIONS.map((c) => [c.code, c.symbol])
+);
 
 /** Return the display symbol for a currency code, with safe fallbacks. */
 export function getCurrencySymbol(currency: string | null | undefined): string {

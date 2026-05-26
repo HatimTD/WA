@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CaseStudyFormData } from '@/app/dashboard/new/page';
-import { cn } from '@/lib/utils';
+import { cn, CURRENCY_OPTIONS } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, Sparkles, X, Plus, Calculator, Clock } from 'lucide-react';
 import { ServiceLifePicker, ServiceLifeValue } from '@/components/ui/service-life-picker';
@@ -22,9 +22,12 @@ type Props = {
   subsidiaryCurrency?: string | null;
   /** Subsidiary display name for the hint (e.g. "WA France"). */
   subsidiaryName?: string | null;
+  /** Where the default came from. 'fallback' = no subsidiary on the user's
+   * account, so the hint copy flags that instead of pretending EUR is theirs. */
+  subsidiarySource?: 'primary' | 'multi' | 'fallback' | null;
 };
 
-export default function StepFive({ formData, updateFormData, highlightedFields, subsidiaryCurrency, subsidiaryName }: Props) {
+export default function StepFive({ formData, updateFormData, highlightedFields, subsidiaryCurrency, subsidiaryName, subsidiarySource }: Props) {
   // Auto-sync: changing currency here also updates the cost-calculator's
   // currency (STAR cases) so the two pickers can't drift apart. Non-STAR
   // cases ignore the cost-calc state on save, so this is harmless there.
@@ -190,19 +193,20 @@ export default function StepFive({ formData, updateFormData, highlightedFields, 
                 onChange={(e) => waSetCurrency(e.target.value)}
                 className="w-full h-10 px-3 rounded-md border border-border bg-input text-foreground dark:bg-input dark:border-border dark:text-foreground"
               >
-                <option value="EUR">EUR (€)</option>
-                <option value="USD">USD ($)</option>
-                <option value="GBP">GBP (£)</option>
-                <option value="MAD">MAD (د.م.)</option>
-                <option value="AUD">AUD ($)</option>
-                <option value="CAD">CAD ($)</option>
-                <option value="CHF">CHF (Fr)</option>
-                <option value="JPY">JPY (¥)</option>
-                <option value="CNY">CNY (¥)</option>
+                {CURRENCY_OPTIONS.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.code} ({c.symbol})
+                  </option>
+                ))}
               </select>
-              {subsidiaryCurrency && (
+              {subsidiaryCurrency && subsidiarySource !== 'fallback' && (
                 <p className="text-xs text-muted-foreground mt-1">
                   Based on your subsidiary{subsidiaryName ? ` (${subsidiaryName})` : ''}: <span className="font-semibold">{subsidiaryCurrency}</span>. Change above if needed.
+                </p>
+              )}
+              {subsidiarySource === 'fallback' && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  No subsidiary on your account &mdash; defaulting to <span className="font-semibold">EUR</span>. Pick the right currency above before saving.
                 </p>
               )}
             </div>
