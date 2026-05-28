@@ -25,9 +25,13 @@ type Props = {
   /** Where the default came from. 'fallback' = no subsidiary on the user's
    * account, so the hint copy flags that instead of pretending EUR is theirs. */
   subsidiarySource?: 'primary' | 'multi' | 'fallback' | null;
+  /** Signed-in user's role. Used to soften the fallback hint for ADMIN and
+   * APPROVER users (who intentionally span subsidiaries). */
+  userRole?: string | null;
 };
 
-export default function StepFive({ formData, updateFormData, highlightedFields, subsidiaryCurrency, subsidiaryName, subsidiarySource }: Props) {
+export default function StepFive({ formData, updateFormData, highlightedFields, subsidiaryCurrency, subsidiaryName, subsidiarySource, userRole }: Props) {
+  const isCrossRegionRole = userRole === 'ADMIN' || userRole === 'APPROVER';
   // Auto-sync: changing currency here also updates the cost-calculator's
   // currency (STAR cases) so the two pickers can't drift apart. Non-STAR
   // cases ignore the cost-calc state on save, so this is harmless there.
@@ -204,7 +208,12 @@ export default function StepFive({ formData, updateFormData, highlightedFields, 
                   Based on your subsidiary{subsidiaryName ? ` (${subsidiaryName})` : ''}: <span className="font-semibold">{subsidiaryCurrency}</span>. Change above if needed.
                 </p>
               )}
-              {subsidiarySource === 'fallback' && (
+              {subsidiarySource === 'fallback' && isCrossRegionRole && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Admin account &mdash; pick the currency that matches this case&apos;s customer/market.
+                </p>
+              )}
+              {subsidiarySource === 'fallback' && !isCrossRegionRole && (
                 <p className="text-xs text-muted-foreground mt-1">
                   No subsidiary on your account &mdash; defaulting to <span className="font-semibold">EUR</span>. Pick the right currency above before saving.
                 </p>

@@ -20,9 +20,13 @@ type Props = {
   /** Where the default came from. 'fallback' means the user has no
    * subsidiary on their account so the hint copy switches to flag that. */
   subsidiarySource?: 'primary' | 'multi' | 'fallback' | null;
+  /** Signed-in user's role. Used to soften the fallback hint for ADMIN and
+   * APPROVER users (who intentionally don't belong to a single subsidiary). */
+  userRole?: string | null;
 };
 
-export default function StepCostCalculator({ formData, updateFormData, subsidiaryCurrency, subsidiaryName, subsidiarySource }: Props) {
+export default function StepCostCalculator({ formData, updateFormData, subsidiaryCurrency, subsidiaryName, subsidiarySource, userRole }: Props) {
+  const isCrossRegionRole = userRole === 'ADMIN' || userRole === 'APPROVER';
   const waUpdateCostCalculator = (field: string, value: string) => {
     updateFormData({
       costCalculator: {
@@ -299,7 +303,12 @@ export default function StepCostCalculator({ formData, updateFormData, subsidiar
                 Based on your subsidiary{subsidiaryName ? ` (${subsidiaryName})` : ''}: <span className="font-semibold">{subsidiaryCurrency}</span>. Change above if needed.
               </p>
             )}
-            {subsidiarySource === 'fallback' && (
+            {subsidiarySource === 'fallback' && isCrossRegionRole && (
+              <p className="text-xs text-muted-foreground">
+                Admin account &mdash; pick the currency that matches this case&apos;s customer/market.
+              </p>
+            )}
+            {subsidiarySource === 'fallback' && !isCrossRegionRole && (
               <p className="text-xs text-muted-foreground">
                 No subsidiary on your account &mdash; defaulting to <span className="font-semibold">EUR</span>. Pick the right currency above before saving.
               </p>

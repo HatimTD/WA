@@ -469,13 +469,13 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
   // auto-override the case's saved currency on edit (the value was already
   // chosen or accepted on create); the hint just informs the user what their
   // subsidiary uses, so they can correct mismatches deliberately.
-  const [subsidiaryDefault, setSubsidiaryDefault] = useState<{ currency: string; subsidiaryName: string | null; source: 'primary' | 'multi' | 'fallback' } | null>(null);
+  const [subsidiaryDefault, setSubsidiaryDefault] = useState<{ currency: string; subsidiaryName: string | null; source: 'primary' | 'multi' | 'fallback'; userRole: string | null } | null>(null);
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const res = await waGetUserDefaultCurrency();
-        if (!cancelled) setSubsidiaryDefault({ currency: res.currency, subsidiaryName: res.subsidiaryName, source: res.source });
+        if (!cancelled) setSubsidiaryDefault({ currency: res.currency, subsidiaryName: res.subsidiaryName, source: res.source, userRole: res.userRole });
       } catch (err) {
         console.error('[edit-form] failed to fetch subsidiary default currency:', err);
       }
@@ -1316,6 +1316,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
               subsidiaryCurrency={subsidiaryDefault?.currency}
               subsidiaryName={subsidiaryDefault?.subsidiaryName}
               subsidiarySource={subsidiaryDefault?.source}
+              userRole={subsidiaryDefault?.userRole}
             />
           )}
           {STEPS[currentStep - 1]?.title === 'Finalise' && (
@@ -1326,6 +1327,7 @@ export default function EditCaseStudyForm({ caseStudy, wpsData, costCalcData }: 
               subsidiaryCurrency={subsidiaryDefault?.currency}
               subsidiaryName={subsidiaryDefault?.subsidiaryName}
               subsidiarySource={subsidiaryDefault?.source}
+              userRole={subsidiaryDefault?.userRole}
             />
           )}
         </CardContent>
