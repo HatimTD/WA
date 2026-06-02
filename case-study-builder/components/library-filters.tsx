@@ -69,6 +69,7 @@ export function LibraryFilters({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [localMinRevenue, setLocalMinRevenue] = useState(minRevenue?.toString() || '');
   const [localMaxRevenue, setLocalMaxRevenue] = useState(maxRevenue?.toString() || '');
+  const [contributorSearch, setContributorSearch] = useState('');
 
   // Check if any advanced filters are active
   const hasAdvancedFilters = componentFilter || waProductFilter || countryFilter || regionFilter || wearTypeFilter || contributorFilter || minRevenue || maxRevenue;
@@ -440,6 +441,15 @@ export function LibraryFilters({
           {contributors.length > 0 && (
             <div>
               <label className="text-sm font-medium mb-2 block dark:text-foreground">Contributor</label>
+              <div className="relative mb-2">
+                <Input
+                  value={contributorSearch}
+                  onChange={(e) => setContributorSearch(e.target.value)}
+                  placeholder="Search contributors..."
+                  className="pr-10 text-sm dark:bg-input dark:border-border dark:text-foreground"
+                />
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted-foreground" />
+              </div>
               <div className="space-y-2 max-h-36 overflow-y-auto">
                 <Link
                   href={waGetFilterUrl({ contributor: undefined })}
@@ -451,7 +461,10 @@ export function LibraryFilters({
                 >
                   All Contributors
                 </Link>
-                {contributors.slice(0, 8).map((cont) => (
+                {contributors
+                  .filter((c) => (c.contributor.name || 'Unknown').toLowerCase().includes(contributorSearch.toLowerCase()))
+                  .sort((a, b) => (a.contributor.name || '').localeCompare(b.contributor.name || ''))
+                  .map((cont) => (
                   <Link
                     key={cont.contributorId}
                     href={waGetFilterUrl({ contributor: cont.contributorId })}

@@ -46,7 +46,8 @@ export default async function LibraryPage({
   searchParams: Promise<SearchParams>;
 }) {
   const session = await auth();
-  const canSeeCustomerName = session?.user?.role === 'ADMIN' || session?.user?.role === 'APPROVER';
+  const isApproverOrAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'APPROVER';
+  const canSeeCustomerName = isApproverOrAdmin;
 
   const params = await searchParams;
   const query = params.q || '';
@@ -218,13 +219,18 @@ export default async function LibraryPage({
       distinct: ['country'],
     }),
     // BRD: Contributor options
+    // Approvers/Admins see every active contributor who registered any case (any status);
+    // other viewers see only contributors who have at least one approved case in the library.
     prisma.waCaseStudy.findMany({
-      where: { status: 'APPROVED' },
+      where: isApproverOrAdmin
+        ? { contributor: { status: 'ACTIVE' } }
+        : { status: 'APPROVED' },
       select: {
         contributorId: true,
         contributor: { select: { id: true, name: true } },
       },
       distinct: ['contributorId'],
+      orderBy: { contributorId: 'asc' },
     }),
     // Fetch wear types from master data (admin-managed)
     prisma.waMasterList.findMany({
