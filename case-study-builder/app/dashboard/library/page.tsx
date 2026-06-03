@@ -10,7 +10,7 @@ import { SaveButton } from '@/components/save-button';
 import LanguageIndicator from '@/components/language-indicator';
 import { waGetProductDisplay } from '@/lib/waUtils';
 import { getCurrencySymbol } from '@/lib/utils';
-import { waGetCountriesForRegion } from '@/lib/constants/waCountryRegions';
+import { waGetCountriesForRegion, waGetCountryVariants, waGetCountryDisplayName } from '@/lib/constants/waCountryRegions';
 
 // Fallback wear types if master data not available
 const FALLBACK_WEAR_TYPES = ['ABRASION', 'IMPACT', 'CORROSION', 'TEMPERATURE', 'COMBINATION'];
@@ -115,9 +115,14 @@ export default async function LibraryPage({
     where.waProduct = { contains: waProductFilter, mode: 'insensitive' };
   }
 
-  // BRD: Country filter
+  // BRD: Country filter — match ALL stored variants (code/name/alias) of the selected country
+  // so a "Morocco" filter also catches rows stored as "MA" or "Maroc".
   if (countryFilter) {
-    where.country = { contains: countryFilter, mode: 'insensitive' };
+    const countryVariants = waGetCountryVariants(countryFilter);
+    where.AND = [
+      ...(where.AND || []),
+      { OR: countryVariants.map((c) => ({ country: { equals: c, mode: 'insensitive' as const } })) },
+    ];
   }
 
   // Region filter (GEOGRAPHIC — by the case's own country mapped to a WA region)
@@ -260,6 +265,14 @@ export default async function LibraryPage({
 
   const totalPages = Math.ceil(totalCount / perPage);
 
+  // Country filter options: collapse stored variants (e.g. "MA"/"Maroc"/"Morocco") to one
+  // canonical name so the dropdown shows each country once and reads well.
+  const countryOptions = Array.from(
+    new Set(countries.map((c) => c.country).filter((c): c is string => !!c).map((c) => waGetCountryDisplayName(c)))
+  )
+    .sort((a, b) => a.localeCompare(b))
+    .map((country) => ({ country }));
+
   // Build a pagination URL that preserves ALL active filters (not just q/type/industry/oem),
   // mirroring waGetFilterUrl in library-filters.tsx so filters persist across pages.
   const buildPageUrl = (targetPage: number) => {
@@ -324,7 +337,7 @@ export default async function LibraryPage({
                 // BRD Required Filter Options
                 components={components}
                 waProducts={waProducts}
-                countries={countries}
+                countries={countryOptions}
                 wearTypes={wearTypeOptions}
                 contributors={contributors}
                 // BRD Current Filter Values

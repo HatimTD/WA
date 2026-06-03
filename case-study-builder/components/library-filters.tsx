@@ -11,6 +11,7 @@ import { Search, ChevronDown, ChevronUp, ChevronsUpDown, Check, X } from 'lucide
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { WA_REGIONS } from '@/lib/constants/waRegions';
+import { waGetCountryDisplayName } from '@/lib/constants/waCountryRegions';
 
 /**
  * BRD Section 5 - Search & Filtering
@@ -247,7 +248,7 @@ export function LibraryFilters({
   if (oemFilter) chips.push({ label: `OEM: ${oemFilter}`, href: waGetFilterUrl({ oem: undefined }) });
   if (componentFilter) chips.push({ label: `Component: ${componentFilter}`, href: waGetFilterUrl({ component: undefined }) });
   if (waProductFilter) chips.push({ label: `Product: ${waProductFilter}`, href: waGetFilterUrl({ waProduct: undefined }) });
-  if (countryFilter) chips.push({ label: `Country: ${countryFilter}`, href: waGetFilterUrl({ country: undefined }) });
+  if (countryFilter) chips.push({ label: `Country: ${waGetCountryDisplayName(countryFilter)}`, href: waGetFilterUrl({ country: undefined }) });
   if (regionFilter) chips.push({ label: `Region: ${regionLabel(regionFilter)}`, href: waGetFilterUrl({ region: undefined }) });
   if (contributorRegionFilter) chips.push({ label: `Contributor Region: ${regionLabel(contributorRegionFilter)}`, href: waGetFilterUrl({ contributorRegion: undefined }) });
   if (wearTypeFilter) {
@@ -420,8 +421,9 @@ export function LibraryFilters({
             <SearchableCombobox
               label="Country"
               allLabel="All Countries"
-              options={countries.filter((c) => c.country).map((c) => ({ value: c.country!, label: c.country! }))}
+              options={countries.filter((c) => c.country).map((c) => ({ value: c.country!, label: waGetCountryDisplayName(c.country) }))}
               currentValue={countryFilter}
+              currentLabel={waGetCountryDisplayName(countryFilter)}
               buildHref={(v) => waGetFilterUrl({ country: v })}
             />
           )}
