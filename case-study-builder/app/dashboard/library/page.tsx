@@ -391,7 +391,7 @@ export default async function LibraryPage({
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
                           <Badge
                             variant={
                               caseStudy.type === 'STAR'
@@ -425,7 +425,7 @@ export default async function LibraryPage({
                         </CardTitle>
                       </div>
                       {/* SaveButton sits above the overlay so it captures its own clicks */}
-                      <div className="relative z-10">
+                      <div className="relative z-10 shrink-0">
                         <SaveButton caseStudyId={caseStudy.id} variant="icon" size="sm" />
                       </div>
                     </div>

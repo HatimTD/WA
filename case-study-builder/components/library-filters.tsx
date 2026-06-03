@@ -76,9 +76,12 @@ function SearchableCombobox({
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const filtered = search
+  const filtered = (search
     ? options.filter((o) => o.label.toLowerCase().includes(search.toLowerCase()))
-    : options;
+    : options
+  )
+    .slice()
+    .sort((a, b) => a.label.localeCompare(b.label));
   const display = currentValue ? currentLabel ?? currentValue : allLabel;
 
   return (
