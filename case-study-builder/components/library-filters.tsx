@@ -5,8 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, ChevronDown, ChevronUp } from 'lucide-react';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Search, ChevronDown, ChevronUp, ChevronsUpDown, Check, X } from 'lucide-react';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 import { WA_REGIONS } from '@/lib/constants/waRegions';
 
 /**
@@ -40,6 +43,97 @@ interface LibraryFiltersProps {
   maxRevenue: number | null;
 }
 
+// Shared active/inactive option styling for combobox rows.
+const optionClass = (active: boolean) =>
+  cn(
+    'flex items-center px-3 py-1.5 rounded-md text-sm transition-colors',
+    active
+      ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
+      : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
+  );
+
+/**
+ * Compact, searchable single-select. Each option is a Next <Link> built from the
+ * parent's waGetFilterUrl helper (via buildHref), so the URL-param contract and
+ * filter persistence are identical to the old link-lists — only the shell changes.
+ */
+function SearchableCombobox({
+  label,
+  helper,
+  options,
+  currentValue,
+  currentLabel,
+  allLabel,
+  buildHref,
+}: {
+  label: string;
+  helper?: string;
+  options: { value: string; label: string }[];
+  currentValue: string;
+  currentLabel?: string;
+  allLabel: string;
+  buildHref: (value: string | undefined) => string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const filtered = search
+    ? options.filter((o) => o.label.toLowerCase().includes(search.toLowerCase()))
+    : options;
+  const display = currentValue ? currentLabel ?? currentValue : allLabel;
+
+  return (
+    <div>
+      <label className="text-sm font-medium mb-1 block dark:text-foreground">{label}</label>
+      {helper && <p className="text-xs text-gray-500 dark:text-muted-foreground mb-1.5">{helper}</p>}
+      <Popover open={open} onOpenChange={(o) => { setOpen(o); if (!o) setSearch(''); }}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className={cn(
+              'w-full justify-between font-normal',
+              currentValue && 'border-wa-green-300 text-wa-green-700 bg-wa-green-50 dark:bg-accent dark:text-primary'
+            )}
+          >
+            <span className="truncate">{display}</span>
+            <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0 ml-1" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] p-0">
+          <div className="relative border-b dark:border-border">
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={`Search ${label.toLowerCase()}…`}
+              className="border-0 rounded-b-none focus-visible:ring-0 pr-9 dark:bg-input dark:text-foreground"
+              autoFocus
+            />
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          </div>
+          <div className="max-h-64 overflow-y-auto p-1">
+            <Link href={buildHref(undefined)} onClick={() => setOpen(false)} className={optionClass(!currentValue)}>
+              {allLabel}
+            </Link>
+            {filtered.map((o) => (
+              <Link
+                key={o.value}
+                href={buildHref(o.value)}
+                onClick={() => setOpen(false)}
+                className={optionClass(currentValue === o.value)}
+                title={o.label}
+              >
+                {currentValue === o.value && <Check className="h-3.5 w-3.5 mr-1 shrink-0" />}
+                <span className="truncate">{o.label}</span>
+              </Link>
+            ))}
+            {filtered.length === 0 && <p className="px-3 py-2 text-sm text-gray-400">No matches</p>}
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
 export function LibraryFilters({
   industries,
   oems,
@@ -68,13 +162,12 @@ export function LibraryFilters({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(initialQuery);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [localMinRevenue, setLocalMinRevenue] = useState(minRevenue?.toString() || '');
   const [localMaxRevenue, setLocalMaxRevenue] = useState(maxRevenue?.toString() || '');
-  const [contributorSearch, setContributorSearch] = useState('');
 
   // Check if any advanced filters are active
   const hasAdvancedFilters = componentFilter || waProductFilter || countryFilter || regionFilter || contributorRegionFilter || wearTypeFilter || contributorFilter || minRevenue || maxRevenue;
+  const [showAdvanced, setShowAdvanced] = useState(!!hasAdvancedFilters);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -139,6 +232,33 @@ export function LibraryFilters({
     router.push(`/dashboard/library?${params.toString()}`);
   };
 
+  const regionLabel = (v: string) => WA_REGIONS.find((r) => r.value === v)?.label ?? v;
+  const contributorName =
+    contributors.find((c) => c.contributorId === contributorFilter)?.contributor.name || 'Contributor';
+
+  // Active-filter chips (removable) — the at-a-glance "what's applied" view.
+  const chips: { label: string; href: string }[] = [];
+  if (initialQuery) chips.push({ label: `Search: ${initialQuery}`, href: waGetFilterUrl({ q: undefined }) });
+  if (typeFilter) chips.push({ label: `Type: ${typeFilter}`, href: waGetFilterUrl({ type: undefined }) });
+  if (industryFilter) chips.push({ label: `Industry: ${industryFilter}`, href: waGetFilterUrl({ industry: undefined }) });
+  if (oemFilter) chips.push({ label: `OEM: ${oemFilter}`, href: waGetFilterUrl({ oem: undefined }) });
+  if (componentFilter) chips.push({ label: `Component: ${componentFilter}`, href: waGetFilterUrl({ component: undefined }) });
+  if (waProductFilter) chips.push({ label: `Product: ${waProductFilter}`, href: waGetFilterUrl({ waProduct: undefined }) });
+  if (countryFilter) chips.push({ label: `Country: ${countryFilter}`, href: waGetFilterUrl({ country: undefined }) });
+  if (regionFilter) chips.push({ label: `Region: ${regionLabel(regionFilter)}`, href: waGetFilterUrl({ region: undefined }) });
+  if (contributorRegionFilter) chips.push({ label: `Contributor Region: ${regionLabel(contributorRegionFilter)}`, href: waGetFilterUrl({ contributorRegion: undefined }) });
+  if (wearTypeFilter) {
+    const tokens = wearTypeFilter.split(',').map((t) => t.trim()).filter(Boolean);
+    tokens.forEach((tok) => {
+      const remaining = tokens.filter((t) => t.toUpperCase() !== tok.toUpperCase());
+      chips.push({ label: `Wear: ${tok}`, href: waGetFilterUrl({ wearType: remaining.length ? remaining.join(',') : undefined }) });
+    });
+  }
+  if (contributorFilter) chips.push({ label: `Contributor: ${contributorName}`, href: waGetFilterUrl({ contributor: undefined }) });
+  if (minRevenue !== null || maxRevenue !== null) {
+    chips.push({ label: `Revenue: ${minRevenue ?? 0}–${maxRevenue ?? '∞'}`, href: waGetFilterUrl({ minRevenue: undefined, maxRevenue: undefined }) });
+  }
+
   return (
     <>
       {/* Search */}
@@ -160,30 +280,32 @@ export function LibraryFilters({
         )}
       </div>
 
-      {/* Type Filter */}
+      {/* Active filters (removable chips) */}
+      {chips.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {chips.map((chip, i) => (
+            <Badge key={i} variant="secondary" className="gap-1 pr-1 font-normal max-w-full">
+              <span className="truncate max-w-[150px]">{chip.label}</span>
+              <Link href={chip.href} aria-label={`Remove ${chip.label}`} className="rounded-sm hover:bg-gray-300/60 dark:hover:bg-background">
+                <X className="h-3 w-3" />
+              </Link>
+            </Badge>
+          ))}
+          <Link href="/dashboard/library" className="text-xs font-medium text-wa-green-700 dark:text-primary hover:underline ml-0.5">
+            Clear all
+          </Link>
+        </div>
+      )}
+
+      {/* Type Filter — kept as pills */}
       <div>
         <label className="text-sm font-medium mb-2 block dark:text-foreground">Case Type</label>
-        <div className="space-y-2">
-          <Link
-            href={waGetFilterUrl({ type: undefined })}
-            className={`block px-3 py-2 rounded-md text-sm transition-colors ${
-              !typeFilter
-                ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
-                : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
-            }`}
-          >
+        <div className="space-y-1">
+          <Link href={waGetFilterUrl({ type: undefined })} className={optionClass(!typeFilter)}>
             All Types ({typeCounts.reduce((sum, t) => sum + t._count, 0)})
           </Link>
           {typeCounts.map((typeCount) => (
-            <Link
-              key={typeCount.type}
-              href={waGetFilterUrl({ type: typeCount.type })}
-              className={`block px-3 py-2 rounded-md text-sm transition-colors ${
-                typeFilter === typeCount.type
-                  ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
-                  : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
-              }`}
-            >
+            <Link key={typeCount.type} href={waGetFilterUrl({ type: typeCount.type })} className={optionClass(typeFilter === typeCount.type)}>
               {typeCount.type} ({typeCount._count})
             </Link>
           ))}
@@ -191,65 +313,23 @@ export function LibraryFilters({
       </div>
 
       {/* Industry Filter */}
-      <div>
-        <label className="text-sm font-medium mb-2 block dark:text-foreground">Industry</label>
-        <div className="space-y-2 max-h-48 overflow-y-auto">
-          <Link
-            href={waGetFilterUrl({ industry: undefined })}
-            className={`block px-3 py-2 rounded-md text-sm transition-colors ${
-              !industryFilter
-                ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
-                : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
-            }`}
-          >
-            All Industries
-          </Link>
-          {industries.slice(0, 10).map((ind) => (
-            <Link
-              key={ind.industry}
-              href={waGetFilterUrl({ industry: ind.industry })}
-              className={`block px-3 py-2 rounded-md text-sm transition-colors ${
-                industryFilter === ind.industry
-                  ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
-                  : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
-              }`}
-            >
-              {ind.industry}
-            </Link>
-          ))}
-        </div>
-      </div>
+      <SearchableCombobox
+        label="Industry"
+        allLabel="All Industries"
+        options={industries.map((i) => ({ value: i.industry, label: i.industry }))}
+        currentValue={industryFilter}
+        buildHref={(v) => waGetFilterUrl({ industry: v })}
+      />
 
       {/* OEM Filter */}
       {oems.length > 0 && (
-        <div>
-          <label className="text-sm font-medium mb-2 block dark:text-foreground">OEM/Competitor</label>
-          <div className="space-y-2 max-h-48 overflow-y-auto">
-            <Link
-              href={waGetFilterUrl({ oem: undefined })}
-              className={`block px-3 py-2 rounded-md text-sm transition-colors ${
-                !oemFilter
-                  ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
-                  : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
-              }`}
-            >
-              All OEMs
-            </Link>
-            {oems.filter(o => o.competitorName).slice(0, 10).map((oemItem) => (
-              <Link
-                key={oemItem.competitorName}
-                href={waGetFilterUrl({ oem: oemItem.competitorName! })}
-                className={`block px-3 py-2 rounded-md text-sm transition-colors ${
-                  oemFilter === oemItem.competitorName
-                    ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
-                    : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
-                }`}
-              >
-                {oemItem.competitorName}
-              </Link>
-            ))}
-          </div>
-        </div>
+        <SearchableCombobox
+          label="OEM / Competitor"
+          allLabel="All OEMs"
+          options={oems.filter((o) => o.competitorName).map((o) => ({ value: o.competitorName!, label: o.competitorName! }))}
+          currentValue={oemFilter}
+          buildHref={(v) => waGetFilterUrl({ oem: v })}
+        />
       )}
 
       {/* Advanced Filters Toggle - BRD Section 5 */}
@@ -272,76 +352,30 @@ export function LibraryFilters({
       {showAdvanced && (
         <div className="space-y-4 pt-2">
           {/* Component Filter */}
-          <div>
-            <label className="text-sm font-medium mb-2 block dark:text-foreground">Component</label>
-            <div className="space-y-2 max-h-36 overflow-y-auto">
-              <Link
-                href={waGetFilterUrl({ component: undefined })}
-                className={`block px-3 py-2 rounded-md text-sm transition-colors ${
-                  !componentFilter
-                    ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
-                    : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
-                }`}
-              >
-                All Components
-              </Link>
-              {components.slice(0, 8).map((comp) => (
-                <Link
-                  key={comp.componentWorkpiece}
-                  href={waGetFilterUrl({ component: comp.componentWorkpiece })}
-                  className={`block px-3 py-2 rounded-md text-sm transition-colors truncate ${
-                    componentFilter === comp.componentWorkpiece
-                      ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
-                      : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
-                  }`}
-                  title={comp.componentWorkpiece}
-                >
-                  {comp.componentWorkpiece}
-                </Link>
-              ))}
-            </div>
-          </div>
+          <SearchableCombobox
+            label="Component"
+            allLabel="All Components"
+            options={components.map((c) => ({ value: c.componentWorkpiece, label: c.componentWorkpiece }))}
+            currentValue={componentFilter}
+            buildHref={(v) => waGetFilterUrl({ component: v })}
+          />
 
           {/* WA Product Filter */}
-          <div>
-            <label className="text-sm font-medium mb-2 block dark:text-foreground">WA Product</label>
-            <div className="space-y-2 max-h-36 overflow-y-auto">
-              <Link
-                href={waGetFilterUrl({ waProduct: undefined })}
-                className={`block px-3 py-2 rounded-md text-sm transition-colors ${
-                  !waProductFilter
-                    ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
-                    : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
-                }`}
-              >
-                All Products
-              </Link>
-              {waProducts.slice(0, 8).map((prod) => (
-                <Link
-                  key={prod.waProduct}
-                  href={waGetFilterUrl({ waProduct: prod.waProduct })}
-                  className={`block px-3 py-2 rounded-md text-sm transition-colors ${
-                    waProductFilter === prod.waProduct
-                      ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
-                      : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
-                  }`}
-                >
-                  {prod.waProduct}
-                </Link>
-              ))}
-            </div>
-          </div>
+          <SearchableCombobox
+            label="WA Product"
+            allLabel="All Products"
+            options={waProducts.map((p) => ({ value: p.waProduct, label: p.waProduct }))}
+            currentValue={waProductFilter}
+            buildHref={(v) => waGetFilterUrl({ waProduct: v })}
+          />
 
-          {/* Wear Type Filter - Multi-select */}
+          {/* Wear Type Filter - Multi-select (kept as toggle badges) */}
           {wearTypes.length > 0 && (
             <div>
               <label className="text-sm font-medium mb-2 block dark:text-foreground">
                 Wear Type
                 {wearTypeFilter && (
-                  <Link
-                    href={waGetFilterUrl({ wearType: undefined })}
-                    className="ml-2 text-xs text-gray-500 hover:text-red-500"
-                  >
+                  <Link href={waGetFilterUrl({ wearType: undefined })} className="ml-2 text-xs text-gray-500 hover:text-red-500">
                     (Clear all)
                   </Link>
                 )}
@@ -380,140 +414,55 @@ export function LibraryFilters({
 
           {/* Country Filter */}
           {countries.length > 0 && (
-            <div>
-              <label className="text-sm font-medium mb-2 block dark:text-foreground">Country</label>
-              <div className="space-y-2 max-h-36 overflow-y-auto">
-                <Link
-                  href={waGetFilterUrl({ country: undefined })}
-                  className={`block px-3 py-2 rounded-md text-sm transition-colors ${
-                    !countryFilter
-                      ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
-                      : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
-                  }`}
-                >
-                  All Countries
-                </Link>
-                {countries.filter(c => c.country).slice(0, 8).map((c) => (
-                  <Link
-                    key={c.country}
-                    href={waGetFilterUrl({ country: c.country! })}
-                    className={`block px-3 py-2 rounded-md text-sm transition-colors ${
-                      countryFilter === c.country
-                        ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
-                        : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
-                    }`}
-                  >
-                    {c.country}
-                  </Link>
-                ))}
-              </div>
-            </div>
+            <SearchableCombobox
+              label="Country"
+              allLabel="All Countries"
+              options={countries.filter((c) => c.country).map((c) => ({ value: c.country!, label: c.country! }))}
+              currentValue={countryFilter}
+              buildHref={(v) => waGetFilterUrl({ country: v })}
+            />
           )}
 
           {/* Region Filter (GEOGRAPHIC — by the case's country) */}
           <div>
             <label className="text-sm font-medium mb-0.5 block dark:text-foreground">Region</label>
-            <p className="text-xs text-gray-500 dark:text-muted-foreground mb-2">Where the case is — by country</p>
-            <div className="space-y-2">
-              <Link
-                href={waGetFilterUrl({ region: undefined })}
-                className={`block px-3 py-2 rounded-md text-sm transition-colors ${
-                  !regionFilter
-                    ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
-                    : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
-                }`}
-              >
-                All Regions
-              </Link>
-              {WA_REGIONS.map((r) => (
-                <Link
-                  key={r.value}
-                  href={waGetFilterUrl({ region: r.value })}
-                  className={`block px-3 py-2 rounded-md text-sm transition-colors ${
-                    regionFilter === r.value
-                      ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
-                      : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
-                  }`}
-                >
-                  {r.label}
-                </Link>
-              ))}
-            </div>
+            <p className="text-xs text-gray-500 dark:text-muted-foreground mb-1.5">Where the case is — by country</p>
+            <Select value={regionFilter || '__all'} onValueChange={(v) => router.push(waGetFilterUrl({ region: v === '__all' ? undefined : v }))}>
+              <SelectTrigger className="w-full"><SelectValue placeholder="All Regions" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">All Regions</SelectItem>
+                {WA_REGIONS.map((r) => (
+                  <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Contributor Region Filter (by the AUTHOR's region) */}
           <div>
             <label className="text-sm font-medium mb-0.5 block dark:text-foreground">Contributor Region</label>
-            <p className="text-xs text-gray-500 dark:text-muted-foreground mb-2">Who submitted it — by author</p>
-            <div className="space-y-2">
-              <Link
-                href={waGetFilterUrl({ contributorRegion: undefined })}
-                className={`block px-3 py-2 rounded-md text-sm transition-colors ${
-                  !contributorRegionFilter
-                    ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
-                    : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
-                }`}
-              >
-                All Contributor Regions
-              </Link>
-              {WA_REGIONS.map((r) => (
-                <Link
-                  key={r.value}
-                  href={waGetFilterUrl({ contributorRegion: r.value })}
-                  className={`block px-3 py-2 rounded-md text-sm transition-colors ${
-                    contributorRegionFilter === r.value
-                      ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
-                      : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
-                  }`}
-                >
-                  {r.label}
-                </Link>
-              ))}
-            </div>
+            <p className="text-xs text-gray-500 dark:text-muted-foreground mb-1.5">Who submitted it — by author</p>
+            <Select value={contributorRegionFilter || '__all'} onValueChange={(v) => router.push(waGetFilterUrl({ contributorRegion: v === '__all' ? undefined : v }))}>
+              <SelectTrigger className="w-full"><SelectValue placeholder="All Contributor Regions" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">All Contributor Regions</SelectItem>
+                {WA_REGIONS.map((r) => (
+                  <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Contributor Filter */}
           {contributors.length > 0 && (
-            <div>
-              <label className="text-sm font-medium mb-2 block dark:text-foreground">Contributor</label>
-              <div className="relative mb-2">
-                <Input
-                  value={contributorSearch}
-                  onChange={(e) => setContributorSearch(e.target.value)}
-                  placeholder="Search contributors..."
-                  className="pr-10 text-sm dark:bg-input dark:border-border dark:text-foreground"
-                />
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted-foreground" />
-              </div>
-              <div className="space-y-2 max-h-36 overflow-y-auto">
-                <Link
-                  href={waGetFilterUrl({ contributor: undefined })}
-                  className={`block px-3 py-2 rounded-md text-sm transition-colors ${
-                    !contributorFilter
-                      ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
-                      : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
-                  }`}
-                >
-                  All Contributors
-                </Link>
-                {contributors
-                  .filter((c) => (c.contributor.name || 'Unknown').toLowerCase().includes(contributorSearch.toLowerCase()))
-                  .sort((a, b) => (a.contributor.name || '').localeCompare(b.contributor.name || ''))
-                  .map((cont) => (
-                  <Link
-                    key={cont.contributorId}
-                    href={waGetFilterUrl({ contributor: cont.contributorId })}
-                    className={`block px-3 py-2 rounded-md text-sm transition-colors ${
-                      contributorFilter === cont.contributorId
-                        ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
-                        : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
-                    }`}
-                  >
-                    {cont.contributor.name || 'Unknown'}
-                  </Link>
-                ))}
-              </div>
-            </div>
+            <SearchableCombobox
+              label="Contributor"
+              allLabel="All Contributors"
+              options={contributors.map((c) => ({ value: c.contributorId, label: c.contributor.name || 'Unknown' }))}
+              currentValue={contributorFilter}
+              currentLabel={contributorName}
+              buildHref={(v) => waGetFilterUrl({ contributor: v })}
+            />
           )}
 
           {/* Revenue Filter */}
@@ -534,11 +483,7 @@ export function LibraryFilters({
                 onChange={(e) => setLocalMaxRevenue(e.target.value)}
                 className="dark:bg-input dark:border-border dark:text-foreground"
               />
-              <Button
-                size="sm"
-                onClick={waApplyRevenueFilter}
-                className="w-full"
-              >
+              <Button size="sm" onClick={waApplyRevenueFilter} className="w-full">
                 Apply Revenue Filter
               </Button>
             </div>
