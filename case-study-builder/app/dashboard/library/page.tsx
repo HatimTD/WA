@@ -10,6 +10,7 @@ import { SaveButton } from '@/components/save-button';
 import LanguageIndicator from '@/components/language-indicator';
 import { waGetProductDisplay } from '@/lib/waUtils';
 import { getCurrencySymbol } from '@/lib/utils';
+import { waGetCountriesForRegion } from '@/lib/constants/waCountryRegions';
 
 // Fallback wear types if master data not available
 const FALLBACK_WEAR_TYPES = ['ABRASION', 'IMPACT', 'CORROSION', 'TEMPERATURE', 'COMBINATION'];
@@ -33,7 +34,8 @@ interface SearchParams {
   wearType?: string;
   waProduct?: string;
   country?: string;
-  region?: string; // Contributor's region filter
+  region?: string; // Geographic region (by case country)
+  contributorRegion?: string; // Contributor's region (by author)
   contributor?: string;
   minRevenue?: string;
   maxRevenue?: string;
@@ -61,7 +63,8 @@ export default async function LibraryPage({
   const wearTypeFilters = wearTypeFilter ? wearTypeFilter.split(',').map(w => w.trim().toUpperCase()) : [];
   const waProductFilter = params.waProduct || '';
   const countryFilter = params.country || '';
-  const regionFilter = params.region || ''; // Contributor's region
+  const regionFilter = params.region || ''; // Geographic region (by case country)
+  const contributorRegionFilter = params.contributorRegion || ''; // Contributor's region (by author)
   const contributorFilter = params.contributor || '';
   const minRevenue = params.minRevenue ? parseFloat(params.minRevenue) : null;
   const maxRevenue = params.maxRevenue ? parseFloat(params.maxRevenue) : null;
@@ -117,12 +120,21 @@ export default async function LibraryPage({
     where.country = { contains: countryFilter, mode: 'insensitive' };
   }
 
-  // Region filter (contributor's region — via legacy User.region OR subsidiary assignment)
+  // Region filter (GEOGRAPHIC — by the case's own country mapped to a WA region)
   if (regionFilter) {
+    const regionCountries = waGetCountriesForRegion(regionFilter);
+    where.AND = [
+      ...(where.AND || []),
+      { OR: regionCountries.map((c) => ({ country: { equals: c, mode: 'insensitive' as const } })) },
+    ];
+  }
+
+  // Contributor Region filter (by the AUTHOR's region — legacy User.region OR subsidiary assignment)
+  if (contributorRegionFilter) {
     where.contributor = {
       OR: [
-        { region: regionFilter },
-        { userSubsidiaries: { some: { subsidiary: { region: regionFilter } } } },
+        { region: contributorRegionFilter },
+        { userSubsidiaries: { some: { subsidiary: { region: contributorRegionFilter } } } },
       ],
     };
   }
@@ -262,6 +274,7 @@ export default async function LibraryPage({
     if (waProductFilter) sp.set('waProduct', waProductFilter);
     if (countryFilter) sp.set('country', countryFilter);
     if (regionFilter) sp.set('region', regionFilter);
+    if (contributorRegionFilter) sp.set('contributorRegion', contributorRegionFilter);
     if (contributorFilter) sp.set('contributor', contributorFilter);
     if (minRevenue !== null) sp.set('minRevenue', String(minRevenue));
     if (maxRevenue !== null) sp.set('maxRevenue', String(maxRevenue));
@@ -319,6 +332,7 @@ export default async function LibraryPage({
                 waProductFilter={waProductFilter}
                 countryFilter={countryFilter}
                 regionFilter={regionFilter}
+                contributorRegionFilter={contributorRegionFilter}
                 wearTypeFilter={wearTypeFilter}
                 contributorFilter={contributorFilter}
                 minRevenue={minRevenue}

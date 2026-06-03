@@ -32,7 +32,8 @@ interface LibraryFiltersProps {
   componentFilter: string;
   waProductFilter: string;
   countryFilter: string;
-  regionFilter: string; // Contributor's region filter
+  regionFilter: string; // Geographic region (by case country)
+  contributorRegionFilter: string; // Contributor's region (by author)
   wearTypeFilter: string; // Comma-separated values for multi-select
   contributorFilter: string;
   minRevenue: number | null;
@@ -58,6 +59,7 @@ export function LibraryFilters({
   waProductFilter,
   countryFilter,
   regionFilter,
+  contributorRegionFilter,
   wearTypeFilter,
   contributorFilter,
   minRevenue,
@@ -72,7 +74,7 @@ export function LibraryFilters({
   const [contributorSearch, setContributorSearch] = useState('');
 
   // Check if any advanced filters are active
-  const hasAdvancedFilters = componentFilter || waProductFilter || countryFilter || regionFilter || wearTypeFilter || contributorFilter || minRevenue || maxRevenue;
+  const hasAdvancedFilters = componentFilter || waProductFilter || countryFilter || regionFilter || contributorRegionFilter || wearTypeFilter || contributorFilter || minRevenue || maxRevenue;
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -103,6 +105,7 @@ export function LibraryFilters({
     if (waProductFilter) params.waProduct = waProductFilter;
     if (countryFilter) params.country = countryFilter;
     if (regionFilter) params.region = regionFilter;
+    if (contributorRegionFilter) params.contributorRegion = contributorRegionFilter;
     if (wearTypeFilter) params.wearType = wearTypeFilter;
     if (contributorFilter) params.contributor = contributorFilter;
     if (minRevenue) params.minRevenue = minRevenue.toString();
@@ -407,9 +410,10 @@ export function LibraryFilters({
             </div>
           )}
 
-          {/* Region Filter (Contributor's Region) */}
+          {/* Region Filter (GEOGRAPHIC — by the case's country) */}
           <div>
-            <label className="text-sm font-medium mb-2 block dark:text-foreground">Region</label>
+            <label className="text-sm font-medium mb-0.5 block dark:text-foreground">Region</label>
+            <p className="text-xs text-gray-500 dark:text-muted-foreground mb-2">Where the case is — by country</p>
             <div className="space-y-2">
               <Link
                 href={waGetFilterUrl({ region: undefined })}
@@ -427,6 +431,37 @@ export function LibraryFilters({
                   href={waGetFilterUrl({ region: r.value })}
                   className={`block px-3 py-2 rounded-md text-sm transition-colors ${
                     regionFilter === r.value
+                      ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
+                      : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
+                  }`}
+                >
+                  {r.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Contributor Region Filter (by the AUTHOR's region) */}
+          <div>
+            <label className="text-sm font-medium mb-0.5 block dark:text-foreground">Contributor Region</label>
+            <p className="text-xs text-gray-500 dark:text-muted-foreground mb-2">Who submitted it — by author</p>
+            <div className="space-y-2">
+              <Link
+                href={waGetFilterUrl({ contributorRegion: undefined })}
+                className={`block px-3 py-2 rounded-md text-sm transition-colors ${
+                  !contributorRegionFilter
+                    ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
+                    : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
+                }`}
+              >
+                All Contributor Regions
+              </Link>
+              {WA_REGIONS.map((r) => (
+                <Link
+                  key={r.value}
+                  href={waGetFilterUrl({ contributorRegion: r.value })}
+                  className={`block px-3 py-2 rounded-md text-sm transition-colors ${
+                    contributorRegionFilter === r.value
                       ? 'bg-wa-green-50 text-wa-green-700 font-medium dark:bg-accent dark:text-primary'
                       : 'hover:bg-gray-100 text-gray-700 dark:text-muted-foreground dark:hover:bg-background'
                   }`}
