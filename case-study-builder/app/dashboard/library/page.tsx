@@ -248,6 +248,26 @@ export default async function LibraryPage({
 
   const totalPages = Math.ceil(totalCount / perPage);
 
+  // Build a pagination URL that preserves ALL active filters (not just q/type/industry/oem),
+  // mirroring waGetFilterUrl in library-filters.tsx so filters persist across pages.
+  const buildPageUrl = (targetPage: number) => {
+    const sp = new URLSearchParams();
+    sp.set('page', String(targetPage));
+    if (query) sp.set('q', query);
+    if (typeFilter) sp.set('type', typeFilter);
+    if (industryFilter) sp.set('industry', industryFilter);
+    if (oemFilter) sp.set('oem', oemFilter);
+    if (componentFilter) sp.set('component', componentFilter);
+    if (wearTypeFilter) sp.set('wearType', wearTypeFilter);
+    if (waProductFilter) sp.set('waProduct', waProductFilter);
+    if (countryFilter) sp.set('country', countryFilter);
+    if (regionFilter) sp.set('region', regionFilter);
+    if (contributorFilter) sp.set('contributor', contributorFilter);
+    if (minRevenue !== null) sp.set('minRevenue', String(minRevenue));
+    if (maxRevenue !== null) sp.set('maxRevenue', String(maxRevenue));
+    return `/dashboard/library?${sp.toString()}`;
+  };
+
   // Use master data wear types, fallback to hardcoded if none found
   const wearTypeOptions = masterWearTypes.length > 0
     ? masterWearTypes.map(wt => wt.value)
@@ -487,13 +507,7 @@ export default async function LibraryPage({
           {totalPages > 1 && (
             <div className="mt-8 flex items-center justify-center gap-2">
               <Link
-                href={`/dashboard/library?${new URLSearchParams({
-                  page: String(Math.max(1, page - 1)),
-                  ...(query && { q: query }),
-                  ...(typeFilter && { type: typeFilter }),
-                  ...(industryFilter && { industry: industryFilter }),
-                  ...(oemFilter && { oem: oemFilter }),
-                }).toString()}`}
+                href={buildPageUrl(Math.max(1, page - 1))}
               >
                 <Button variant="outline" disabled={page === 1}>
                   Previous
@@ -516,13 +530,7 @@ export default async function LibraryPage({
                   return (
                     <Link
                       key={pageNum}
-                      href={`/dashboard/library?${new URLSearchParams({
-                        page: String(pageNum),
-                        ...(query && { q: query }),
-                        ...(typeFilter && { type: typeFilter }),
-                        ...(industryFilter && { industry: industryFilter }),
-                        ...(oemFilter && { oem: oemFilter }),
-                      }).toString()}`}
+                      href={buildPageUrl(pageNum)}
                     >
                       <Button
                         variant={page === pageNum ? 'default' : 'outline'}
@@ -537,13 +545,7 @@ export default async function LibraryPage({
               </div>
 
               <Link
-                href={`/dashboard/library?${new URLSearchParams({
-                  page: String(Math.min(totalPages, page + 1)),
-                  ...(query && { q: query }),
-                  ...(typeFilter && { type: typeFilter }),
-                  ...(industryFilter && { industry: industryFilter }),
-                  ...(oemFilter && { oem: oemFilter }),
-                }).toString()}`}
+                href={buildPageUrl(Math.min(totalPages, page + 1))}
               >
                 <Button variant="outline" disabled={page === totalPages}>
                   Next
