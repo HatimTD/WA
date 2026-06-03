@@ -334,6 +334,9 @@ export async function waGetContributorRegionBhagProgress() {
         contributor: {
           select: {
             region: true,
+            // NetSuite-synced subsidiary region (legacy User.region is null for synced employees)
+            subsidiary: { select: { region: true } },
+            userSubsidiaries: { select: { subsidiary: { select: { region: true } } } },
           },
         },
       },
@@ -344,7 +347,10 @@ export async function waGetContributorRegionBhagProgress() {
     const byContributorRegion: Record<string, Set<string>> = {};
 
     approvedCases.forEach((cs) => {
-      const region = cs.contributor?.region || 'Unknown';
+      const region = cs.contributor?.region
+        || cs.contributor?.userSubsidiaries?.[0]?.subsidiary?.region
+        || cs.contributor?.subsidiary?.region
+        || 'Unknown';
       const uniqueKey = waCreateUniqueKey(cs);
 
       if (!byContributorRegion[region]) {
