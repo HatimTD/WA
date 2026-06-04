@@ -1,4 +1,5 @@
 import { auth } from '@/auth';
+import { waSafeUrl } from '@/lib/waSafeUrl';
 import { prisma } from '@/lib/prisma';
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
@@ -530,7 +531,7 @@ export default async function ApprovalReviewPage({ params, searchParams }: Props
               {caseStudy.images.map((imageUrl, index) => (
                 <a
                   key={index}
-                  href={imageUrl}
+                  href={waSafeUrl(imageUrl)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-border bg-gray-100 dark:bg-background cursor-pointer block"
@@ -572,7 +573,7 @@ export default async function ApprovalReviewPage({ params, searchParams }: Props
                 return (
                   <a
                     key={index}
-                    href={downloadUrl}
+                    href={waSafeUrl(downloadUrl)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-4 p-4 border border-gray-200 dark:border-border rounded-lg hover:bg-gray-50 dark:hover:bg-accent hover:border-wa-green-300 dark:hover:border-primary transition-all"

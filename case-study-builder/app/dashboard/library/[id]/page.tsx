@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { waSafeUrl } from '@/lib/waSafeUrl';
 import { notFound, redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -683,7 +684,7 @@ export default async function PublicCaseDetailPage({
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {caseStudy.images.map((imageUrl, index) => (
-                  <a key={index} href={imageUrl} target="_blank" rel="noopener noreferrer" className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-border bg-gray-100 dark:bg-gray-800 cursor-pointer block">
+                  <a key={index} href={waSafeUrl(imageUrl)} target="_blank" rel="noopener noreferrer" className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-border bg-gray-100 dark:bg-gray-800 cursor-pointer block">
                     <Image
                       src={imageUrl}
                       alt={`Case study image ${index + 1}`}
@@ -717,7 +718,7 @@ export default async function PublicCaseDetailPage({
                   return (
                     <a
                       key={index}
-                      href={downloadUrl}
+                      href={waSafeUrl(downloadUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-4 p-4 border border-gray-200 dark:border-border rounded-lg hover:bg-gray-50 dark:hover:bg-card hover:border-wa-green-300 dark:hover:border-primary transition-all"

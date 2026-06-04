@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { FileText, ChevronDown, ChevronUp, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { WaWpsFormData, WpsLayer } from '@/lib/actions/waWpsActions';
+import { waSafeUrl } from '@/lib/waSafeUrl';
 
 type WeldingProcedureFormProps = {
   caseStudyId: string;
@@ -452,7 +453,7 @@ export default function WeldingProcedureForm({ caseStudyId, existingData }: Weld
                       {doc.url && (
                         <div className="flex items-center gap-2">
                           <a
-                            href={docHref}
+                            href={waSafeUrl(docHref)}
                             target="_blank"
                             rel="noopener noreferrer"
                             download={doc.name}
