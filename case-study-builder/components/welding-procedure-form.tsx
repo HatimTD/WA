@@ -442,6 +442,8 @@ export default function WeldingProcedureForm({ caseStudyId, existingData }: Weld
               <div className="space-y-2">
                 {(existingData.documents as any[]).map((doc: any, index: number) => {
                   const isImage = doc.type?.startsWith('image/') || /\.(png|jpg|jpeg|gif|webp)$/i.test(doc.name);
+                  // Non-image docs must go through the proxy (Cloudinary restricts raw delivery). Fixes WA-008.
+                  const docHref = isImage ? doc.url : `/api/documents/download?url=${encodeURIComponent(doc.url)}&filename=${encodeURIComponent(doc.name || 'document')}`;
 
                   return (
                     <div key={index} className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border border-border">
@@ -450,7 +452,7 @@ export default function WeldingProcedureForm({ caseStudyId, existingData }: Weld
                       {doc.url && (
                         <div className="flex items-center gap-2">
                           <a
-                            href={doc.url}
+                            href={docHref}
                             target="_blank"
                             rel="noopener noreferrer"
                             download={doc.name}
