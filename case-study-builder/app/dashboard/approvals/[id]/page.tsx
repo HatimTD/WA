@@ -528,7 +528,13 @@ export default async function ApprovalReviewPage({ params, searchParams }: Props
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {caseStudy.images.map((imageUrl, index) => (
-                <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-border bg-gray-100 dark:bg-background">
+                <a
+                  key={index}
+                  href={imageUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-border bg-gray-100 dark:bg-background cursor-pointer block"
+                >
                   <Image
                     src={imageUrl}
                     alt={`Case study image ${index + 1}`}
@@ -536,7 +542,7 @@ export default async function ApprovalReviewPage({ params, searchParams }: Props
                     className="object-cover hover:scale-105 transition-transform duration-200"
                     sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                   />
-                </div>
+                </a>
               ))}
             </div>
           </CardContent>
