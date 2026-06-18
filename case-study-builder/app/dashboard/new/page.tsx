@@ -406,6 +406,15 @@ export default function NewCaseStudyPage() {
     return baseSteps;
   }, [formData.type]);
 
+  // Clamp the current step when the step list shrinks (e.g. switching the case
+  // type from STAR back to APPLICATION removes the WPS / Cost steps) so that
+  // STEPS[currentStep - 1] can never read past the end of the array.
+  useEffect(() => {
+    if (currentStep > STEPS.length) {
+      setCurrentStep(STEPS.length);
+    }
+  }, [STEPS.length, currentStep]);
+
   const updateFormData = (data: Partial<CaseStudyFormData>) => {
     setFormData((prev) => ({ ...prev, ...data }));
     // Clear highlighted fields when user edits them
@@ -933,8 +942,8 @@ export default function NewCaseStudyPage() {
       {/* Form Content */}
       <Card role="article" className="dark:bg-card dark:border-border">
         <CardHeader>
-          <CardTitle className="dark:text-foreground">{STEPS[currentStep - 1].title}</CardTitle>
-          <CardDescription className="dark:text-muted-foreground">{STEPS[currentStep - 1].description}</CardDescription>
+          <CardTitle className="dark:text-foreground">{STEPS[currentStep - 1]?.title}</CardTitle>
+          <CardDescription className="dark:text-muted-foreground">{STEPS[currentStep - 1]?.description}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {STEPS[currentStep - 1]?.title === 'Case Study Type' && (
@@ -1213,7 +1222,7 @@ export default function NewCaseStudyPage() {
 
           {currentStep < STEPS.length ? (
             <Button onClick={handleNext} disabled={isSubmitting}>
-              Next{STEPS[currentStep - 1]?.title === 'Welding Procedure' && formData.type === 'STAR' ? ' (+1 pt)' : ''}
+              Next{STEPS[currentStep - 1]?.title === 'Welding Procedure' && formData.type === 'STAR' ? <span>&nbsp;(+1 pt)</span> : null}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           ) : (
