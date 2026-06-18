@@ -83,7 +83,9 @@ function buildCSP(): string {
       `style-src 'self' 'unsafe-inline'`,
       `img-src 'self' data: https: blob:`,
       `font-src 'self' data:`,
-      `connect-src 'self' ws: wss: https://api.openai.com https://res.cloudinary.com https://*.ngrok-free.dev wss://*.ngrok-free.dev https://*.google.com https://*.googleapis.com`,
+      `connect-src 'self' ws: wss: https://api.openai.com https://res.cloudinary.com https://*.ngrok-free.dev wss://*.ngrok-free.dev https://*.google.com https://*.googleapis.com https://*.ingest.sentry.io https://*.ingest.de.sentry.io https://*.ingest.us.sentry.io`,
+      // Sentry Session Replay compresses recordings in a blob: web worker.
+      `worker-src 'self' blob:`,
       `media-src 'self'`,
       `object-src 'none'`,
       `frame-src 'none'`,
@@ -100,7 +102,9 @@ function buildCSP(): string {
     `style-src 'self' 'unsafe-inline'`,
     `img-src 'self' data: https: blob:`,
     `font-src 'self' data:`,
-    `connect-src 'self' https://api.openai.com https://res.cloudinary.com https://*.ngrok-free.dev wss://*.ngrok-free.dev https://*.google.com https://*.googleapis.com https://vercel.live https://*.vercel.live wss://vercel.live wss://*.vercel.live https://*.vercel.app wss://*.pusher.com https://*.pusher.com`,
+    `connect-src 'self' https://api.openai.com https://res.cloudinary.com https://*.ngrok-free.dev wss://*.ngrok-free.dev https://*.google.com https://*.googleapis.com https://vercel.live https://*.vercel.live wss://vercel.live wss://*.vercel.live https://*.vercel.app wss://*.pusher.com https://*.pusher.com https://*.ingest.sentry.io https://*.ingest.de.sentry.io https://*.ingest.us.sentry.io`,
+    // Sentry error reporting + Session Replay (which compresses in a blob: web worker).
+    `worker-src 'self' blob:`,
     `media-src 'self'`,
     `object-src 'none'`,
     `frame-src 'self' https://vercel.live`,
